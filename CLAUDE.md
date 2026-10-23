@@ -1016,5 +1016,5 @@ Measured: 77 to 78 on the jog, 59 to 60 with the switch; `tests/battle.js ladder
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
   kept the old bundle.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
-  from disk), crossfading at dusk and dawn; **the day's loop by the season** (Derek, SD's meadow-day-spring at 124 bpm and meadow-day-winter at 90, Robin's picks of 2026-10-23, "I like spring and winter"; `dayTheme` by `year.season`, a season's turn crossfading it as dusk does; summer the meadow as before, autumn too until Derek, SD's reworked start comes); the synthesized songs in `src/music.js` are the fallback. Music is off until the
+  from disk), crossfading at dusk and dawn; **the day's loop by the season** (Derek, SD's meadow-day-spring at 124 bpm and meadow-day-winter at 90, Robin's picks of 2026-10-23, "I like spring and winter"; `dayTheme` by `year.season`, a season's turn crossfading it as dusk does; and meadow-day-autumn at 104 with its start reworked, "Autumn is good now"; summer the meadow as before; the nights' seasons come next); the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).

@@ -15770,7 +15770,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     meadowDay: { url: '../assets/music/meadow-day.js?v=0bdfb254', frames: 9762712 },        // the studio's MP3, wrapped in a script so a page opened from disk can load it too (tools/musicjs.js; npm start opens file://, where a fetch fails)
     meadowEvening: { url: '../assets/music/meadow-night.js?v=482ee75a', frames: 7680000 },
     meadowDaySpring: { url: '../assets/music/meadow-day-spring.js?v=604e8c72', frames: 9290323 },   /* the seasons' meadow by day (Derek, SD; Robin, 2026-10-23: "I like spring and winter"; autumn comes when its start is reworked, summer stays the meadow) */
-    meadowDayWinter: { url: '../assets/music/meadow-day-winter.js?v=9ee2a479', frames: 12800000 }
+    meadowDayWinter: { url: '../assets/music/meadow-day-winter.js?v=9ee2a479', frames: 12800000 },
+    meadowDayAutumn: { url: '../assets/music/meadow-day-autumn.js?v=5723f9a4', frames: 11076923 }   /* (Robin: "Autumn is good now", the start reworked) */
   };
   function fileOf(id) { var f = MUSIC_FILES[id]; if (!f) return null; return { url: f.url, loopStart: 1105 / 48000, loopEnd: (1105 + f.frames) / 48000 }; }
   function startMusic() {                 // browsers allow sound only after the first key or click
@@ -15781,7 +15782,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (fl) Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fadeIn: 2 }).then(function (ok) { if (!ok && musicOn && musicSong === want) Music.play(songOf(want)); });   // the file, or the song if it cannot be had
     else { Music.stopTrack(1); if (!Music.play(songOf(musicSong))) musicOn = false; }
   }
-  function dayTheme() { return year.season === 'spring' ? 'meadowDaySpring' : year.season === 'winter' ? 'meadowDayWinter' : 'meadowDay'; }   /* the day's loop by the season (a season's turn crossfades it as dusk does) */       /* (2026-10-15, Robin: "tell the game to use the new meadows day and night soundtrack"; a song handed over from the Song Editor took their place, which is likely why Robin did not hear them: the recorded loops are the day and the night now) */
+  function dayTheme() { return year.season === 'spring' ? 'meadowDaySpring' : year.season === 'winter' ? 'meadowDayWinter' : year.season === 'autumn' ? 'meadowDayAutumn' : 'meadowDay'; }   /* the day's loop by the season (a season's turn crossfades it as dusk does) */       /* (2026-10-15, Robin: "tell the game to use the new meadows day and night soundtrack"; a song handed over from the Song Editor took their place, which is likely why Robin did not hear them: the recorded loops are the day and the night now) */
   function eveTheme() { return 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
