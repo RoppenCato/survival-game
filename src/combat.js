@@ -2410,7 +2410,7 @@ function render(c) {
   W.enemies.forEach(function (e) { if (api.scene && api.scene.visible && !api.scene.visible(e.x, e.y, e.r)) return; items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });   // a page can say what is in view (2026-10-08: every beast in the world was drawn each frame)
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
-  if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
+  if (!P.dead) { var hsy = api.scene && api.scene.heroSortY ? api.scene.heroSortY() : null; items.push({ y: hsy != null ? hsy : P.y, f: function () { drawHero(c); } }); }   /* heroSortY: a page sorts the hero elsewhere than at his feet (over the altar's slab as he lays and stabs, 2026-10-24) */
   if (sc) sc.items(items);
   items.sort(function (a, b) { return a.y - b.y; });
   for (i = 0; i < items.length; i++) items[i].f();
