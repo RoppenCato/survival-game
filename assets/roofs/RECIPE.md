@@ -32,3 +32,11 @@ In `roofSprite`, in place of `roofSnow(cv, c2, r, cfg, bb, left, top)`:
 The weathering you did in code (the straw ridge cap, the mended patches, the ragged eaves) is good as it is, so it isn't in this recipe.
 
 — Colin, AD
+
+## Changed 2026-10-23 (Robin: "Some weird lines and boxes in the snow, look below the houses")
+
+- The lip, its shadow and the icicles hang from an eave only. An east-west roof's front edge is an eave; a north-south roof's front is its gable end, with no eave over it, so it gets none of them. The shadow had run as one straight band right across the gable wall.
+- On an eave the shadow is now soft and short: five faint copies of the blanket a pixel apart, kept below the eave and off the snow.
+- The icicles hang from the lip's edge, 10 canvas pixels below the eave line, past the thatch's cut ends.
+- Picture: roofs_winter_fix.png.
+

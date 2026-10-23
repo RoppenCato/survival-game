@@ -67,15 +67,24 @@
     var out = mk(W, H), o = out.getContext('2d');
     o.drawImage(cv, 0, 0);                                                   // the roof under it (it shows in the scoured and slid places)
     var inkC = mk(W, H), ig = inkC.getContext('2d'); ig.drawImage(sn, 0, 0); ig.globalCompositeOperation = 'source-in'; ig.fillStyle = C.ink; ig.fillRect(0, 0, W, H);
-    var shC = mk(W, H), sg = shC.getContext('2d'); sg.drawImage(sn, 0, 0); sg.globalCompositeOperation = 'source-in'; sg.fillStyle = 'rgba(60,72,104,1)'; sg.fillRect(0, 0, W, H);
-    o.globalAlpha = 0.35; o.drawImage(shC, 1.5, 7); o.globalAlpha = 1;      // the lip's shadow on the wall under the eaves
-    [[-1.2, 0], [1.2, 0], [0, -1.2], [0, 1.2], [0.9, 0.9], [-0.9, 0.9], [0.9, -0.9], [-0.9, -0.9]].forEach(function (d) { o.drawImage(inkC, d[0], d[1] + 2.5); o.drawImage(inkC, d[0], d[1]); });   // the cold edge, round the lip and the blanket
-    var lipC = mk(W, H), lg = lipC.getContext('2d'); lg.drawImage(sn, 0, 0); lg.globalCompositeOperation = 'source-in'; lg.fillStyle = C.lip; lg.fillRect(0, 0, W, H);
-    for (i = 0; i < 5; i++) o.drawImage(lipC, (i - 2) * 0.6, 1 + i * 0.4 + R() * 0.8);   // the lip: the blanket hung a little past the eaves
+    // the lip, its shadow and the icicles hang from an eave only: an ew roof's front edge is an eave; an ns roof's front is its gable end,
+    // with no eave over it, so none of them there (2026-10-23, Robin: "Some weird lines and boxes in the snow, look below the houses": the
+    // shadow ran as one straight band right across the gable wall)
+    var eaveFront = !ns;
+    if (eaveFront) {                                                         // the shadow: soft, short, following the lip's own edge, only below the eave
+      var shC = mk(W, H), sg = shC.getContext('2d');
+      for (i = 1; i <= 5; i++) { sg.globalAlpha = 0.22; sg.drawImage(sn, (i - 3) * 0.5, i * 1.1); }
+      sg.globalAlpha = 1; sg.globalCompositeOperation = 'source-in'; sg.fillStyle = 'rgb(70,84,118)'; sg.fillRect(0, 0, W, H);
+      sg.globalCompositeOperation = 'destination-out'; sg.drawImage(sn, 0, 0); sg.fillRect(0, 0, W, eave - 2);   // not on the snow, not above the eave
+      o.globalAlpha = 0.6; o.drawImage(shC, 0, 2); o.globalAlpha = 1;
+    }
+    [[-1.2, 0], [1.2, 0], [0, -1.2], [0, 1.2], [0.9, 0.9], [-0.9, 0.9], [0.9, -0.9], [-0.9, -0.9]].forEach(function (d) { if (eaveFront) o.drawImage(inkC, d[0], d[1] + 2.5); o.drawImage(inkC, d[0], d[1]); });   // the cold edge, round the lip and the blanket
+    if (eaveFront) { var lipC = mk(W, H), lg = lipC.getContext('2d'); lg.drawImage(sn, 0, 0); lg.globalCompositeOperation = 'source-in'; lg.fillStyle = C.lip; lg.fillRect(0, 0, W, H);
+      for (i = 0; i < 5; i++) o.drawImage(lipC, (i - 2) * 0.6, 1 + i * 0.4 + R() * 0.8); }   // the lip: the blanket hung a little past the eave
     o.drawImage(sn, 0, 0);
-    // icicles along the front eave (and the gable's foot for an ns roof)
-    var ix0 = W * 0.08, ix1 = W * 0.92, step = 10;
-    for (var x2 = ix0; x2 < ix1; x2 += step * (0.6 + R() * 0.8)) { if (R() < 0.5) continue; var len = 4 + R() * 9 * (R() < 0.2 ? 1.7 : 1), ey = eave + 3;
+    // icicles along the front eave (an ew roof only)
+    var ix0 = W * 0.08, ix1 = eaveFront ? W * 0.92 : 0, step = 10;
+    for (var x2 = ix0; x2 < ix1; x2 += step * (0.6 + R() * 0.8)) { if (R() < 0.5) continue; var len = 4 + R() * 9 * (R() < 0.2 ? 1.7 : 1), ey = eave + 10;   // from the lip's edge (the thatch's cut ends hang below the eave line, and the snow over them)
       o.fillStyle = C.ice; o.beginPath(); o.moveTo(x2 - 1.4, ey); o.lineTo(x2 + 1.4, ey); o.lineTo(x2 + 0.2, ey + len); o.closePath(); o.fill();
       o.strokeStyle = 'rgba(110,125,152,0.8)'; o.lineWidth = 0.6; o.stroke(); o.fillStyle = 'rgba(255,255,255,0.9)'; o.fillRect(x2 - 0.6, ey + 0.5, 0.7, len * 0.5); }
     return out;
