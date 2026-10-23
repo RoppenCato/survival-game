@@ -387,10 +387,10 @@ __COMBAT__
   var SPR = Sprites.withOverride(__SPRITES__ || {}, typeof window !== 'undefined' ? window.__SPRITES_OVERRIDE__ : null), sprHero = Sprites.hero(SPR, localStorage);   /* (window.__SPRITES_OVERRIDE__: the studio's viewer lays its sheets over the game's, 2026-10-21) */   // the Blender hero (hero2-mixamo, or the model game.blenderHero names); without sheets the drawn figure stays
   function handLayers(face) {              // the thing in the hand as layers over the body (2026-10-09): its wood, and its metal tinted by the material; and the shield on the other arm
     var P = hero(), M = sprHero && sprHero.meta, out = ['body']; if (!M) return out;
-    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) return out;   /* (in a place at peace the weapon is away until it is used) */
-    var lk = it ? (it.kind === 'cudgel' ? 'club' : it.kind) : null;   /* (the cudgel wears the club's layers until Colin, AD's come) */
+    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
+    var lk = it ? it.kind : null;
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
-    if (it && lk !== 'club' && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
+    if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (shieldHeld()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
     return out;
   }
@@ -421,6 +421,8 @@ __COMBAT__
      nasal) to the Gjermundbu; a colour for the cloth ones, the helms and the fur cap as rendered. The hoods wait for an item. */
   var HERO_HEADS = { leather: ['capC', '#6e5a44'], wool: ['capA', '#7c3a2c'], fur: ['capB', null], copper: ['helmC', null], bronze: ['helmC', null], iron: ['helmB', null], silver: ['helmA', null], gold: ['helmA', null] };
   function bladeTint(m) { return m === 'iron' ? '#c4cbd4' : ((Items.MATS[m] || {}).face || '#c4cbd4'); }
+  var CARRY_LAYER = { boar: 'carryBoar', deer: 'carryDeer', hen: 'carryHen' };   /* the beast over his shoulders by its kind; a kind without its own picture is carried as the boar (a bird as the hen) */
+  function carryLayer() { if (!carrying || !carrying.beast) return null; var e = carrying.beast, k = e.stock || e.kind; return CARRY_LAYER[k] || (k === 'bird' ? 'carryHen' : 'carryBoar'); }
   function heroLook(face) {
     var P = hero(), M = sprHero && sprHero.meta; if (!M || !sprHero.kit) return null;
     var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, mf = function (it, d) { return (it && Items.MATS[it.mat] && Items.MATS[it.mat].face) || d; };
@@ -435,6 +437,7 @@ __COMBAT__
     if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
     if (!away && it && has(it.kind + 'Metal')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
+    var cl = carryLayer(); if (cl) L.push({ l: cl });
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
   }
   /* The hero's gait (Robin, 2026-10-22: "id prefer a better jogging. I think the normal pace needs to be around 75-80 as now its
@@ -443,7 +446,7 @@ __COMBAT__
   function strolling() { return typeof ADMIN !== 'undefined' && !!ADMIN && !!ADMIN.stroll && !!(sprHero && sprHero.meta && sprHero.meta.anims.walk_fast); }   /* (2026-10-22: the hero jogs at 78 on the kit's jog; Admin's "The hero walks at 60" brings back yesterday's walk_fast at 60, to compare) */
   function gaitSync() { Combat.HERO_GAIT.walk = strolling() ? Combat.HERO_GAIT.stroll : (sprHero && sprHero.meta && sprHero.meta.anims.jog ? 78 : 60); }
   function attachKit() {                 // the hero as the game draws him (the models scene swaps the figure and comes back to this)
-    Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook, walkClip: function () { return strolling() ? 'walk_fast' : null; } });
+    Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook, carry: function () { return !!(carrying && carrying.beast); }, walkClip: function () { return strolling() ? 'walk_fast' : null; } });
     var hd0 = Combat.api.heroSprite; if (hd0) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (!shipHero && raft && raft.aboard && Yard.isShip(raft.kind)) return; var PH = hero(), md = inCave ? 1 : mouthDark(PH.x, PH.y); if (md < 1) { c.save(); c.filter = 'brightness(' + md.toFixed(3) + ')'; hd0(c, x, y, face, an, dashing); c.restore(); return; }
       if (swim.on) { var bob = Math.sin(swim.ripT * 2.2) * 1.2, wl = y - 13 + bob; c.save(); c.strokeStyle = 'rgba(236,246,252,0.55)'; c.lineWidth = 1; c.beginPath(); c.ellipse(x, wl + 1, 15 + Math.sin(swim.ripT * 3) * 1.5, 5, 0, 0, 6.283); c.stroke(); c.beginPath(); c.rect(x - 60, wl - 90, 120, 90); c.clip(); hd0(c, x, y + bob + 12, face, an, dashing); c.restore(); c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(x, wl + 1.5, 10, 3.2, 0, 0, 6.283); c.stroke(); return; }   /* swimming: sunk to the chest, a ring of ripples (SWIM) */
       hd0(c, x, y, face, an, dashing); };   /* (in the troll cave's mouth he goes dark with depth: MOUTH) */
@@ -521,7 +524,8 @@ __COMBAT__
     if (!PEOPLE || !m.fig) return; var look = m.look || (m.look = Sprites.lookOf(m.fig.spec, m.lookX || {}));
     Sprites.person(c, PEOPLE, Sprites.withHand(look, null), { clip: 'death', face: face + Math.PI / 2, k: 0.999 }, x, y * K - 21, { shadow: false, scale: 0.9 });
   }
-  Combat.api.enemySprite = function (c, e) { var mdk = !inCave && !e.human && caveMouth && caveMouth.pic ? mouthDark(e.x, e.y) : 1; if (mdk < 1) { c.save(); c.filter = 'brightness(' + mdk.toFixed(3) + ')'; var r0 = beastSpriteOf(c, e); c.restore(); return r0; } return beastSpriteOf(c, e); };   /* (in the troll cave's mouth, dark with depth: MOUTH) */
+  Combat.api.enemySprite = function (c, e) { if (e.hidden && e.carried) return true;   /* (a beast out cold on the hero's shoulders: drawn as a layer of his carry clip, not where it lay) */
+    var mdk = !inCave && !e.human && caveMouth && caveMouth.pic ? mouthDark(e.x, e.y) : 1; if (mdk < 1) { c.save(); c.filter = 'brightness(' + mdk.toFixed(3) + ')'; var r0 = beastSpriteOf(c, e); c.restore(); return r0; } return beastSpriteOf(c, e); };   /* (in the troll cave's mouth, dark with depth: MOUTH) */
   function beastSpriteOf(c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind];
     if (!Sprites.beastReady(BH)) { Sprites.warm(BH); if (e.dead) return true; c.save(); c.translate(e.x, e.y * K); c.fillStyle = 'rgba(24,18,14,0.22)'; c.beginPath(); c.ellipse(0, e.r * 0.25, e.r * 1.25, e.r * 0.5, 0, 0, 7); c.fill(); c.restore(); return true; }   /* its sheets on their way: a soft shadow where it stands */
     var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
@@ -6630,7 +6634,7 @@ __COMBAT__
       idleShips().forEach(function (sv2) { if (Math.abs(sv2.x - cam.x) < hw + 320 && Math.abs(sv2.y * K - cam.y) < hh + 320) items.push({ y: sv2.y - 14, f: function () { Yard.drawVessel(ctx, sv2, clock); } }); });   /* your other ships, where you left them (empty: the crew are aboard the one in use) */
       if (fishing) items.push({ y: P.y + 0.4, f: function () { drawFishing(ctx); } });
       if (carrying && carrying.man) items.push({ y: P.y + 0.6, f: function () { drawCarried(ctx, P.x, P.y - (hero().lvl ? UP / K : 0), P.face, carrying.man); } });
-      if (carrying && carrying.beast) items.push({ y: P.y + 0.6, f: function () { drawCarriedBeast(ctx); } });
+      if (carrying && carrying.beast) { if (!(sprHero && sprHero.meta && sprHero.meta.anims.carry && sprHero.meta.layers.indexOf(carryLayer()) >= 0)) items.push({ y: P.y + 0.6, f: function () { drawCarriedBeast(ctx); } }); }   /* (the beast is a layer of Colin, AD's carry clips; only without them the lying picture at his shoulders) */
       else if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite(carrying.name === 'sack' ? 'sack' : 'chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
       if (npc && !npc.asMan && !npc.lost && !npc.dead && !npc.aboard && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });   /* (on a raid Arnor is the engine's man, drawn by it; aboard, the ship draws him) */
       hird.forEach(function (m) { if (m === npc || m.asMan || m.lost || m.dead || m.aboard) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });

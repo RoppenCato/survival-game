@@ -98,6 +98,7 @@
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
     if (P.bowDraw > 0) { if (A.bow_draw) return { a: 'bow_draw', f: frameAt(A.bow_draw, Math.min(0.999, P.bowDraw / 1.5)) }; if (A.bow_shoot) return { a: 'bow_shoot', f: 0 }; }   /* the bow drawn and held (BOW, 2026-10-23): the draw clip to the frame the charge has reached */
     if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder; the studio's clips when they come, the block held until then */
+    if (opts.carry && opts.carry() && A.carry) { if (an && an.amt > 0.3 && A.carry_walk) return { a: 'carry_walk', f: A.carry_walk.stride > 0 ? strideFrame(A.carry_walk, dd, sc) : loopFrame(A.carry_walk, t * 0.62) }; var lc = loopAt(A.carry, t); return { a: 'carry', f: lc.f, f2: lc.f2, w: lc.w }; }   /* a beast out cold over his shoulders (the cudgel, Colin, AD's carry clips, 2026-10-23): standing with it, or the guard walk's steps under it */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
       if (!(an && an.amt > 0.3)) return { a: bk, f: frameAt(A[bk], Math.min(0.999, H.blk)) };
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: A[bkW].stride > 0 ? strideFrame(A[bkW], dd, sc) : loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
@@ -215,7 +216,7 @@
     if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'bash', 'bash_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once (the bash clips with them, 2026-10-23: a bash is over in 0.3 s, too short to wait for a sheet)
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null };
+      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
       if (H.kit) { drawKit(c, H, x, y, face, an, dashing, P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }
       draw(c, H, x, y, face, an, dashing, P, o);
     };
