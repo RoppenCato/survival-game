@@ -15760,7 +15760,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var OPTS = { music: 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
-  function songOf(id) { return Music.SONGS[id]; }   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
+  function songOf(id) { return Music.SONGS[id] || (/^meadowDay/.test(id) ? Music.SONGS.meadowDay : null); }   /* (a season's day loop falls back to the day song) */   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
   /* The meadow by day and by night from the sound studio (2026-10-15; C:\dev\SG\Sound Director\out\music\HANDOFF-meadow-day-night.md): two
      recorded loops in place of the synthesized meadowDay and meadowEvening, when no song from the Song Editor is chosen in their
      place (a choice there still wins). Each MP3 starts with the encoder's 1105 samples of delay (measured against the studio's
@@ -15768,7 +15768,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
      loop runs from 1105 to 1105 + the studio's loop length, at 48 kHz. On file:// the fetch fails and the synthesized song plays. */
   var MUSIC_FILES = {
     meadowDay: { url: '../assets/music/meadow-day.js?v=0bdfb254', frames: 9762712 },        // the studio's MP3, wrapped in a script so a page opened from disk can load it too (tools/musicjs.js; npm start opens file://, where a fetch fails)
-    meadowEvening: { url: '../assets/music/meadow-night.js?v=482ee75a', frames: 7680000 }
+    meadowEvening: { url: '../assets/music/meadow-night.js?v=482ee75a', frames: 7680000 },
+    meadowDaySpring: { url: '../assets/music/meadow-day-spring.js?v=604e8c72', frames: 9290323 },   /* the seasons' meadow by day (Derek, SD; Robin, 2026-10-23: "I like spring and winter"; autumn comes when its start is reworked, summer stays the meadow) */
+    meadowDayWinter: { url: '../assets/music/meadow-day-winter.js?v=9ee2a479', frames: 12800000 }
   };
   function fileOf(id) { var f = MUSIC_FILES[id]; if (!f) return null; return { url: f.url, loopStart: 1105 / 48000, loopEnd: (1105 + f.frames) / 48000 }; }
   function startMusic() {                 // browsers allow sound only after the first key or click
@@ -15779,7 +15781,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (fl) Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fadeIn: 2 }).then(function (ok) { if (!ok && musicOn && musicSong === want) Music.play(songOf(want)); });   // the file, or the song if it cannot be had
     else { Music.stopTrack(1); if (!Music.play(songOf(musicSong))) musicOn = false; }
   }
-  function dayTheme() { return 'meadowDay'; }       /* (2026-10-15, Robin: "tell the game to use the new meadows day and night soundtrack"; a song handed over from the Song Editor took their place, which is likely why Robin did not hear them: the recorded loops are the day and the night now) */
+  function dayTheme() { return year.season === 'spring' ? 'meadowDaySpring' : year.season === 'winter' ? 'meadowDayWinter' : 'meadowDay'; }   /* the day's loop by the season (a season's turn crossfades it as dusk does) */       /* (2026-10-15, Robin: "tell the game to use the new meadows day and night soundtrack"; a song handed over from the Song Editor took their place, which is likely why Robin did not hear them: the recorded loops are the day and the night now) */
   function eveTheme() { return 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
