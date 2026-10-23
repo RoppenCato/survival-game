@@ -123,3 +123,11 @@ Pictures: `pictures/after_game_round.png` (golden hour and sunset on a sea view 
 
 Pictures: `pictures/round3.png`.
 
+## Round four (2026-10-23)
+
+- **The deep sea keeps its blue at sunrise.** Each key now has `hue`, how much of the sky's hue the water takes: 0.65 at sunset,
+  blue hour and night (the violets are the point there), 0.3 at the golden hour, 0.22 to 0.35 at sunrise, 0 at noon. The water's mix is
+  `color` at skyK × hue, `screen` at skyK × 0.15 × (1 − night), and `soft-light` at skyK × 0.85. A peach sky at full hue made the game's sea
+  grey-tan.
+
+Pictures: `pictures/round4.png`.
