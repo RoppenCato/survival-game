@@ -91,3 +91,23 @@ becomes 20:00 to 27:00.
 - Windows lighting up one by one in the blue hour.
 
 — Colin, AD
+
+## After the game's first pictures (2026-10-23)
+
+Clive, GD put the day in the game. From his pictures, in sun.js (copy `Sun.KEYS` and the shadow pass):
+
+- **Shadows at half size, straight from the pictures.**
+  - The shadow layer is half the screen's size. Each picture is drawn into it with the same transform, scaled by a half, and the
+    tint makes it a shadow. That is crisper than the quarter copies (the oak's shadow was a blob), and it needs no copies.
+  - The hero's, the people's and the beasts' current frames can be drawn into the same layer for their sun shadows: one more draw each,
+    and no creature copies.
+- **Long, low things keep their length.** A thing's width runs across the shadow if it is round, and along the screen if it is long
+  and low (a boat, a cart, a log). Between the two it goes by how much wider than tall its picture is: m = clamp((w / h − 1.1) / 0.7).
+- **A calmer sky in the water.** The middle colours are gentler and the strength lower; a whole sea across the middle of the screen
+  went hot pink.
+- **Gold, not lime, at the golden hour.** The warm wash is more orange and lighter.
+- **The water's mask needs a soft edge.** A blocky mask showed as a hard pink rectangle by the boat. Feather the mask a few pixels at
+  the shore.
+
+Pictures: `pictures/after_game_round.png` (golden hour and sunset on a sea view and the woods).
+
