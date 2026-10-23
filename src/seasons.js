@@ -5,6 +5,7 @@
 //   Seasons.gradeSprite(d, w, h, kind, season, capped)  a standing thing's picture, once a season: false = do not draw it this season;
 //                                                    capped: the piece has its own snow cap picture (the set 'snowcaps': <name>_snow), so
 //                                                    winter leaves the outline snow off and the game draws the cap over it
+//   Seasons.deepen(d, w, h, kind)                  winter's copy with deeper snow, for while it snows (laid over the plain copy at the fresh snow's strength)
 //   Seasons.bareTree(kind)                           winter's picture name for an oak or a birch (the bare trees, set 'trees_bare')
 //   Seasons.gradeGround(d, w, h, season, water)      a baked ground chunk, once a season; water(x, y) true where the chunk's pixel is sea or
 //                                                    shallows (the game's own heights: elevAt < 0), for the ice at the shore in winter
@@ -86,7 +87,7 @@
       }
       var grass = hh > 60 && hh < 205 && ss > 0.07, sand = hh >= 30 && hh <= 60 && ss > 0.3 && ll > 0.5;   // (the meadow's own shade is bluish: it takes the season too)
       if (season === 'winter') {
-        var dirt = !grass && !sand && hh >= 12 && hh <= 55 && ss > 0.1 && ll < 0.55;
+        var dirt = (!grass && !sand && hh >= 12 && hh <= 55 && ss > 0.1 && ll < 0.55) || (cls[p] === 2 && speck(x, y));   // (a speck in the snow takes the packed snow too)
         if (dirt) { var sp = snowAt(0.55 + (vn(x / 30, y / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0] + 3, 0.92); d[i + 1] = mix(d[i + 1], sp[1], 0.92); d[i + 2] = mix(d[i + 2], sp[2] - 3, 0.92); }   // trodden earth, paths and yards: packed snow a shade greyer than the field, smooth (2026-10-23: their darker snow kept the patches' shapes; then a mottle of earth read as blocks at the game's enlargement)
         else if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn(x / 30, y / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
         else { d[i] = mix(d[i], 150, 0.3); d[i + 1] = mix(d[i + 1], 158, 0.3); d[i + 2] = mix(d[i + 2], 175, 0.3); }   // rock: greyed, its snow from above
@@ -127,7 +128,8 @@
     if (season === 'winter') { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(128,128,128,0.18)'; ctx.fillRect(0, 0, w, h); ctx.globalCompositeOperation = 'soft-light'; ctx.fillStyle = 'rgba(170,196,232,0.30)'; ctx.fillRect(0, 0, w, h); }
     ctx.restore();
   }
+  function deepen(d, w, h, kind) { snowOn(d, w, h, Math.round((SNOW_DEPTH[kind] || SNOW_DEPTH.def) * 1.8) + 3, kind === 'pine' ? 0.6 : 0.3); return true; }   // snow building on a thing while it snows (2026-10-23): the winter copy with deeper snow, laid over it at the fresh snow's strength
   var api = { PICKS: { spring: 'A, fresh green', summer: 'as the game is', autumn: 'B, fiery', winter: 'A, deep snow' }, LEAF: LEAF, SNOW_DEPTH: SNOW_DEPTH,
-    gradeSprite: gradeSprite, bareTree: bareTree, gradeGround: gradeGround, sprinkle: sprinkle, grassInk: grassInk, light: light, gradeHex: gradeHex };
+    gradeSprite: gradeSprite, deepen: deepen, bareTree: bareTree, gradeGround: gradeGround, sprinkle: sprinkle, grassInk: grassInk, light: light, gradeHex: gradeHex };
   if (typeof module !== 'undefined') module.exports = api; else root.Seasons = api;
 })(this);

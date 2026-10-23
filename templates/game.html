@@ -888,6 +888,14 @@ __COMBAT__
     WG.lx = P.x; WG.ly = P.y;
     if (year.season === 'winter' || G.frost > 0.3) { WG.breathT -= dt; if (WG.breathT <= 0) { WG.breathT = 2.2; var hp = env.toScreen(P.x + (P.faceVis === 1 ? 4 : -4), P.y - 30); Weather.ground.breath(G, hp[0], hp[1], env); } }
   }
+  function wgDrawPrints(c, G) {             // the prints in the world's own units, so they scale with the camera and read as feet (Colin, AD: half-axes 2.4 by 1.15 units, the dent's lit wall 1.7 by 0.47 offset 0.27, 0.53)
+    var PR = Weather.GROUND.print, i;
+    for (i = 0; i < G.prints.length; i++) { var p = G.prints[i], S = PR[p.kind]; if (!S) continue; var f = 1 - p.t / S.life; f = f < 0.25 ? f / 0.25 : 1; var al = S.a * f;
+      c.save(); c.translate(p.x, p.y * K); c.rotate(Math.atan2(Math.sin(p.a) * K, Math.cos(p.a)));
+      if (p.kind === 'snow') { c.fillStyle = 'rgba(112,134,170,' + al + ')'; c.beginPath(); c.ellipse(0, 0, 2.4, 1.15, 0, 0, 6.283); c.fill(); c.fillStyle = 'rgba(248,251,255,' + al * 0.7 + ')'; c.beginPath(); c.ellipse(0.27, 0.53, 1.7, 0.47, 0, 0, 6.283); c.fill(); }
+      else { c.fillStyle = (p.kind === 'sand' ? 'rgba(124,96,60,' : 'rgba(66,50,34,') + al + ')'; c.beginPath(); c.ellipse(0, 0, 2.05, 0.95, 0, 0, 6.283); c.fill(); c.fillStyle = (p.kind === 'sand' ? 'rgba(104,78,46,' : 'rgba(50,38,26,') + al + ')'; c.beginPath(); c.ellipse(1.15, 0, 0.75, 0.75, 0, 0, 6.283); c.fill(); }
+      c.restore(); }
+  }
   function wgDraw(c, layer, hw, hh) {
     var G = WG.G; if (!G || inCave || typeof Weather === 'undefined') return; var env = wgEnvS(), w8 = wgW8();
     if (layer === 'under') {
@@ -895,8 +903,8 @@ __COMBAT__
       if (G.fresh > 0.01) { c.fillStyle = 'rgba(' + Weather.GROUND.fresh.col + ',' + (Weather.GROUND.fresh.a * G.fresh).toFixed(3) + ')'; c.fillRect(cam.x - hw - 2, cam.y - hh - 2, hw * 2 + 4, hh * 2 + 4); }
       if (G.frost > 0.01) { c.fillStyle = 'rgba(' + Weather.GROUND.frost.col + ',' + (Weather.GROUND.frost.a * G.frost * 0.6).toFixed(3) + ')'; c.fillRect(cam.x - hw - 2, cam.y - hh - 2, hw * 2 + 4, hh * 2 + 4); }
       var pud = wgPuddlesNear(env).map(function (p) { var q = env.toScreen(p.x, p.y); return { x: q[0], y: q[1], r: p.r, lobes: p.lobes }; });
-      var pr = G.prints.map(function (p) { var q = env.toScreen(p.x, p.y); return { x: q[0], y: q[1], a: p.a, side: p.side, kind: p.kind, t: p.t }; });
-      var G2 = Object.assign({}, G, { puddles: pud, prints: pr, wet: 0, fresh: 0, frost: 0 }); Weather.ground.draw(c, G2, env, 'under', w8);
+      wgDrawPrints(c, G);
+      var G2 = Object.assign({}, G, { puddles: pud, prints: [], wet: 0, fresh: 0, frost: 0 }); Weather.ground.draw(c, G2, env, 'under', w8);
     } else Weather.ground.draw(c, G, env, 'over', w8);
   }
   function weatherNow() { return WTH.spells.filter(function (S) { return S.k > 0.02; }).map(function (S) { return S.kind + ' ' + S.k.toFixed(2); }).join(', ') || 'clear'; }
