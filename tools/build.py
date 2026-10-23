@@ -20,7 +20,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes2.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js')}
 
 # The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09): the Character Editor and the Blender Editor get each sheet's
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
@@ -149,6 +149,10 @@ def hud_art():
     if os.path.isdir(sd):
         for fn in sorted(os.listdir(sd)):
             if fn.endswith('.png'): out['ship/' + fn[:-4]] = '../assets/hud/ship/' + fn + '?v=' + hashlib.md5(open(os.path.join(sd, fn), 'rb').read()).hexdigest()[:8]
+    rd = os.path.join(d, 'runes')   # the runes' marks and slot icons (Colin, AD, 2026-10-23)
+    if os.path.isdir(rd):
+        for fn in sorted(os.listdir(rd)):
+            if fn.endswith('.png'): out['runes/' + fn[:-4]] = '../assets/hud/runes/' + fn + '?v=' + hashlib.md5(open(os.path.join(rd, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__HUD__'] = hud_art()
 def font_faces():

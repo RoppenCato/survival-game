@@ -2262,6 +2262,7 @@ var KINDS = {
   sword: { name: 'Sword', len: 26, w: 3, dmg: 1, tool: null, melee: true, desc: 'A straight blade for the shield wall. Quick chains of three, and the surest parry.' },
   axe: { name: 'Axe', len: 15, w: 2.8, dmg: 1.2, tool: 'tree', melee: true, desc: 'For felling trees, and anything else that stands in the way. Hits harder than a sword, recovers slower, and breaks through a guard.' },
   club: { name: 'Club', len: 20, w: 3.4, dmg: 0.85, tool: null, melee: true, desc: 'A knotted length of hardwood. Slow, and it staggers and throws back whatever it lands on.' },
+  cudgel: { name: 'Cudgel', len: 16, w: 3.6, dmg: 0.5, tool: null, melee: true, ko: true, desc: 'A short club with a leather-bound grip. It stuns rather than kills: a weakened beast goes out cold and can be carried.' },
   seax: { name: 'Seax', len: 16, w: 2.6, dmg: 0.6, tool: null, melee: true, desc: 'The long knife every Norseman carries. Fast stabs, little reach, and it finds the gaps.' },
   spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
@@ -2294,7 +2295,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -2307,6 +2308,7 @@ function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
   if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
   if (it.mat === 'iron' && it.kind === 'shield') return 'Painted Shield';
@@ -2318,6 +2320,7 @@ function desc(it) {
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
   else if (it.mat === 'wood' && it.kind === 'club') bits.push('A branch with a knot at the end, hardened in the fire. Good enough for a boar.');
+  else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
@@ -2336,7 +2339,7 @@ function desc(it) {
 }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
-  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club') ? 1 : 0.8 + it.sharp * 0.4;
+  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
 }
@@ -2398,8 +2401,8 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
       c.fillStyle = P.dark; c.fillRect(-1.6, -3 * s, 3.2, 3.5 * s);
     }
     c.restore();
-  } else if (it.kind === 'club') {
-    // a knotted stick: thicker toward the end, a knob at the tip, bands of bark
+  } else if (it.kind === 'club' || it.kind === 'cudgel') {
+    // a knotted stick (the cudgel shares it, shorter): thicker toward the end, a knob at the tip, bands of bark
     outlined(c, function () { c.beginPath(); c.moveTo(-6, -w * 0.45); c.quadraticCurveTo(L * 0.5, -w * 0.7 + tw * 0.4, L - 4, -w * 1.1 + tw); c.quadraticCurveTo(L + 1, -w * 0.9 + tw, L + 1, tw); c.quadraticCurveTo(L + 1, w * 0.9 + tw, L - 4, w * 1.1 + tw); c.quadraticCurveTo(L * 0.5, w * 0.7 + tw * 0.4, -6, w * 0.45); c.closePath(); }, it.mat === 'wood' ? '#8a5a3a' : P.face, 1.2);
     c.strokeStyle = 'rgba(40,25,15,0.45)'; c.lineWidth = 0.8; for (i = 0; i < 3; i++) { var bx = L * (0.35 + i * 0.2); c.beginPath(); c.moveTo(bx, -w * 0.7); c.lineTo(bx + 1, w * 0.7); c.stroke(); }
     if (it.mat !== 'wood') { c.fillStyle = P.dark; for (i = 0; i < 4; i++) { c.beginPath(); c.arc(L - 3 - i * 2.2, tw + (i % 2 ? 1.2 : -1.2), 0.9, 0, 7); c.fill(); } }   // iron studs on a metal-shod club
@@ -2523,6 +2526,36 @@ var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null
 var HERO_GAIT = { walk: 78, sprint: 130, guard: 46.2, stroll: 60, jog: 84, sprintSt: 18 };   /* walk 78 on the kit's jog since 2026-10-22 (Robin: "id prefer a better jogging. I think the normal pace needs to be around 75-80 as now its actually too slow"; the studio's jog is made for 78); stroll: yesterday's 60 on walk_fast, a page's switch; jog: the first jog's 84, kept as a number */   // sprintSt: stamina a second at a sprint (22 until 2026-10-21; Robin: "lower the stamina cost slightly for sprint to compensate, as you will sprint more"; 18 is mine)
 function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }
 function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k] : 0; }   // a rune's switch: 0 unless the page says so
+/* The runes (src/runes2.js, Robin's rework of 2026-10-23): a page hands the engine its rune state (api.runeState: the library, what is
+   bound where, the blood on each active); without one the engine keeps a starting state of its own (the Bash and the Dash), and
+   without the module at all it plays as before. rune(slot): what is bound; runeHas(id): bound anywhere; runeN(id, key): the bound
+   tier's number; runeReady, runeSpend: the blood ring on an active (filled by the blows the hero lands, runeBlood); a spend counts a
+   use, and a use that raises the tier tells the page (api.onRuneGrow). Marks a foe carries (e.marks: struck, bleeding, afraid, chilled,
+   burning) are how runes work together: one lays, another reads. */
+var R2DEF = null, KO_T = 60;
+function RS2() { if (api.runeState) return api.runeState; if (!R2DEF && typeof Runes2 !== 'undefined') R2DEF = Runes2.start(); return R2DEF; }
+function rune(slot) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.bound(st, slot) : (slot === 'guardBlow' ? 'bash' : slot === 'dash' ? 'dash' : null); }
+function runeHas(id) { var st = RS2(); return !!(st && typeof Runes2 !== 'undefined' && Runes2.has(st, id)); }
+function runeN(id, key) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.num(st, id, key) : 0; }
+function runeReady(slot) { var st = RS2(); return !st || typeof Runes2 === 'undefined' ? true : Runes2.ready(st, slot); }
+function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; Runes2.spend(st, slot); var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
+function runeBlood(n) { var st = RS2(); if (st && typeof Runes2 !== 'undefined') Runes2.drawBlood(st, n); }
+function markOn(e, mark, t) { if (!e) return; e.marks = e.marks || {}; e.marks[mark] = Math.max(e.marks[mark] || 0, t || 1); }
+function marked(e, mark) { return !!(e && e.marks && e.marks[mark] > 0); }
+function lightning(e, leaps, dmg, depth) {   // Thor's wrath: a bolt on a man, who is struck for a while (the Hammer reads it); the Storm's eye leaps it to others within reach
+  if (!e || e.dead) return; depth = depth || 0; markOn(e, 'struck', runeN('thorsWrath', 'mark') || 10);
+  var i; for (i = 0; i < 7; i++) spark(e.x + (Math.random() - 0.5) * 10, e.y - 14 - i * 9, 2, i % 2 ? '#ffffff' : '#ffe9a0', 40);
+  ring(e.x, e.y, 0, 26, 0.25, '255,240,180', false, 2); num(e.x, headY(e) - 6, 'STRUCK', '#ffe9a0'); sfx('lightning_small', 0, e); logEv({ k: 'lightning', e: e, leap: depth });
+  if (dmg > 0 && !e.dead) { var was = hitFlags.wkind; hitFlags.wkind = 'lightning'; damageEnemy(e, dmg, e.face + Math.PI, 20, 10, 'melee'); hitFlags.wkind = was; }
+  if (leaps > 0 && depth < 3) { var best = null, bd = 1e9; for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === e || q.type !== 'soldier' || q.dead || q.down || q.side === 1 || marked(q, 'struck')) continue; var d = Math.hypot(q.x - e.x, q.y - e.y); if (d < 70 && d < bd) { bd = d; best = q; } }
+    if (best) lightning(best, leaps - 1, runeN('stormsEye', 'dmg') * dmgMul('sword'), depth + 1); }
+}
+function knockOut(e) {                     // the cudgel on a weakened beast: out cold for a while, to be carried
+  e.ko = KO_T; e.state = 'ko'; e.t = 0; e.sw = null; e.swung = false; e.guard = 0; e.aggro = 0; e.awake = true; e.vx = 0; e.vy = 0; e.chargeT = 0; num(e.x, headY(e), 'OUT COLD', '#dfe8ff'); ring(e.x, e.y, 0, 22, 0.25, '220,230,255', false, 2); logEv({ k: 'ko', e: e });
+}
+function knockDown(e, ang, k) {            // a man thrown off his feet: a long stagger and a shove (the Charge, the Rush-step)
+  e.state = 'stagger'; e.t = 0; e.dur = 1.2; e.sw = null; e.swung = false; e.guard = 0; e.guardAge = 0; e.guardCd = 1.0; e.poiseT = 0.9; e.showBar = 2; e.kx += Math.cos(ang) * CROWD.shoveD * 0.8 * (k || 1); e.ky += Math.sin(ang) * CROWD.shoveD * 0.8 * (k || 1); num(e.x, headY(e), 'DOWN', '#dfe8ff'); ring(e.x, e.y, 0, 30, 0.3, '255,255,255', false, 2.5);
+}
 function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
@@ -2571,6 +2604,7 @@ var PROFILES = {
   sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.13, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
   axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.17, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
   club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.2, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
+  cudgel:   { arc: 1.6, reach: 28, blade: 18, wu: 0.2, ac: 0.11, rec: 0.4, dmg: 1, kb: 160, stag: 40, lunge: 55, chain: 2, motion: 'smash', st: 8, wt: 1.3, ko: 1 },   /* the cudgel (Robin, 2026-10-23): a blunt tool that knocks a weakened animal out so it can be carried to the altar; it never kills a beast */
   seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
   knife:    { arc: 1.0, reach: 21, blade: 11, wu: 0.07, ac: 0.07, rec: 0.16, dmg: 1, kb: 40, stag: 3, lunge: 60, chain: 3, motion: 'thrust', st: 3, crit: 0.15, wt: 0.5 },   // (2026-10-16: the knife is a weapon now, a smaller seax)
   spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
@@ -2848,6 +2882,24 @@ function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23:
     q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
   ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'BLOCK BROKEN', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best }); return true;
 }
+function crowdCharge(p) {                 // the Charge (a rune of the guard-blow): a rush so many strides long; the first man in the way goes down, the next is pushed, at tier III the rush strikes with the weapon
+  var face = P.inAng !== null ? P.inAng : P.face, len = runeN('charge', 'len') || 3;
+  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.bashT = CROWD.bashT; p.guard = false; p.anim.sq = -0.4; p.anim.sqv = 0;
+  p.roll.t = DASH_T * len * 0.55; p.roll.len = p.roll.t; p.roll.dx = Math.cos(face); p.roll.dy = Math.sin(face); p.roll.cd = 0.3; p.invuln = Math.max(p.invuln, 0.2); p.ghostT = 0;
+  p.charge = { down: runeN('charge', 'down') || 1, strike: runeN('charge', 'strike') || 0, hit: [], ang: face }; dust(p.x, p.y, 7); sfx('dash'); logEv({ k: 'shove', hit: true, charge: true }); return true;
+}
+function rushHits(p) {                     // during a rush or a dash: the men the hero runs into
+  var ch = p.charge, i, ang = ch ? ch.ang : Math.atan2(p.roll.dy, p.roll.dx);
+  for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.type !== 'soldier' || e.dead || e.down || e.out || e.side === 1) continue; if (Math.hypot(e.x - p.x, e.y - p.y) > e.r + p.r + 6) continue;
+    if (ch) { if (ch.hit.indexOf(e) >= 0) continue; ch.hit.push(e); if (ch.hit.length <= ch.down) knockDown(e, ang, 1); else { e.kx += Math.cos(ang) * 220; e.ky += Math.sin(ang) * 220; }
+      if (ch.strike) { var sd = meleeProfile(); hitFlags.wkind = sd.kind || 'sword'; damageEnemy(e, sd.dmg * dmgMul('sword'), ang, 0, 10, 'melee'); hitFlags.wkind = null; } }
+    else if (runeHas('rushStep') && !e.rushed && (marked(e, 'struck') || (runeN('rushStep', 'any') && e.state === 'stagger'))) { e.rushed = 0.8; knockDown(e, ang, 0.8); if (runeN('rushStep', 'spread')) crowdBump(e, ang); } }
+}
+function crowdBump(best, ang) {            // the men a thrown man falls against stagger with him
+  for (var i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
+    var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead) continue;
+    q.kx += Math.cos(ang) * CROWD.shoveD * 0.4; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
+}
 function heavyBlow(e) { return e.type === 'soldier' ? !!(e.sw && e.sw.heavy) : (e.type === 'brute' || !!(e.cfg && e.cfg.atk && e.cfg.atk.heavy)); }
 function glint(x, y, hv) { if (S.juice) W.glints.push({ x: x, y: y, t: 0, life: hv ? 0.5 : 0.35, hv: !!hv }); }
 function perfectCheck() {                // a dash begun in the last moment before a blow would land
@@ -2890,7 +2942,8 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     if (p.hp <= 0) die();
     return 'block';
   }
-  var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
+  if (runeHas('thickHide')) { if (W.t - (p.lastHurtT || -99) > 6) p.fightHits = 0; p.fightHits = (p.fightHits || 0) + 1; p.lastHurtT = W.t; if (p.fightHits <= runeN('thickHide', 'first')) dmg *= runeN('thickHide', 'half') || 0.5; }   /* Thick hide: the first blows of a fight do half (Runes2) */
+  var hit = dmg * (api.armor ? 1 - api.armor() : 1) * (runeHas('thickHide') ? 1 - runeN('thickHide', 'armor') : 1);     // armour turns a share of every blow aside, not only blocked ones
   logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
   p.hp -= hit; p.chain = 0; p.rally = Math.min(p.maxHp, (p.rally || 0) + hit * RALLY.share); p.rally0 = p.rally; p.rallyT = 0;   // (the win-back: RALLY)
   p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;
@@ -2928,6 +2981,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
   if (quiet) crit = true;                                     // (shown as a critical blow)
+  if (!src && man && marked(e, 'struck') && runeHas('hammer')) { var hk = (hitFlags.wkind === 'club' || hitFlags.wkind === 'cudgel') ? runeN('hammer', 'club') : runeN('hammer', 'any'); if (hk > 1) { mult *= hk; if (hk >= 2) stag = Math.max(stag, 42); } }   /* the Hammer: a blow on a struck man (Runes2) */
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   if (fin) crowdFear(e);
   if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('finish'); logEv({ k: 'finish', e: e, dmg: dealt }); }
@@ -2940,6 +2994,9 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
   var killing = e.hp <= 0;
+  if (killing && !src && hitFlags.wkind === 'cudgel' && e.type === 'beast' && !e.human) { e.hp = 1; killing = false; knockOut(e); }   /* the cudgel never kills a beast: out cold instead (Robin, 2026-10-23) */
+  if (!src && dealt > 0 && !(blocked && !broke) && hitFlags.wkind !== 'lightning') runeBlood(1);   /* a blow landed feeds the blood rings of the actives (Runes2) */
+  if (!src && man && !killing && hitFlags.wkind !== 'lightning' && runeHas('thorsWrath') && Math.random() < runeN('thorsWrath', 'chance')) lightning(e, runeHas('stormsEye') ? runeN('stormsEye', 'leaps') : 0, runeN('thorsWrath', 'dmg') * dmgMul('sword'), 0);
   if (!src && !killing && !fin) postureAdd(e, blocked && !broke ? POSTURE.block : broke ? POSTURE.block * 1.5 : reeling ? 0 : POSTURE.hit);   // his balance: what he stops on his shield, and a little of what lands
   if (!src && (!blocked || broke) && P.rally > 0 && !P.dead) { var rg = Math.min(P.rally, RALLY.perHit * (hitFlags.wt || 1), P.maxHp - P.hp); if (rg > 0.05) { P.hp += rg; P.rally -= rg; num(P.x - 8, P.y - 30, '+' + Math.max(1, Math.round(rg)), '#9be58b'); logEv({ k: 'rally', dmg: rg }); } }   // the win-back (RALLY)
   if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
@@ -3009,6 +3066,7 @@ function killEnemy(e, src) {
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
   if (W.lock === e) W.lock = null;
+  if (!src && runeHas('bloodlust') && !P.dead) { var bl = runeN('bloodlust', 'heal'); P.hp = Math.min(P.maxHp, P.hp + bl); num(P.x - 8, P.y - 30, '+' + bl, '#c8322a'); if (runeN('bloodlust', 'ready') && RS2() && typeof Runes2 !== 'undefined') Runes2.readyAll(RS2()); }   /* Bloodlust (Runes2) */
   if (api.onDeath) api.onDeath(e);
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
 }
@@ -3127,8 +3185,8 @@ function updatePlayer(dt) {
     else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
   }
   p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt);
-  var shoving = CROWD.shove > 0 && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the shield shove: J with the guard up (CROWD, 2026-10-23) */
-  if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) crowdShove(p); }
+  var gbRune = rune('guardBlow'), shoving = CROWD.shove > 0 && !!gbRune && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the guard-blow: the blow with the guard held, what the bound rune makes of it (the Bash, the Charge: CROWD, Runes2, 2026-10-23) */
+  if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
   if (!shoving && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
@@ -3180,8 +3238,8 @@ function updatePlayer(dt) {
     p.dashBuf = 0;
     p.st -= 18 * mod('dash'); p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0; if (api.onDeed) api.onDeed('dash');
     var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
-    var rl = modZ('roll') > 0 ? 1 : 0;                           // the roll rune (mods().roll 2): longer, longer untouchable, slower to rise
-    p.roll.t = DASH_T * (rl ? 1.7 : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? 0.35 : 0.08; p.invuln = Math.max(p.invuln, rl ? 0.42 : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0;
+    var dRune = rune('dash'), rl = dRune === 'roll' || modZ('roll') > 0 ? 1 : 0;                           // the dash slot (Runes2): the Roll is longer, longer untouchable, slower to rise
+    p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
     dust(p.x, p.y, 7); sfx('dash'); perfectCheck();
   }
 
@@ -3308,8 +3366,8 @@ function updatePlayer(dt) {
   if (a.ph === 'windup') spd *= 0.1; else if (a.ph === 'active') spd *= 0; else if (a.ph === 'recover') spd *= 0.2; else if (a.ph === 'charge') spd *= 0.6;
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
-    p.roll.t -= dt;
-    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; }
+    p.roll.t -= dt; rushHits(p);
+    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; }
     var rs = (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));
     p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
     p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
@@ -3336,6 +3394,7 @@ var BOT_CFG = { speed: 58, windup: 0.55, lunge: 175 };
 //   are slow), pack (only one of the pack bites at a time), venom (seconds of a lingering bite; the adder).
 var packT = 0;
 function beastAI(e, dt, d, ang) {
+  if (e.ko > 0) { e.ko -= dt; e.vx = 0; e.vy = 0; if (e.carried) e.ko = Math.max(e.ko, 1); if (e.ko <= 0) { e.state = 'flee'; e.t = 0; e.cd = 0.5; } return; }   /* out cold (the cudgel): lies until it wakes, then runs */
   var cf = e.cfg || BOT_CFG, sk = cf.speed / 58, A = cf.atk || {}, kind = A.kind || 'lunge';
   var near = kind === 'arc' ? e.r + (A.reach || 20) * 0.8 : (A.near || 56), ring = A.ring || Math.min(52, near);
   e.cd -= dt;
@@ -3470,7 +3529,7 @@ var MEN = {
   hp: 30, hpK: 0.8,                   // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
   dmg: 18,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100). 18 since 2026-10-20 (was 12): the men retuned to the hero's blows on the press, by the ladder (tools/sweepmen.js): the tapping bot now wins half against one axe-man in leather (was all), the careful bot three in four against two (was nine in ten), five against five a coin; mine, for Robin to feel
   toMen: 0.15,                        // the same blow landing on a man (their health is on the beasts' scale)
-  wdmg: { sword: 1, axe: 1, club: 0.9, seax: 0.7, spear: 1.1, greataxe: 1.6 },
+  wdmg: { sword: 1, axe: 1, club: 0.9, cudgel: 0.5, seax: 0.7, spear: 1.1, greataxe: 1.6 },
   cd: [1.0, 0.45],                    // the wait between his attacks: dull to sharp
   react: [0.36, 0.07],                // how long after a blow begins he has his shield up: dull to sharp
   guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
@@ -3507,7 +3566,8 @@ var MEN = {
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
 api.men = MEN; api.guardFace = GUARD_FACE; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT; api.crowd = CROWD;
-var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
+var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };
+api.runeState = null; api.onRuneGrow = null; api.runeOf = rune; api.runeHas = runeHas; api.runeN = runeN; api.knockOut = knockOut; api.markOn = markOn; api.marked = marked;   /* the runes (Runes2): a page hands its state in and reads what is bound */       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
   o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
@@ -3753,7 +3813,7 @@ function strike(e) {
 }
 function dodges(e, th) { if (e.thr !== th || e.thrN !== th.swingN) { e.thr = th; e.thrN = th.swingN; e.willDodge = Math.random() < 0.3 + 0.5 * e.w01; } return e.willDodge; }   // decided once a blow
 function lowerGuard(e, tired) { e.guard = 0; e.guardAge = 0; e.guardCd = e.inLine ? 0.2 : lerp(MEN.guardCd[0], MEN.guardCd[1], e.w01) * (tired ? 1 : 0.45); e.wary = Math.random() < 0.2 + 0.65 * e.w01; }
-function raiseGuard(e, t) { e.guard = t || MEN.guard; e.guardAge = 0; e.seeT = 0; sfx('raise', 0, e); }
+function raiseGuard(e, t) { if (marked(e, 'struck') && runeN('hammer', 'noGuard')) return; e.guard = t || MEN.guard; e.guardAge = 0; e.seeT = 0; sfx('raise', 0, e); }
 function heartOf(e) {                       // hurt badly: on his knees, away, or on with it (a loyal man and a friend do neither)
   if (e.side === 1 || e.loyal || e.nerved || e.hp > e.maxHp * MEN.yieldAt) return; e.nerved = true;
   if (Math.random() < e.nerve) return;
@@ -3872,7 +3932,8 @@ function makingOff(T, e) {                  // is this man making off: going awa
 }
 function soldierAI(e, dt) {
   var i, T, dx, dy, d, ang;
-  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; e.hopCd -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
+  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; e.hopCd -= dt; if (e.rushed > 0) e.rushed -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
+  if (e.marks) { for (var mk in e.marks) { e.marks[mk] -= dt; if (e.marks[mk] <= 0) delete e.marks[mk]; } if (e.marks.struck > 0 && Math.random() < dt * 5) spark(e.x + (Math.random() - 0.5) * 12, e.y - 18 - Math.random() * 14, 1, '#ffe9a0', 30); }   /* the marks a rune laid, fading (Runes2) */
   if (e.guard > 0) { e.guard -= dt; e.guardAge += dt; if (e.guard <= 0) lowerGuard(e, false); }
   if (e.heard > 0) { e.heard -= dt; e.awake = true; }
   e.heartT = (e.heartT || Math.random() * 0.5) - dt; if (e.heartT <= 0) { e.heartT = 0.5; bandHeart(e); }
