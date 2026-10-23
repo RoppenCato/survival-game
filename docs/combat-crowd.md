@@ -28,11 +28,14 @@ Arena's Tuning panel, 0 turns it off; Use in the game hands them to the game as 
 2. **The finishing blow's fear.** When a man takes the finishing blow (the chain's top, or his balance broken), the men within
    130 units stand frozen 0.8 s with their guards down (`fearR`, `fearT`). The showpiece of the chain becomes the turn of the
    fight: you finish one and have the next one open.
-3. **The shield shove.** J with the guard up (K held) is a shove instead of a blow: the man before you within 36 units is thrown
-   back about a hero's length (`shoveD` 380 as a push, about 38 units) and staggers 0.55 s, and a man he is thrown into staggers with him (`shoveD`, `shoveT`, `bump`); it costs 14
-   stamina and comes once in 1.1 s (`shoveSt`, `shoveCd`); without a shield the weapon's haft does it for half the throw. It is
-   the tool for lining them up: shove one into the other and they come at you one at a time, or shove one off and parry the
-   other. A Viking's shield was used for this.
+3. **The shield bash** (Robin's decisions of 2026-10-23: "only be able to be used when the enemy is blocking, to break their block";
+   "if you are using a weapon without a shield, you should be able to just bash by hitting with your shoulder"). J with the guard up
+   (K held) is a bash: the man before you within 36 units **with his guard up** has his block broken (as the axe breaks it; no guard
+   again for `breakCd` 1.4 s), is thrown back about a hero's length (`shoveD` 380 as a push) and staggers 0.55 s, and a man he is
+   thrown into staggers with him (`shoveT`, `bump`); it costs 14 stamina and comes once in 1.1 s (`shoveSt`, `shoveCd`). With no
+   blocking man before you nothing happens and nothing is spent. Without a shield the shoulder does it at 0.7 of the throw
+   (`shoulderK`, mine). The clips `bash` and `bash_wpn` (the shoulder) are asked of Colin, AD; until they come the block is held
+   through the move (`bashT` 0.3 s).
 
 The bots do not use the shove and do not go for a staggered man, so their numbers barely move with these on (the careful bot
 left the three-man fights with a little more health). What they change is what a player can do with his hands, which only

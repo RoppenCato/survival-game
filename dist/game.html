@@ -7870,7 +7870,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
-var TURF_RIDGE = '#4e6a3a';   // the sod cap on a thatch ridge (the studio, 2026-10-20)
+var STRAW_RIDGE = '#a48c4a';   // the straw cap sewn over a thatch ridge (Robin, 2026-10-23: no green turf on the ridge; the sod cap of 2026-10-20 is gone)
 var CFG = { wallH: 40, thick: 5, overhang: 10, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   /* (lean: a trial on the Destruction Editor's board; on by default for an hour on 2026-10-14 and taken back, Robin: a wall at an angle might look odd; the build cursor marks the edge instead) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
@@ -8425,7 +8425,13 @@ function roundCorners(pts, r) {            // a polygon with each corner eased i
   }
   return out;
 }
-function turfTufts(c, x0, y0, x1, y1, seed) {   // grass standing on a turf ridge's top
+function strawSpars(c, x0, y0, x1, y1, seed) {   // the hazel spars that sew a straw ridge cap down: short crossed sticks along it, a few units apart
+  var len = Math.hypot(x1 - x0, y1 - y0) || 1, k, ux = (x1 - x0) / len, uy = (y1 - y0) / len, nx = -uy, ny = ux; c.lineWidth = 0.6; c.lineCap = 'round'; c.strokeStyle = '#5a4028';
+  for (k = 4; k < len - 3; k += 6.5 + hs(k, seed) * 2) { var px = x0 + ux * k, py = y0 + uy * k, s2 = 2.2 + hs(k + 1, seed) * 0.8;
+    c.beginPath(); c.moveTo(px - ux * 1.2 - nx * s2, py - uy * 1.2 - ny * s2); c.lineTo(px + ux * 1.2 + nx * s2, py + uy * 1.2 + ny * s2); c.stroke();
+    c.beginPath(); c.moveTo(px + ux * 1.2 - nx * s2, py + uy * 1.2 - ny * s2); c.lineTo(px - ux * 1.2 + nx * s2, py - uy * 1.2 + ny * s2); c.stroke(); }
+}
+function turfTufts(c, x0, y0, x1, y1, seed) {   // grass standing on a turf ridge's top (kept for the turf roof)
   var len = Math.hypot(x1 - x0, y1 - y0) || 1, k; c.lineWidth = 0.8; c.lineCap = 'round';
   for (k = 1; k < len; k += 1.6 + hs(k, seed) * 1.6) { var u = k / len, px = x0 + (x1 - x0) * u, py = y0 + (y1 - y0) * u, h2 = 1.4 + hs(k + 1, seed) * 2; c.strokeStyle = hs(k + 2, seed) < 0.5 ? '#86a85e' : '#4f7a3c'; c.beginPath(); c.moveTo(px, py + 0.6); c.lineTo(px + (hs(k + 3, seed) - 0.5) * 1.6, py - h2); c.stroke(); }
 }
@@ -8437,11 +8443,11 @@ function thatchWeather(c, outline, eaves, moss, seed, a) {   // the lowest cours
     pts.push(sd === 0 ? [x1, y1] : [x1, y1]); pts.push(sd === 0 ? [x0, y0] : [x0, y0]);
     c.globalAlpha = a * 0.5; c.fillStyle = '#857c68'; c.beginPath(); pts.forEach(function (q, qi) { if (qi) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.closePath(); c.fill();
   });
-  if (hs(seed, 3) < 0.85) moss.forEach(function (m, mi) {   // most roofs have a patch or two
-    if (hs(seed + mi, 5) < 0.35) return; var rx = 4.5 + hs(seed + mi, 7) * 4, ry = rx * 0.72;
-    c.globalAlpha = a * 0.8; c.fillStyle = '#5f8a46'; c.beginPath(); c.ellipse(m[0], m[1], rx, ry, 0, 0, 7); c.fill();
-    c.globalAlpha = a * 0.45; c.fillStyle = '#3e6a32'; c.beginPath(); c.ellipse(m[0] + rx * 0.2, m[1] + ry * 0.3, rx * 0.7, ry * 0.55, 0, 0, 7); c.fill();
-    c.globalAlpha = a * 0.6; c.fillStyle = '#9cbc6e'; for (i = 0; i < 4; i++) { c.beginPath(); c.arc(m[0] - rx * 0.5 + hs(seed + mi, i) * rx, m[1] - ry * 0.4 + hs(seed + mi + 9, i) * ry * 0.6, 0.6, 0, 7); c.fill(); }
+  if (hs(seed, 3) < 0.9) moss.forEach(function (m, mi) {   // most roofs have a patch or two: weathered straw gone grey, or a patch mended in new straw (Robin, 2026-10-23: imperfections and variation, no moss)
+    if (hs(seed + mi, 5) < 0.3) return; var rx = 6 + hs(seed + mi, 7) * 7, ry = rx * 0.6, mend = hs(seed + mi, 8) < 0.35;
+    c.globalAlpha = a * (mend ? 0.42 : 0.3); c.fillStyle = mend ? '#d9c070' : '#8a8268';
+    for (i = 0; i < 4; i++) { c.beginPath(); c.ellipse(m[0] + (hs(seed + mi, 20 + i) - 0.5) * rx * 0.9, m[1] + (hs(seed + mi, 30 + i) - 0.5) * ry * 0.9, rx * (0.5 + hs(seed + mi, 40 + i) * 0.5), ry * (0.5 + hs(seed + mi, 50 + i) * 0.5), 0, 0, 7); c.fill(); }   /* (a ragged patch of four overlapping blots) */
+    if (!mend) { c.globalAlpha = a * 0.25; c.strokeStyle = '#6a6250'; c.lineWidth = 0.7; for (i = 0; i < 3; i++) { var sx = m[0] - rx * 0.6 + hs(seed + mi, 60 + i) * rx * 1.2; c.beginPath(); c.moveTo(sx, m[1] - ry); c.lineTo(sx + (hs(seed + mi, 70 + i) - 0.5) * 2, m[1] + ry); c.stroke(); } }   /* (a few straws slipped down through it) */
   });
   c.globalAlpha = a; c.restore();
 }
@@ -8556,7 +8562,7 @@ function drawRoof(c, room, a, C, dy) {
       stroke(c, [[cx, top - rh], [cx, bot - rh]], INK.soft, 0.9);
       var sil = [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]];
       path(c, sil); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, sil, 2.4);
-      if (kind === 1) { ink(c, [[cx - 5.2, top - rh - 1.5], [cx + 5.2, top - rh - 1.5], [cx + 5, bot - rh + 1.5], [cx - 5, bot - rh + 1.5]], TURF_RIDGE, { wob: 0.9, seed: seed, lw: 0.7, heavy: 1.3 }); turfTufts(c, cx - 4, top - rh, cx - 4, bot - rh, seed); }   /* (fuller, 2026-10-22) */   // a thatch ridge is capped with turf, held by the crossed boards
+      if (kind === 1) { ink(c, [[cx - 3.6, top - rh - 1.2], [cx + 3.6, top - rh - 1.2], [cx + 3.4, bot - rh + 1.2], [cx - 3.4, bot - rh + 1.2]], STRAW_RIDGE, { wob: 0.7, seed: seed, lw: 0.6, heavy: 1.2 }); strawSpars(c, cx, top - rh, cx, bot - rh, seed); }   /* (a straw cap sewn with spars, 2026-10-23) */   // a thatch ridge is capped with turf, held by the crossed boards
       else ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
       if (kind !== 0 && kind !== 1) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }   /* (no boards over a thatch's turf since 2026-10-22: the studio's target has none) */
     } else {
@@ -8577,7 +8583,7 @@ function drawRoof(c, room, a, C, dy) {
       stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
       path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
       }
-      if (kind === 1) { ink(c, [[left + hip - 2.5, ridgeY - 5], [right - hip + 2.5, ridgeY - 5.4], [right - hip + 2.5, ridgeY + 4.4], [left + hip - 2.5, ridgeY + 4.8]], TURF_RIDGE, { wob: 0.9, seed: seed, lw: 0.7, heavy: 1.3 }); turfTufts(c, left + hip - 1, ridgeY - 4.6, right - hip + 1, ridgeY - 5, seed); }   // the turf cap of a thatch ridge, fuller (2026-10-22)
+      if (kind === 1) { ink(c, [[left + hip - 2, ridgeY - 3.6], [right - hip + 2, ridgeY - 3.8], [right - hip + 2, ridgeY + 3.2], [left + hip - 2, ridgeY + 3.4]], STRAW_RIDGE, { wob: 0.7, seed: seed, lw: 0.6, heavy: 1.2 }); strawSpars(c, left + hip, ridgeY, right - hip, ridgeY - 0.2, seed); }   // the straw cap of a thatch ridge, sewn with spars (2026-10-23)
       else ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
       if (kind !== 0 && kind !== 1) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
     }
@@ -12505,6 +12511,7 @@ if (typeof module !== 'undefined') module.exports = Music;
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
+    if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder; the studio's clips when they come, the block held until then */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
       if (!(an && an.amt > 0.3)) return { a: bk, f: frameAt(A[bk], Math.min(0.999, H.blk)) };
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: A[bkW].stride > 0 ? strideFrame(A[bkW], dd, sc) : loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
@@ -13329,7 +13336,7 @@ var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
    guard up: the man before you within shoveReach is thrown back shoveD and staggers shoveT, and a man he is thrown into
    staggers too; it costs shoveSt stamina, once in shoveCd; with no shield the weapon's haft does it for half the throw). Each
    is a switch: 0 turns it off. */
-var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36 };
+var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3 };   /* (the bash breaks a block only, Robin 2026-10-23; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
 function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
@@ -13353,19 +13360,20 @@ function crowdFear(e) {                   // the finishing blow's fear: the men 
     if (Math.hypot(o.x - e.x, o.y - e.y) > CROWD.fearR) continue; o.state = 'stagger'; o.t = 0; o.dur = CROWD.fearT; o.sw = null; o.swung = false; o.poiseT = 0.9; o.showBar = 2; o.guard = 0; n++; }
   if (n) { ring(e.x, e.y, 0, CROWD.fearR, 0.5, '255,200,140', false, 2); logEv({ k: 'fear', n: n }); }
 }
-function crowdShove(p) {                  // the shield shove: the man before you is thrown back and staggers, and the one he lands on with him (CROWD)
+function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23: "only be able to be used when the enemy is blocking, to break their block"): the blocking man before you has his guard broken, is thrown back and staggers, and the one he lands on staggers with him; without a shield the shoulder does it (CROWD)
   var best = null, bd = 1e9, i, face = P.inAng !== null ? P.inAng : P.face, hasShield = !!(S.shield && api.shield && api.shield());
   for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
+    if (!(o.guard > 0)) continue;   /* (only a man with his guard up: the bash is for breaking a block) */
     var d = Math.hypot(o.x - p.x, o.y - p.y) - o.r - p.r; if (d > CROWD.shoveReach) continue; if (Math.abs(wrap(Math.atan2(o.y - p.y, o.x - p.x) - face)) > 1.0) continue; if (d < bd) { bd = d; best = o; } }
-  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; sfx('block', 0.6);
-  if (!best) { ring(p.x + Math.cos(face) * 20, p.y + Math.sin(face) * 20, 0, 14, 0.2, '200,200,200', false, 1.5); logEv({ k: 'shove', hit: false }); return; }
-  var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : 0.5;
+  if (!best) return false;   /* (nobody blocking before you: nothing happens, nothing is spent) */
+  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; p.bashT = CROWD.bashT; sfx('block', 0.6);
+  var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : CROWD.shoulderK;
   best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * CROWD.shoveD * k; best.ky += Math.sin(ang) * CROWD.shoveD * k;
-  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.showBar = 2; postureAdd(best, POSTURE.block);
+  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.guardAge = 0; best.guardCd = CROWD.breakCd; best.brokeT = 1; best.showBar = 2; postureAdd(best, POSTURE.block);   /* (his block is broken: as the axe breaks it, and no guard again for breakCd) */
   for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
     var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead) continue;
     q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
-  ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'SHOVED', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best });
+  ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'BLOCK BROKEN', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best }); return true;
 }
 function heavyBlow(e) { return e.type === 'soldier' ? !!(e.sw && e.sw.heavy) : (e.type === 'brute' || !!(e.cfg && e.cfg.atk && e.cfg.atk.heavy)); }
 function glint(x, y, hv) { if (S.juice) W.glints.push({ x: x, y: y, t: 0, life: hv ? 0.5 : 0.35, hv: !!hv }); }
@@ -13645,7 +13653,7 @@ function updatePlayer(dt) {
     if (IN.lmb || IN.keys.KeyJ) { p.holdG = (p.holdG || 0) + dt; }
     else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
   }
-  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt);
+  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt);
   var shoving = CROWD.shove > 0 && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the shield shove: J with the guard up (CROWD, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) crowdShove(p); }
   if (!shoving && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes

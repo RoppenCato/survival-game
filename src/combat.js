@@ -304,7 +304,7 @@ var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
    guard up: the man before you within shoveReach is thrown back shoveD and staggers shoveT, and a man he is thrown into
    staggers too; it costs shoveSt stamina, once in shoveCd; with no shield the weapon's haft does it for half the throw). Each
    is a switch: 0 turns it off. */
-var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36 };
+var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3 };   /* (the bash breaks a block only, Robin 2026-10-23; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
 function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
@@ -328,19 +328,20 @@ function crowdFear(e) {                   // the finishing blow's fear: the men 
     if (Math.hypot(o.x - e.x, o.y - e.y) > CROWD.fearR) continue; o.state = 'stagger'; o.t = 0; o.dur = CROWD.fearT; o.sw = null; o.swung = false; o.poiseT = 0.9; o.showBar = 2; o.guard = 0; n++; }
   if (n) { ring(e.x, e.y, 0, CROWD.fearR, 0.5, '255,200,140', false, 2); logEv({ k: 'fear', n: n }); }
 }
-function crowdShove(p) {                  // the shield shove: the man before you is thrown back and staggers, and the one he lands on with him (CROWD)
+function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23: "only be able to be used when the enemy is blocking, to break their block"): the blocking man before you has his guard broken, is thrown back and staggers, and the one he lands on staggers with him; without a shield the shoulder does it (CROWD)
   var best = null, bd = 1e9, i, face = P.inAng !== null ? P.inAng : P.face, hasShield = !!(S.shield && api.shield && api.shield());
   for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
+    if (!(o.guard > 0)) continue;   /* (only a man with his guard up: the bash is for breaking a block) */
     var d = Math.hypot(o.x - p.x, o.y - p.y) - o.r - p.r; if (d > CROWD.shoveReach) continue; if (Math.abs(wrap(Math.atan2(o.y - p.y, o.x - p.x) - face)) > 1.0) continue; if (d < bd) { bd = d; best = o; } }
-  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; sfx('block', 0.6);
-  if (!best) { ring(p.x + Math.cos(face) * 20, p.y + Math.sin(face) * 20, 0, 14, 0.2, '200,200,200', false, 1.5); logEv({ k: 'shove', hit: false }); return; }
-  var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : 0.5;
+  if (!best) return false;   /* (nobody blocking before you: nothing happens, nothing is spent) */
+  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; p.bashT = CROWD.bashT; sfx('block', 0.6);
+  var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : CROWD.shoulderK;
   best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * CROWD.shoveD * k; best.ky += Math.sin(ang) * CROWD.shoveD * k;
-  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.showBar = 2; postureAdd(best, POSTURE.block);
+  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.guardAge = 0; best.guardCd = CROWD.breakCd; best.brokeT = 1; best.showBar = 2; postureAdd(best, POSTURE.block);   /* (his block is broken: as the axe breaks it, and no guard again for breakCd) */
   for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
     var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead) continue;
     q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
-  ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'SHOVED', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best });
+  ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'BLOCK BROKEN', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best }); return true;
 }
 function heavyBlow(e) { return e.type === 'soldier' ? !!(e.sw && e.sw.heavy) : (e.type === 'brute' || !!(e.cfg && e.cfg.atk && e.cfg.atk.heavy)); }
 function glint(x, y, hv) { if (S.juice) W.glints.push({ x: x, y: y, t: 0, life: hv ? 0.5 : 0.35, hv: !!hv }); }
@@ -620,7 +621,7 @@ function updatePlayer(dt) {
     if (IN.lmb || IN.keys.KeyJ) { p.holdG = (p.holdG || 0) + dt; }
     else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
   }
-  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt);
+  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt);
   var shoving = CROWD.shove > 0 && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the shield shove: J with the guard up (CROWD, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) crowdShove(p); }
   if (!shoving && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
