@@ -16054,11 +16054,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var bb = roofBox(r), ov = Build.CFG.overhang + 1.5, left = bb.x0 * T - ov - 6, right = (bb.x1 + 1) * T + ov + 6, top = bb.y0 * TS - UP - ov * K - 52, bottom = (bb.y1 + 1) * TS - UP + ov * K + 14;
     var w2 = Math.ceil(right - left), h2 = Math.ceil(bottom - top), cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
     var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -left * 2, -top * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawRoof(c2, r, 1, cfg, 0);
-    if (w.season === 'winter') {   /* snow on the roofs drawn in code (2026-10-23): the roof's picture whitened where it is, the courses faint through it, the lower slope and the eaves in the snow's shade */
-      c2.save(); c2.setTransform(1, 0, 0, 1, 0, 0); c2.globalCompositeOperation = 'source-atop'; c2.fillStyle = 'rgba(236,241,247,0.84)'; c2.fillRect(0, 0, cv.width, cv.height);
-      var sg = c2.createLinearGradient(0, 0, 0, cv.height); sg.addColorStop(0, 'rgba(255,255,255,0.12)'); sg.addColorStop(0.5, 'rgba(206,217,232,0)'); sg.addColorStop(1, 'rgba(186,199,218,0.5)'); c2.fillStyle = sg; c2.fillRect(0, 0, cv.width, cv.height); c2.restore();
-    }
+    if (w.season === 'winter') roofSnow(cv, c2, r, cfg, bb, left, top);
+
     sp = roofCache[key] = { cv: cv, x: left, y: top, w: w2, h: h2 }; return sp;
+  }
+  function roofSnow(cv, c2, r, cfg, bb, left, top) {   /* snow on a roof drawn in code (made over 2026-10-23, Robin: the first was "a white translucent roof"): an opaque blanket in the roof's shape with grain, the slope on the sun's side lit and the other in the snow's blue shade from the ridge, a bright ridge, a lumpy lip hanging past the eaves with its shadow on the wall, and a few bare patches near the eaves where the snow has slid */
+    var W2 = cv.width, H2 = cv.height, sn = document.createElement('canvas'); sn.width = W2; sn.height = H2; var g = sn.getContext('2d'), R = kit.rng((+r.id || 1) * 7 + 3), i;
+    g.drawImage(cv, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#eef2f7'; g.fillRect(0, 0, W2, H2); g.globalCompositeOperation = 'source-atop';
+    var n = Math.round(W2 * H2 / 70); for (i = 0; i < n; i++) { g.fillStyle = R() < 0.5 ? 'rgba(255,255,255,0.55)' : 'rgba(174,188,212,0.3)'; g.fillRect(R() * W2, R() * H2, 1.5 + R() * 2.5, 1 + R() * 1.2); }
+    var wT = bb.x1 - bb.x0 + 1, dT = bb.y1 - bb.y0 + 1, ns = cfg.gable === 'ns' || (cfg.gable !== 'ew' && dT >= wT), rm = Build.ridgeMid(r, cfg), rx = rm ? 2 * (rm.x - left) : W2 / 2, ry = rm ? 2 * (rm.y - top) : H2 / 2;
+    var sgd = ns ? g.createLinearGradient(rx - 4, 0, rx + 4, 0) : g.createLinearGradient(0, ry - 4, 0, ry + 4); sgd.addColorStop(0, 'rgba(255,255,255,0.16)'); sgd.addColorStop(1, 'rgba(164,181,208,0.44)'); g.fillStyle = sgd; g.fillRect(0, 0, W2, H2);
+    var dn = Math.round((ns ? H2 : W2) / 26); for (i = 0; i < dn; i++) { var dl = 20 + R() * 60, da = R() < 0.5; g.fillStyle = da ? 'rgba(160,178,206,0.22)' : 'rgba(255,255,255,0.5)'; if (ns) g.fillRect(R() * W2, R() * H2, 2 + R() * 2, dl); else g.fillRect(R() * W2, R() * H2, dl, 2 + R() * 2); }   /* (the wind's drifts along the slope) */
+    var eb = ns ? g.createLinearGradient(0, H2 * 0.78, 0, H2) : g.createLinearGradient(0, H2 * 0.8, 0, H2); eb.addColorStop(0, 'rgba(255,255,255,0)'); eb.addColorStop(1, 'rgba(255,255,255,0.45)'); g.fillStyle = eb; g.fillRect(0, 0, W2, H2);   /* (the snow heaped thicker toward the eaves) */
+    g.fillStyle = 'rgba(255,255,255,0.9)'; if (ns) g.fillRect(rx - 3, 0, 4.5, H2); else g.fillRect(0, ry - 3, W2, 4.5); g.fillStyle = 'rgba(132,152,190,0.6)'; if (ns) g.fillRect(rx + 1.5, 0, 2.4, H2); else g.fillRect(0, ry + 1.5, W2, 2.4);   /* (the ridge: a crest of light, the shade beside it) */
+    var tp = document.createElement('canvas'); tp.width = W2; tp.height = H2; var gt = tp.getContext('2d');
+    gt.save(); gt.globalAlpha = 0.42; gt.filter = 'brightness(0.6) saturate(0.7)'; gt.drawImage(sn, 2, 9); gt.restore();   /* (the lip's shadow on the wall under the eaves) */
+    gt.save(); gt.filter = 'brightness(0.94)'; for (i = 0; i < 7; i++) gt.drawImage(sn, (i - 3) * 0.7, 3.5 + Math.abs(Math.sin(i * 1.9 + (+r.id || 0))) * 2.5); gt.restore();   /* (the lip: the blanket's own shape hung a little past the eaves, uneven) */
+    gt.drawImage(sn, 0, 0);
+    gt.globalCompositeOperation = 'destination-out'; var k = 1 + Math.floor(R() * 2), j; for (i = 0; i < k; i++) { var px = W2 * (0.15 + R() * 0.7), py = H2 * 0.9, rr = 6 + R() * 8; for (j = 0; j < 5; j++) { gt.beginPath(); gt.ellipse(px + (R() - 0.5) * rr * 1.6, py + (R() - 0.5) * rr * 0.5 + j * 1.5, rr * (0.5 + R() * 0.6), rr * 0.3, (R() - 0.5) * 0.6, 0, 7); gt.fill(); } }   /* (at the eaves a ragged patch or two where the snow has slid off and the thatch shows) */
+    c2.save(); c2.setTransform(1, 0, 0, 1, 0, 0); c2.globalCompositeOperation = 'source-over'; c2.drawImage(tp, 0, 0); c2.restore();
   }
   function drawRoofCached(c, r, a, cfg, dy) { if (a <= 0.01) return; var sp = roofSprite(r, cfg); c.save(); c.globalAlpha *= a; c.drawImage(sp.cv, sp.x, sp.y + (dy || 0), sp.w, sp.h); c.restore(); }
   function roofInView(r, hw, hh) { var bb = roofBox(r); return !((bb.x1 + 1) * T < cam.x - hw - 60 || bb.x0 * T > cam.x + hw + 60 || (bb.y1 + 1) * TS < cam.y - hh - 120 || bb.y0 * TS > cam.y + hh + 60); }
