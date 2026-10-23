@@ -26,7 +26,7 @@
     storm:     { rain: { n: 900, len: [30, 50], w: 1.3, a: [0.3, 0.52], v: 1400, slant: 0.85 }, splash: 110, rings: 40, leaves: 36,
                  veil: { mul: [148, 160, 186, 0.30], sat: 0.24 }, flash: [18, 45], wind: [0.85, 1.0], ramp: [25, 35] },
     //            mist: soft banks lying on the world (n, width px, alpha), thickest on water and the shore, burning off by mid-morning
-    mist:      { mist: { n: 12, r: [320, 720], a: [0.55, 0.85], col: [240, 237, 230] }, veil: { haze: [236, 236, 236, 0.1, 0.03] }, wind: [0.03, 0.12], ramp: [40, 90] },
+    mist:      { mist: { n: 12, r: [320, 720], a: [0.42, 0.64], col: [240, 237, 230] }, veil: { haze: [236, 236, 236, 0.1, 0.03] }, wind: [0.03, 0.12], ramp: [40, 90] },
     //            snow: flakes in three depths (far, middle, near): share of n, radius px, alpha, fall px/s
     snow:      { snow: { n: 520 }, veil: { haze: [230, 235, 242, 0.08, 0.03] }, wind: [0.1, 0.35], ramp: [20, 30] },
     heavySnow: { snow: { n: 1150 }, veil: { haze: [228, 233, 241, 0.2, 0.08], mul: [204, 212, 226, 0.1] }, wind: [0.25, 0.5], ramp: [25, 30] },
@@ -70,17 +70,20 @@
     if (K.rain) for (n = Math.round(K.rain.n * A), i = S.drops.length; i < n; i++) { var far = R() < 0.6; S.drops.push({ x: R() * env.W, y: R() * env.H, far: far, len: lerp(K.rain.len[0], K.rain.len[1], R()) * (far ? 0.7 : 1), a: lerp(K.rain.a[0], K.rain.a[1], R()) * (far ? 0.6 : 1), v: K.rain.v * (far ? 0.7 : 1) * lerp(0.9, 1.1, R()) }); }
     if (K.snow) for (n = Math.round(K.snow.n * A), i = S.flakes.length; i < n; i++) { var x = R(), L = x < LAYERS[0].f ? 0 : (x < LAYERS[0].f + LAYERS[1].f ? 1 : 2), Ly = LAYERS[L]; S.flakes.push({ x: R() * env.W, y: R() * env.H, L: L, r: lerp(Ly.r[0], Ly.r[1], R()), v: lerp(Ly.v[0], Ly.v[1], R()), ph: R() * 6.28, sw: 6 + R() * 10 }); }
     if (K.leaves) for (n = Math.round(K.leaves * A * (K === KINDS.storm ? 1 : 1)), i = S.leaves.length; i < n; i++) S.leaves.push({ x: R() * env.W, y: R() * env.H, s: 3 + R() * 2.5, spin: R() * 6.28, vs: 4 + R() * 8, c: LEAF[i % 3], v: 0.6 + R() * 0.8 });
-    if (K.mist && env.toScreen) for (n = K.mist.n, i = S.banks.length; i < n; i++) S.banks.push(bank(S, env, true));
+    if (K.mist && env.toScreen) for (n = Math.max(4, Math.round(K.mist.n * Math.max(0.5, A))), i = S.banks.length; i < n; i++) S.banks.push(bank(S, env, true));
   }
   function bank(S, env, anywhere) {               // a mist bank: a world point (it lies on the land and the water, and stays put as you walk)
     var R = S.R, K = S.K.mist, z = env.zoom || 1, best = null, tries;
-    for (tries = 0; tries < 6; tries++) {
-      var sx = anywhere ? R() * env.W : (Math.cos((env.wind || { a: 0 }).a) > 0 ? -K.r[1] * 0.5 : env.W + K.r[1] * 0.5), sy = R() * env.H * 1.2 - env.H * 0.1;
+    for (tries = 0; tries < 10; tries++) {
+      var sx = anywhere ? R() * env.W : (Math.cos((env.wind || { a: 0 }).a) > 0 ? -K.r[1] * lerp(0.4, 1.4, R()) : env.W + K.r[1] * lerp(0.4, 1.4, R())), sy = R() * env.H * 1.2 - env.H * 0.1;
+      var crowd = 0; for (var bi = 0; bi < S.banks.length; bi++) { var ob = S.banks[bi], oq = env.toScreen(ob.x, ob.y); if (Math.abs(oq[0] - sx) < ob.r * z * 1.3 && Math.abs(oq[1] - sy) < ob.r * z * 0.5) crowd++; }
+      if (crowd && tries < 9) continue;                                         // not on top of another bank
       var wp = env.fromScreen ? env.fromScreen(sx, sy) : [env.cam.x + (sx - env.W / 2) / z, env.cam.y + (sy - env.H / 2) / z], wx = wp[0], wy = wp[1], lo = env.low ? env.low(wx, wy) : 0.6;
       if (!best || lo > best.lo) best = { wx: wx, wy: wy, lo: lo };
       if (lo > 0.7) break;
     }
-    return { x: best.wx, y: best.wy, lo: best.lo, r: lerp(K.r[0], K.r[1], R()) / z, a: lerp(K.a[0], K.a[1], R()), ph: R() * 6.28 };
+    var lobes = [], nl = 4 + Math.floor(R() * 2); for (var li = 0; li < nl; li++) lobes.push([lerp(-0.9, 0.9, li / (nl - 1)) + (R() - 0.5) * 0.2, (R() - 0.5) * 0.12, lerp(0.45, 0.75, R())]);   // along the bank: offset (of r), height offset, size
+    return { x: best.wx, y: best.wy, lo: best.lo, r: lerp(K.r[0], K.r[1], R()) / z, a: lerp(K.a[0], K.a[1], R()), ph: R() * 6.28, lobes: lobes };
   }
 
   function tick(S, dt, env) {
@@ -130,8 +133,9 @@
       var tb = tinted(mk, K.mist.col), z = env.zoom || 1;
       for (i = 0; i < S.banks.length; i++) { p = S.banks[i]; var q = env.toScreen(p.x, p.y), rr = p.r * z * (1 + 0.06 * Math.sin(p.ph * 3));
         var al = p.a * k * (0.12 + 0.88 * Math.pow(p.lo, 1.6));               // a bank lies in the low and wet places and thins to nothing up the slopes
-        ctx.globalAlpha = Math.min(1, al * 0.7); ctx.drawImage(tb, q[0] - rr, q[1] - rr * 0.38, rr * 2, rr * 0.76);
-        ctx.globalAlpha = Math.min(1, al * 0.55); ctx.drawImage(tb, q[0] - rr * 0.55 + rr * 0.15 * Math.sin(p.ph), q[1] - rr * 0.2, rr * 1.1, rr * 0.4); }   // its denser heart
+        ctx.globalAlpha = Math.min(0.6, al * 0.55);
+        for (var lj = 0; lj < p.lobes.length; lj++) { var L2 = p.lobes[lj], lw = rr * L2[2] * 1.5, lh = rr * L2[2] * 0.34;   // a long flat drift of lobes, each wide and low
+          ctx.drawImage(tb, q[0] + L2[0] * rr + rr * 0.05 * Math.sin(p.ph + lj) - lw, q[1] + L2[1] * rr - lh, lw * 2, lh * 2); } }
       ctx.globalAlpha = 1;
     }
     if (V.haze) { var g = ctx.createLinearGradient(0, 0, 0, H), c = V.haze[0] + ',' + V.haze[1] + ',' + V.haze[2];   // farther (up the screen) hazier
