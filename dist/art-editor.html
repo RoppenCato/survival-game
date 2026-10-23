@@ -8514,7 +8514,7 @@ function render(c) {
     c.fillStyle = gl.hv ? '#ff4a2a' : '#fffbe6'; c.strokeStyle = gl.hv ? 'rgba(80,10,0,0.85)' : 'rgba(80,60,20,0.7)'; c.lineWidth = 0.8; c.fill(); c.stroke(); c.restore();
   }
   for (i = 0; i < W.rings.length; i++) {
-    var rg = W.rings[i], u = 1 - rg.life / rg.max, rr0 = rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2));
+    var rg = W.rings[i], u = Math.min(1, 1 - rg.life / rg.max), rr0 = Math.max(0, rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2)));   /* (a ring outlived by a long frame drew a negative radius and threw, 2026-10-23) */
     c.strokeStyle = 'rgba(' + rg.c + ',' + (0.85 * (1 - u)) + ')'; c.lineWidth = rg.w * (1 - u * 0.6);
     c.beginPath();
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
