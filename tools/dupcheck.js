@@ -31,6 +31,10 @@ function scan(sc) {
           const name = sc.slice(k, m), scope = stack[stack.length - 1]; (decl[scope + ':' + name] = decl[scope + ':' + name] || { name, lines: [] }).lines.push(line);
         }
       }
+      if ((w === 'var' || w === 'let' || w === 'const') && last !== '.') {   /* a var in CAPITALS declared twice in one scope (2026-10-23: the weather's state was named WX, which the page already used for the world's width; the two are one variable, and worldBounds read an object) */
+        let k = j; while (k < n && /\s/.test(sc[k])) k++; let m = k; while (m < n && isWord(sc[m])) m++; const nm = sc.slice(k, m);
+        if (/^[A-Z][A-Z0-9_]+$/.test(nm)) { const scope = stack[stack.length - 1]; (decl[scope + ':' + nm] = decl[scope + ':' + nm] || { name: nm, lines: [] }).lines.push(line); }
+      }
       lastWord = w; last = 'word'; i = j; continue;
     }
     if (!/\s/.test(c)) { last = c; lastWord = ''; }

@@ -4786,6 +4786,143 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
   if (typeof module !== 'undefined') module.exports = api; else root.Weather = api;
 })(this);
 
+// sun.js: the day for a game seen from above (Colin, AD, 2026-10-23). Robin: "Is there any good way we could have a beautiful
+// sunrise/sunset? Its so magical in Valheim but im not sure how it would work in a 2D game", and "It feels like its saying 'oh now its
+// night' and then nothing happens for a long time ... you dont really feel the sun going down or up".
+// From above you never see the sky, so the sun is shown by what it does, and it does something all day long:
+//   - the shadows swing and stretch with it: long to the west at sunrise, short at noon, long to the east at sunset
+//   - the light runs across the frame from the sun's side: fresh in the morning, plain at noon, warm in the afternoon, gold, then rose
+//     and violet at sunset, the blue hour, the night
+//   - every standing thing takes a warm edge on its sun side while the sun is low
+//   - the water holds the sky's colours, with a path of sun on it (of moon at night) and stars when the moon is down
+//   - shafts of light slant through at the golden hour and the sunrise
+//   - the night moves too: the moon rises in the east, crosses, and sets in the west, and its silver path walks over the water
+// The reference for the game's own code, like weather.js; browser or Node. Times are the game's day.t, with the dawn proposed at three
+// minutes (DAWN_AT 1620 instead of 1740) so the sunrise can be seen.
+//   Sun.KEYS                  the day's keyframes (below)
+//   Sun.state(t)              the mix at a time of day: every number of the keyframes, blended
+//   Sun.rimPicture(d, w, h, side, col, k)   a standing picture with its sun-side edge lit (made once; laid over at state.rimK)
+//   Sun.draw(ctx, st, L)      the whole frame: L = { ground, atlas, scene, water, mk, t } (the page's layers; the game has its own)
+(function (root) {
+  // t: seconds of the day. sx: where the sun is across the screen (+1 the right, the east; -1 the left, the west). near/far: the light on the
+  // sun's side and the far side (multiply colours with their strength). glow: the low sun's bloom on its side. shade/sk/len: the cast
+  // shadow's colour, strength and length (1 = the game's day shadow). rimK: the lit edge. sky/skyK: the water's colours across, sun side
+  // to far side, and how much. path/pathK: the sun's path on the water. rays: the shafts. night: the dark (the game's light()). moon: 0..1.
+  var N0 = [255, 255, 255, 0];
+  var KEYS = [
+    { t: 0,    warm: [255, 220, 180, 0.16], sx: 0.95, near: [255, 214, 172, 0.2],  far: [190, 205, 226, 0.12], glow: [255, 220, 170, 0.15], shade: [70, 70, 130], sk: 0.3, len: 2.1, rimK: 0.5,  sky: [[255, 214, 176], [226, 222, 220], [160, 186, 214]], skyK: 0.25, path: [255, 226, 196], pathK: 0.5, rays: 0.08, night: 0,    moon: 0 },
+    { t: 240,  warm: [255, 236, 210, 0.06], sx: 0.6,  near: [255, 240, 214, 0.1],  far: [214, 224, 240, 0.06], glow: [255, 236, 200, 0.06], shade: [40, 50, 100], sk: 0.36, len: 1.6, rimK: 0.22, sky: [[255, 236, 210], [226, 230, 232], [190, 206, 226]], skyK: 0.08, path: [255, 240, 220], pathK: 0.2, rays: 0,    night: 0,    moon: 0 },
+    { t: 420,  warm: [255, 255, 255, 0], sx: 0,    near: N0,                    far: N0,                    glow: [255, 255, 240, 0],    shade: [20, 40, 90],  sk: 0.34, len: 0.9, rimK: 0,    sky: [[255, 255, 255], [255, 255, 255], [255, 255, 255]], skyK: 0,    path: [255, 255, 240], pathK: 0,   rays: 0,    night: 0,    moon: 0 },
+    { t: 600,  warm: [255, 230, 180, 0.12], sx: -0.55, near: [255, 236, 200, 0.12], far: [236, 226, 214, 0.05], glow: [255, 230, 190, 0.06], shade: [40, 46, 100], sk: 0.38, len: 1.5, rimK: 0.2,  sky: [[255, 230, 196], [232, 230, 226], [196, 210, 226]], skyK: 0.08, path: [255, 236, 200], pathK: 0.2, rays: 0,    night: 0,    moon: 0 },
+    { t: 720,  warm: [255, 190, 90, 0.34], sx: -0.85, near: [255, 206, 130, 0.26], far: [255, 220, 180, 0.1],  glow: [255, 196, 120, 0.15], shade: [40, 52, 100], sk: 0.36, len: 1.8, rimK: 0.55, sky: [[255, 214, 140], [236, 222, 196], [160, 190, 214]], skyK: 0.35, path: [255, 226, 160], pathK: 0.6, rays: 0.1,  night: 0,    moon: 0 },
+    { t: 840,  warm: [255, 166, 90, 0.34], sx: -1,   near: [255, 170, 98, 0.36],  far: [196, 166, 200, 0.24], glow: [255, 150, 80, 0.32],  shade: [44, 46, 104], sk: 0.4, len: 2.5, rimK: 0.75, sky: [[255, 156, 84], [240, 132, 150], [112, 104, 176]], skyK: 0.6,  path: [255, 196, 120], pathK: 1,   rays: 0.16, night: 0,    moon: 0 },
+    { t: 960,  warm: [255, 140, 100, 0.22], sx: -1,   near: [255, 140, 110, 0.4],  far: [150, 132, 192, 0.34], glow: [255, 120, 90, 0.32],  shade: [40, 40, 100], sk: 0.32, len: 3,   rimK: 0.6,  sky: [[255, 130, 90], [210, 110, 150], [90, 90, 170]],    skyK: 0.65, path: [255, 170, 120], pathK: 0.7, rays: 0.08, night: 0.1,  moon: 0 },
+    { t: 1080, warm: [220, 140, 160, 0.08], sx: -1,   near: [200, 150, 190, 0.3],  far: [100, 108, 186, 0.42], glow: [230, 130, 140, 0.12], shade: [40, 40, 110], sk: 0.16, len: 2.1, rimK: 0.12, sky: [[210, 120, 140], [110, 100, 180], [55, 65, 135]],    skyK: 0.55, path: [230, 160, 160], pathK: 0.15, rays: 0,   night: 0.45, moon: 0 },
+    { t: 1200, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 0 },
+    { t: 1260, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 0.35 },
+    { t: 1410, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 1 },
+    { t: 1560, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 0.35 },
+    { t: 1620, warm: [255, 180, 180, 0.06], sx: 1,    near: [150, 140, 200, 0.2],  far: [70, 80, 150, 0.3],    glow: [255, 150, 150, 0.12], shade: [40, 40, 110], sk: 0,    len: 2.3,   rimK: 0,    sky: [[200, 140, 170], [100, 100, 170], [50, 60, 130]],    skyK: 0.45, path: [240, 170, 180], pathK: 0.15, rays: 0,   night: 1,    moon: 0 },
+    { t: 1700, warm: [255, 176, 150, 0.26], sx: 1,    near: [255, 170, 160, 0.35], far: [120, 120, 190, 0.4],  glow: [255, 170, 150, 0.3],  shade: [56, 56, 120], sk: 0.24, len: 2.5, rimK: 0.5,  sky: [[255, 170, 160], [200, 160, 200], [90, 100, 170]],   skyK: 0.55, path: [255, 200, 180], pathK: 0.7, rays: 0.08, night: 0.4, moon: 0 },
+    { t: 1760, warm: [255, 196, 150, 0.3], sx: 1,    near: [255, 196, 160, 0.32], far: [170, 180, 214, 0.26], glow: [255, 200, 150, 0.25], shade: [56, 60, 116], sk: 0.32, len: 2.4, rimK: 0.7,  sky: [[255, 206, 170], [226, 210, 214], [150, 176, 214]],  skyK: 0.45, path: [255, 220, 196], pathK: 0.9, rays: 0.14, night: 0.08,  moon: 0 }
+  ];
+  var DAY = 1800;
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function mixA(a, b, t) { if (!a) return b; if (!b) return a; var o = []; for (var i = 0; i < a.length; i++) o.push(Array.isArray(a[i]) ? mixA(a[i], b[i], t) : lerp(a[i], b[i], t)); return o; }
+  function state(t) {
+    t = ((t % DAY) + DAY) % DAY; var i, a = KEYS[KEYS.length - 1], b = KEYS[0], ta = a.t - DAY, tb = b.t;
+    for (i = 0; i < KEYS.length; i++) { if (KEYS[i].t <= t) { a = KEYS[i]; ta = a.t; b = KEYS[(i + 1) % KEYS.length]; tb = i + 1 < KEYS.length ? b.t : b.t + DAY; } }
+    var u = (t - ta) / (tb - ta), s = { t: t }, k; u = u * u * (3 - 2 * u);
+    for (k in a) if (k !== 't') s[k] = typeof a[k] === 'number' ? lerp(a[k], b[k], u) : mixA(a[k], b[k], u);
+    s.moonX = t >= 1200 && t < 1620 ? 1 - 2 * (t - 1230) / 360 : 0;           // the moon's place across: rising on the right, setting on the left
+    return s;
+  }
+  function rgba(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + a + ')'; }
+  function hash(x, y) { var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
+
+  // the sun-side edge of a standing thing lit warm: inside its ink line on the side toward the sun, fading in over four pixels
+  function rimPicture(d, w, h, side, col, k) {
+    var x, y, i, j, src = new Uint8ClampedArray(d);
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) { i = (y * w + x) * 4; if (src[i + 3] < 30) continue;
+      var lum = (src[i] * 0.3 + src[i + 1] * 0.59 + src[i + 2] * 0.11) / 255; if (lum < 0.16) continue;
+      var edge = 0, inkSeen = 0;
+      for (j = 1; j <= 60; j++) { if (j > 8 && !inkSeen && j > Math.max(5, Math.round(w / 26)) + 1) break; var xx = x + side * j; if (xx < 0 || xx >= w) { edge = j; break; } var q = (y * w + xx) * 4;
+        if (src[q + 3] < 40) { edge = j; break; } var ql = (src[q] * 0.3 + src[q + 1] * 0.59 + src[q + 2] * 0.11) / 255; if (ql < 0.16) { inkSeen++; if (inkSeen > 4) break; continue; } if (inkSeen) break; }
+      var dist = edge ? edge - inkSeen : 99, reach = Math.max(5, Math.round(w / 26));
+      if (dist > reach) { d[i] = d[i] * (1 - 0.06 * k); d[i + 1] = d[i + 1] * (1 - 0.08 * k); d[i + 2] = Math.min(255, d[i + 2] * (1 - 0.02 * k) + 6 * k); continue; }   // the far side a touch cooler
+      var a = k * Math.pow(1 - (dist - 1) / reach, 0.7) * (0.7 + 0.3 * lum);
+      d[i] = d[i] + (col[0] - d[i]) * a; d[i + 1] = d[i + 1] + (col[1] - d[i + 1]) * a; d[i + 2] = d[i + 2] + (col[2] - d[i + 2]) * a; }
+    return true;
+  }
+
+  var C = {};
+  function disc(mk, col) { var key = col ? col.map(Math.round).join(',') : 'w'; if (C[key]) return C[key]; var cv = mk(128, 128), g = cv.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    if (col) { g.globalCompositeOperation = 'source-in'; g.fillStyle = 'rgb(' + key + ')'; g.fillRect(0, 0, 128, 128); } return (C[key] = cv); }
+  function silhouette(L, key, mk) {             // a thing's shape in black at a quarter of its size: drawn up again it is soft at the edge
+    var sc = C.sil || (C.sil = {}); if (sc[key]) return sc[key]; var r = L.scene.rects[key], w = Math.max(8, Math.round(r[2] / 4)), h = Math.max(8, Math.round(r[3] / 4)), cv = mk(w, h), g = cv.getContext('2d');
+    g.drawImage(L.atlas, r[0], r[1], r[2], r[3], 0, 0, w, h); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, w, h); return (sc[key] = cv);
+  }
+  function shadowAngle(side) { return side >= 0 ? lerp(0.36, Math.PI - 0.12, Math.min(1, side)) : lerp(0.36, -0.12, Math.min(1, -side)); }   // away from the light: left in the morning, down at noon, right in the evening
+  function waterLayer(L, col3, sunX, farX) {
+    var W = L.scene.W, H = L.scene.H, cv = C.wl || (C.wl = L.mk(W, H)), g = cv.getContext('2d'); g.globalCompositeOperation = 'copy'; g.drawImage(L.water, 0, 0, W, H); g.globalCompositeOperation = 'source-in';
+    var sg = g.createLinearGradient(sunX, 0, farX, 0); sg.addColorStop(0, rgba(col3[0], 1)); sg.addColorStop(0.5, rgba(col3[1], 1)); sg.addColorStop(1, rgba(col3[2], 1)); g.fillStyle = sg; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; return cv;
+  }
+  function glitter(L, x0, col, k, seed, n, band) {   // a path of light on the water toward x0 (the sun or the moon across the screen)
+    var W = L.scene.W, H = L.scene.H, cv = C.gl || (C.gl = L.mk(W, H)), g = cv.getContext('2d'); g.globalCompositeOperation = 'copy'; g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+    var t = L.t || 0, sunX = (x0 + 1) / 2 * W, i;
+    for (i = 0; i < n; i++) { var u = hash(i, seed), dir = hash(i, seed + 9) < 0.5 ? -1 : 1, x = sunX + dir * Math.pow(u, 1.5) * W * 1.05, y = hash(i, seed + 2) * H;   // over all the water, thickest toward the sun's side
+      var tw = 0.5 + 0.5 * Math.sin(t * (2 + 3 * hash(i, seed + 5)) + i), len = 3 + 10 * (1 - u) * hash(i, seed + 3);
+      g.fillStyle = rgba(col, k * tw * (0.35 + 0.6 * hash(i, seed + 4)) * (1 - u * 0.75)); g.fillRect(x - len / 2, y, len, 1.4); }
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(L.water, 0, 0, W, H); g.globalCompositeOperation = 'source-over'; return cv;
+  }
+  function draw(ctx, st, L) {
+    var W = L.scene.W, H = L.scene.H, mk = L.mk, i, it, r, side = st.sx, sunX = (side + 1) / 2 * W, farX = W - sunX, night = st.night, moon = st.moon;
+    if (Math.abs(sunX - farX) < 2) farX = sunX + 1;
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    ctx.drawImage(L.ground, 0, 0, W, H);
+    // the shadows: each thing's own silhouette laid flat on the ground from its foot, away from the sun (by night, faint ones away from the
+    // moon), all into one layer tinted once, so where two shadows cross they do not darken twice
+    var sk = st.sk + 0.18 * moon * night, ang = shadowAngle(night > 0.6 ? st.moonX : side), len = night > 0.6 ? 2.6 : st.len, shadeCol = night > 0.6 ? [20, 30, 70] : st.shade;
+    if (sk > 0.01) { var lay = C.sl || (C.sl = mk(W, H)), lg = lay.getContext('2d'); lg.setTransform(1, 0, 0, 1, 0, 0); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, W, H);
+      var kk = 0.5 * len, ckx = kk * Math.cos(ang), cky = kk * Math.sin(ang), px = Math.sin(ang), py = -Math.cos(ang) * 0.75;   // a thing's height runs along the shadow, its width across it (the ground's depth squashed as the camera sees it)
+      for (i = 0; i < L.scene.items.length; i++) { it = L.scene.items[i]; var sil = silhouette(L, it.key, mk), fx = it.fx, fy = it.fy;
+        lg.setTransform(px, py, -ckx, -cky, fx - px * fx + ckx * fy, fy - py * fx + cky * fy); lg.drawImage(sil, it.x, it.y, it.w, it.h); }
+      lg.setTransform(1, 0, 0, 1, 0, 0); lg.globalCompositeOperation = 'source-in'; lg.fillStyle = rgba(shadeCol, 1); lg.fillRect(0, 0, W, H);
+      ctx.globalAlpha = sk; ctx.drawImage(lay, 0, 0); ctx.globalAlpha = 1; }
+    // the things, each with its lit edge on the sun's side while the sun is low
+    var slot = side < 0 ? 1 : 2, rk = st.rimK * Math.min(1, Math.abs(side) * 1.4);
+    for (i = 0; i < L.scene.items.length; i++) { it = L.scene.items[i]; r = L.scene.rects[it.key];
+      ctx.globalAlpha = 1; ctx.drawImage(L.atlas, r[0], r[1], r[2], r[3], it.x, it.y, it.w, it.h);
+      if (rk > 0.01) { ctx.globalAlpha = rk; ctx.drawImage(L.atlas, r[0] + r[2] * slot, r[1], r[2], r[3], it.x, it.y, it.w, it.h); } }
+    ctx.globalAlpha = 1;
+    // the light across the frame from the sun's side
+    var a = Math.max(st.near[3], st.far[3]);
+    if (a > 0.005) { var g = ctx.createLinearGradient(sunX, 0, farX, 0); g.addColorStop(0, rgba(st.near, 1)); g.addColorStop(1, rgba(st.far, 1));
+      ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = a; ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.near[3]; var g2 = ctx.createLinearGradient(sunX, 0, farX, 0); g2.addColorStop(0, rgba(st.near, 1)); g2.addColorStop(0.6, rgba(st.near, 0)); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H); }
+    if (st.warm && st.warm[3] > 0.005) { ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.warm[3]; ctx.fillStyle = rgba(st.warm, 1); ctx.fillRect(0, 0, W, H); }   // the low sun gilding everything
+    if (st.glow[3] > 0.005) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; var g3 = ctx.createRadialGradient(sunX, H * 0.35, 0, sunX, H * 0.35, W * 0.7); g3.addColorStop(0, rgba(st.glow, st.glow[3])); g3.addColorStop(1, rgba(st.glow, 0)); ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H); }
+    // the sky in the water and the sun's path
+    if (L.water && st.skyK > 0.005) { var wl = waterLayer(L, st.sky, sunX, farX); ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = st.skyK; ctx.drawImage(wl, 0, 0); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.skyK * 0.8; ctx.drawImage(wl, 0, 0); }
+    if (L.water && st.path && st.pathK > 0.01) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; ctx.drawImage(glitter(L, side, st.path, st.pathK, 1, 2200, 110), 0, 0); }
+    // shafts of light
+    if (st.rays > 0.005) { ctx.globalCompositeOperation = 'screen'; var ox = side < 0 ? -W * 0.1 : W * 1.1, ra = side < 0 ? 0.42 : Math.PI - 0.42, t = L.t || 0;
+      for (i = 0; i < 5; i++) { var y = H * (0.05 + 0.2 * i) + Math.sin(t * 0.05 + i * 1.7) * 30, wdt = 50 + 70 * hash(i, 7);
+        ctx.save(); ctx.translate(ox, y); ctx.rotate(ra); var gr = ctx.createLinearGradient(0, -wdt, 0, wdt); gr.addColorStop(0, rgba(st.near, 0)); gr.addColorStop(0.5, rgba(st.near, st.rays * (0.6 + 0.4 * Math.sin(t * 0.3 + i)))); gr.addColorStop(1, rgba(st.near, 0));
+        ctx.globalAlpha = 1; ctx.fillStyle = gr; ctx.fillRect(0, -wdt, W * 1.05, wdt * 2); ctx.restore(); } }
+    // the night: the game's palette (a little lighter and bluer under the moon), then the moon's path and the stars in the water
+    if (night > 0.005) { var mm = 1 - 0.12 * moon; ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 1; ctx.fillStyle = rgba([255 - 222 * night * mm, 255 - 212 * night * mm, 255 - 172 * night * mm], 1); ctx.fillRect(0, 0, W, H);
+      if (L.water) { ctx.globalCompositeOperation = 'screen';
+        if (moon > 0.02) ctx.drawImage(glitter(L, st.moonX, [205, 218, 244], moon * night, 31, 1800, 70), 0, 0);
+        var sc = C.st || (C.st = (function () { var cv = mk(W, H), g = cv.getContext('2d'); for (var n = 0; n < 500; n++) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * hash(n, 51)) + ')'; g.fillRect(hash(n, 52) * W, hash(n, 53) * H, 1.4, 1.4); } g.globalCompositeOperation = 'destination-in'; g.drawImage(L.water, 0, 0, W, H); return cv; })());
+        ctx.globalAlpha = night * (1 - 0.6 * moon) * 0.7; ctx.drawImage(sc, 0, 0); } }
+    ctx.restore();
+  }
+  var api = { KEYS: KEYS, state: state, rimPicture: rimPicture, draw: draw, shadowAngle: shadowAngle, silhouette: silhouette };
+  if (typeof module !== 'undefined') module.exports = api; else root.Sun = api;
+})(this);
+
 /* World: the archipelago, shared by the Sea Editor and the game.
    World.make(kit, o) builds a sea with islands and returns an object that knows the ground (a height field read
    smoothly between tiles, painted per pixel), what stands on it (props in buckets per piece of map) and how to
@@ -4988,6 +5125,19 @@ function make(kit, opts) {
     return src.gs.sp;
   }
   w.seasonSprite = seasonSprite;
+  var RIM_COL = [255, 214, 150], rimN = 0;
+  w.rimSprite = function (name, v, side) {  // the set piece with its sun-side edge lit (the Art Director's Sun.rimPicture, 2026-10-23): a copy per picture per side, made when the sun is low (at most two a frame) and drawn over the picture at the state's strength
+    if (typeof Sun === 'undefined' || !Sun.rimPicture) return null; var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null;
+    var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null; var key = side < 0 ? 'L' : 'R'; if (im.rim && im.rim.from === base.cv && im.rim[key]) return im.rim[key]; if (rimN >= 2) return null; rimN++;
+    var cw = base.cv.naturalWidth || base.cv.width, chh = base.cv.naturalHeight || base.cv.height, cv = kit.mk(cw, chh), g = cv.getContext('2d'); g.drawImage(base.cv, 0, 0); var id = g.getImageData(0, 0, cw, chh); Sun.rimPicture(id.data, cw, chh, side, RIM_COL, 1); g.putImageData(id, 0, 0);
+    if (!im.rim || im.rim.from !== base.cv) im.rim = { from: base.cv }; im.rim[key] = cv; return cv;
+  };
+  w.silSprite = function (name, v) {        // a set piece's shape in black at a quarter of its size (the Art Director's Sun.silhouette): made once a picture (per season's copy), drawn up again as its shadow
+    var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null; var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null;
+    if (im.sil && im.sil.from === base.cv) return im.sil.cv; var cw = base.cv.naturalWidth || base.cv.width, chh = base.cv.naturalHeight || base.cv.height, sw = Math.max(8, Math.round(cw / 4)), sh = Math.max(8, Math.round(chh / 4)), cv = kit.mk(sw, sh), g = cv.getContext('2d');
+    g.drawImage(base.cv, 0, 0, sw, sh); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, sw, sh); im.sil = { from: base.cv, cv: cv }; return cv;
+  };
+  w.rimDrop = function () { for (var k in IMAGES) delete IMAGES[k].rim; };   // (dropped at midday and at night: w.rimDrop from the page)
   w.wetSprite = function (name, v) {        // the set piece's picture graded wet (the Art Director's Weather.wetPicture, 2026-10-23), made once a season per picture and drawn over the dry one at the ground's wetness
     if (typeof Weather === 'undefined' || !Weather.wetPicture) return null; var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null;
     var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null; if (im.wsp && im.wsp.from === base.cv) return im.wsp.cv;
@@ -6156,7 +6306,7 @@ function make(kit, opts) {
   w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
-    gradeN = 0;
+    gradeN = 0; rimN = 0;
     var pw = CT * T, phh = CT * TS, baked = 0;
     if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
@@ -15337,12 +15487,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
-  var SFX_SET = '../assets/sfx/combat.js?v=7049ef84';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
+  var SFX_SET = '../assets/sfx/combat.js?v=ecf164d0';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
   /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  var DEFAULT_PICK = { talk_open: 'f', talk_next: 'e', book_open: 'b', book_close: 'c', book_page: 'b', raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
+  var DEFAULT_PICK = { talk_open: 'f', talk_next: 'e', book_open: 'b', book_close: 'c', book_page: 'b', raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w', oar: 'a', oars: 'v', sail_fill: 'v', sail_flap: 'a', creak: 'a', keel_sand: 'v', keel_off: 'v' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
   function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; if (k && k !== 'orig' && Sfx.has(n + '_' + k)) return n + '_' + k; k = DEFAULT_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }   /* (a pick of a sound no longer in the bundle falls back to Robin's) */
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -15446,6 +15596,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: true, maxTiles: 2e7 }, zoom = 0.65, ZOOM0 = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12; the sea as waters round them since 2026-10-20: World.WATERS)
   try { var gwS = JSON.parse(localStorage.getItem('game.world3')); if (gwS && gwS.count) {   /* (game.world2 is ignored since the sea became waters, 2026-10-20) */ for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var CHART_PX = 1400;   /* the chart's width in pixels (700 until the sea became waters: a small island of 15 tiles was two pixels) */
+  var WLD = null;   /* (the world again, for the closures where w is a width: the prop drawing's) */
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
@@ -15639,7 +15790,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function worldBounds() { return { x0: 8, y0: 12, x1: WX + 12000, y1: WY - 8 }; }
   function buildWorld() {
     try { World.setTreeShape(localStorage.getItem('game.trees') || 'old'); } catch (eT) {}   /* the trees' size (Admin: Trees) */
-    w = World.make(kit, spec); w.meadowLook = grassLook;
+    w = World.make(kit, spec); WLD = w; w.meadowLook = grassLook;
     w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty], ru = B.ruin && B.ruin[tx + ',' + ty]; return (f != null && f !== 4 && f !== 5 && f !== 6) || !!(ru && ru.k === 'burnt'); };   // no grass grows through a laid floor, nor in the ash of a burnt room (2026-10-16) (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); (function () { var gone2 = []; w.eachProp(function (o) { if (isleAt(o.x, o.y) !== 0) return; if (o.name === 'fireRing') gone2.push(o); else if (o.name === 'struckTree') o.name = 'birch'; }); gone2.forEach(function (o) { w.removeProp(o); }); })();   /* (no charcoal on the starter island: no old fire rings, no lightning-struck trees; Robin 2026-10-20) */ if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
@@ -16005,6 +16156,63 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var G2 = Object.assign({}, G, { puddles: pud, prints: [], wet: 0, fresh: 0, frost: 0 }); Weather.ground.draw(c, G2, env, 'under', w8);
     } else Weather.ground.draw(c, G, env, 'over', w8);
   }
+  /* The sun and the moon (Colin, AD's day, assets/sun/DAY.md and sun.js; Robin's yes of 2026-10-23, "Looks amazing"): from above the
+     sky is never seen, so the sun is shown by what it does all day. Sun.state(t) gives every number for the time of day; the game
+     draws: the light across the frame from the sun's side (a multiply gradient near to far, a soft-light gradient, the warm wash and
+     the low sun's glow), in place of the old flat dusk tint; the sky's colours in the water with the sun's path glittering on it; the
+     shafts at the golden hour and the sunrise; the lit edges of the standing things on the sun's side while it is low (w.rimSprite:
+     a copy per picture per side, made when the evening or the morning begins and dropped after); the moon rising in the east,
+     crossing and setting, the night a little lighter and bluer under it, its silver path on the water and the stars in the water when
+     it is down. The cast shadows swinging with the sun wait for his silhouette version. The night palette and the fires' light stay
+     as they are, laid on after. */
+  var SUN = null, SWV = { cv: null }, SUNL = {};
+  function sunTick() { SUN = typeof Sun !== 'undefined' && !inCave ? Sun.state(day.t) : null; }
+  function sunWaterMask() {                   // the water in view as a mask (200 by 125, white where the world has water and no painted ground), made again when the view has moved
+    var V = SWV; if (!V.cv) { V.cv = document.createElement('canvas'); V.cv.width = 200; V.cv.height = 125; V.img = V.cv.getContext('2d').createImageData(200, 125); }
+    if (V.x == null || Math.abs(cam.x - V.x) * cam.z > 1 || Math.abs(cam.y - V.y) * cam.z > 1 || Math.abs(cam.z - V.z) > 0.001) {
+      V.x = cam.x; V.y = cam.y; V.z = cam.z; var D = V.img.data, gx, gy, i = 0, any = false;
+      for (gy = 0; gy < 125; gy++) { var wy = (cam.y + (2 * gy + 1 - 125) / cam.z) / K; for (gx = 0; gx < 200; gx++, i += 4) { var wx = cam.x + (2 * gx + 1 - 200) / cam.z; var isW = w.isWater(wx, wy) && !w.groundKind(wx, wy); D[i] = 255; D[i + 1] = 255; D[i + 2] = 255; D[i + 3] = isW ? 255 : 0; if (isW) any = true; } }
+      V.cv.getContext('2d').putImageData(V.img, 0, 0); V.any = any;
+    }
+    return V.any ? V.cv : null;
+  }
+  function sunLayer(key, W, H) { var L = SUNL[key]; if (!L || L.width !== W || L.height !== H) { L = SUNL[key] = document.createElement('canvas'); L.width = W; L.height = H; } return L; }
+  function sunRgba(c3, a) { return 'rgba(' + Math.round(c3[0]) + ',' + Math.round(c3[1]) + ',' + Math.round(c3[2]) + ',' + a + ')'; }
+  function sunHash(x, y) { var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
+  function sunGlitter(W, H, mask, x0, col, k, seed, n) {   // a path of light on the water toward the sun or the moon across the screen: dashes, thickest on its side, masked to the water
+    var cvl = sunLayer('gl', W, H), g = cvl.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+    var sunX = (x0 + 1) / 2 * W, i, A = Math.min(1.5, W * H / (1920 * 1080));
+    for (i = 0; i < Math.round(n * A); i++) { var u = sunHash(i, seed), dir = sunHash(i, seed + 9) < 0.5 ? -1 : 1, x = sunX + dir * Math.pow(u, 1.5) * W * 1.05, y = sunHash(i, seed + 2) * H;
+      var tw = 0.5 + 0.5 * Math.sin(clock * (2 + 3 * sunHash(i, seed + 5)) + i), len = (3 + 10 * (1 - u) * sunHash(i, seed + 3)) * (W / 1920 + 0.4);
+      g.fillStyle = sunRgba(col, k * tw * (0.35 + 0.6 * sunHash(i, seed + 4)) * (1 - u * 0.75)); g.fillRect(x - len / 2, y, len, 1.4 * (W / 1200 + 0.3)); }
+    g.globalCompositeOperation = 'destination-in'; g.imageSmoothingEnabled = true; g.drawImage(mask, 0, 0, W, H); g.globalCompositeOperation = 'source-over'; return cvl;
+  }
+  function drawSun(c) {                       // the day's light over the world and the season's light, under the weather and the night
+    var st = SUN; if (!st || inCave) return; var W = cv.width, H = cv.height, side = st.sx, sunX = (side + 1) / 2 * W, farX = W - sunX; if (Math.abs(sunX - farX) < 2) farX = sunX + 1;
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+    var a = Math.max(st.near[3], st.far[3]);
+    if (a > 0.005) { var g = c.createLinearGradient(sunX, 0, farX, 0); g.addColorStop(0, sunRgba(st.near, 1)); g.addColorStop(1, sunRgba(st.far, 1)); c.globalCompositeOperation = 'multiply'; c.globalAlpha = a; c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.near[3]; var g2 = c.createLinearGradient(sunX, 0, farX, 0); g2.addColorStop(0, sunRgba(st.near, 1)); g2.addColorStop(0.6, sunRgba(st.near, 0)); c.fillStyle = g2; c.fillRect(0, 0, W, H); }
+    if (st.warm && st.warm[3] > 0.005) { c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.warm[3]; c.fillStyle = sunRgba(st.warm, 1); c.fillRect(0, 0, W, H); }
+    if (st.glow[3] > 0.005) { c.globalCompositeOperation = 'screen'; c.globalAlpha = 1; var g3 = c.createRadialGradient(sunX, H * 0.35, 0, sunX, H * 0.35, W * 0.7); g3.addColorStop(0, sunRgba(st.glow, st.glow[3])); g3.addColorStop(1, sunRgba(st.glow, 0)); c.fillStyle = g3; c.fillRect(0, 0, W, H); }
+    var mask = (st.skyK > 0.005 || (st.path && st.pathK > 0.01)) ? sunWaterMask() : null;
+    if (mask && st.skyK > 0.005) { var wl = sunLayer('wl', W, H), gw = wl.getContext('2d'); gw.globalCompositeOperation = 'copy'; gw.imageSmoothingEnabled = true; gw.drawImage(mask, 0, 0, W, H); gw.globalCompositeOperation = 'source-in';
+      var sg = gw.createLinearGradient(sunX, 0, farX, 0); sg.addColorStop(0, sunRgba(st.sky[0], 1)); sg.addColorStop(0.5, sunRgba(st.sky[1], 1)); sg.addColorStop(1, sunRgba(st.sky[2], 1)); gw.fillStyle = sg; gw.fillRect(0, 0, W, H); gw.globalCompositeOperation = 'source-over';
+      c.globalCompositeOperation = 'color'; c.globalAlpha = st.skyK; c.drawImage(wl, 0, 0); c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.skyK * 0.8; c.drawImage(wl, 0, 0); }
+    if (mask && st.path && st.pathK > 0.01) { c.globalCompositeOperation = 'screen'; c.globalAlpha = 1; c.drawImage(sunGlitter(W, H, mask, side, st.path, st.pathK, 1, 2200), 0, 0); }
+    if (st.rays > 0.005) { c.globalCompositeOperation = 'screen'; var ox = side < 0 ? -W * 0.1 : W * 1.1, ra = side < 0 ? 0.42 : Math.PI - 0.42, i;
+      for (i = 0; i < 5; i++) { var y = H * (0.05 + 0.2 * i) + Math.sin(clock * 0.05 + i * 1.7) * 30 * (H / 1080), wdt = (50 + 70 * sunHash(i, 7)) * (H / 1080 + 0.3);
+        c.save(); c.translate(ox, y); c.rotate(ra); var gr = c.createLinearGradient(0, -wdt, 0, wdt); gr.addColorStop(0, sunRgba(st.near, 0)); gr.addColorStop(0.5, sunRgba(st.near, st.rays * (0.6 + 0.4 * Math.sin(clock * 0.3 + i)))); gr.addColorStop(1, sunRgba(st.near, 0)); c.globalAlpha = 1; c.fillStyle = gr; c.fillRect(0, -wdt, W * 1.05, wdt * 2); c.restore(); } }
+    c.restore();
+  }
+  function drawSunNight(c) {                  // after the night palette: the moon's path on the water and the stars in it when the moon is down
+    var st = SUN, L = light(); if (!st || inCave || L < 0.05) return; var W = cv.width, H = cv.height, mask = sunWaterMask(); if (!mask) return;
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'screen';
+    if (st.moon > 0.02) { c.globalAlpha = 1; c.drawImage(sunGlitter(W, H, mask, st.moonX, [205, 218, 244], st.moon * L, 31, 1800), 0, 0); }
+    var sc = SUNL.stars; if (!sc || sc.width !== W || sc.height !== H) { sc = SUNL.stars = document.createElement('canvas'); sc.width = W; sc.height = H; var g = sc.getContext('2d'); for (var n = 0; n < 500; n++) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * sunHash(n, 51)) + ')'; g.fillRect(sunHash(n, 52) * W, sunHash(n, 53) * H, 1.4, 1.4); } }
+    var sl = sunLayer('sl', W, H), gs = sl.getContext('2d'); gs.globalCompositeOperation = 'copy'; gs.drawImage(sc, 0, 0); gs.globalCompositeOperation = 'destination-in'; gs.imageSmoothingEnabled = true; gs.drawImage(mask, 0, 0, W, H); gs.globalCompositeOperation = 'source-over';
+    c.globalAlpha = L * (1 - 0.6 * st.moon) * 0.7; c.drawImage(sl, 0, 0); c.restore();
+  }
   function weatherNow() { return WTH.spells.filter(function (S) { return S.k > 0.02; }).map(function (S) { return S.kind + ' ' + S.k.toFixed(2); }).join(', ') || 'clear'; }
   /* Swimming (Robin, 2026-10-23: "I also want the character to be able to wade in shallow waters around the island, and swim in the
      water. But his stamina shouldnt last til next island or very far"): the shallows are waded as before (w.isWade); past them he
@@ -16021,7 +16229,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P.st <= 0 && !swim.spent) { swim.spent = true; if (!swim.said) { swim.said = true; toast('You can swim no further: back to the shore'); } }
     swim.ripT += dt;
   }
-  var DAY_LEN = 1800, DUSK_AT = 840, NIGHT_AT = 1200, DAWN_AT = 1740, day = { t: 0, n: 1 }, sleep = null, rested = 0, nightCv = null;
+  var DAY_LEN = 1800, DUSK_AT = 840, NIGHT_AT = 1200, DAWN_AT = 1620, day = { t: 0, n: 1 }, sleep = null, rested = 0, nightCv = null;   /* (the dawn three minutes long since 2026-10-23, Colin, AD's day with Robin's yes: the sunrise can be seen; it was 1740) */
   function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return Math.pow((t - DUSK_AT) / (NIGHT_AT - DUSK_AT), DUSK_POW); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
   var DUSK_POW = 2.4, NOTE_AT = 0.25;   /* (2026-10-14, Robin: the dark took five minutes to come after its message and changed little after it. The evening is golden and
      hardly darker for its first half, then the dark falls faster and faster (light() is the dusk's share to the power 2.4: 0.19 at its middle, 0.68 at
@@ -16276,8 +16484,28 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.restore();
     var keys = Object.keys(BSH.cache); if (keys.length > 20) { keys.sort(function (a, b) { return BSH.cache[a].used - BSH.cache[b].used; }); keys.slice(0, keys.length - 20).forEach(function (k2) { delete BSH.cache[k2]; }); }   // the least lately seen let go
   }
+  /* The sun's shadows (Colin, AD's day, DAY.md "Shadows"; Robin: "The shadows all look the same"): by day every set piece casts its own
+     silhouette, laid flat from its foot away from the sun with one transform (its height along the shadow, its width across it,
+     squashed by K), long to the west in the morning, short at noon, long to the east in the evening; all into one layer tinted once
+     with the state's colour and laid on at its strength, so where two cross they do not darken twice. The night's fire shadows stay. */
+  var SHL = { cv: null };
+  function drawSunShadows(c, hw, hh) {
+    var st = SUN; if (!st || st.sk <= 0.01 || inCave || !STICK.cast) return false; var W = cv.width, H = cv.height, L = SHL.cv; if (!L || L.width !== W || L.height !== H) { L = SHL.cv = document.createElement('canvas'); L.width = W; L.height = H; }
+    var g = L.getContext('2d'), M = c.getTransform(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
+    var ang = Sun.shadowAngle(st.sx), k = 0.5 * st.len, pxv = Math.sin(ang), pyv = -0.75 * Math.cos(ang), ca = Math.cos(ang), sa = Math.sin(ang), n = 0;
+    function lay(o, s, sS, gk) { var sil = w.silSprite(o.name, o.v); if (!sil) return; var fx = o.x, fy = o.y * K, x = o.x + s.l * sS, y = o.y * K + s.t * sS, wd = s.w * sS * gk, ht = s.h * sS * gk;
+      g.setTransform(M.a, M.b, M.c, M.d, M.e, M.f); g.transform(pxv, pyv, -k * ca, -k * sa, fx - pxv * fx + k * ca * fy, fy - pyv * fx + k * sa * fy); g.drawImage(sil, x, y, wd, ht); n++; }
+    var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
+    for (by = by0; by <= by1; by++) for (bx = bx0; bx <= bx1; bx++) { var list = buckets[by * CW + bx]; if (!list) continue; list.forEach(function (o) {
+      if (o.painted || o.peak || o.inFace || o.shelter || o.ledge || o.noShadow || o.dying != null) return; var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, ph = s.h * sS; if (ph < 10 || !s.fixed) return;
+      if (o.x < cam.x - hw - ph * 2 || o.x > cam.x + hw + ph * 2 || o.y * K < cam.y - hh - ph || o.y * K > cam.y + hh + ph) return;
+      lay(o, s, sS, o.grow != null ? 0.3 + 0.7 * Math.min(1, o.grow) : 1); }); }
+    if (!n) return true;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = sunRgba(st.shade, 1); g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = st.sk; c.drawImage(L, 0, 0); c.restore(); return true;
+  }
   function drawCastShadows(c, hw, hh) {    // every set piece's shadow thrown to the lower right, under everything that stands
-    if (inCave || !STICK.cast) return; var sk = sunK(); if (!sk) return;
+    if (inCave || !STICK.cast) return; if (drawSunShadows(c, hw, hh)) return; var sk = sunK(); if (!sk) return;
     var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
     for (by = by0; by <= by1; by++) for (bx = bx0; bx <= bx1; bx++) { var list = buckets[by * CW + bx]; if (!list) continue; list.forEach(function (o) {
       if (o.painted || o.peak || o.inFace || o.shelter || o.ledge || o.noShadow || o.dying != null) return; var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, ph = s.h * sS; if (ph < 10) return;
@@ -16376,7 +16604,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!nightCv) { nightCv = document.createElement('canvas'); nightCv.width = 200; nightCv.height = 125; }
     var n = nightCv.getContext('2d'), P = hero();
     n.globalCompositeOperation = 'source-over';
-    var MOON = lt('moon'), r = Math.round(255 - (MOON ? 200 : 222) * L + 0 * D), g = Math.round(255 - (MOON ? 184 : 215) * L - 70 * D), b = Math.round(255 - (MOON ? 136 : 178) * L - 120 * D);   // dusk goes amber, night goes very dark blue (under a moon a little lighter, and bluer)
+    var mn = SUN ? SUN.moon : (lt('moon') ? 1 : 0), mm = 1 - 0.12 * mn, MOON = mn > 0.02, Dk = SUN ? 0 : 1, r = Math.round(255 - 222 * L * mm), g = Math.round(255 - 215 * L * mm - 70 * D * Dk), b = Math.round(255 - 178 * L * (1 - 0.2 * mn) - 120 * D * Dk);   // night goes very dark blue, a little lighter and bluer under the moon as it crosses (Colin, AD's day); the old amber dusk only without the sun's state
     n.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'; n.fillRect(0, 0, 200, 125);
     if (L > 0.05) {               /* the water's night is darker and greyer than the land's (the palette): half its remaining light, a third less colour, in blocks of six screen pixels tested against the world's water */
       var wk = 0.5 + 0.5 * (1 - L), wgr = (r + g + b) / 3, wr = Math.round((r + (wgr - r) / 3) * wk), wg = Math.round((g + (wgr - g) / 3) * wk), wb = Math.round((b + (wgr - b) / 3) * wk), BS = 3, gx, gy;
@@ -16399,7 +16627,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     c.save(); c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(nightCv, 0, 0, 400, 250); c.restore();
     if (L > 0.05) { c.save(); c.globalCompositeOperation = 'screen'; c.fillStyle = 'rgba(40,60,120,' + (0.22 * L).toFixed(3) + ')'; c.fillRect(0, 0, 400, 250); c.restore(); }   /* the darks lifted with blue after the multiply (the palette: Bauer's blue, not black-teal mud) */
-    if (MOON && L > 0.1) { c.save(); c.globalCompositeOperation = 'screen'; var mg = c.createLinearGradient(0, 0, 0, 110); mg.addColorStop(0, 'rgba(150,180,255,' + (0.1 * L).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(150,180,255,0)'); c.fillStyle = mg; c.fillRect(0, 0, 400, 110); c.restore(); }   /* a faint cool light from the top when there is a moon */
+    if (MOON && L > 0.1) { c.save(); c.globalCompositeOperation = 'screen'; var mg = c.createLinearGradient(0, 0, 0, 110); mg.addColorStop(0, 'rgba(150,180,255,' + (0.1 * L * mn).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(150,180,255,0)'); c.fillStyle = mg; c.fillRect(0, 0, 400, 110); c.restore(); }   /* a faint cool light from the top when there is a moon */
     if (L > 0.1) {                         // what no fire lights loses a third of its colour: grey laid on with the 'saturation' blend, the lights cut out of it (every night since 2026-10-21; it was the moon trial's)
       if (!satCv) { satCv = document.createElement('canvas'); satCv.width = 200; satCv.height = 125; } var sg = satCv.getContext('2d'); sg.globalCompositeOperation = 'source-over'; sg.fillStyle = '#808080'; sg.fillRect(0, 0, 200, 125); sg.globalCompositeOperation = 'destination-out';
       fsN.forEach(function (f) { var qx = ((f.x - cam.x) * cam.z + 200) / 2, qy = ((f.y * K - cam.y) * cam.z + 125) / 2, qr = f.r * (f.lamp ? 0.4 : 1) * 0.95 * cam.z / 2; if (qx < -qr || qx > 200 + qr || qy < -qr || qy > 125 + qr) return; var q = sg.createRadialGradient(qx, qy, 0, qx, qy, qr); q.addColorStop(0, 'rgba(0,0,0,1)'); q.addColorStop(0.6, 'rgba(0,0,0,0.8)'); q.addColorStop(1, 'rgba(0,0,0,0)'); sg.fillStyle = q; sg.beginPath(); sg.arc(qx, qy, qr, 0, 7); sg.fill(); });
@@ -17129,6 +17357,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if ((v.sailSet || 0) > 0.5 && seaSnd.set <= 0.5) sfx('sail_fill', 0.5); seaSnd.set = v.sailSet || 0;
     if (v.beached && !seaSnd.beached) { sfx('keel_sand', 0.6); crewLand(v); } else if (!v.beached && seaSnd.beached) sfx('keel_off', 0.45); seaSnd.beached = v.beached ? 1 : 0;
     if (Math.abs(v.speed || 0) > 20 && (seaSnd.creakT -= dt) <= 0) { seaSnd.creakT = 6 + Math.random() * 8; sfx('creak', Yard.rigged(v.kind) ? 0.35 : 0.2); }
+    if ((v.sailSet || 0) > 0.5 && (v.sailFill || 0) < 0.3 && (seaSnd.flapT = (seaSnd.flapT || 0) - dt) <= 0) { seaSnd.flapT = 1 + Math.random() * 1.2; sfx('sail_flap', 0.4); }   /* the sail set but spilling wind: it flaps every second or two (Derek, SD's sail_flap) */
   }
   function crewLand(v) {                   // a man of the crew says a word as she runs up a beach (line.crew.land, Alistair, LD's handoff 10, Robin's yes of 2026-10-23); once in 20 s, never the line just said
     if (v !== raft || !v.aboard || !(v.crew > 0) || clock < (seaSnd.landT || 0)) return;
@@ -17280,6 +17509,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
      the gulls over everything. A shore point near the hero (the nearest coast, looked for every two seconds) is where the gulls
      circle when there is no ship. */
   var KEEP_HERO = ['idle', 'idle_look', 'jog', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn'], KEEP_PEOPLE = ['idle', 'idle_look', 'walk', 'jog', 'run', 'sit'], trimT = 0;
+  var rimDropT = 0;
+  function rimTick(dt) { if (!SUN || SUN.rimK > 0.01) { rimDropT = 0; return; } rimDropT += dt; if (rimDropT > 30) { rimDropT = 0; w.rimDrop(); } }   /* (the lit copies dropped half a minute after the sun is high or down) */
   function trimTick(dt) {                  /* the hero's and the people's sheets of clips not drawn for two minutes let go (2026-10-21: the kit warmed eleven clips at the start and kept every clip ever used; now the resident set is what the last minutes used) */
     if ((trimT += dt) < 5) return; trimT = 0; if (sprHero) Sprites.trim(sprHero, KEEP_HERO, 120); if (PEOPLE) Sprites.trim(PEOPLE, KEEP_PEOPLE, 120);
   }
@@ -17293,7 +17524,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt; if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
     if (!seen.left && !SCENE && !inCave && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
-    windTick(dt); yearTick(dt); weatherTick(dt); wgTick(dt); swimTick(dt); landingTick(dt); seaTick(dt); trimTick(dt); fleetTick();
+    windTick(dt); sunTick(); rimTick(dt); yearTick(dt); weatherTick(dt); wgTick(dt); swimTick(dt); landingTick(dt); seaTick(dt); trimTick(dt); fleetTick();
     var zt = zoomTarget(); if (!inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6); if (!(zoom > 0.15)) zoom = zt > 0.15 ? zt : ZOOM0;   /* (a guard: the frame log once showed the camera's zoom below nothing for ten frames, 2026-10-22, the night's light then threw) */   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
@@ -21508,7 +21739,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
             var lit = SIDES && o.dying == null && !o.shake && !o.peak && !o.inFace && !o.shelter && h > 12 && !(P.y < o.y && P.x > px - 4 && P.x < px + w + 4 && P.y * K > py - 6) ? figLit(o.x, o.y, false) : null;   // (not a thing you stand behind: it is drawn thin there, and its lit edge would show through it)
             if (lit && lit.rim) { ctx.globalAlpha = lit.rim.a; ctx.drawImage(silCol(s, '#ffb45e'), px + lit.rim.ox, py + lit.rim.oy, w, h); ctx.globalAlpha = 1; }
             drawProp(o, s, px, py, w, h, P);
-            if (WG.G && WG.G.wet > 0.02 && s.fixed && !o.bare && o.dying == null && !o.shake) { var wsp = w.wetSprite(o.name, o.v); if (wsp) { ctx.globalAlpha = Math.min(1, WG.G.wet); ctx.drawImage(wsp, px, py, w, h); ctx.globalAlpha = 1; } }   /* the thing wet in the rain (Weather.wetPicture) */
+            if (WG.G && WG.G.wet > 0.02 && s.fixed && !o.bare && o.dying == null && !o.shake) { var wsp = WLD.wetSprite(o.name, o.v); if (wsp) { ctx.globalAlpha = Math.min(1, WG.G.wet); ctx.drawImage(wsp, px, py, w, h); ctx.globalAlpha = 1; } }   /* the thing wet in the rain (Weather.wetPicture) */
+            if (SUN && SUN.rimK > 0.01 && s.fixed && !o.bare && o.dying == null && !o.shake) { var rk = SUN.rimK * Math.min(1, Math.abs(SUN.sx) * 1.4), rsp = rk > 0.01 ? WLD.rimSprite(o.name, o.v, SUN.sx < 0 ? -1 : 1) : null; if (rsp) { ctx.globalAlpha = rk; ctx.drawImage(rsp, px, py, w, h); ctx.globalAlpha = 1; } }   /* its edge lit on the sun's side while the sun is low (Sun.rimPicture) */
             if (lit && lit.dark) { ctx.globalAlpha = lit.dark; ctx.drawImage(silCol(s, '#060a1c'), px, py, w, h); ctx.globalAlpha = 1; }
             else if (lit && lit.warm) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = lit.warm; ctx.drawImage(silCol(s, '#ff8a2a'), px, py, w, h); ctx.restore(); }
             if (gr) stickGrass(ctx, s, o.x, o.y * K + 0.7, w, gr === 2);
@@ -21593,8 +21825,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (seaEnv && !inCave) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); Sea.drawGulls(c, sea, seaEnv, SEA_IMG); c.restore(); }   /* the gulls in the air, over everything on the ground */
       if (kit.STYLE.look === 3 && !inCave && !PERF.skip.grain && LAB.tone.grain !== false) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); c.globalAlpha = 0.085 * (kit.STYLE.texture || 1) * (typeof LAB.tone.grain === 'number' ? LAB.tone.grain : 1); c.fillStyle = kit.grain(c); c.fillRect(cam.x - 200 / cam.z - 2, cam.y - 125 / cam.z - 2, 400 / cam.z + 4, 250 / cam.z + 4); c.restore(); c.save(); c.globalAlpha = 1; if (kit.STYLE.vignette > 0) { var vg = c.createRadialGradient(200, 125, 120, 200, 125, 300); vg.addColorStop(0, 'rgba(20,16,12,0)'); vg.addColorStop(1, 'rgba(20,16,12,' + kit.STYLE.vignette + ')'); c.fillStyle = vg; c.fillRect(0, 0, 400, 250); } c.restore(); }   // the ink look: grain over the world and a vignette
       if (!inCave && typeof Seasons !== 'undefined' && w.season !== 'summer') Seasons.light(c, 400, 250, w.season);   /* the season's light over the world, under the night (the Art Director's module) */
+      if (!inCave) drawSun(c);   /* the sun's light across the frame, the sky and its path in the water, the shafts (Colin, AD's day) */
       if (!inCave) { wgDraw(c, 'over'); weatherDraw(c); }   /* the weather over the world and the season's light, under the night; the breath, the kicked snow and the splashes over the figures */
-      if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) drawNight(c);
+      if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) { drawNight(c); drawSunNight(c); }
       if (!inCave && LAB.light.moon) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawMoonSea(c, 200 / cam.z, 125 / cam.z); c.restore(); }
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
       if (MS.on && MS.clean) { c.restore(); return; }   /* the models scene's clean view: no chart, no prompts, no bars */

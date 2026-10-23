@@ -200,6 +200,19 @@ function make(kit, opts) {
     return src.gs.sp;
   }
   w.seasonSprite = seasonSprite;
+  var RIM_COL = [255, 214, 150], rimN = 0;
+  w.rimSprite = function (name, v, side) {  // the set piece with its sun-side edge lit (the Art Director's Sun.rimPicture, 2026-10-23): a copy per picture per side, made when the sun is low (at most two a frame) and drawn over the picture at the state's strength
+    if (typeof Sun === 'undefined' || !Sun.rimPicture) return null; var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null;
+    var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null; var key = side < 0 ? 'L' : 'R'; if (im.rim && im.rim.from === base.cv && im.rim[key]) return im.rim[key]; if (rimN >= 2) return null; rimN++;
+    var cw = base.cv.naturalWidth || base.cv.width, chh = base.cv.naturalHeight || base.cv.height, cv = kit.mk(cw, chh), g = cv.getContext('2d'); g.drawImage(base.cv, 0, 0); var id = g.getImageData(0, 0, cw, chh); Sun.rimPicture(id.data, cw, chh, side, RIM_COL, 1); g.putImageData(id, 0, 0);
+    if (!im.rim || im.rim.from !== base.cv) im.rim = { from: base.cv }; im.rim[key] = cv; return cv;
+  };
+  w.silSprite = function (name, v) {        // a set piece's shape in black at a quarter of its size (the Art Director's Sun.silhouette): made once a picture (per season's copy), drawn up again as its shadow
+    var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null; var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null;
+    if (im.sil && im.sil.from === base.cv) return im.sil.cv; var cw = base.cv.naturalWidth || base.cv.width, chh = base.cv.naturalHeight || base.cv.height, sw = Math.max(8, Math.round(cw / 4)), sh = Math.max(8, Math.round(chh / 4)), cv = kit.mk(sw, sh), g = cv.getContext('2d');
+    g.drawImage(base.cv, 0, 0, sw, sh); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, sw, sh); im.sil = { from: base.cv, cv: cv }; return cv;
+  };
+  w.rimDrop = function () { for (var k in IMAGES) delete IMAGES[k].rim; };   // (dropped at midday and at night: w.rimDrop from the page)
   w.wetSprite = function (name, v) {        // the set piece's picture graded wet (the Art Director's Weather.wetPicture, 2026-10-23), made once a season per picture and drawn over the dry one at the ground's wetness
     if (typeof Weather === 'undefined' || !Weather.wetPicture) return null; var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null;
     var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null; if (im.wsp && im.wsp.from === base.cv) return im.wsp.cv;
@@ -1368,7 +1381,7 @@ function make(kit, opts) {
   w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
-    gradeN = 0;
+    gradeN = 0; rimN = 0;
     var pw = CT * T, phh = CT * TS, baked = 0;
     if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {

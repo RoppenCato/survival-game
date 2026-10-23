@@ -1,0 +1,239 @@
+{
+  "about": "The ships sounds: 48 kHz 16-bit mono WAVs, every file's peak at -1 dBFS. Play a sound at its \"gain\" (multiply) so the set is levelled against itself: swings under hits, hits under heavy hits, the finishing blow the loudest. Pick one of the files at random each time. loud_db: the loudest 50 ms of the file before the gain; target_db: where it should sit (the sword's hit = about 0).",
+  "sample_rate": 48000,
+  "channels": 1,
+  "peak_dbfs": -1,
+  "made": "2026-10-23T13:17:47.532Z",
+  "sounds": {
+    "oar_a": {
+      "files": [
+        "oar_a_1.wav",
+        "oar_a_2.wav",
+        "oar_a_3.wav",
+        "oar_a_4.wav"
+      ],
+      "seconds": [
+        1.198,
+        1.001,
+        1.095,
+        1.084
+      ],
+      "loud_db": -12.7,
+      "target_db": -8,
+      "use": "one man's oar stroke, slow (raw); every 1.2 to 1.6 s while rowing: well under a blow",
+      "gain": 0.192,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -8 dB relative to it"
+    },
+    "oar_b": {
+      "files": [
+        "oar_b_1.wav",
+        "oar_b_2.wav",
+        "oar_b_3.wav",
+        "oar_b_4.wav"
+      ],
+      "seconds": [
+        1.128,
+        1.095,
+        1.103,
+        1.068
+      ],
+      "loud_db": -12.9,
+      "target_db": -8,
+      "use": "one man's oar stroke, quick (raw)",
+      "gain": 0.196,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -8 dB relative to it"
+    },
+    "oars_v": {
+      "files": [
+        "oars_v_1.wav",
+        "oars_v_2.wav",
+        "oars_v_3.wav"
+      ],
+      "seconds": [
+        1.136,
+        1.084,
+        1.129
+      ],
+      "loud_db": -11.2,
+      "target_db": -5,
+      "use": "a crew's oars together (the studio's)",
+      "gain": 0.228,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -5 dB relative to it"
+    },
+    "sail_fill_a": {
+      "files": [
+        "sail_fill_a_1.wav",
+        "sail_fill_a_2.wav",
+        "sail_fill_a_3.wav",
+        "sail_fill_a_4.wav"
+      ],
+      "seconds": [
+        0.684,
+        0.872,
+        1.019,
+        0.418
+      ],
+      "loud_db": -18.7,
+      "target_db": -4,
+      "use": "the sail catching the wind as it is set (raw flag snaps); once",
+      "gain": 0.606,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -4 dB relative to it"
+    },
+    "sail_fill_v": {
+      "files": [
+        "sail_fill_v_1.wav",
+        "sail_fill_v_2.wav",
+        "sail_fill_v_3.wav"
+      ],
+      "seconds": [
+        1.379,
+        1.585,
+        1.413
+      ],
+      "loud_db": -16.3,
+      "target_db": -4,
+      "use": "the sail catching the wind (the studio's, with weight)",
+      "gain": 0.46,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -4 dB relative to it"
+    },
+    "sail_flap_a": {
+      "files": [
+        "sail_flap_a_1.wav",
+        "sail_flap_a_2.wav",
+        "sail_flap_a_3.wav",
+        "sail_flap_a_4.wav"
+      ],
+      "seconds": [
+        0.495,
+        0.536,
+        0.554,
+        0.543
+      ],
+      "loud_db": -14.5,
+      "target_db": -12,
+      "use": "the sail luffing (raw, longer); may repeat every second or two: quiet",
+      "gain": 0.149,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -12 dB relative to it"
+    },
+    "sail_flap_b": {
+      "files": [
+        "sail_flap_b_1.wav",
+        "sail_flap_b_2.wav",
+        "sail_flap_b_3.wav",
+        "sail_flap_b_4.wav"
+      ],
+      "seconds": [
+        0.392,
+        0.317,
+        0.378,
+        0.338
+      ],
+      "loud_db": -16.2,
+      "target_db": -12,
+      "use": "the sail luffing (raw, shortest)",
+      "gain": 0.181,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -12 dB relative to it"
+    },
+    "creak_a": {
+      "files": [
+        "creak_a_1.wav",
+        "creak_a_2.wav",
+        "creak_a_3.wav",
+        "creak_a_4.wav"
+      ],
+      "seconds": [
+        0.846,
+        1.241,
+        0.436,
+        1.093
+      ],
+      "loud_db": -6.6,
+      "target_db": -10,
+      "use": "the hull creaking at sea (Kenney's creaks at half speed); now and then",
+      "gain": 0.075,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -10 dB relative to it"
+    },
+    "creak_b": {
+      "files": [
+        "creak_b_1.wav",
+        "creak_b_2.wav",
+        "creak_b_3.wav",
+        "creak_b_4.wav"
+      ],
+      "seconds": [
+        1.151,
+        0.716,
+        0.449,
+        0.394
+      ],
+      "loud_db": -16,
+      "target_db": -10,
+      "use": "the hull and rigging creaking (the tree creak and a wood squeak, slowed)",
+      "gain": 0.223,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -10 dB relative to it"
+    },
+    "creak_v": {
+      "files": [
+        "creak_v_1.wav",
+        "creak_v_2.wav",
+        "creak_v_3.wav"
+      ],
+      "seconds": [
+        1.305,
+        0.935,
+        1.283
+      ],
+      "loud_db": -6.6,
+      "target_db": -10,
+      "use": "the hull and rigging creaking (the studio's: planks, rope, a knock)",
+      "gain": 0.075,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -10 dB relative to it"
+    },
+    "keel_sand_v": {
+      "files": [
+        "keel_sand_v_1.wav",
+        "keel_sand_v_2.wav",
+        "keel_sand_v_3.wav"
+      ],
+      "seconds": [
+        0.993,
+        1.155,
+        0.908
+      ],
+      "loud_db": -11.1,
+      "target_db": -3,
+      "use": "the keel running up onto sand, once on beaching (built from the studio's own material)",
+      "gain": 0.283,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -3 dB relative to it"
+    },
+    "keel_off_v": {
+      "files": [
+        "keel_off_v_1.wav",
+        "keel_off_v_2.wav",
+        "keel_off_v_3.wav"
+      ],
+      "seconds": [
+        0.783,
+        0.791,
+        0.788
+      ],
+      "loud_db": -9.8,
+      "target_db": -5,
+      "use": "pushing off the sand (built from the studio's own material)",
+      "gain": 0.194,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -5 dB relative to it"
+    }
+  }
+}
