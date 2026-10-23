@@ -12,7 +12,7 @@ the answers to Robin's four questions are in section 5.
 input, four fixed passives (hand, foot, eye, heart), the library as stones round the altar, binding by blood at the altar only,
 actives that charge on blood drawn, no plain-number runes, marks for the combinations; **a man may be sacrificed** (the dark road,
 with its price). At the altar you pick the slot you want to change (say the hand) and see only the runes of your library that fit
-it. The animals' tiers and the first marks are still mine to settle with him. The chapter that builds it is not yet said (the rune
+it. **A rune gains power with time and use** (Robin's yes, the same day): a bound rune grows through its tiers by being used, beside the deeper tier an animal's blood can give at once. The animals' tiers and the first marks are still mine to settle with him. The chapter that builds it is not yet said (the rune
 system is reworked when the pet chapter is worked on, Robin's earlier word).
 
 Robin's brief: the system today is convoluted and confusing, the learning paces oddly, the arm ring is too complicated to make
