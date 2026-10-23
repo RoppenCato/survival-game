@@ -1,4 +1,4 @@
-// src/seasons.js: the game's copy of the Art Director's seasons_grade.js (assets/seasons/, the drops of 2026-10-23) with the ice's
+// src/seasons.js: the game's copy of the Art Director's seasons_grade.js (assets/seasons/, 2026-10-23), made by tools/seasons_sync.py with the ice's
 // distance found on a coarse grid (the only change). The seasons of home's meadow as Robin picked them (2026-10-23: spring A fresh green, autumn B fiery, winter A deep
 // snow; docs/seasons.md). The grades of the board he picked from, as one module the game can call when it bakes, never a frame at a
 // time. Works in the browser and in Node; every function works on ImageData (d = data array, w, h) or a 2d context.
@@ -59,6 +59,7 @@
     if (season === 'winter') {
       if (kind === 'flower' || kind === 'mushrooms') return false;        // no flowers and no toadstools in the snow (the season's own pieces carry their season in seasonal.json)
       for (y = 0; y < h; y++) for (x = 0; x < w; x++) { i = (y * w + x) * 4; if (d[i + 3] < 10) continue; c = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+        if (kind === 'wildHerbs') { if (c[2] > 0.16) { var dh = hsl2rgb(34, 0.26, clamp(c[2] * 0.78 + 0.06, 0, 0.78)); d[i] = dh[0]; d[i + 1] = dh[1]; d[i + 2] = dh[2]; } continue; }   // the herbs dry where they stand: leaves brown, the white heads gone to pale seed (2026-10-23, Clive, GD saw them green and in bloom)
         if (isLeaf(c[0], c[1], c[2])) { var o = kind === 'pine' ? hsl2rgb(150, c[1] * 0.55, c[2] * 0.82) : hsl2rgb(35, 0.28, clamp(c[2] * 0.9 + 0.05, 0, 0.8)); d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2]; } }
       if (!capped) snowOn(d, w, h, SNOW_DEPTH[kind] || SNOW_DEPTH.def, kind === 'pine' ? 0.36 : 0);
       return true;
@@ -86,7 +87,7 @@
       var grass = hh > 60 && hh < 205 && ss > 0.07, sand = hh >= 30 && hh <= 60 && ss > 0.3 && ll > 0.5;   // (the meadow's own shade is bluish: it takes the season too)
       if (season === 'winter') {
         var dirt = !grass && !sand && hh >= 12 && hh <= 55 && ss > 0.1 && ll < 0.55;
-        if (dirt) { var tn = 0.62 + 0.3 * vn(x / 9, y / 7, 8), sp = snowAt(Math.max(ll, 0.3) + 0.36 + (vn(x / 30, y / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0], tn); d[i + 1] = mix(d[i + 1], sp[1], tn); d[i + 2] = mix(d[i + 2], sp[2], tn); }   // trodden earth, paths and yards: packed snow as light as the rest, the earth showing here and there (2026-10-23: their darker snow kept the patches' shapes)
+        if (dirt) { var sp = snowAt(0.55 + (vn(x / 30, y / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0] + 3, 0.92); d[i + 1] = mix(d[i + 1], sp[1], 0.92); d[i + 2] = mix(d[i + 2], sp[2] - 3, 0.92); }   // trodden earth, paths and yards: packed snow a shade greyer than the field, smooth (2026-10-23: their darker snow kept the patches' shapes; then a mottle of earth read as blocks at the game's enlargement)
         else if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn(x / 30, y / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
         else { d[i] = mix(d[i], 150, 0.3); d[i + 1] = mix(d[i + 1], 158, 0.3); d[i + 2] = mix(d[i + 2], 175, 0.3); }   // rock: greyed, its snow from above
       } else if (grass) {
