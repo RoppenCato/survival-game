@@ -224,7 +224,7 @@ PAGES = [
     ('index', 'index'),
     ('art-editor', 'art'),          # the Art Editor's set pieces (2026-10-21; its figures are game.html?scene=models)
     ('sea-editor', 'sea'),
-    ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'),
+    ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'), ('rune-browser', 'runes'),   # the Rune Browser (2026-10-23)
 ]
 # ?mute=1 on any page silences it: every sound the page makes goes to a gain of nothing (Robin, 2026-10-13: the sound was on
 # while pages were tested by script, and the browser pane cannot be silenced). It goes in before the page's first script, so

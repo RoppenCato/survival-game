@@ -7873,7 +7873,7 @@ __COMBAT__
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
+      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {
@@ -7890,6 +7890,7 @@ __COMBAT__
     else if (id === 'boarWild') { var kw = placeAnimal('boar', 0, { x: P.x + 140, y: P.y + 20 }, false); if (kw) { kw.awake = true; kw.aggro = 60; } }
     else if (id === 'men') { [0, 1].forEach(function (k) { var m2 = spawnMan(0, P.x + 140 + k * 30, P.y + (k ? 30 : -20), k ? 'axe' : 'sword', 1, 4); m2.awake = true; m2.aggro = 60; m2.loyal = true; }); }   /* (the Battle test's men, in leather with shields, come at you at once) */
     else if (id === 'blood') { Runes2.readyAll(R2); }
+    else if (id === 'unbuilt') { Runes2.OPTS.includeData = !Runes2.OPTS.includeData; }
     else if (id === 'trees') { Runes2.learn(R2, 'thorsFell', Math.max(1, Runes2.tierOf(R2, 'thorsFell'))); Runes2.bind(R2, 'swing', 'thorsFell'); var tx0 = P.x + 70, ty0 = P.y - 30, tk; for (tk = 0; tk < 4; tk++) (function (x, y) { var near = []; w.eachProp(function (o) { if (Math.hypot(o.x - x, o.y - y) < 30) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var tp = { name: 'pine', x: x, y: y, s: 0.58, r: 11, v: tk % 3, kind: 'tree', leanDir: 1 }; tp.max = tp.hp = World.HP.pine * (0.7 + 0.6 * tp.s); w.addProp(tp); })(tx0 + tk * 44, ty0); toast('Thor\u2019s fell on the swing: fell the first pine toward the others'); }
     else if (id === 'altar') { if (runeSite) { P.x = runeSite.x; P.y = runeSite.y - 44; P.face = Math.PI / 2; P.lvl = 0; } }
     else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }

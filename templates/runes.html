@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rune Browser</title>
+<style>
+  :root { --bg: #171a1f; --panel: #20242b; --ink: #e8e4da; --muted: #a9a399; --line: #3a3f48; --btn: #2a2f38; --on: #4caf7d; --bad: #e07a5f; --gold: #ead08a; --vellum: #e9dcc0; --vink: #2a1f18; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
+  .wrap { max-width: 2200px; margin: 0 auto; padding: 18px 24px 40px; }
+  h1 { margin: 0 0 6px; font-size: 22px; } h2 { margin: 14px 0 8px; font-size: 15px; }
+  .lede { color: var(--muted); margin: 0 0 14px; max-width: 1100px; }
+  .lede a { color: var(--gold); }
+  .cols { display: grid; grid-template-columns: minmax(640px, 1fr) 520px; gap: 20px; align-items: start; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+  button { background: var(--btn); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 6px 11px; font: inherit; cursor: pointer; min-height: 34px; }
+  button[aria-pressed="true"] { background: var(--on); color: #10231a; border-color: var(--on); }
+  button.gold { background: var(--gold); color: #2a1f18; border-color: var(--gold); }
+  button.small { min-height: 28px; padding: 3px 9px; font-size: 13px; }
+  input[type=text], select, textarea { background: #15181d; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; }
+  input[type=text], select { min-height: 34px; }
+  textarea { width: 100%; min-height: 56px; resize: vertical; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .card { background: var(--vellum); color: var(--vink); border-radius: 10px; padding: 10px 12px 10px 58px; position: relative; cursor: pointer; border: 2px solid transparent; min-height: 96px; box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+  .card:hover { border-color: var(--gold); }
+  .card.sel { border-color: #b8352c; }
+  .card canvas { position: absolute; left: 10px; top: 10px; width: 40px; height: 40px; }
+  .card .nm { font-weight: 700; font-size: 16px; }
+  .card .meta { font-size: 12px; color: #5a4a3c; margin: 1px 0 5px; }
+  .card .tx { font-size: 13px; line-height: 1.35; }
+  .card .tag { position: absolute; right: 10px; top: 9px; font-size: 11px; padding: 1px 7px; border-radius: 9px; background: #cdbf9e; color: #3a2a24; }
+  .card .tag.built { background: #8fbf8a; color: #10231a; } .card .tag.edited { background: #e0b35f; } .card .tag.new { background: #d08a6a; }
+  .card .wants { font-size: 11.5px; color: #7a3b2c; margin-top: 4px; }
+  .counts { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .counts b { color: var(--ink); }
+  .ed label { display: block; font-size: 12.5px; color: var(--muted); margin: 8px 0 2px; }
+  .ed .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ed input[type=text], .ed select { width: 100%; }
+  .ed .tier { margin-top: 4px; }
+  .note { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  pre.out { background: #0f1115; color: #cfe2c7; padding: 10px; border-radius: 8px; max-height: 320px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
+  .menu { position: fixed; top: 10px; right: 14px; }
+  .menu a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="menu"><a href="index.html">menu</a></div>
+<div class="wrap">
+  <h1>Rune Browser</h1>
+  <p class="lede">Every rune of the game by kind, slot and pool, with its three tiers' words and numbers and what it still wants of the Art Director and the Sound Director. Click a card to read or change it; <b>New rune</b> adds one of your own. What you change is kept in this browser and shown as text under <b>Export</b> for the Game Developer to take into <code>src/runes2.js</code>; a changed rune is marked <i>edited</i>, a new one <i>new</i>. <b>built</b> means the rune works in the game; <b>data</b> means it exists in the library and the storm's offer but its working is not yet made.</p>
+  <div class="cols">
+    <div>
+      <div class="panel">
+        <div class="bar" id="kinds"></div>
+        <div class="bar"><span style="color:var(--muted)">slot</span> <select id="slot"><option value="">every slot</option></select> <span style="color:var(--muted)">pool</span> <select id="pool"><option value="">every pool</option><option>start</option><option>storm</option><option>world</option><option>legend</option></select> <span style="color:var(--muted)">status</span> <select id="status"><option value="">built and data</option><option>built</option><option>data</option></select> <input type="text" id="q" placeholder="search the names and words" style="min-width:260px"> <button id="newBtn" class="gold">New rune</button> <button id="exportBtn">Export</button> <button id="resetBtn" class="small">Forget my edits</button></div>
+        <p class="counts" id="counts"></p>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+    <div>
+      <div class="panel ed" id="ed"><h2>A rune</h2><p class="note">Click a card.</p></div>
+      <div class="panel" id="exp" style="display:none;margin-top:14px"><h2>Export: what you changed or added</h2><p class="note">Copy this to the Game Developer; it is the JSON of the edited and new runes, in the shape of <code>src/runes2.js</code>.</p><pre class="out" id="out"></pre></div>
+    </div>
+  </div>
+</div>
+<script>
+__RUNES__
+</script>
+<script>
+(function () {
+  var KEY = 'runebrowser.edits', edits = {}; try { edits = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) {}
+  var base = {}; Runes2.LIST.forEach(function (r) { base[r.id] = r; });
+  function all() { var out = Runes2.LIST.map(function (r) { return edits[r.id] ? merge(r, edits[r.id]) : r; }); Object.keys(edits).forEach(function (id) { if (!base[id]) out.push(merge({ id: id, status: 'data', pool: 'storm', kind: 'combat', slot: 'hand', text: ['', '', ''], n: {} }, edits[id])); }); return out; }
+  function merge(a, b) { var o = {}; Object.keys(a).forEach(function (k) { o[k] = a[k]; }); Object.keys(b).forEach(function (k) { o[k] = b[k]; }); o.edited = !!base[o.id]; o.isNew = !base[o.id]; return o; }
+  function saveEdits() { try { localStorage.setItem(KEY, JSON.stringify(edits)); } catch (e) {} }
+  var kind = '', sel = null, els = { kinds: document.getElementById('kinds'), slot: document.getElementById('slot'), pool: document.getElementById('pool'), status: document.getElementById('status'), q: document.getElementById('q'), grid: document.getElementById('grid'), counts: document.getElementById('counts'), ed: document.getElementById('ed'), exp: document.getElementById('exp'), out: document.getElementById('out') };
+  Runes2.SLOTS.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + (s.active ? ' (active)' : ''); els.slot.appendChild(o); });
+  function kindBtns() { els.kinds.innerHTML = ''; [''].concat(Runes2.KINDS).forEach(function (k) { var b = document.createElement('button'); b.className = 'small'; b.textContent = k || 'every kind'; b.setAttribute('aria-pressed', kind === k ? 'true' : 'false'); b.addEventListener('click', function () { kind = k; render(); }); els.kinds.appendChild(b); }); }
+  function glyphOn(cv, id) { var c = cv.getContext('2d'); cv.width = 80; cv.height = 80; c.clearRect(0, 0, 80, 80); try { if (Runes2.GLYPHS && Runes2.GLYPHS[id]) { Runes2.glyph(c, id, 40, 40, 34, '#3a2a24', 3, 1); return; } } catch (e) {} c.fillStyle = '#3a2a24'; c.font = 'bold 40px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText((id || '?')[0].toUpperCase(), 40, 42); }
+  function wantsOf(r) { var w = r.wants || {}, bits = []; if (w.art && w.art.length) bits.push('art: ' + w.art.join('; ')); if (w.sfx && w.sfx.length) bits.push('sound: ' + w.sfx.join(', ')); return bits.join(' · '); }
+  function render() {
+    kindBtns(); var list = all(), q = els.q.value.trim().toLowerCase(), shown = list.filter(function (r) { return (!kind || r.kind === kind) && (!els.slot.value || r.slot === els.slot.value) && (!els.pool.value || r.pool === els.pool.value) && (!els.status.value || r.status === els.status.value) && (!q || (r.name + ' ' + r.id + ' ' + (r.text || []).join(' ')).toLowerCase().indexOf(q) >= 0); });
+    var byKind = {}; list.forEach(function (r) { byKind[r.kind] = (byKind[r.kind] || 0) + 1; });
+    els.counts.innerHTML = '<b>' + shown.length + '</b> shown of <b>' + list.length + '</b> runes: ' + Runes2.KINDS.map(function (k) { return k + ' ' + (byKind[k] || 0); }).join(', ') + ' · built <b>' + list.filter(function (r) { return r.status === 'built'; }).length + '</b>, data <b>' + list.filter(function (r) { return r.status === 'data'; }).length + '</b>, legendary <b>' + list.filter(function (r) { return r.pool === 'legend'; }).length + '</b>';
+    els.grid.innerHTML = '';
+    shown.forEach(function (r) { var d = document.createElement('div'); d.className = 'card' + (sel === r.id ? ' sel' : ''); var sl = Runes2.SLOT[r.slot] || { name: r.slot };
+      d.innerHTML = '<canvas></canvas><span class="tag ' + (r.isNew ? 'new' : r.edited ? 'edited' : r.status) + '">' + (r.isNew ? 'new' : r.edited ? 'edited' : r.status) + '</span><div class="nm"></div><div class="meta"></div><div class="tx"></div>' + (wantsOf(r) ? '<div class="wants"></div>' : '');
+      d.querySelector('.nm').textContent = r.name; d.querySelector('.meta').textContent = r.kind + ' · ' + sl.name + (sl.active ? ' (active)' : '') + ' · ' + r.pool + (r.source ? ' · from ' + r.source : ''); d.querySelector('.tx').textContent = (r.text && r.text[0]) || ''; if (wantsOf(r)) d.querySelector('.wants').textContent = 'wants ' + wantsOf(r);
+      glyphOn(d.querySelector('canvas'), r.id); d.addEventListener('click', function () { sel = r.id; render(); editor(r); }); els.grid.appendChild(d); });
+  }
+  function field(label, html) { return '<label>' + label + '</label>' + html; }
+  function editor(r) {
+    var sl = Runes2.SLOTS.map(function (s) { return '<option value="' + s.id + '"' + (s.id === r.slot ? ' selected' : '') + '>' + s.name + (s.active ? ' (active)' : '') + '</option>'; }).join('');
+    var kd = Runes2.KINDS.map(function (k) { return '<option' + (k === r.kind ? ' selected' : '') + '>' + k + '</option>'; }).join('');
+    var pl = ['start', 'storm', 'world', 'legend'].map(function (k) { return '<option' + (k === r.pool ? ' selected' : '') + '>' + k + '</option>'; }).join('');
+    var st = ['built', 'data'].map(function (k) { return '<option' + (k === r.status ? ' selected' : '') + '>' + k + '</option>'; }).join('');
+    els.ed.innerHTML = '<h2>' + (r.isNew ? 'A new rune' : r.name) + '</h2>' +
+      '<div class="two">' + field('id (letters only, never changed once in the game)', '<input type="text" id="f_id" value="' + r.id + '"' + (r.isNew ? '' : ' disabled') + '>') + field('name', '<input type="text" id="f_name" value="' + esc(r.name || '') + '">') + '</div>' +
+      '<div class="two">' + field('kind', '<select id="f_kind">' + kd + '</select>') + field('slot', '<select id="f_slot">' + sl + '</select>') + '</div>' +
+      '<div class="two">' + field('pool (start: everyone; storm: the sacrifice; world: a deed, see source; legend: a jarl’s or a boss’s blood)', '<select id="f_pool">' + pl + '</select>') + field('status', '<select id="f_status">' + st + '</select>') + '</div>' +
+      field('source (a world rune: the deed that teaches it)', '<input type="text" id="f_source" value="' + esc(r.source || '') + '">') +
+      field('tier I: what it does', '<textarea id="f_t0">' + esc((r.text || [])[0] || '') + '</textarea>') + field('tier II: what more', '<textarea id="f_t1">' + esc((r.text || [])[1] || '') + '</textarea>') + field('tier III: what more', '<textarea id="f_t2">' + esc((r.text || [])[2] || '') + '</textarea>') +
+      field('the numbers by tier, as JSON (each key three numbers, tier I to III)', '<textarea id="f_n">' + esc(JSON.stringify(r.n || {})) + '</textarea>') +
+      '<div class="two">' + field('wants of the Art Director (one a line)', '<textarea id="f_art">' + esc(((r.wants || {}).art || []).join('\n')) + '</textarea>') + field('wants of the Sound Director (one a line)', '<textarea id="f_sfx">' + esc(((r.wants || {}).sfx || []).join('\n')) + '</textarea>') + '</div>' +
+      '<div class="bar" style="margin-top:12px"><button class="gold" id="saveBtn">Keep</button>' + (r.edited || r.isNew ? '<button id="undoBtn" class="small">Back to the game’s</button>' : '') + '</div><p class="note" id="edNote"></p>';
+    document.getElementById('saveBtn').addEventListener('click', function () {
+      var id = (document.getElementById('f_id').value || '').replace(/[^a-zA-Z0-9]/g, ''); if (!id) { document.getElementById('edNote').textContent = 'An id is wanted.'; return; }
+      var n; try { n = JSON.parse(document.getElementById('f_n').value || '{}'); } catch (e) { document.getElementById('edNote').textContent = 'The numbers are not JSON: ' + e.message; return; }
+      var lines = function (s) { return s.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l; }); };
+      var o = { id: id, name: document.getElementById('f_name').value, kind: document.getElementById('f_kind').value, slot: document.getElementById('f_slot').value, pool: document.getElementById('f_pool').value, status: document.getElementById('f_status').value, text: [document.getElementById('f_t0').value, document.getElementById('f_t1').value, document.getElementById('f_t2').value], n: n };
+      var src = document.getElementById('f_source').value.trim(); if (src) o.source = src; var art = lines(document.getElementById('f_art').value), sfx = lines(document.getElementById('f_sfx').value); if (art.length || sfx.length) o.wants = {}; if (art.length) o.wants.art = art; if (sfx.length) o.wants.sfx = sfx;
+      if (base[id]) { var diff = {}; Object.keys(o).forEach(function (k) { if (JSON.stringify(o[k]) !== JSON.stringify(base[id][k])) diff[k] = o[k]; }); if (Object.keys(diff).length) edits[id] = diff; else delete edits[id]; } else edits[id] = o;
+      saveEdits(); sel = id; render(); var rr = all().filter(function (x) { return x.id === id; })[0]; if (rr) editor(rr); document.getElementById('edNote').textContent = 'Kept in this browser. Export shows it as text.';
+    });
+    var ub = document.getElementById('undoBtn'); if (ub) ub.addEventListener('click', function () { delete edits[r.id]; saveEdits(); render(); var rr = all().filter(function (x) { return x.id === r.id; })[0]; if (rr) editor(rr); else { els.ed.innerHTML = '<h2>A rune</h2><p class="note">Click a card.</p>'; } });
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  document.getElementById('newBtn').addEventListener('click', function () { sel = null; editor({ id: '', name: '', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['', '', ''], n: {}, isNew: true }); });
+  document.getElementById('exportBtn').addEventListener('click', function () { els.exp.style.display = ''; var o = []; Object.keys(edits).forEach(function (id) { var r = base[id] ? merge(base[id], edits[id]) : edits[id]; var c = {}; Object.keys(r).forEach(function (k) { if (k !== 'edited' && k !== 'isNew') c[k] = r[k]; }); o.push(c); }); els.out.textContent = o.length ? o.map(function (r) { return '  ' + JSON.stringify(r) + ','; }).join('\n') : '(nothing changed or added yet)'; });
+  document.getElementById('resetBtn').addEventListener('click', function () { if (!Object.keys(edits).length) return; edits = {}; saveEdits(); sel = null; els.ed.innerHTML = '<h2>A rune</h2><p class="note">Click a card.</p>'; render(); });
+  [els.slot, els.pool, els.status].forEach(function (e) { e.addEventListener('change', render); }); els.q.addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>
