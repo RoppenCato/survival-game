@@ -303,8 +303,23 @@
       d[i] = r < 0 ? 0 : r > 255 ? 255 : r; d[i + 1] = g < 0 ? 0 : g > 255 ? 255 : g; d[i + 2] = b < 0 ? 0 : b > 255 ? 255 : b; }
     return true;
   }
+
+  function mkOf(mk) { return mk || function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }; }
+  // the picture's pixels that lie (dx0, dy0) inside its edge but not (dx1, dy1): an edge band, filled with col, kept inside the picture
+  function band(src, w, h, dx0, dy0, dx1, dy1, col, mk) {
+    var c = mkOf(mk)(w, h), g = c.getContext('2d'); g.drawImage(src, dx0, dy0); g.globalCompositeOperation = 'destination-out'; g.drawImage(src, dx1, dy1);
+    g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); return c;
+  }
+  function overFill(g, src, w, h, op, col, a) { g.globalCompositeOperation = op; g.globalAlpha = a; g.fillStyle = col; g.fillRect(0, 0, w, h); g.globalAlpha = 1; g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-over'; }
+
+  // wetPicture by composites: darker, the sky caught along the upper edge
+  function wetCanvas(src, mk) {
+    var w = src.width, h = src.height, c = mkOf(mk)(w, h), g = c.getContext('2d'), ink = Math.max(1, Math.round(w / 140));
+    g.drawImage(src, 0, 0); overFill(g, src, w, h, 'multiply', 'rgb(204,204,214)', 1); overFill(g, src, w, h, 'saturation', 'hsl(0,60%,50%)', 0.12);
+    g.globalAlpha = 0.45; g.drawImage(band(src, w, h, 0, ink, 0, ink + Math.max(2, Math.round(w / 90)), 'rgb(238,244,250)', mk), 0, 0); g.globalAlpha = 1; return c;
+  }
   function wind(kind) { return (KINDS[kind] || {}).wind || [0.15, 0.75]; }
   var api = { KINDS: KINDS, LAYERS: LAYERS, YEAR: YEAR, GROUND: GROUND, day: day, make: make, tick: tick, draw: draw, wind: wind,
-    ground: { make: groundMake, tick: groundTick, step: groundStep, breath: groundBreath, draw: groundDraw }, wetPicture: wetPicture };
+    ground: { make: groundMake, tick: groundTick, step: groundStep, breath: groundBreath, draw: groundDraw }, wetPicture: wetPicture, wetCanvas: wetCanvas };
   if (typeof module !== 'undefined') module.exports = api; else root.Weather = api;
 })(this);

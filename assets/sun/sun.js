@@ -67,6 +67,22 @@
     return true;
   }
 
+
+  function mkOf(mk) { return mk || function (w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }; }
+  // the picture's pixels that lie (dx0, dy0) inside its edge but not (dx1, dy1): an edge band, filled with col, kept inside the picture
+  function band(src, w, h, dx0, dy0, dx1, dy1, col, mk) {
+    var c = mkOf(mk)(w, h), g = c.getContext('2d'); g.drawImage(src, dx0, dy0); g.globalCompositeOperation = 'destination-out'; g.drawImage(src, dx1, dy1);
+    g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); return c;
+  }
+  function overFill(g, src, w, h, op, col, a) { g.globalCompositeOperation = op; g.globalAlpha = a; g.fillStyle = col; g.fillRect(0, 0, w, h); g.globalAlpha = 1; g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-over'; }
+
+  // rimPicture by composites: the lit edge on the sun's side, just inside the ink line, fading in
+  function rimCanvas(src, side, col, mk) {
+    var w = src.width, h = src.height, c = mkOf(mk)(w, h), g = c.getContext('2d'), ink = Math.max(1, Math.round(w / 110)), reach = Math.max(4, Math.round(w / 26)), cc = 'rgb(' + col.join(',') + ')';
+    g.drawImage(src, 0, 0);
+    g.globalAlpha = 0.45; g.drawImage(band(src, w, h, -side * ink, 0, -side * (ink + reach), 0, cc, mk), 0, 0);
+    g.globalAlpha = 0.45; g.drawImage(band(src, w, h, -side * ink, 0, -side * (ink + Math.round(reach * 0.45)), 0, cc, mk), 0, 0); g.globalAlpha = 1; return c;
+  }
   var C = {};
   function disc(mk, col) { var key = col ? col.map(Math.round).join(',') : 'w'; if (C[key]) return C[key]; var cv = mk(128, 128), g = cv.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
     gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
@@ -142,6 +158,6 @@
         cutOut(nl, L); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; ctx.drawImage(nl, 0, 0); } }   // not on what stands in the water: the light lies on the water only
     ctx.restore();
   }
-  var api = { KEYS: KEYS, state: state, rimPicture: rimPicture, draw: draw, shadowAngle: shadowAngle, silhouette: silhouette };
+  var api = { KEYS: KEYS, state: state, rimPicture: rimPicture, rimCanvas: rimCanvas, draw: draw, shadowAngle: shadowAngle, silhouette: silhouette };
   if (typeof module !== 'undefined') module.exports = api; else root.Sun = api;
 })(this);

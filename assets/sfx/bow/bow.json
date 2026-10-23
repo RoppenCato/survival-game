@@ -1,0 +1,89 @@
+{
+  "about": "The bow sounds: 48 kHz 16-bit mono WAVs, every file's peak at -1 dBFS. Play a sound at its \"gain\" (multiply) so the set is levelled against itself: swings under hits, hits under heavy hits, the finishing blow the loudest. Pick one of the files at random each time. loud_db: the loudest 50 ms of the file before the gain; target_db: where it should sit (the sword's hit = about 0).",
+  "sample_rate": 48000,
+  "channels": 1,
+  "peak_dbfs": -1,
+  "made": "2026-10-23T14:16:20.355Z",
+  "sounds": {
+    "shoot_a": {
+      "files": [
+        "shoot_a_1.wav",
+        "shoot_a_2.wav",
+        "shoot_a_3.wav",
+        "shoot_a_4.wav"
+      ],
+      "seconds": [
+        0.377,
+        0.056,
+        0.221,
+        0.053
+      ],
+      "loud_db": -17.2,
+      "target_db": 0,
+      "use": "the bow being shot: an English longbow's snap (raw); as loud as the game's current shoot at its gain",
+      "gain": 0.874,
+      "loudness": "weighted",
+      "anchor": "shoot_1.wav at gain 0.473; target 0 dB relative to it"
+    },
+    "shoot_b": {
+      "files": [
+        "shoot_b_1.wav",
+        "shoot_b_2.wav",
+        "shoot_b_3.wav",
+        "shoot_b_4.wav"
+      ],
+      "seconds": [
+        0.065,
+        0.074,
+        0.078,
+        0.064
+      ],
+      "loud_db": -17.1,
+      "target_db": 0,
+      "use": "the bow being shot: a recurve bow's snap (raw)",
+      "gain": 0.864,
+      "loudness": "weighted",
+      "anchor": "shoot_1.wav at gain 0.473; target 0 dB relative to it"
+    },
+    "shoot_c": {
+      "files": [
+        "shoot_c_1.wav",
+        "shoot_c_2.wav",
+        "shoot_c_3.wav",
+        "shoot_c_4.wav"
+      ],
+      "seconds": [
+        0.637,
+        0.545,
+        0.446,
+        0.477
+      ],
+      "loud_db": -10.5,
+      "target_db": 0,
+      "use": "the bow being shot: real shots, deeper, with the string's thrum (raw)",
+      "gain": 0.404,
+      "loudness": "weighted",
+      "anchor": "shoot_1.wav at gain 0.473; target 0 dB relative to it"
+    },
+    "shoot_v": {
+      "files": [
+        "shoot_v_1.wav",
+        "shoot_v_2.wav",
+        "shoot_v_3.wav",
+        "shoot_v_4.wav"
+      ],
+      "seconds": [
+        0.307,
+        0.245,
+        0.307,
+        0.237
+      ],
+      "loud_db": -16.6,
+      "target_db": 0,
+      "use": "the bow being shot: the studio's, a longbow's snap, a real string's thrum, the arrow leaving",
+      "gain": 0.815,
+      "loudness": "weighted",
+      "anchor": "shoot_1.wav at gain 0.473; target 0 dB relative to it"
+    }
+  }
+}
