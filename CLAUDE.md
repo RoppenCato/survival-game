@@ -55,7 +55,7 @@ and not built (`docs/idea-bank.md`).
   only friendly priests who cannot defend themselves: lucky strikes, though an army may turn up. Some villages are for
   trading; one big central trading hub, heavily guarded, is unwise to attack. Nothing is off limits; reputation (risk and
   reward) is the only brake.
-- **A pet system is one of the big new systems a later chapter opens with** (Robin, 2026-10-23; the chapter not yet said): it comes through a family close with animals who keep many pets (Robin will think more on them), different kinds of pets with different uses, and a pet is its own person, named and cared for; the proposal is `docs/pet.md`, the rest of it waits.
+- **A pet system is one of the big new systems a later chapter opens with** (Robin, 2026-10-23; the chapter not yet said): it comes through a family close with animals who keep many pets (Robin will think more on them), different kinds of pets with different uses, and a pet is its own person, named and cared for; **runes augment the pets with passive abilities and bonuses, and the rune system is reworked when that chapter is worked on, not before** (Robin, the same day); the proposal is `docs/pet.md`, the rest of it waits.
 - **The hird** (Old Norse hirð; a member is a hirdman, and they call each other fellows): they crew your ships (the more
   aboard, the faster, rowing and sailing), fight beside you on land, can die in battle (never at random), work at home and
   defend what you claim; found and recruited in different ways, with randomised stats and traits and training to change

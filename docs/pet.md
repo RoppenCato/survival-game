@@ -82,6 +82,17 @@ better. **Food is a reward:** meat in the evening makes it quick and brave the n
 hero's is. **A life**: a dog lives about ten winters of the game's year; it greys, slows, and one winter stays by the hearth; a
 pup of its line is in the village that spring. No line says it; the Lore Book's page (Alistair, LD's words) does.
 
+## 4b. Runes for the pet (Robin, 2026-10-23)
+
+Robin: "We could also have runes that augment the pets in ways. Gives them passive abilities and bonuses. But we need to rework
+the rune system once we start working on it." So: the arm ring's runes (knowledge, cut into the ring at the carver's bench, a
+coil per side) get a side or a set for the pet, and the rune system itself is reworked when the pet chapter is worked on, not
+before. Ideas for what such runes could give, mine: a keener nose (Track from further, the scent of a secret a tile further), a
+harder bite (the stagger), thicker hide (it goes down later), a faster pup (grows in half a season), a quiet foot (no bark on a
+raid without the order), a bond (it comes back from lost on its own), the pack (two follow at once), and a rune of the grave
+that keeps a dying dog one more winter. Passive, as the ring's runes are; some cut on the ring, some perhaps on a collar the
+pet wears, so a pet carries its own.
+
 ## 5. In the engine
 
 - The follow, the leash, the idle at home and the going-down are the hird's (`src/hird.js`, the follow and the jobs) on a
