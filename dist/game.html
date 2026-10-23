@@ -9040,7 +9040,15 @@ var LIST = [
 ];
 var BY = {}; LIST.forEach(function (r) { BY[r.id] = r; });
 var TIERS = 3, GROW = [0, 50, 150];                 // uses at which a rune reaches tier II and III by itself
-var ANIMAL_TIER = { hen: 1, hare: 1, fish: 1, sheep: 2, goat: 2, deer: 2, boar: 2, cow: 2, bear: 3, moose: 3, wolf: 3, man: 4 };
+var RANKS = [null,                                 // the ranks of blood (Robin, 2026-10-23): how many stones rise from it and at what tier; the fifth rank draws on the legendary pool when it has runes
+  { id: 1, name: 'thin blood', n: 1, tier: 1 },      // a hen, a hare, a fish, an adder: one stone, take it or leave it
+  { id: 2, name: 'red blood', n: 2, tier: 1 },       // a deer, a boar, the farm's beasts: two
+  { id: 3, name: 'a man\u2019s blood', n: 3, tier: 2 },   // a man: three, the dark road
+  { id: 4, name: 'strong blood', n: 4, tier: 3 },    // a bear, a moose, a wolf, a troll: four
+  { id: 5, name: 'a great one\u2019s blood', n: 5, tier: 3, legend: true }];   // a jarl, a boss: five, and the legendary runes among them (none yet)
+var ANIMAL_RANK = { hen: 1, hare: 1, fish: 1, snake: 1, sheep: 2, goat: 2, deer: 2, boar: 2, cow: 2, man: 3, bear: 4, moose: 4, wolf: 4, troll: 4, jarl: 5, boss: 5 };
+var ANIMAL_TIER = {}; for (var ak in ANIMAL_RANK) ANIMAL_TIER[ak] = RANKS[ANIMAL_RANK[ak]].tier;   // (kept for readers of the tier alone)
+function rankOf(kind) { return RANKS[ANIMAL_RANK[kind] || 1]; }
 var MARKS = { struck: { t: 10, col: '#ffe9a0' }, bleeding: { t: 20, col: '#c8322a' }, afraid: { t: 6, col: '#c9a8ff' }, chilled: { t: 8, col: '#a8d8ff' }, burning: { t: 6, col: '#ff9a40' } };
 function fresh() { return { lib: {}, bound: {}, uses: {}, blood: {} }; }
 function start(st) { st = st || fresh(); learn(st, 'bash', 1); learn(st, 'dash', 1); if (!st.bound.guardBlow) bind(st, 'guardBlow', 'bash'); if (!st.bound.dash) bind(st, 'dash', 'dash'); return st; }   // what every hero has from the first day
@@ -9060,12 +9068,13 @@ function drawBlood(st, n) { for (var s in st.bound) if (SLOT[s] && SLOT[s].activ
 function ready(st, slot) { return !!bound(st, slot) && charge(st, slot) >= 1; }
 function spend(st, slot) { st.blood[slot] = 0; }
 function readyAll(st) { for (var s in st.bound) if (SLOT[s] && SLOT[s].active) st.blood[s] = need(st, s); }
-// the storm's offer: three from the sacrifice pool for the slots, at the animal's tier; a rune known already is offered one tier up, never twice
-function offer(st, tier, R) {
-  R = R || Math.random; tier = Math.max(1, Math.min(TIERS, tier || 1));
-  var pool = LIST.filter(function (r) { return r.pool === 'storm' && (!known(st, r.id) || (tierOf(st, r.id) < tier)); });
-  var out = [], guard = 40; while (out.length < 3 && pool.length && guard-- > 0) { var i = Math.floor(R() * pool.length), r = pool.splice(i, 1)[0]; out.push({ id: r.id, tier: known(st, r.id) ? Math.min(TIERS, Math.max(tier, tierOf(st, r.id) + 1)) : tier }); }
-  if (out.length < 3) LIST.filter(function (r) { return r.pool === 'world' && !known(st, r.id); }).slice(0, 3 - out.length).forEach(function (r) { out.push({ id: r.id, tier: tier }); });   // the pool run dry: the world's runes come through the storm too
+// the storm's offer: so many stones as the blood's rank brings, from the sacrifice pool, at the rank's tier; a rune known already is offered one tier up, never twice; the fifth rank's stones come from the legendary pool first
+function offer(st, rank, R) {
+  R = R || Math.random; var rk = typeof rank === 'object' ? rank : RANKS[Math.max(1, Math.min(RANKS.length - 1, rank || 1))], n = rk.n, tier = Math.max(1, Math.min(TIERS, rk.tier));
+  var pool = LIST.filter(function (r) { return (r.pool === 'storm' || (rk.legend && r.pool === 'legend')) && (!known(st, r.id) || (tierOf(st, r.id) < TIERS)); });   /* a rune known already is offered one tier up, whatever the blood's tier */
+  var out = [], guard = 60; if (rk.legend) { var leg = pool.filter(function (r) { return r.pool === 'legend'; }); while (out.length < n && leg.length && guard-- > 0) { var li = Math.floor(R() * leg.length), lr = leg.splice(li, 1)[0]; pool.splice(pool.indexOf(lr), 1); out.push({ id: lr.id, tier: tier }); } }
+  while (out.length < n && pool.length && guard-- > 0) { var i = Math.floor(R() * pool.length), r = pool.splice(i, 1)[0]; out.push({ id: r.id, tier: known(st, r.id) ? Math.min(TIERS, Math.max(tier, tierOf(st, r.id) + 1)) : tier }); }
+  if (out.length < n) LIST.filter(function (r) { return r.pool === 'world' && !known(st, r.id); }).slice(0, n - out.length).forEach(function (r) { out.push({ id: r.id, tier: tier }); });   // the pool run dry: the world's runes come through the storm too
   return out;
 }
 function take(st, pick) { learn(st, pick.id, pick.tier); return pick.id; }
@@ -9094,7 +9103,7 @@ function stone(c, x, y, h, id, state, fill) {
   if (state !== 'blank' && id) glyph(c, id, x, y - h * 0.5, h * 0.5, state === 'woken' || fill > 0 ? '#3a2a24' : '#3f3730', Math.max(0.7, h * 0.055), state === 'woken' ? 1 : (fill || 0));
   c.restore();
 }
-return { SLOTS: SLOTS, SLOT: SLOT, LIST: LIST, BY: BY, TIERS: TIERS, GROW: GROW, ANIMAL_TIER: ANIMAL_TIER, MARKS: MARKS, GLYPHS: GLYPHS, fresh: fresh, start: start, known: known, tierOf: tierOf, learn: learn, fits: fits, bound: bound, bind: bind, unbind: unbind, num: num, has: has, use: use, need: need, charge: charge, drawBlood: drawBlood, ready: ready, spend: spend, readyAll: readyAll, offer: offer, take: take, glyph: glyph, stone: stone };
+return { SLOTS: SLOTS, SLOT: SLOT, LIST: LIST, BY: BY, TIERS: TIERS, GROW: GROW, ANIMAL_TIER: ANIMAL_TIER, RANKS: RANKS, ANIMAL_RANK: ANIMAL_RANK, rankOf: rankOf, MARKS: MARKS, GLYPHS: GLYPHS, fresh: fresh, start: start, known: known, tierOf: tierOf, learn: learn, fits: fits, bound: bound, bind: bind, unbind: unbind, num: num, has: has, use: use, need: need, charge: charge, drawBlood: drawBlood, ready: ready, spend: spend, readyAll: readyAll, offer: offer, take: take, glyph: glyph, stone: stone };
 })();
 if (typeof module !== 'undefined') module.exports = Runes2;
 
@@ -20947,34 +20956,48 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* the ceremony: the season due, a beast laid on the altar and three stones from the bag beside it; the storm rises over the altar,
      the stones turn and show carvings (the offer by the animal's tier), one is chosen (a click or 1, 2, 3), lightning strikes the
      altar, the two others break, the chosen stone stands in the ring, the season turns */
-  function altarReady(it) { return !!(it && it.laid && yearDue() && inv.stone >= 3 && !ceremony); }
-  function altarWhy(it) { if (!it.laid) return 'Nothing lies on the altar'; if (!yearDue()) return 'The season is not yet due'; if (inv.stone < 3) return 'Three stones are wanted'; return ''; }
+  var ALTAR_FIRE = 100;                      /* a burning fire of yours within this of the altar: the blót is held at a fire (mine, 2026-10-23: the one thing the place needs, the rest the player builds as he likes) */
+  function altarFire(it) { return !!(it && fireNear(it.x, it.y, ALTAR_FIRE)); }
+  function altarStones(it) { return it && it.laid ? Runes2.rankOf(it.laid.kind).n : 1; }
+  function altarReady(it) { return !!(it && it.laid && yearDue() && altarFire(it) && inv.stone >= altarStones(it) && !ceremony); }
+  function altarWhy(it) { if (!it.laid) return 'Nothing lies on the altar'; if (!yearDue()) return 'The season is not yet due'; if (!altarFire(it)) return 'A fire must burn by the altar'; var ns = altarStones(it); if (inv.stone < ns) return (ns === 1 ? 'One stone is' : ['', '', 'Two', 'Three', 'Four', 'Five'][ns] + ' stones are') + ' wanted'; return ''; }
   function riteStart(it) {
-    if (!altarReady(it)) return; takeItem('stone', 3); var tier = Runes2.ANIMAL_TIER[it.laid.kind] || 1;
-    ceremony = { it: it, t: 0, phase: 'storm', offer: Runes2.offer(R2, tier), pick: -1, tier: tier, force0: WTH.force, chosen: null }; WTH.force = 'storm'; altarOpen = false; sfx('storm_rise'); save();
+    if (!altarReady(it)) return; var rk = Runes2.rankOf(it.laid.kind); takeItem('stone', rk.n); var tier = rk.tier;
+    ceremony = { it: it, t: 0, phase: 'storm', offer: Runes2.offer(R2, rk), pick: -1, tier: tier, rank: rk.id, force0: WTH.force, chosen: null }; WTH.force = 'storm'; altarOpen = false; sfx('storm_rise'); save();
   }
   function ritePick(i) { if (!ceremony || ceremony.phase !== 'choose' || !ceremony.offer[i]) return; ceremony.pick = i; ceremony.phase = 'strike'; ceremony.t = 0; sfx('lightning_strike'); flashT = 0.35; }
   var flashT = 0;
   function riteTick2(dt) {
     if (!ceremony) return; var C = ceremony; C.t += dt;
-    if (C.phase === 'storm') { WTH.spells.forEach(function (S) { if (S.kind === 'storm') S.k = Math.min(1, S.k + dt * 0.5); }); if (C.t >= 3.5) { C.phase = 'choose'; C.t = 0; sfx('rune_carve'); } }
-    else if (C.phase === 'strike') { if (C.t >= 0.55 && !C.chosen) { var pk = C.offer[C.pick]; C.chosen = Runes2.take(R2, pk); C.it.scorched = day.n; C.it.laid = null; C.it.broken = { t: 0, ids: C.offer.filter(function (q, k) { return k !== C.pick; }).map(function (q) { return q.id; }) }; rite = { id: C.chosen, t: 0, grew: Runes2.tierOf(R2, C.chosen) > 1 ? Runes2.tierOf(R2, C.chosen) : 0 }; sfx('stone_break'); save(); } if (C.t >= 3) { C.phase = 'done'; C.t = 0; seasonTurn(yearNext(year.season)); save(); } }   /* the season turns once the woken stone has been seen (the board came down over it) */
+    if (C.phase === 'storm') { WTH.spells.forEach(function (S) { if (S.kind === 'storm') S.k = Math.min(1, S.k + dt * 0.5); }); var Ph = hero(); if (Ph.y < C.it.y + STEP_BACK && Math.abs(Ph.x - C.it.x) < 60) { Ph.y = Math.min(C.it.y + STEP_BACK, Ph.y + dt * 70); Ph.face = -Math.PI / 2; }   /* he steps back from the stone as the storm rises, so the stones rise before him, not behind his head */ if (C.t >= 3.5) { if (!C.offer.length) { C.phase = 'done'; C.t = 0; C.it.laid = null; C.it.scorched = day.n; C.it.stain = 1; toast('The storm passes and leaves no stone'); seasonTurn(yearNext(year.season)); save(); } else { C.phase = 'choose'; C.t = 0; sfx('rune_carve'); } } }   /* (nothing left to offer: the blood still turns the year) */
+    else if (C.phase === 'strike') { if (C.t >= 0.55 && !C.chosen) { var pk = C.offer[C.pick]; C.chosen = Runes2.take(R2, pk); C.it.scorched = day.n; C.it.laid = null; C.it.broken = { t: 0, pick: C.pick, ids: C.offer.filter(function (q, k) { return k !== C.pick; }).map(function (q) { return q.id; }) }; rite = { id: C.chosen, t: 0, grew: Runes2.tierOf(R2, C.chosen) > 1 ? Runes2.tierOf(R2, C.chosen) : 0 }; C.it.stain = 1; sfx('stone_break'); save(); } if (C.t >= 3) { C.phase = 'done'; C.t = 0; seasonTurn(yearNext(year.season)); save(); } }   /* the season turns once the woken stone has been seen (the board came down over it) */
     else if (C.phase === 'done') { if (C.t >= 1) { WTH.force = C.force0 || null; ceremony = null; } }
     if (flashT > 0) flashT -= dt;
   }
-  function altarItems(items) {                 // what stands round and on every altar in view: the ring of stones (the library), the beast laid, the storm's three, the lightning, the broken stones
+  var STONE_GAP = 24, STONE_H = 22, RISE = 30, POOL = { w: 32, h: 7 }, STEP_BACK = 96;   /* the ceremony's stones in a row before the altar, risen from the blood pool at its foot (mine, 2026-10-23) */
+  function altarItems(items) {                 // what stands on and before every altar in view: the library carved on the stone, the beast laid, the blood and the stones risen from it, the lightning, the broken stones, the stain
     var P = hero(); B.items.forEach(function (it) { if (!it.altar || !sameLvl(it) || Math.abs(it.x - cam.x) > 260 / cam.z + 80 || Math.abs(it.y * K - cam.y) > 170 / cam.z + 80) return;
-      var known = Runes2.LIST.filter(function (r) { return Runes2.known(R2, r.id); }), n = Math.max(known.length + 1, 6), i, im = World.IMAGES.runeAltar, lay = im && im.lay ? { x: (im.lay.x - im.ax) * im.upp, y: (im.lay.y - im.ay) * im.upp / K } : { x: 0, y: -8 };
-      for (i = 0; i < Math.min(13, n); i++) { var a = -Math.PI * 0.9 + i / 12 * Math.PI * 1.8, sx = it.x + Math.cos(a) * 46, sy = it.y + Math.sin(a) * 30, r = known[i]; (function (sx, sy, r) { items.push({ y: sy, f: function () { if (r) drawRuneStone(ctx, sx, sy * K, 20, r.id, Runes2.has(R2, r.id) ? 'woken' : 'carved', 0); else { var pl = World.IMAGES.runeStonePlace && sprite('runeStonePlace'); if (pl && pl.cv) ctx.drawImage(pl.cv, sx + pl.l, sy * K + pl.t, pl.w, pl.h); } } }); })(sx, sy, r); }
+      var im = World.IMAGES.runeAltar, lay = im && im.lay ? { x: (im.lay.x - im.ax) * im.upp, y: (im.lay.y - im.ay) * im.upp / K } : { x: 0, y: -8 }, foot = it.y + 14;
+      items.push({ y: it.y + 0.5, f: function () {          /* the library: every rune known carved small along the stone's front, bright where it is bound (Colin, AD's carved faces will take this over) */
+        var known = Runes2.LIST.filter(function (r) { return Runes2.known(R2, r.id); }); if (!known.length) return; var per = 7, rows = Math.ceil(known.length / per);
+        known.forEach(function (r, k) { var row = Math.floor(k / per), inRow = Math.min(per, known.length - row * per), gx = it.x + (k % per - (inRow - 1) / 2) * 6.5, gy = it.y * K - 7 + row * 5.5, on = Runes2.has(R2, r.id); Runes2.glyph(ctx, r.id, gx, gy, 3.6, on ? '#ead08a' : 'rgba(58,42,36,0.55)', 0.8, 1); });
+      } });
+      if (it.stain > 0 && !(ceremony && ceremony.it === it)) items.push({ y: it.y - 1, f: function () { it.stain -= 1 / 60 / 240; if (it.stain <= 0) { it.stain = 0; return; } ctx.save(); ctx.globalAlpha = 0.45 * Math.min(1, it.stain * 3); ctx.fillStyle = '#4a1612'; ctx.beginPath(); ctx.ellipse(it.x + lay.x, foot * K, POOL.w, POOL.h, 0, 0, 7); ctx.fill(); ctx.restore(); } });   /* the blood's stain at the foot, gone in a few minutes (saved as it.stain) */
       if (it.laid) (function (it) { items.push({ y: it.y + 1, f: function () { var L = it.laid, fake = { kind: L.bkind || L.kind, stock: L.stock, r: L.r || 14, sizeK: L.sizeK || 1, face: L.face || 0, seed: L.seed || 0, x: it.x + lay.x, y: it.y + lay.y, ko: 1, awake: true, hp: 1, maxHp: 1, state: 'ko', t: 0, dead: false, tame: !!L.stock }; try { Combat.api.enemySprite(ctx, fake); } catch (eL) {} } }); })(it);
-      if (ceremony && ceremony.it === it) (function (it, C) { items.push({ y: it.y + 2, f: function () {
-        var k; for (k = 0; k < 3; k++) { var ox = it.x + lay.x + (k - 1) * 22, oy = it.y + lay.y + 6, pk = C.offer[k]; if (!pk) continue; if (C.phase === 'storm') { var carvedK = Math.max(0, Math.min(1, (C.t - 1.5) / 2)); drawRuneStone(ctx, ox, oy * K, 18, carvedK > 0.5 ? pk.id : null, carvedK > 0.5 ? 'carved' : 'blank', 0); }
-          else if (C.phase === 'choose') { drawRuneStone(ctx, ox, oy * K, 18, pk.id, 'carved', 0); ctx.font = 'bold 6px system-ui, sans-serif'; ctx.fillStyle = '#f6e2b8'; ctx.textAlign = 'center'; ctx.fillText(String(k + 1), ox, oy * K - 24); }
-          else if (k === C.pick) drawRuneStone(ctx, ox, oy * K, 18, pk.id, C.chosen ? 'woken' : 'carved', 0); else if (!C.chosen) drawRuneStone(ctx, ox, oy * K, 18, pk.id, 'carved', 0); else { var bk = World.IMAGES['runeStoneBroken_' + (k % 2 + 1)] && sprite('runeStoneBroken_' + (k % 2 + 1)); if (bk && bk.cv) ctx.drawImage(bk.cv, ox + bk.l, oy * K + bk.t, bk.w, bk.h); else Runes2.stone(ctx, ox, oy * K, 18, null, 'broken'); } }
+      if (ceremony && ceremony.it === it) (function (it, C) { items.push({ y: foot + 2, f: function () {
+        var n = C.offer.length, k, bloodK = Math.min(1, C.t / 1.2), riseK = C.phase === 'storm' ? Math.max(0, Math.min(1, (C.t - 0.8) / 1.6)) : 1, carvedK = C.phase === 'storm' ? Math.max(0, Math.min(1, (C.t - 2.2) / 1.2)) : 1;
+        if (C.phase === 'storm' || C.phase === 'choose' || C.phase === 'strike') { ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = '#5a1a14'; ctx.beginPath(); ctx.ellipse(it.x + lay.x, foot * K, POOL.w * (C.phase === 'storm' ? bloodK : 1), POOL.h * (C.phase === 'storm' ? bloodK : 1), 0, 0, 7); ctx.fill(); ctx.restore(); }   /* the blood runs down into the hollow at the foot */
+        for (k = 0; k < n; k++) { var ox = it.x + lay.x + (k - (n - 1) / 2) * STONE_GAP, oy = foot, pk = C.offer[k]; if (!pk) continue; var gy = oy * K;
+          var sinkK = C.phase === 'strike' && C.chosen && k === C.pick ? Math.max(0, Math.min(1, (C.t - 1.0) / 1.4)) : 0, up = C.phase === 'storm' ? riseK : 1 - sinkK; if (up <= 0) continue;
+          ctx.save(); ctx.beginPath(); ctx.rect(ox - 40, gy - 90, 80, 90); ctx.clip(); var sy = gy + (1 - up) * RISE;   /* a stone rises out of the pool, and the chosen one sinks back into the stone's keeping */
+          if (C.phase === 'storm') drawRuneStone(ctx, ox, sy, STONE_H, carvedK > 0.5 ? pk.id : null, carvedK > 0.5 ? 'carved' : 'blank', 0);
+          else if (C.phase === 'choose') { drawRuneStone(ctx, ox, sy, STONE_H, pk.id, 'carved', 0); ctx.font = 'bold 6px system-ui, sans-serif'; ctx.fillStyle = '#f6e2b8'; ctx.textAlign = 'center'; ctx.fillText(String(k + 1), ox, sy - 24); }
+          else if (k === C.pick) drawRuneStone(ctx, ox, sy, STONE_H, pk.id, C.chosen ? 'woken' : 'carved', 0); else if (!C.chosen) drawRuneStone(ctx, ox, sy, STONE_H, pk.id, 'carved', 0); else { var bk = World.IMAGES['runeStoneBroken_' + (k % 2 + 1)] && sprite('runeStoneBroken_' + (k % 2 + 1)); if (bk && bk.cv) ctx.drawImage(bk.cv, ox + bk.l, sy + bk.t, bk.w, bk.h); else Runes2.stone(ctx, ox, sy, STONE_H, null, 'broken'); }
+          ctx.restore(); }
         if (C.phase === 'strike' && C.t < 0.5) { var fr = Math.min(7, Math.floor(C.t * 16)), li = World.IMAGES['lightning_' + fr] && sprite('lightning_' + fr); if (li && li.cv) { ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.drawImage(li.cv, it.x + lay.x + li.l, it.y * K + lay.y * K + li.t, li.w, li.h); ctx.restore(); } }
         else if (C.phase === 'strike' && C.t < 1.1) { var la = World.IMAGES.lightning_after && sprite('lightning_after'); if (la && la.cv) { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - (C.t - 0.5) / 0.6); ctx.globalCompositeOperation = 'screen'; ctx.drawImage(la.cv, it.x + lay.x + la.l, it.y * K + lay.y * K + la.t, la.w, la.h); ctx.restore(); } }
       } }); })(it, ceremony);
-      else if (it.broken) (function (it) { items.push({ y: it.y + 2, f: function () { it.broken.t += 1 / 60; if (it.broken.t > 8) { it.broken = null; return; } it.broken.ids.forEach(function (id, k) { var ox = it.x + lay.x + (k === 0 ? -22 : 22), oy = it.y + lay.y + 6, bk = World.IMAGES['runeStoneBroken_' + (k % 2 + 1)] && sprite('runeStoneBroken_' + (k % 2 + 1)); ctx.save(); ctx.globalAlpha = Math.min(1, (8 - it.broken.t) / 2); if (bk && bk.cv) ctx.drawImage(bk.cv, ox + bk.l, oy * K + bk.t, bk.w, bk.h); else Runes2.stone(ctx, ox, oy * K, 18, null, 'broken'); ctx.restore(); }); } }); })(it);
+      else if (it.broken) (function (it) { items.push({ y: foot + 2, f: function () { it.broken.t += 1 / 60; if (it.broken.t > 8) { it.broken = null; return; } var nb = it.broken.ids.length + 1; it.broken.ids.forEach(function (id, k) { var kk = k >= (it.broken.pick || 0) ? k + 1 : k, ox = it.x + lay.x + (kk - (nb - 1) / 2) * STONE_GAP, gy = foot * K, bk = World.IMAGES['runeStoneBroken_' + (k % 2 + 1)] && sprite('runeStoneBroken_' + (k % 2 + 1)); ctx.save(); ctx.globalAlpha = Math.min(1, (8 - it.broken.t) / 2); ctx.beginPath(); ctx.rect(ox - 40, gy - 90, 80, 90); ctx.clip(); var sy = gy + Math.min(1, it.broken.t / 8) * RISE; if (bk && bk.cv) ctx.drawImage(bk.cv, ox + bk.l, sy + bk.t, bk.w, bk.h); else Runes2.stone(ctx, ox, sy, STONE_H, null, 'broken'); ctx.restore(); }); } }); })(it);   /* the broken stones sink back into the blood */
     });
   }
   function drawRuneMarks(c) {                  // by the toolbar: a mark for each active slot with a rune, its red ring filling with the blows landed (the blood)
@@ -23280,7 +23303,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); noSave = true; toCamp(); var ax = P.x - 150, ay = P.y - 30, tries = 0; while (tries++ < 40 && !(w.isLand(ax, ay) && !w.isWater(ax, ay) && w.flatAt && w.flatAt(ax, ay, 40))) { ax -= 24; }
     var near = []; w.eachProp(function (o) { if (Math.abs(o.x - ax) < 170 && Math.abs(o.y - ay) < 150) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
     function item(name, x, y, extra) { var it = { name: name, x: x, y: y, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 6 }).r }; for (var k in extra || {}) it[k] = extra[k]; B.items.push(it); return it; }
-    runeSite = item('runeAltar', ax, ay, { altar: true }); item('campfire', ax + 80, ay + 40, { hearth: true, light: 1 }); bDirty = true;
+    runeSite = item('runeAltar', ax, ay, { altar: true }); item('campfire', ax + 70, ay + 36, { hearth: true, light: 1 }); bDirty = true;
     P.x = ax; P.y = ay + 70; P.face = -Math.PI / 2; P.lvl = 0; P.mode = 'fight';
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); });
@@ -23290,7 +23313,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'boar', name: 'A boar out cold here' }, { id: 'deer', name: 'A deer out cold here' }, { id: 'hen', name: 'A hen out cold here' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
+      { id: 'hen', name: 'A hen out cold here (one stone)' }, { id: 'boar', name: 'A boar out cold here (two)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {
@@ -23303,7 +23326,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (id === 'start') { R2 = Runes2.start(); Combat.api.runeState = R2; toast('The Bash and the Dash'); }
     else if (id === 'tiers') { Runes2.LIST.forEach(function (r) { Runes2.learn(R2, r.id, 3); }); toast('Every rune at tier III'); }
     else if (id === 'due') { year.day = yearDue() ? 0 : YEAR.days; }
-    else if (id === 'boar' || id === 'deer' || id === 'hen') { var kb = placeAnimal(id === 'hen' ? 'boar' : id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) { if (id === 'hen') { kb.stock = 'hen'; kb.tame = true; } Combat.api.knockOut(kb); } }
+    else if (id === 'boar' || id === 'deer' || id === 'hen' || id === 'bear') { var kb = placeAnimal(id === 'hen' ? 'boar' : id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) { if (id === 'hen') { kb.stock = 'hen'; kb.tame = true; } Combat.api.knockOut(kb); } }
     else if (id === 'boarWild') { var kw = placeAnimal('boar', 0, { x: P.x + 140, y: P.y + 20 }, false); if (kw) { kw.awake = true; kw.aggro = 60; } }
     else if (id === 'men') { [0, 1].forEach(function (k) { var m2 = spawnMan(0, P.x + 140 + k * 30, P.y + (k ? 30 : -20), k ? 'axe' : 'sword', 1, 4); m2.awake = true; m2.aggro = 60; m2.loyal = true; }); }   /* (the Battle test's men, in leather with shields, come at you at once) */
     else if (id === 'blood') { Runes2.readyAll(R2); }

@@ -50,7 +50,15 @@ var LIST = [
 ];
 var BY = {}; LIST.forEach(function (r) { BY[r.id] = r; });
 var TIERS = 3, GROW = [0, 50, 150];                 // uses at which a rune reaches tier II and III by itself
-var ANIMAL_TIER = { hen: 1, hare: 1, fish: 1, sheep: 2, goat: 2, deer: 2, boar: 2, cow: 2, bear: 3, moose: 3, wolf: 3, man: 4 };
+var RANKS = [null,                                 // the ranks of blood (Robin, 2026-10-23): how many stones rise from it and at what tier; the fifth rank draws on the legendary pool when it has runes
+  { id: 1, name: 'thin blood', n: 1, tier: 1 },      // a hen, a hare, a fish, an adder: one stone, take it or leave it
+  { id: 2, name: 'red blood', n: 2, tier: 1 },       // a deer, a boar, the farm's beasts: two
+  { id: 3, name: 'a man\u2019s blood', n: 3, tier: 2 },   // a man: three, the dark road
+  { id: 4, name: 'strong blood', n: 4, tier: 3 },    // a bear, a moose, a wolf, a troll: four
+  { id: 5, name: 'a great one\u2019s blood', n: 5, tier: 3, legend: true }];   // a jarl, a boss: five, and the legendary runes among them (none yet)
+var ANIMAL_RANK = { hen: 1, hare: 1, fish: 1, snake: 1, sheep: 2, goat: 2, deer: 2, boar: 2, cow: 2, man: 3, bear: 4, moose: 4, wolf: 4, troll: 4, jarl: 5, boss: 5 };
+var ANIMAL_TIER = {}; for (var ak in ANIMAL_RANK) ANIMAL_TIER[ak] = RANKS[ANIMAL_RANK[ak]].tier;   // (kept for readers of the tier alone)
+function rankOf(kind) { return RANKS[ANIMAL_RANK[kind] || 1]; }
 var MARKS = { struck: { t: 10, col: '#ffe9a0' }, bleeding: { t: 20, col: '#c8322a' }, afraid: { t: 6, col: '#c9a8ff' }, chilled: { t: 8, col: '#a8d8ff' }, burning: { t: 6, col: '#ff9a40' } };
 function fresh() { return { lib: {}, bound: {}, uses: {}, blood: {} }; }
 function start(st) { st = st || fresh(); learn(st, 'bash', 1); learn(st, 'dash', 1); if (!st.bound.guardBlow) bind(st, 'guardBlow', 'bash'); if (!st.bound.dash) bind(st, 'dash', 'dash'); return st; }   // what every hero has from the first day
@@ -70,12 +78,13 @@ function drawBlood(st, n) { for (var s in st.bound) if (SLOT[s] && SLOT[s].activ
 function ready(st, slot) { return !!bound(st, slot) && charge(st, slot) >= 1; }
 function spend(st, slot) { st.blood[slot] = 0; }
 function readyAll(st) { for (var s in st.bound) if (SLOT[s] && SLOT[s].active) st.blood[s] = need(st, s); }
-// the storm's offer: three from the sacrifice pool for the slots, at the animal's tier; a rune known already is offered one tier up, never twice
-function offer(st, tier, R) {
-  R = R || Math.random; tier = Math.max(1, Math.min(TIERS, tier || 1));
-  var pool = LIST.filter(function (r) { return r.pool === 'storm' && (!known(st, r.id) || (tierOf(st, r.id) < tier)); });
-  var out = [], guard = 40; while (out.length < 3 && pool.length && guard-- > 0) { var i = Math.floor(R() * pool.length), r = pool.splice(i, 1)[0]; out.push({ id: r.id, tier: known(st, r.id) ? Math.min(TIERS, Math.max(tier, tierOf(st, r.id) + 1)) : tier }); }
-  if (out.length < 3) LIST.filter(function (r) { return r.pool === 'world' && !known(st, r.id); }).slice(0, 3 - out.length).forEach(function (r) { out.push({ id: r.id, tier: tier }); });   // the pool run dry: the world's runes come through the storm too
+// the storm's offer: so many stones as the blood's rank brings, from the sacrifice pool, at the rank's tier; a rune known already is offered one tier up, never twice; the fifth rank's stones come from the legendary pool first
+function offer(st, rank, R) {
+  R = R || Math.random; var rk = typeof rank === 'object' ? rank : RANKS[Math.max(1, Math.min(RANKS.length - 1, rank || 1))], n = rk.n, tier = Math.max(1, Math.min(TIERS, rk.tier));
+  var pool = LIST.filter(function (r) { return (r.pool === 'storm' || (rk.legend && r.pool === 'legend')) && (!known(st, r.id) || (tierOf(st, r.id) < TIERS)); });   /* a rune known already is offered one tier up, whatever the blood's tier */
+  var out = [], guard = 60; if (rk.legend) { var leg = pool.filter(function (r) { return r.pool === 'legend'; }); while (out.length < n && leg.length && guard-- > 0) { var li = Math.floor(R() * leg.length), lr = leg.splice(li, 1)[0]; pool.splice(pool.indexOf(lr), 1); out.push({ id: lr.id, tier: tier }); } }
+  while (out.length < n && pool.length && guard-- > 0) { var i = Math.floor(R() * pool.length), r = pool.splice(i, 1)[0]; out.push({ id: r.id, tier: known(st, r.id) ? Math.min(TIERS, Math.max(tier, tierOf(st, r.id) + 1)) : tier }); }
+  if (out.length < n) LIST.filter(function (r) { return r.pool === 'world' && !known(st, r.id); }).slice(0, n - out.length).forEach(function (r) { out.push({ id: r.id, tier: tier }); });   // the pool run dry: the world's runes come through the storm too
   return out;
 }
 function take(st, pick) { learn(st, pick.id, pick.tier); return pick.id; }
@@ -104,6 +113,6 @@ function stone(c, x, y, h, id, state, fill) {
   if (state !== 'blank' && id) glyph(c, id, x, y - h * 0.5, h * 0.5, state === 'woken' || fill > 0 ? '#3a2a24' : '#3f3730', Math.max(0.7, h * 0.055), state === 'woken' ? 1 : (fill || 0));
   c.restore();
 }
-return { SLOTS: SLOTS, SLOT: SLOT, LIST: LIST, BY: BY, TIERS: TIERS, GROW: GROW, ANIMAL_TIER: ANIMAL_TIER, MARKS: MARKS, GLYPHS: GLYPHS, fresh: fresh, start: start, known: known, tierOf: tierOf, learn: learn, fits: fits, bound: bound, bind: bind, unbind: unbind, num: num, has: has, use: use, need: need, charge: charge, drawBlood: drawBlood, ready: ready, spend: spend, readyAll: readyAll, offer: offer, take: take, glyph: glyph, stone: stone };
+return { SLOTS: SLOTS, SLOT: SLOT, LIST: LIST, BY: BY, TIERS: TIERS, GROW: GROW, ANIMAL_TIER: ANIMAL_TIER, RANKS: RANKS, ANIMAL_RANK: ANIMAL_RANK, rankOf: rankOf, MARKS: MARKS, GLYPHS: GLYPHS, fresh: fresh, start: start, known: known, tierOf: tierOf, learn: learn, fits: fits, bound: bound, bind: bind, unbind: unbind, num: num, has: has, use: use, need: need, charge: charge, drawBlood: drawBlood, ready: ready, spend: spend, readyAll: readyAll, offer: offer, take: take, glyph: glyph, stone: stone };
 })();
 if (typeof module !== 'undefined') module.exports = Runes2;

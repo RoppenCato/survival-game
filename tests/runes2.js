@@ -15,10 +15,12 @@ ok(R.num(st, 'charge', 'down') === 1, 'the Charge at tier I knocks one man down'
 let grew = 0; for (let i = 0; i < 50; i++) { const g = R.use(st, 'charge'); if (g) grew = g; }
 ok(grew === 2 && R.tierOf(st, 'charge') === 2 && R.num(st, 'charge', 'down') === 2, 'fifty uses: tier II, two men down');
 const seeds = [0.1, 0.7, 0.3, 0.9, 0.5, 0.2, 0.8, 0.4, 0.6]; let k = 0; const rng = () => seeds[k++ % seeds.length];
-const o1 = R.offer(st, 2, rng); ok(o1.length === 3 && o1.every(p => p.tier === 2 && R.BY[p.id].pool === 'storm'), 'a boar’s blood: three storm runes at tier II: ' + o1.map(p => p.id).join(', '));
-R.take(st, o1[0]); ok(R.tierOf(st, o1[0].id) === 2, 'the one taken is known at tier II');
-const o2 = R.offer(st, 1, rng); ok(o2.every(p => p.id !== o1[0].id || p.tier > 2), 'a known rune is offered only one tier up');
-R.LIST.filter(r => r.pool === 'storm').forEach(r => R.learn(st, r.id, 3)); const o3 = R.offer(st, 3, rng);
+const o1 = R.offer(st, R.rankOf('boar'), rng); ok(o1.length === 2 && o1.every(p => p.tier === 1 && R.BY[p.id].pool === 'storm'), 'a boar’s blood (red, rank 2): two storm runes at tier I: ' + o1.map(p => p.id).join(', '));
+const oh = R.offer(st, R.rankOf('hen'), rng), om = R.offer(st, R.rankOf('man'), rng), ob = R.offer(st, R.rankOf('bear'), rng);
+ok(oh.length === 1 && om.length === 3 && om.every(p => p.tier >= 2) && ob.length === 4 && ob.every(p => p.tier >= 3), 'a hen one stone, a man three at tier II, a bear four at tier III: ' + [oh.length, om.length, ob.length].join('/'));
+R.take(st, om[0]); ok(R.tierOf(st, om[0].id) === 2, 'the one taken from a man’s blood is known at tier II');
+const o2 = R.offer(st, 3, rng); ok(o2.every(p => p.id !== om[0].id || p.tier > 2), 'a known rune is offered only one tier up');
+R.LIST.filter(r => r.pool === 'storm').forEach(r => R.learn(st, r.id, 3)); const o3 = R.offer(st, 4, rng);
 ok(o3.every(p => R.BY[p.id].pool === 'world'), 'the storm pool run dry at tier III: the world’s unmet runes come through: ' + o3.map(p => p.id).join(', '));
-ok(R.ANIMAL_TIER.hen === 1 && R.ANIMAL_TIER.boar === 2 && R.ANIMAL_TIER.bear === 3 && R.ANIMAL_TIER.man === 4, 'the animals’ tiers');
+ok(R.ANIMAL_RANK.hen === 1 && R.ANIMAL_RANK.boar === 2 && R.ANIMAL_RANK.man === 3 && R.ANIMAL_RANK.bear === 4 && R.RANKS[5].legend, 'the ranks of blood: hen 1, boar 2, man 3, bear 4, the fifth legendary');
 console.log('  runes:', R.LIST.length, 'slots:', R.SLOTS.length, 'storm pool:', R.LIST.filter(r => r.pool === 'storm').length, 'world:', R.LIST.filter(r => r.pool === 'world').length);
