@@ -988,9 +988,9 @@ Measured: 77 to 78 on the jog, 59 to 60 with the switch; `tests/battle.js ladder
     not kill it (`e.bkind`, set by `tuneBeast`); the page plays the cry 50 ms later, always on a heavy blow, every other light
     one, never two within 0.35 s (mine), a grown boar's slower (0.88: the cry was made for the young). Real boar, wolf and
     deer recordings would need Robin's Freesound account or a Sonniss bundle;
-  - the studio's own for the rest (parry, crit, the tell, the chain, finish, broken, perfect, stagger, dash, hurt, shoot,
+  - the studio's own for the rest (parry, crit, the tell, the chain, finish, broken, perfect, stagger, dash, hurt,
     slam, die);
-  - **the bow shot's candidates** (Derek, SD's, 2026-10-23, `assets/sfx/bow`: a longbow's snap A, a recurve's B, real shots with the string ringing C, the studio's snap, thrum and arrow V, levelled to the current shoot; the studio's `shoot` stays until Robin picks in the arena);
+  - **the bow shot B** (Derek, SD's `assets/sfx/bow`, Robin's pick of 2026-10-23: a recurve's snap; the studio's old `shoot` and the other candidates are out);
   - **the weather's sounds** (Derek, SD's candidates of 2026-10-23, `assets/sfx/weather`, copied whole; **their own bundle
     `assets/sfx/weather.js`**, 21 MB, built by `node tools/sfxjs.js assets/sfx/weather weather`, `__TAG_WSFX__`, **loaded when
     the first wet spell comes**, `WSFX`, `weatherSfx`; Robin picks in the arena, where its rows are the world's): the rain as
