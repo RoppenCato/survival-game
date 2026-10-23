@@ -1225,6 +1225,7 @@ function make(kit, opts) {
       var sgd = c.getImageData(0, 0, W2 * 2, H2 * 2), sgx0 = cx * W2, sgy0 = cy * H2;
       Seasons.gradeGround(sgd.data, W2 * 2, H2 * 2, w.season, function (px, py) { return w.isWater(sgx0 + px / 2, (sgy0 + py / 2) / K); });
       c.putImageData(sgd, 0, 0);
+      if (w.season === 'winter') { c.save(); c.fillStyle = 'rgba(236,241,246,0.88)'; for (var ay = 0; ay < CT; ay++) for (var ax = 0; ax < CT; ax++) { var gk = w.groundKind((cx * CT + ax + 0.5) * T, (cy * CT + ay + 0.5) * T); if (gk === 7 || gk === 8) c.fillRect(ax * T - 1, ay * TS - 1, T + 2, TS + 2); } c.restore(); }   /* (the ash and soot of a burnt room lie open to the sky: snow over them) */
       c.save(); c.setTransform(1, 0, 0, 1, 0, 0); Seasons.sprinkle(c, w.season, W2 * 2, H2 * 2, function (px, py) { return !!LM[(py >> 1) * W2 + (px >> 1)]; }, sgx0, sgy0); c.restore();
     }
     if (waters) {                                             // the climate's tint over the grass (and the season's): nothing at home, where it is zero

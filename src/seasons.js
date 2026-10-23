@@ -85,8 +85,10 @@
       }
       var grass = hh > 60 && hh < 205 && ss > 0.07, sand = hh >= 30 && hh <= 60 && ss > 0.3 && ll > 0.5;   // (the meadow's own shade is bluish: it takes the season too)
       if (season === 'winter') {
-        if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn(x / 30, y / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
-        else { d[i] = mix(d[i], 150, 0.3); d[i + 1] = mix(d[i + 1], 158, 0.3); d[i + 2] = mix(d[i + 2], 175, 0.3); }
+        var dirt = !grass && !sand && hh >= 12 && hh <= 55 && ss > 0.1 && ll < 0.55;
+        if (dirt) { var tn = 0.62 + 0.3 * vn(x / 9, y / 7, 8), sp = snowAt(Math.max(ll, 0.3) + 0.36 + (vn(x / 30, y / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0], tn); d[i + 1] = mix(d[i + 1], sp[1], tn); d[i + 2] = mix(d[i + 2], sp[2], tn); }   // trodden earth, paths and yards: packed snow as light as the rest, the earth showing here and there (2026-10-23: their darker snow kept the patches' shapes)
+        else if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn(x / 30, y / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
+        else { d[i] = mix(d[i], 150, 0.3); d[i + 1] = mix(d[i + 1], 158, 0.3); d[i + 2] = mix(d[i + 2], 175, 0.3); }   // rock: greyed, its snow from above
       } else if (grass) {
         var T = LEAF[season].grass, o = hsl2rgb(T[0] + (vn(x / 40, y / 30, 2) - 0.5) * (season === 'autumn' ? 22 : 8), clamp(ss * T[1], 0, 1), clamp(ll + T[2], 0, 0.95)); d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2];
       }
