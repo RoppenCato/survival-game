@@ -144,6 +144,10 @@ def hud_art():
     if os.path.isdir(td):
         for fn in sorted(os.listdir(td)):
             if fn.endswith('.png'): out['talk/' + fn[:-4]] = '../assets/hud/talk/' + fn + '?v=' + hashlib.md5(open(os.path.join(td, fn), 'rb').read()).hexdigest()[:8]
+    sd = os.path.join(d, 'ship')                        # the shipyard panel's clothes (Colin, AD's step 13 of the ships rework, 2026-10-23): ship/<name>
+    if os.path.isdir(sd):
+        for fn in sorted(os.listdir(sd)):
+            if fn.endswith('.png'): out['ship/' + fn[:-4]] = '../assets/hud/ship/' + fn + '?v=' + hashlib.md5(open(os.path.join(sd, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__HUD__'] = hud_art()
 def font_faces():
