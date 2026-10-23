@@ -1,0 +1,245 @@
+{
+  "about": "The weather sounds: 48 kHz 16-bit mono WAVs, every file's peak at -1 dBFS. Play a sound at its \"gain\" (multiply) so the set is levelled against itself: swings under hits, hits under heavy hits, the finishing blow the loudest. Pick one of the files at random each time. loud_db: the loudest 50 ms of the file before the gain; target_db: where it should sit (the sword's hit = about 0).",
+  "sample_rate": 48000,
+  "channels": 1,
+  "peak_dbfs": -1,
+  "made": "2026-10-23T13:41:05.595Z",
+  "sounds": {
+    "rain_light_a": {
+      "files": [
+        "rain_light_a_1.wav",
+        "rain_light_a_2.wav"
+      ],
+      "seconds": [
+        16,
+        16
+      ],
+      "loud_db": -18.4,
+      "target_db": -16,
+      "use": "the shower and light rain: a seamless 16 s loop (two takes); the game crossfades the beds by the weather's strength",
+      "gain": 0.147,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -16 dB relative to it"
+    },
+    "rain_a": {
+      "files": [
+        "rain_a_1.wav"
+      ],
+      "seconds": [
+        16
+      ],
+      "loud_db": -23.2,
+      "target_db": -12,
+      "use": "steady rain on the ground: a seamless 16 s loop",
+      "gain": 0.405,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -12 dB relative to it"
+    },
+    "rain_heavy_v": {
+      "files": [
+        "rain_heavy_v_1.wav"
+      ],
+      "seconds": [
+        16
+      ],
+      "loud_db": -20.6,
+      "target_db": -8,
+      "use": "the storm's driven rain: a seamless 16 s loop (the studio's, layered from the others)",
+      "gain": 0.476,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -8 dB relative to it"
+    },
+    "rain_water_a": {
+      "files": [
+        "rain_water_a_1.wav"
+      ],
+      "seconds": [
+        16
+      ],
+      "loud_db": -23.1,
+      "target_db": -14,
+      "use": "rain on water near the shore: a seamless 16 s loop",
+      "gain": 0.318,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "thunder_a": {
+      "files": [
+        "thunder_a_1.wav",
+        "thunder_a_2.wav",
+        "thunder_a_3.wav",
+        "thunder_a_4.wav"
+      ],
+      "seconds": [
+        10.22,
+        9.827,
+        11.221,
+        7.096
+      ],
+      "loud_db": -10.5,
+      "target_db": -4,
+      "use": "far thunder after a flash, broad long rolls; the game lowers it with the delay",
+      "gain": 0.236,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -4 dB relative to it"
+    },
+    "thunder_b": {
+      "files": [
+        "thunder_b_1.wav",
+        "thunder_b_2.wav",
+        "thunder_b_3.wav"
+      ],
+      "seconds": [
+        8.374,
+        8.344,
+        3.889
+      ],
+      "loud_db": -12.3,
+      "target_db": -4,
+      "use": "far thunder, shorter rolls",
+      "gain": 0.29,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -4 dB relative to it"
+    },
+    "step_snow_a": {
+      "files": [
+        "step_snow_a_1.wav",
+        "step_snow_a_2.wav",
+        "step_snow_a_3.wav",
+        "step_snow_a_4.wav"
+      ],
+      "seconds": [
+        0.385,
+        0.378,
+        0.338,
+        0.347
+      ],
+      "loud_db": -17,
+      "target_db": -14,
+      "use": "a footstep in snow, soft and low",
+      "gain": 0.158,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "step_snow_b": {
+      "files": [
+        "step_snow_b_1.wav",
+        "step_snow_b_2.wav",
+        "step_snow_b_3.wav",
+        "step_snow_b_4.wav"
+      ],
+      "seconds": [
+        0.347,
+        0.307,
+        0.377,
+        0.232
+      ],
+      "loud_db": -16.6,
+      "target_db": -14,
+      "use": "a footstep in snow, a longer crunch",
+      "gain": 0.15,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "step_snow_c": {
+      "files": [
+        "step_snow_c_1.wav",
+        "step_snow_c_2.wav",
+        "step_snow_c_3.wav",
+        "step_snow_c_4.wav"
+      ],
+      "seconds": [
+        0.527,
+        0.542,
+        0.548,
+        0.491
+      ],
+      "loud_db": -9.6,
+      "target_db": -14,
+      "use": "a footstep in cold dry snow, the squeaky crunch",
+      "gain": 0.067,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "step_mud_a": {
+      "files": [
+        "step_mud_a_1.wav",
+        "step_mud_a_2.wav",
+        "step_mud_a_3.wav",
+        "step_mud_a_4.wav"
+      ],
+      "seconds": [
+        0.391,
+        0.348,
+        0.357,
+        0.377
+      ],
+      "loud_db": -14.4,
+      "target_db": -14,
+      "use": "a footstep on a muddy path",
+      "gain": 0.117,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "step_wetsand_v": {
+      "files": [
+        "step_wetsand_v_1.wav",
+        "step_wetsand_v_2.wav",
+        "step_wetsand_v_3.wav",
+        "step_wetsand_v_4.wav"
+      ],
+      "seconds": [
+        0.176,
+        0.207,
+        0.173,
+        0.2
+      ],
+      "loud_db": -15.9,
+      "target_db": -14,
+      "use": "a footstep in wet sand (the studio's)",
+      "gain": 0.139,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -14 dB relative to it"
+    },
+    "splash_a": {
+      "files": [
+        "splash_a_1.wav",
+        "splash_a_2.wav",
+        "splash_a_3.wav",
+        "splash_a_4.wav"
+      ],
+      "seconds": [
+        0.471,
+        0.162,
+        0.535,
+        0.412
+      ],
+      "loud_db": -15.4,
+      "target_db": -10,
+      "use": "walking through a puddle",
+      "gain": 0.208,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -10 dB relative to it"
+    },
+    "gust_a": {
+      "files": [
+        "gust_a_1.wav",
+        "gust_a_2.wav",
+        "gust_a_3.wav",
+        "gust_a_4.wav"
+      ],
+      "seconds": [
+        5.022,
+        5.253,
+        5.26,
+        5.342
+      ],
+      "loud_db": -10.9,
+      "target_db": -10,
+      "use": "a gust over the game's own wind in the storm or the blizzard, only if needed",
+      "gain": 0.124,
+      "loudness": "weighted",
+      "anchor": "hit_1.wav at gain 0.417; target -10 dB relative to it"
+    }
+  }
+}

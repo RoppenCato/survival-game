@@ -989,6 +989,15 @@ Measured: 77 to 78 on the jog, 59 to 60 with the switch; `tests/battle.js ladder
     deer recordings would need Robin's Freesound account or a Sonniss bundle;
   - the studio's own for the rest (parry, crit, the tell, the chain, finish, broken, perfect, stagger, dash, hurt, shoot,
     slam, die);
+  - **the weather's sounds** (Derek, SD's candidates of 2026-10-23, `assets/sfx/weather`, copied whole; **their own bundle
+    `assets/sfx/weather.js`**, 21 MB, built by `node tools/sfxjs.js assets/sfx/weather weather`, `__TAG_WSFX__`, **loaded when
+    the first wet spell comes**, `WSFX`, `weatherSfx`; Robin picks in the arena, where its rows are the world's): the rain as
+    beds, seamless 16 s loops (`Sfx.loop`, `Sfx.setLoop`, `Sfx.cut`) crossfaded by each spell's own strength (the shower
+    `rain_light`, rain `rain`, the storm `rain_heavy`; `rain_water` beside them while the sea is in sight), through the place's
+    own volume; **the thunder** 1.5 to 5 s after each of the storm's flashes, quieter and lower the longer the delay
+    (`weatherThunder`); **a step** where a print shows (`step_snow`, `step_wetsand`, `step_mud`) and **a splash** through a
+    puddle on wet ground (`weatherStep`, `weatherSplash`, from `wgTick`'s footfall); the gust is not played (the game's own
+    wind). The numbers are mine. `debug().weather().sfx` counts what played;
   - **the wave on the shore V** (`amb.wave`, through the place's volume, ashore only): each wave ±2 dB and ±4%, gaps 4.6 to
     11 s with now and then a close pair, and between them the old wash low and unswept (0.01: measured 11 to 17 dB under the
     waves; 0.012 for a more continuous shore, under 0.007 it no longer fills the gaps).

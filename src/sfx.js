@@ -78,6 +78,13 @@ var Sfx = (function () {
     try { if (h.at > now + 0.005) { h.src.stop(); return; } h.g.gain.cancelScheduledValues(now); h.g.gain.setValueAtTime(h.g.gain.value, now); h.g.gain.setTargetAtTime(0, now, f / 3); h.src.stop(now + f * 2 + 0.02); } catch (e) {}
   }
   function peak(n) { return peaks[n] || 0; }
-  return { load: load, has: has, play: play, cut: cut, peak: peak, names: names, label: label, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
+  function loop(ctx, dest, n, o) {   /* a bed (the weather's rain, 2026-10-23): one variation looping from a random point, faded in to v; setLoop moves its level, cut ends it */
+    if (!Sfx.on || !ctx) return false; var list = bufs[n]; if (!list || !list.length) return false; o = o || {};
+    var i = Math.floor(Math.random() * list.length), b = list[i].buf, src = ctx.createBufferSource(), g = ctx.createGain(), now = ctx.currentTime;
+    src.buffer = b; src.loop = true; src.playbackRate.value = o.rate || 1; g.gain.setValueAtTime(0.0001, now); src.connect(g); g.connect(dest || ctx.destination); src.start(now, Math.random() * Math.max(0, b.duration - 0.5));
+    var h = { src: src, g: g, at: now, n: n, base: (gains[n] == null ? 1 : gains[n]) * Sfx.vol }; setLoop(ctx, h, o.v == null ? 1 : o.v, o.ramp == null ? 2 : o.ramp); return h;
+  }
+  function setLoop(ctx, h, v, ramp) { if (!h || !ctx) return; var now = ctx.currentTime; try { h.g.gain.cancelScheduledValues(now); h.g.gain.setValueAtTime(Math.max(0.0001, h.g.gain.value), now); h.g.gain.setTargetAtTime(Math.max(0.0001, h.base * v), now, Math.max(0.05, (ramp == null ? 2 : ramp) / 3)); } catch (e) {} }
+  return { load: load, has: has, play: play, cut: cut, loop: loop, setLoop: setLoop, peak: peak, names: names, label: label, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
 })();
 if (typeof module !== 'undefined') module.exports = Sfx;

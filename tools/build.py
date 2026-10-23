@@ -181,6 +181,7 @@ def file_tag(*parts):   # the sound bundle and the music scripts carry a hash of
     fp = os.path.join(ROOT, *parts)
     return hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
 SRC['__TAG_SFX__'] = file_tag('assets', 'sfx', 'combat.js')
+SRC['__TAG_WSFX__'] = file_tag('assets', 'sfx', 'weather.js')   # the weather's own bundle (Derek, SD's, 2026-10-23), loaded when the first wet spell comes
 SRC['__TAG_DAY__'] = file_tag('assets', 'music', 'meadow-day.js')
 SRC['__TAG_NIGHT__'] = file_tag('assets', 'music', 'meadow-night.js')
 
