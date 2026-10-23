@@ -100,6 +100,7 @@ __LIB__
 __SEASONS__
 __WEATHER__
 __SUN__
+__ROOFS__
 __WORLD__
 __CAVE__
 __AMBIENT__
@@ -725,7 +726,11 @@ __COMBAT__
     var bb = roofBox(r), ov = Build.CFG.overhang + 1.5, left = bb.x0 * T - ov - 6, right = (bb.x1 + 1) * T + ov + 6, top = bb.y0 * TS - UP - ov * K - 52, bottom = (bb.y1 + 1) * TS - UP + ov * K + 14;
     var w2 = Math.ceil(right - left), h2 = Math.ceil(bottom - top), cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
     var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -left * 2, -top * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawRoof(c2, r, 1, cfg, 0);
-    if (w.season === 'winter') roofSnow(cv, c2, r, cfg, bb, left, top);
+    if (w.season === 'winter') {   /* snow on the roofs: Colin, AD's recipe, 2026-10-23 (assets/roofs/RECIPE.md, src/roofs_winter.js: the slopes lit and shaded, the courses through the snow, wind streaks, the ridge's crest and cornice, scoured and slid patches, the lip with its shadow and icicles, a cold ink edge; the gable face kept clear); roofSnow is the fallback */
+      if (typeof RoofWinter !== 'undefined') { var wT = bb.x1 - bb.x0 + 1, dT = bb.y1 - bb.y0 + 1, ns = cfg.gable === 'ns' || (cfg.gable !== 'ew' && dT >= wT), rm = Build.ridgeMid(r, cfg), ovr = cfg.overhang + 1.5 + (cfg.roof === 1 ? 2 : 0), up = cfg.wallH + cfg.thick * K + 1, eave = ((bb.y1 + 1) * TS - up + ovr * K - top) * 2;
+        var gables = ns ? Build.roofRects(r.tiles).map(function (rc) { var b2 = (rc.y1 + 1) * TS - up + ovr * K, l2 = rc.x0 * T - ovr, r2 = (rc.x1 + 1) * T + ovr, Wd = r2 - l2, cxg = (l2 + r2) / 2, rh = cfg.roof === 1 ? Math.min(42, Wd * 0.58) : Math.min(34, Wd * 0.46); return [[l2, b2], [cxg, b2 - rh], [r2, b2]].map(function (q) { return [(q[0] - left) * 2, (q[1] - top) * 2]; }); }) : null;
+        cv = RoofWinter.draw(cv, { ns: ns, rx: rm ? 2 * (rm.x - left) : cv.width / 2, ry: rm ? 2 * (rm.y - top) : cv.height / 2, eave: eave, seed: +r.id || 1, gables: gables }, function (a, b) { var c3 = document.createElement('canvas'); c3.width = a; c3.height = b; return c3; }); }
+      else roofSnow(cv, c2, r, cfg, bb, left, top); }
 
     sp = roofCache[key] = { cv: cv, x: left, y: top, w: w2, h: h2 }; return sp;
   }
