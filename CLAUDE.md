@@ -21,7 +21,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
   islands, claims and the year; `build-plan-waters.md`: the steps to build it; **`raid-build-plan.md`: the raid in the real game in ten
-  steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; **`settlements-plan.md`: one grammar for villages and towns from the farmstead to the great town, grown in rounds, with the research behind it, 2026-10-22**; `ui-review.md` has a list waiting; **`release-and-coop.md`: what releasing the game and playing it with two or three friends would take, and the browser question with its frame-log test, 2026-10-21**). **Finished
+  steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; **`settlements-plan.md`: one grammar for villages and towns from the farmstead to the great town, grown in rounds, with the research behind it, 2026-10-22**; `ui-review.md` has a list waiting; **`big-island-run.md`: the big island played through on 2026-10-23, what was fixed and what needs work there, for the move to the big island**; **`combat-crowd.md`: fighting two or three at once, three things built to feel (the parry's shock, the finishing blow's fear, the shield shove) and six more to choose from, 2026-10-23**; **`release-and-coop.md`: what releasing the game and playing it with two or three friends would take, and the browser question with its frame-log test, 2026-10-21**). **Finished
   business lives in `docs/archive/`** (`archive/before-wednesday.md`, `archive/boats.md`, `archive/lighting.md`, `archive/raid.md`, `archive/creatures.md`, the two playtests) and the
   pictures in `docs/pictures/`.
 - **Our names** (Robin, 2026-10-22): I am **Clive, GD** (the Game Developer); the Art Director is **Colin, AD**, the Lore
@@ -101,7 +101,7 @@ and not built (`docs/idea-bank.md`).
   the player picks his name (no line ever says it); the raider is **Ormr Midgardbane** (folk say the World Serpent fears him;
   he always leaves one alive to tell it); the survivor is **Arnor, the village smith**, an ordinary man scavenging and mending
   in the ruin (he keeps the place Brokk the dwarf had in earlier builds: the story, the raft, the first hirdman); the steading was **Thorgunna's**; the
-  dead Viking in the troll's cave is **Hogni**, whose brother **Old Aslak** lives in the big island's first village. A slower beginning that introduces things one at a time (Robin,
+  dead Viking in the troll's cave is **Hogni**, whose brother **Old Aslak** lives in the big island's first village (village 0, which the generator never makes a ruin: on a seed of 2026-10-23 it was one, with nobody in it and no Aslak). A slower beginning that introduces things one at a time (Robin,
   2026-10-14). Sleeping skips the night. Dying at sea is forgiving: the boat drifts to the shore where you last slept and
   needs half its materials (not built). Currencies: more than one, a new one about every third biome; the first island trades
   basics, silver comes with raiding. Arrows are ammunition of several types carried outside the bag (a way is still to be
@@ -262,7 +262,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   `villages.js`, `bigplace.js`, `boats.js`, `beasts.js`, `trollsheet.js`, `vasensheet.js`, `people.js`, `mountain.js`,
   `mountainlook.js`, `cave.js`, `worlds.js`, `ruin.js`, `weapons.js`, ...) and scripts loaded into a page in the pane to play
   or check it (`drive.js`, `startplay.js`, `battleplay.js`, `raidplay.js`, `ruinplay.js`, `sackplay.js`, `mountainplay.js`,
-  `ui.js`, `smoke.js`, `scenesmoke.js`, `shipsplay.js`: a ship run onto the starter island's shore at five places and backed off each).
+  `ui.js`, `smoke.js`, `scenesmoke.js`, `shipsplay.js`: a ship run onto the starter island's shore at five places and backed off each; `bigplay.js`: the big island step by step, the village, Old Aslak, the slope, a vein, the cave to the ring and out, an adder, the furnace, a stone and the bench, 2026-10-23).
 - `tests/`: headless checks (table in `tests/README.md`). `docs/`: the decided and proposed designs (each says which).
 - `art/` (`art/README.md`): the Blender build scripts and sources; `art/render/` (raw frames) is not committed and is
   remade by a render (emptied on Robin's word, 2026-10-21: 4.7 GB; a sheet is repacked only after its clip is rendered again).
@@ -453,7 +453,7 @@ own groups, faint, "At the hearth", "At the workbench", "At the furnace" for eac
 (`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made
 at the hearth" in place of the button. The pin is the studio's `pin_on` and `pin_off` (drawn in code while they load).
 Hand: flint axe, knife, pick, wooden club, stick bow, torch; **the flint knife is not offered on the starter island** (Robin, 2026-10-21: "not really useful anyway", for now; `STARTER_HIDE`). Bench: the flint sword, the wooden shield, the leather set,
-copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20): embers at dawn by every fire that burned all night, the charcoal
+copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20; and none at a village's fires and lanterns, only at fires outside any place or in one you hold, 2026-10-23): embers at dawn by every fire of yours, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
 
 **Building** (B, `PIECES`, `src/build.js`): the board is tabs by kind (frame and walls, floors and roofs, ground brushes,
@@ -521,7 +521,7 @@ first; hirdmen follow (inside your territory), take jobs at workplaces and eat a
 world (their ground, props and own trees, the roads and the jetty's barrel; the steading's ground too, `villagePaint`) is
 made at every start by `hamletDress` and their pieces in `B` at a fresh one by `hamletBuild` (2026-10-20: a loaded game had
 lost the props and roads); their people live
-routines (spots, jobs, sitting at the fire, watching you a while), find their way round walls, run, hide or arm when you draw
+routines (spots, jobs, sitting at the fire, watching you a while; a taken spot sends one to another free spot, and a plain standing spot is stood beside by each in his own place, so no two stand on one point: 2026-10-23, three thralls had stood in a knot at their door), find their way round walls, run, hide or arm when you draw
 a blade or raid, and can be killed (the dead are remembered by name). **Their clothes and their work are the Art Director's step 5B** (wired 2026-10-21): the people's atlas carries the apron, the kerchief and the straw hat, the hammer, the saw and the bucket for the hand, and the clips hammer, saw, carry, carry_walk, kneel and sit_work (`tools/peoplerender.js` renders them, `art/build/folk_build.py` keys them on `people.blend`); a villager's calling dresses him (`ROLE_X`, `roleLook`: the smith's leather apron, the weaver's linen one, a straw hat on one farmer or fisher in two, grey hair on an elder; a woman in the dress wears the kerchief, under no hat) and gives him his clip (`JOB_CLIP`: the smith hammers at the forge with the hammer in hand, the well is the bucket held and carried, `carry_walk` whenever a villager carries (the brigade too), a priest kneels before the altar (the spot `pray`, held), the weaver and the net mender sit at their work; the hird's crafter saws at the bench). They can be broken into and burnt ("Destruction").
 Houses are narrow and long (a house 6 by 8 to 11 tiles, a longhouse 7 by 16 to 20, a hall 8 by 22 to 24, the outbuildings half as deep again where they are entered: grown 2026-10-22 on Robin's yes through the Art Director, "houses need to be bigger in general to make sense to enter"; the hero is 39 units tall against a tile's 24 of depth, so a 4-tile house was two and a half heroes deep; doors, furniture and the hero as they were).
 
@@ -704,6 +704,7 @@ is health and stamina top left, the chart and the meal top right, **in oak and i
   the bare arm; only a shield stops arrows; a tool can block (gather mode raises a guard too). Arcs 1.9 (shield) to 1.2. No shield with a bow or a Dane axe (`TWO_HANDS`,
   mine). **The guard turns you to the threat** (Robin, 2026-10-15: the foe whose blow lands soonest, else the nearest;
   `GUARD_FACE`, `S.guardFace`) and walking does not turn you while it is up. K late in a recovery raises it.
+- **Fighting two or three at once** (`CROWD`, 2026-10-23, Robin: "being able to fight 2 or 3 at a time in a reasonable way"; the numbers mine, first settings, sliders under "feel" in the arena's Tuning panel, 0 turns one off; `docs/combat-crowd.md`): **the parry's shock** (a parry staggers every other man within `shockR` 80 in front of you for `shockT` 0.45 s, `crowdShock`), **the finishing blow's fear** (the men within `fearR` 130 of a man who takes it stand frozen `fearT` 0.8 s with their guards down, `crowdFear`) and **the shield shove** (J with the guard up: the man before you within `shoveReach` 36 is thrown back `shoveD` 380 as a push, about a hero's length, and staggers `shoveT` 0.55 s, and a man he is thrown into staggers with him; `shoveSt` 14 stamina, once in `shoveCd` 1.1 s; without a shield the haft does half the throw; `crowdShove`). The bots neither shove nor go for a staggered man, so `tests/battle.js two` and the new `three` (against three) barely move with them; Robin judges by hand.
 - **The parry and what follows** (Robin's picks, 2026-10-15; the numbers are mine): a parry stuns (`MEN.parryStun` 1.0 s);
   the foe reels through your blows and comes out swinging, so you parry again: **the chain** (`CHAIN`: up to x4 within 4.5 s,
   each a longer stun and harder blows on him). **Balance** (`POSTURE`): an amber bar that a parry, a perfect dodge, a blocked
@@ -741,7 +742,7 @@ raid's ground too. One ashore when the ship has sailed 700 units off is **lost**
 day, to be won back in step 9); one the engine kills is dead (`seen.hirdDead`). **A carrier holds on until badly hurt**
 (`MEN.dropAt` 0.45; the carry errand's `hold`). **The hero who falls on a raid with a man of his standing within 600 units
 wakes aboard the ship with his men** (`wakeAtSea`, `raidMenAboard`; the chest he carried stays where he fell). Admin: "A
-karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, `claimAt`, `hirdList`, `raidShore`, `raftUse`.
+karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, `claimAt`, `hirdList`, `raidShore`, `raftUse`, `work(id, n)` (a bar or a dish started as the board's button does).
   **Ways in (step 5, the first half, 2026-10-20):** by day one yard man in two **walks the round** the night watch walks
   (`dayWatch`, in `sleepTick`); **a dead man of the place seen by one of its people or its men is found** (`bodiesFound`, every
   half second while the hero is near: the cry and the alarm; the night watch too), so **a body can be dragged** (E on a fallen

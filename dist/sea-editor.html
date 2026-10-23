@@ -8501,6 +8501,14 @@ var BEAST_POISE = 1.1;   // after a beast is staggered, no blow staggers it agai
 var POSTURE = { parry: 0.25, dodge: 0.25, block: 0.04, hit: 0.02, hold: 1.6, decay: 0.15, breakT: 2.0 };   // (block and hit kept small: at 0.15 a bot that only blocked and hit into the shield broke men sooner than one that parried; a perfect dodge counts as a parry, so a foe whose blows are all red can be broken too)
 var RALLY = { share: 0.5, hold: 0.4, time: 1.8, perHit: 2 };   // (at 0.6 of a hit, 6 a blow over 3 s the battle test's careless tapper beat a man in mail with a shield every time (4% before it); at these, 42%)
 var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
+/* Fighting two or three at once (2026-10-23, Robin: "being able to fight 2 or 3 at a time in a reasonable way ... maybe theres
+   something we could do/add"; the numbers mine, first settings): the parry's shock (a parry staggers every other man within
+   shockR in front of you for shockT: the one beside the man you parried flinches, so his blow comes later), the finishing
+   blow's fear (the men within fearR of a man who takes the finishing blow stand frozen fearT), and the shield shove (J with the
+   guard up: the man before you within shoveReach is thrown back shoveD and staggers shoveT, and a man he is thrown into
+   staggers too; it costs shoveSt stamina, once in shoveCd; with no shield the weapon's haft does it for half the throw). Each
+   is a switch: 0 turns it off. */
+var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36 };
 function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
@@ -8509,7 +8517,34 @@ function postureAdd(e, v) {
 }
 function parried(e) {                    // a parry on a foe: the stun, his balance, and at the chain's top the finishing blow
   if ((P.chain || 0) >= CHAIN.max) { stun(e, Math.max(parryStun(), POSTURE.breakT)); e.posture = 0; e.finish = true; num(e.x, headY(e), 'FINISH HIM', '#ff9a4a', true); slowmo(0.35, 0.16); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); logEv({ k: 'broken', e: e, chain: true }); return; }   // the chain at its top: the next blow finishes (Robin)
-  stun(e, parryStun()); postureAdd(e, POSTURE.parry);
+  stun(e, parryStun()); postureAdd(e, POSTURE.parry); crowdShock(e);
+}
+function crowdShock(hit) {                // the parry's shock: the other men within reach in front of the hero flinch (CROWD)
+  if (!(CROWD.shockT > 0)) return; var face = Math.atan2(hit.y - P.y, hit.x - P.x), i, n = 0;
+  for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o === hit || o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1 || o.state === 'stunned') continue;
+    var d = Math.hypot(o.x - P.x, o.y - P.y); if (d > CROWD.shockR + o.r) continue; if (Math.abs(wrap(Math.atan2(o.y - P.y, o.x - P.x) - face)) > CROWD.shockArc / 2) continue;
+    o.state = 'stagger'; o.t = 0; o.dur = Math.max(o.state === 'stagger' ? o.dur - o.t : 0, CROWD.shockT); o.sw = null; o.swung = false; o.poiseT = 0.9; o.showBar = 2; n++; }
+  if (n) { ring(P.x, P.y, 0, CROWD.shockR, 0.3, '220,230,255', false, 2); logEv({ k: 'shock', n: n }); }
+}
+function crowdFear(e) {                   // the finishing blow's fear: the men near him stand frozen (CROWD)
+  if (!(CROWD.fearT > 0)) return; var i, n = 0;
+  for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o === e || o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
+    if (Math.hypot(o.x - e.x, o.y - e.y) > CROWD.fearR) continue; o.state = 'stagger'; o.t = 0; o.dur = CROWD.fearT; o.sw = null; o.swung = false; o.poiseT = 0.9; o.showBar = 2; o.guard = 0; n++; }
+  if (n) { ring(e.x, e.y, 0, CROWD.fearR, 0.5, '255,200,140', false, 2); logEv({ k: 'fear', n: n }); }
+}
+function crowdShove(p) {                  // the shield shove: the man before you is thrown back and staggers, and the one he lands on with him (CROWD)
+  var best = null, bd = 1e9, i, face = P.inAng !== null ? P.inAng : P.face, hasShield = !!(S.shield && api.shield && api.shield());
+  for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
+    var d = Math.hypot(o.x - p.x, o.y - p.y) - o.r - p.r; if (d > CROWD.shoveReach) continue; if (Math.abs(wrap(Math.atan2(o.y - p.y, o.x - p.x) - face)) > 1.0) continue; if (d < bd) { bd = d; best = o; } }
+  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; sfx('block', 0.6);
+  if (!best) { ring(p.x + Math.cos(face) * 20, p.y + Math.sin(face) * 20, 0, 14, 0.2, '200,200,200', false, 1.5); logEv({ k: 'shove', hit: false }); return; }
+  var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : 0.5;
+  best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * CROWD.shoveD * k; best.ky += Math.sin(ang) * CROWD.shoveD * k;
+  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.showBar = 2; postureAdd(best, POSTURE.block);
+  for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
+    var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead) continue;
+    q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
+  ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'SHOVED', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best });
 }
 function heavyBlow(e) { return e.type === 'soldier' ? !!(e.sw && e.sw.heavy) : (e.type === 'brute' || !!(e.cfg && e.cfg.atk && e.cfg.atk.heavy)); }
 function glint(x, y, hv) { if (S.juice) W.glints.push({ x: x, y: y, t: 0, life: hv ? 0.5 : 0.35, hv: !!hv }); }
@@ -8592,6 +8627,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (crit) mult *= 1.5;
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
+  if (fin) crowdFear(e);
   if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('finish'); logEv({ k: 'finish', e: e, dmg: dealt }); }
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
@@ -8788,7 +8824,10 @@ function updatePlayer(dt) {
     if (IN.lmb || IN.keys.KeyJ) { p.holdG = (p.holdG || 0) + dt; }
     else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
   }
-  if ((IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt);
+  var shoving = CROWD.shove > 0 && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the shield shove: J with the guard up (CROWD, 2026-10-23) */
+  if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) crowdShove(p); }
+  if (!shoving && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -9163,7 +9202,7 @@ var MEN = {
   hush: 80, getUp: 2.2,
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
-api.men = MEN; api.guardFace = GUARD_FACE; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT;
+api.men = MEN; api.guardFace = GUARD_FACE; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT; api.crowd = CROWD;
 var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
@@ -10554,7 +10593,7 @@ var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge'
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
   if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
-  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, postureParry: POSTURE.parry, postureDodge: POSTURE.dodge, postureBlock: POSTURE.block, postureHit: POSTURE.hit, rallyShare: RALLY.share, rallyHit: RALLY.perHit, rallyTime: RALLY.time, perfectWin: PERFECT.win, perfectBonus: PERFECT.bonus, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, postureParry: POSTURE.parry, postureDodge: POSTURE.dodge, postureBlock: POSTURE.block, postureHit: POSTURE.hit, rallyShare: RALLY.share, rallyHit: RALLY.perHit, rallyTime: RALLY.time, perfectWin: PERFECT.win, perfectBonus: PERFECT.bonus, toolDmg: TOOL_DMG, shockR: CROWD.shockR, shockT: CROWD.shockT, fearR: CROWD.fearR, fearT: CROWD.fearT, shove: CROWD.shove, shoveD: CROWD.shoveD, shoveT: CROWD.shoveT, shoveSt: CROWD.shoveSt, shoveCd: CROWD.shoveCd }, hero: {}, men: {}, beasts: {} }, k, i;
   for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
   for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
   for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
@@ -10564,7 +10603,7 @@ function tuneDefaults() {
 function tune(over) {
   var T = tuneDefaults(), g, k, q; over = over || {};
   for (g in over) { if (!T[g] || typeof over[g] !== 'object') continue; for (k in over[g]) { q = over[g][k]; if (q && typeof q === 'object') { if (!T[g][k]) continue; for (var kk in q) if (typeof q[kk] === 'number' && T[g][k][kk] != null) T[g][k][kk] = q[kk]; } else if (typeof q === 'number' && T[g][k] != null) T[g][k] = q; } }
-  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; POSTURE.parry = T.feel.postureParry; POSTURE.dodge = T.feel.postureDodge; POSTURE.block = T.feel.postureBlock; POSTURE.hit = T.feel.postureHit; RALLY.share = T.feel.rallyShare; RALLY.perHit = T.feel.rallyHit; RALLY.time = T.feel.rallyTime; PERFECT.win = T.feel.perfectWin; PERFECT.bonus = T.feel.perfectBonus; TOOL_DMG = T.feel.toolDmg;
+  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; POSTURE.parry = T.feel.postureParry; POSTURE.dodge = T.feel.postureDodge; POSTURE.block = T.feel.postureBlock; POSTURE.hit = T.feel.postureHit; RALLY.share = T.feel.rallyShare; RALLY.perHit = T.feel.rallyHit; RALLY.time = T.feel.rallyTime; CROWD.shockR = T.feel.shockR; CROWD.shockT = T.feel.shockT; CROWD.fearR = T.feel.fearR; CROWD.fearT = T.feel.fearT; CROWD.shove = T.feel.shove; CROWD.shoveD = T.feel.shoveD; CROWD.shoveT = T.feel.shoveT; CROWD.shoveSt = T.feel.shoveSt; CROWD.shoveCd = T.feel.shoveCd; PERFECT.win = T.feel.perfectWin; PERFECT.bonus = T.feel.perfectBonus; TOOL_DMG = T.feel.toolDmg;
   for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
   for (k in T.men) MEN[k] = T.men[k];
   TUNED = T; return T;

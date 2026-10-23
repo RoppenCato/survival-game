@@ -98,7 +98,18 @@ to the big island in 104 s of rowing.
 - **The torch's "no torch" toast said "(C)"**, an old craft key. Fixed: "(Tab)".
 - **The toasts never time out while the clock runs fast** (script only; a real frame clears them). Not a player bug.
 
+- **The worn ground reads as a grid of blobs** (the fishing hamlet's and the seat's greens: `wear` counts a tile at a time and
+  paints each worn tile as a rounded square, so the street is a chain of 32-unit dots). The brush that paints it should blur
+  across tile edges, as the other ground kinds do.
+- **The seat's green is a birch wood**: Steinarsborg's fire pit, well and stone stand among a dozen birches and oaks kept
+  inside the green. Fewer kept trees on the focus, more round the edge.
+
 ### Seen and fine
+
+- The jarl's seat's green (Steinarsborg): the fire pit with its log seats, the well, the standing stone, a goat and hens; the
+  fishing hamlet's drying racks with fish on them and its big fire.
+- The cellar under Hakonsgard's longhouse: the stair, the earth passage, barrels and a crate at the top, lit by the torch.
+- The torch: T lights one from the bag (the toast said the old key); it burns by day too, which reads fine.
 
 - The village green at Robin's size: the big fire with its log seats, the well, the standing stone and boulders, the laid
   food table, a goat and hens, villagers at their work and the smith's line "Copper is soft. Bring me bog iron and I will

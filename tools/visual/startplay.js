@@ -94,6 +94,7 @@ window.ST = (function () {
 
   ST.bench = function () {                                // (the hero is put on the wreck's beach)
     var q = P(); q.x = D().home.x + 44; q.y = D().home.y + 10; fast(5); var i = D().pieceIndex('ship1'), spot = null, why = {}, tx0 = Math.floor(q.x / 32), ty0 = Math.floor(q.y / 32), r, dy, dx;
+    var pc = D().pieces ? D().pieces()[i] : null, need = (pc && pc.cost) || { wood: 16, fiber: 6, stone: 4 }, k; for (k in need) if ((inv()[k] || 0) < need[k]) D().addItem(k, need[k] - (inv()[k] || 0));   /* (the naust's cost topped up: the run of 2026-10-23 read "Need 16 wood" as no room) */
     for (r = 0; r < 12 && !spot; r++) for (dy = -r; dy <= r && !spot; dy++) for (dx = -r; dx <= r && !spot; dx++) { var x = (tx0 + dx + 0.5) * 32, y = (ty0 + dy + 0.5) * 32; q = P(); q.x = x + 34; q.y = y + 20; var t = D().target(i, x, y); if (t && t.ok) spot = { x: x, y: y }; else if (t && t.why) why[t.why] = 1; }
     if (!spot) return 'the shipyard can go nowhere near the wreck: ' + Object.keys(why).join('; '); q = P(); q.x = spot.x + 34; q.y = spot.y + 20; fast(1); var pl = D().place(i, spot.x, spot.y); fast(5); P().mode = 'fight';
     return 'the shipyard: ' + (pl && pl.ok ? 'built on the sand' : 'REFUSED: ' + (pl && pl.why)) + '; ' + JSON.stringify(inv());

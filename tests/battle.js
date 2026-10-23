@@ -2,6 +2,7 @@
 //   node tests/battle.js            the short run that npm test makes: a few fights of every rung, and what must not happen
 //   node tests/battle.js one [n]    rung 1: the hero, played by three bots, against one hirdman; n fights a line (200)
 //   node tests/battle.js two [n]    rung 2: against two
+//   node tests/battle.js three [n]  against three (2026-10-23, the crowd additions: CROWD='{"shockT":0,"fearT":0,"shove":0}' turns them off)
 //   node tests/battle.js friend [n] rung 3: two against the hero and one friend; and a friend alone against his equal
 //   node tests/battle.js five [n]   rung 4: five against five with no hero, then with him
 //   node tests/battle.js duels [n]  every weapon against every weapon, man against man
@@ -114,7 +115,7 @@ function line(label, R, extra) {
 if (process.env.GUARDFACE === '0') Combat.S.guardFace = false;   // (the guard turning to the threat off, to compare: GUARDFACE=0)
 if (process.env.MEN) Object.assign(Combat.api.men, JSON.parse(process.env.MEN));             // (for trying a number of the men's: MEN='{"wallGap":4}')
 if (process.env.BOW) Object.assign(Combat.api.men.bow, JSON.parse(process.env.BOW));     // (for trying a bowman's numbers: BOW='{"toMen":0.7}')
-for (const k of ['POSTURE', 'RALLY', 'PERFECT', 'CHAIN']) if (process.env[k]) Object.assign(Combat.api[k.toLowerCase()], JSON.parse(process.env[k]));   // (the balance, the win-back, the perfect dodge, the parry chain: POSTURE='{"block":0}')
+for (const k of ['POSTURE', 'RALLY', 'PERFECT', 'CHAIN', 'CROWD']) if (process.env[k]) Object.assign(Combat.api[k.toLowerCase()], JSON.parse(process.env[k]));   // (the balance, the win-back, the perfect dodge, the parry chain: POSTURE='{"block":0}')
 const mode = process.argv[2] || 'short', N = +process.argv[3] || (mode === 'short' ? 12 : 200);
 const HEROES = [['tapper', ['sword', 'flint'], LEATHER], ['careful', ['sword', 'flint'], LEATHER], ['skilled', ['sword', 'flint'], LEATHER]];
 function one(n) {
@@ -144,6 +145,10 @@ function ladder(n) {
   const watch = process.env.FIVE_DBG ? (t, P, foes, friends) => { const onP = foes.filter(f => !f.dead && f.tgt === P), help = friends.filter(f => !f.dead && !f.down && f.tgt && f.tgt.tgt === P), free = friends.filter(f => !f.dead && !f.down && !f.tgt); console.log('      ' + t.toFixed(0) + ' s: hero ' + Math.round(P.hp) + ' hp, on him ' + onP.length + ' (' + onP.map(f => Math.round(f.hp)).join(',') + ')' + ', friends on those ' + help.length + ', free ' + free.length + ', foes dead ' + foes.filter(f => f.dead || f.out || f.fled).length + ', friends down ' + friends.filter(f => f.down || f.dead).length + '; friends at: ' + friends.map(f => f.dead || f.down ? 'x' : (f.tgt ? (f.tgt.tgt === P ? 'H' : (f.tgt.tgt === f ? 'duel' : 'other')) : '-')).join(' ')); } : null;
   ['careful', 'skilled'].forEach(bot => { const R = run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4), watch }, Math.max(4, Math.round(n / 2))); line(bot + ' with four friends against five', R, ' (the hero fell in ' + R.lost + ' of ' + R.n + '; his friends down ' + (R.friendsDown / R.n).toFixed(1) + ' of 4 a fight; they took ' + (R.foesDead).toFixed(1) + ' of the five)'); });
   line('five against five, no hero', run({ foes: side('sword', 'leather'), friends: side('sword', 'leather') }, Math.max(4, Math.round(n / 2))));
+}
+function three(n) {                        // rung 2b (2026-10-23, Robin: fighting two or three at a time in a reasonable way): against three
+  console.log('--- three. ' + n + ' fights a line. Aimed at: the careful bot can live, the skilled bot can win; the tapper dies');
+  [[['axe', 'leather'], ['axe', 'leather'], ['spear', 'leather']], [['sword', 'mail'], ['axe', 'leather'], ['axe', 'leather']]].forEach(trio => HEROES.forEach(([bot]) => { const R = run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: trio }, n); line(bot + ', iron sword, against ' + trio.map(f => f[0] + ' in ' + f[1]).join(', '), R); }));
 }
 function two(n) {
   console.log('--- two (rung 2). ' + n + ' fights a line. Aimed at: clearly worse than one; the careful bot can win; no two blows landing together, and the hero never held (unable to act) for longer than he could dash out of');
@@ -550,6 +555,7 @@ function raidChecks() {
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);
 if (mode === 'two' || mode === 'short') two(N);
+if (mode === 'three') three(N);
 if (mode === 'friend' || mode === 'short') friend(N);
 if (mode === 'duels') duels(N);
 if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
