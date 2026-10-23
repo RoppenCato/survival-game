@@ -4404,7 +4404,8 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
   var WINTER_PLANT = { bush: 'bush', berryBush: 'bush', heather: 'heather', fern: 'fern', tallGrass: 'tallGrass', reeds: 'reeds', juniper: 'juniper' };
   function winterPlant(kind, v) { var k = WINTER_PLANT[kind]; return k ? k + '_winter_' + ((((v || 0) % 3) + 3) % 3 + 1) : null; }
   function bareTree(kind, v) { return (kind === 'oak' || kind === 'birch') ? kind + '_bare_' + ((((v || 0) % 3) + 3) % 3 + 1) : null; }
-  function gradeGround(d, w, h, season, water) {
+  function gradeGround(d, w, h, season, water, ox, oy) {   // ox, oy: the chunk's origin in its own pixels (world units times the bake's scale): the noise is laid in world space, so chunks meet without a seam (2026-10-23)
+    ox = ox || 0; oy = oy || 0;
     if (season === 'summer') return;
     var x, y, p, i, c, iceD = null, R = 26;
     if (season === 'winter') {                 // how far each water pixel lies from land, for the ice at the shore: found on a grid of every fourth pixel (Clive, GD: per pixel it was 729 looks a pixel, seconds a chunk)
@@ -4420,25 +4421,28 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
       for (p = 0; p < w * h; p++) { i = p * 4; var xq = p % w, yq = (p - xq) / w; if (water(xq, yq)) continue; c = rgb2hsl(d[i], d[i + 1], d[i + 2]);
         var gq = c[0] > 60 && c[0] < 205 && c[1] > 0.07, sq = c[0] >= 30 && c[0] <= 60 && c[1] > 0.3 && c[2] > 0.5, dq = !gq && !sq && c[0] >= 12 && c[0] <= 55 && c[1] > 0.1 && c[2] < 0.55;
         cls[p] = gq || sq || dq || c[2] > 0.3 ? 1 : 2; } }
-    function speck(x0, y0) {                   // a dark pixel with snow all round it: a pebble, a mark, not a rock face
-      var n = 0, k = 0, xx, yy; for (yy = y0 - 2; yy <= y0 + 2; yy++) for (xx = x0 - 2; xx <= x0 + 2; xx++) { if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue; n++; if (cls[yy * w + xx] === 1) k++; }
-      return k >= n * 0.6;
+    var sat = null;
+    if (cls) { sat = new Int32Array((w + 1) * (h + 1)); for (var yq2 = 0; yq2 < h; yq2++) { var row = 0; for (var xq2 = 0; xq2 < w; xq2++) { row += cls[yq2 * w + xq2] === 1 ? 1 : 0; sat[(yq2 + 1) * (w + 1) + xq2 + 1] = sat[yq2 * (w + 1) + xq2 + 1] + row; } } }
+    function snowShare(x0, y0, rr) { var xa = Math.max(0, x0 - rr), ya = Math.max(0, y0 - rr), xb = Math.min(w, x0 + rr + 1), yb = Math.min(h, y0 + rr + 1), n = (xb - xa) * (yb - ya);
+      return (sat[yb * (w + 1) + xb] - sat[ya * (w + 1) + xb] - sat[yb * (w + 1) + xa] + sat[ya * (w + 1) + xa]) / n; }
+    function speck(x0, y0) {                   // a dark pixel that is a speck in the snow (a pebble, a mark) or one of a speckled patch (a gravel path): snow lies round it close by
+      return snowShare(x0, y0, 2) >= 0.6 || snowShare(x0, y0, 5) >= 0.4;   // or in the wider window: a rock face, solid and dark, has little snow inside it
     }
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       p = y * w + x; i = p * 4; c = rgb2hsl(d[i], d[i + 1], d[i + 2]); var hh = c[0], ss = c[1], ll = c[2];
       if (water(x, y)) {
-        if (season === 'winter') { var jag = 12 + 8 * vn(x / 14, y / 10, 4); var idp = iceD.d[(y / iceD.CS | 0) * iceD.cw + (x / iceD.CS | 0)]; if (idp < jag) { var t = 0.85 * clamp(1 - idp / jag, 0.35, 1); d[i] = mix(d[i], 214, t); d[i + 1] = mix(d[i + 1], 230, t); d[i + 2] = mix(d[i + 2], 238, t); } else { d[i] *= 0.78; d[i + 1] *= 0.84; d[i + 2] *= 0.9; } }
+        if (season === 'winter') { var jag = 12 + 8 * vn((x + ox) / 14, (y + oy) / 10, 4); var idp = iceD.d[(y / iceD.CS | 0) * iceD.cw + (x / iceD.CS | 0)]; if (idp < jag) { var t = 0.85 * clamp(1 - idp / jag, 0.35, 1); d[i] = mix(d[i], 214, t); d[i + 1] = mix(d[i + 1], 230, t); d[i + 2] = mix(d[i + 2], 238, t); } else { d[i] *= 0.78; d[i + 1] *= 0.84; d[i + 2] *= 0.9; } }
         else if (season === 'autumn') { d[i] *= 0.92; d[i + 1] *= 0.94; d[i + 2] *= 0.96; }
         continue;
       }
       var grass = hh > 60 && hh < 205 && ss > 0.07, sand = hh >= 30 && hh <= 60 && ss > 0.3 && ll > 0.5;   // (the meadow's own shade is bluish: it takes the season too)
       if (season === 'winter') {
         var dirt = (!grass && !sand && hh >= 12 && hh <= 55 && ss > 0.1 && ll < 0.55) || (cls[p] === 2 && speck(x, y));   // (a speck in the snow takes the packed snow too)
-        if (dirt) { var sp = snowAt(0.55 + (vn(x / 30, y / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0] + 3, 0.92); d[i + 1] = mix(d[i + 1], sp[1], 0.92); d[i + 2] = mix(d[i + 2], sp[2] - 3, 0.92); }   // trodden earth, paths and yards: packed snow a shade greyer than the field, smooth (2026-10-23: their darker snow kept the patches' shapes; then a mottle of earth read as blocks at the game's enlargement)
-        else if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn(x / 30, y / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
+        if (dirt) { var sp = snowAt(0.55 + (vn((x + ox) / 30, (y + oy) / 22, 5) - 0.5) * 0.1); d[i] = mix(d[i], sp[0] + 3, 0.92); d[i + 1] = mix(d[i + 1], sp[1], 0.92); d[i + 2] = mix(d[i + 2], sp[2] - 3, 0.92); }   // trodden earth, paths and yards: packed snow a shade greyer than the field, smooth (2026-10-23: their darker snow kept the patches' shapes; then a mottle of earth read as blocks at the game's enlargement)
+        else if (grass || ll > 0.3) { var sn = snowAt(ll + 0.18 + (vn((x + ox) / 30, (y + oy) / 22, 5) - 0.5) * 0.12), t2 = sand ? 0.7 : 0.95; d[i] = mix(d[i], sn[0], t2); d[i + 1] = mix(d[i + 1], sn[1], t2); d[i + 2] = mix(d[i + 2], sn[2], t2); }
         else { d[i] = mix(d[i], 150, 0.3); d[i + 1] = mix(d[i + 1], 158, 0.3); d[i + 2] = mix(d[i + 2], 175, 0.3); }   // rock: greyed, its snow from above
       } else if (grass) {
-        var T = LEAF[season].grass, o = hsl2rgb(T[0] + (vn(x / 40, y / 30, 2) - 0.5) * (season === 'autumn' ? 22 : 8), clamp(ss * T[1], 0, 1), clamp(ll + T[2], 0, 0.95)); d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2];
+        var T = LEAF[season].grass, o = hsl2rgb(T[0] + (vn((x + ox) / 40, (y + oy) / 30, 2) - 0.5) * (season === 'autumn' ? 22 : 8), clamp(ss * T[1], 0, 1), clamp(ll + T[2], 0, 0.95)); d[i] = o[0]; d[i + 1] = o[1]; d[i + 2] = o[2];
       }
     }
   }
@@ -6348,7 +6352,7 @@ function make(kit, opts) {
     if (w.meadowLook) { c.save(); c.setTransform(2, 0, 0, 2, -cx * W2 * 2, -cy * H2 * 2); w.drawMeadow(c, { x: cx * W2 + W2 / 2, y: cy * H2 + H2 / 2 }, W2 / 2 + 4, H2 / 2 + 4, w.meadowLook); c.restore(); }   // the meadow is still, so it is baked here, not drawn every frame (2026-10-08, the lag)
     if (typeof Seasons !== 'undefined' && w.season !== 'summer' && Seasons.gradeGround) {   /* the season's grade over the baked piece (the Art Director's seasons module, Robin's picks of 2026-10-23): once a bake, never a frame; then spring's anemones or autumn's leaves */
       var sgd = pixOf(c, W2 * 2, H2 * 2), sgx0 = cx * W2, sgy0 = cy * H2;
-      if (sgd) { Seasons.gradeGround(sgd.data, W2 * 2, H2 * 2, w.season, function (px, py) { return w.isWater(sgx0 + px / 2, (sgy0 + py / 2) / K); }); c.putImageData(sgd, 0, 0); }
+      if (sgd) { Seasons.gradeGround(sgd.data, W2 * 2, H2 * 2, w.season, function (px, py) { return w.isWater(sgx0 + px / 2, (sgy0 + py / 2) / K); }, sgx0 * 2, sgy0 * 2); c.putImageData(sgd, 0, 0); }   /* (the chunk's origin in the bake's pixels, so his noise meets across chunks: no seams, 2026-10-23) */
       if (w.season === 'winter') { c.save(); c.fillStyle = 'rgba(236,241,246,0.88)'; for (var ay = 0; ay < CT; ay++) for (var ax = 0; ax < CT; ax++) { var gk = w.groundKind((cx * CT + ax + 0.5) * T, (cy * CT + ay + 0.5) * T); if (gk === 7 || gk === 8) c.fillRect(ax * T - 1, ay * TS - 1, T + 2, TS + 2); } c.restore(); }   /* (the ash and soot of a burnt room lie open to the sky: snow over them) */
       c.save(); c.setTransform(1, 0, 0, 1, 0, 0); Seasons.sprinkle(c, w.season, W2 * 2, H2 * 2, function (px, py) { return !!LM[(py >> 1) * W2 + (px >> 1)]; }, sgx0, sgy0); c.restore();
     }
