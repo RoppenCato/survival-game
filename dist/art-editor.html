@@ -6135,7 +6135,7 @@ function lightning(e, leaps, dmg, depth) {   // Thor's wrath: a bolt on a man, w
     if (best) lightning(best, leaps - 1, runeN('stormsEye', 'dmg') * dmgMul('sword'), depth + 1); }
 }
 function knockOut(e) {                     // the cudgel on a weakened beast: out cold for a while, to be carried
-  e.ko = KO_T; e.state = 'ko'; e.t = 0; e.sw = null; e.swung = false; e.guard = 0; e.aggro = 0; e.awake = true; e.vx = 0; e.vy = 0; e.chargeT = 0; num(e.x, headY(e), 'OUT COLD', '#dfe8ff'); ring(e.x, e.y, 0, 22, 0.25, '220,230,255', false, 2); logEv({ k: 'ko', e: e });
+  e.ko = KO_T; e.state = 'ko'; e.t = 0; e.sw = null; e.swung = false; e.guard = 0; e.aggro = 0; e.awake = true; e.vx = 0; e.vy = 0; e.chargeT = 0; num(e.x, headY(e), 'OUT COLD', '#dfe8ff'); ring(e.x, e.y, 0, 22, 0.25, '220,230,255', false, 2); sfx('cudgel_thud', 0, e); logEv({ k: 'ko', e: e });
 }
 function knockDown(e, ang, k) {            // a man thrown off his feet: a long stagger and a shove (the Charge, the Rush-step)
   e.state = 'stagger'; e.t = 0; e.dur = 1.2; e.sw = null; e.swung = false; e.guard = 0; e.guardAge = 0; e.guardCd = 1.0; e.poiseT = 0.9; e.showBar = 2; e.kx += Math.cos(ang) * CROWD.shoveD * 0.8 * (k || 1); e.ky += Math.sin(ang) * CROWD.shoveD * 0.8 * (k || 1); num(e.x, headY(e), 'DOWN', '#dfe8ff'); ring(e.x, e.y, 0, 30, 0.3, '255,255,255', false, 2.5);
