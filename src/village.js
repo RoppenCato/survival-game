@@ -1147,7 +1147,8 @@ function plan(env, opts) {
     wants.forEach(function (wq) {
       var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
       if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
-      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && R() < 0.14) arch = 'ruin';
+      var ruinRoll = R() < 0.14;   /* (rolled whether or not it can apply, so a seed's layout does not move) */
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && sites.length > 0 && ruinRoll) arch = 'ruin';   /* (never the first place, the big island's village: Old Aslak lives there, and a fresh start of 2026-10-23 had it a ruin with nobody in it) */
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
