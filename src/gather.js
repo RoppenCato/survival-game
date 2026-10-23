@@ -83,14 +83,17 @@ function tick(G, o, dt, ctx) {
     if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
+    else if (o.runeLogs && ev.log) { for (var li = 0; li < G.logsPerTrunk; li++) ev.log(o.name, o.x + dir * len * (0.3 + 0.6 * li / Math.max(1, G.logsPerTrunk - 1)), o.y + 2, Math.max(1, Math.round(wood / G.logsPerTrunk)), dir); }   /* Thor's fell at tier III: the logs come off by themselves (Runes2) */
     else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, bake: s ? s.bake : 1, s: o.s, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
     if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
     var x0 = o.x + dir * 12, x1 = o.x + dir * len, lo = Math.min(x0, x1), hi = Math.max(x0, x1);
+    var fr = !o.runeFelled && ev.fellRune ? ev.fellRune(o) : null;   /* Thor's fell (the swing's rune, Runes2): now and then the tree flies into the next and fells them; a tree it felled fells no more */
     if (G.fallFells && ctx.trees) { var hitT = ctx.trees.filter(function (q) { return q !== o && q.kind === 'tree' && q.dying == null && q.x >= lo - 4 && q.x <= hi + 4 && Math.abs(q.y - o.y) < 22 * G.fallReach; }).sort(function (a, b) { return Math.abs(a.x - o.x) - Math.abs(b.x - o.x); }).slice(0, G.fallMax || 3);
-      hitT.forEach(function (q, k) { var bite = q.max * (G.fallBite || 0.45) / (1 + k * 0.6); q.hp = Math.max(q.max * (G.fallFloor || 0.15), q.hp - bite); q.shake = 0.6; q.leanDir = dir; if (ev.chip) ev.chip(q.x, q.y - 20, 8, '#c9a46a', 6, 70); if (ev.fell) ev.fell(q); }); }   /* chipped, shaken, and left standing */
-    if (G.fallHurts && ctx.hero && ev.hurt) { var h = ctx.hero; if (h.x >= lo - 6 && h.x <= hi + 6 && Math.abs(h.y - o.y) < 16) ev.hurt(G.fallDamage, o.x, o.y, dir); }
+      hitT.forEach(function (q, k) { if (fr && k < fr.fells) { q.hp = 0; q.dying = 0; q.leanDir = dir; q.runeFelled = true; q.runeLogs = !!fr.logs; q.shake = 0.6; if (ev.chip) ev.chip(q.x, q.y - 20, 12, '#c9a46a', 8, 90); if (ev.fell) ev.fell(q); return; }
+        var bite = q.max * (G.fallBite || 0.45) / (1 + k * 0.6); q.hp = Math.max(q.max * (G.fallFloor || 0.15), q.hp - bite); q.shake = 0.6; q.leanDir = dir; if (ev.chip) ev.chip(q.x, q.y - 20, 8, '#c9a46a', 6, 70); if (ev.fell) ev.fell(q); }); }   /* chipped, shaken, and left standing */
+    if (G.fallHurts && !(fr && fr.safe) && ctx.hero && ev.hurt) { var h = ctx.hero; if (h.x >= lo - 6 && h.x <= hi + 6 && Math.abs(h.y - o.y) < 16) ev.hurt(G.fallDamage, o.x, o.y, dir); }
   }
   return o.dying >= done;
 }

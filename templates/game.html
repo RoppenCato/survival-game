@@ -1932,7 +1932,7 @@ __COMBAT__
      it, but the page sets them from what is in hand every frame (handSync): an axe, a pick, a knife or a rod is gather mode (chop,
      mine, cut, fish; a tool bites a beast a little), anything else, or empty hands, is fight mode. BAR_OF says what belongs on
      the bar at all (every weapon and tool); GATHER_KINDS which of them are tools. */
-  var hand = 0, sel = 0, BAR_OF = { sword: 1, axe: 1, club: 1, seax: 1, spear: 1, greataxe: 1, bow: 1, sling: 1, javelin: 1, throwaxe: 1, pick: 1, knife: 1, rod: 1 }, GATHER_KINDS = { axe: 1, pick: 1, rod: 1 };   /* (the knife is a weapon since 2026-10-16: grass is pulled by hand) */
+  var hand = 0, sel = 0, BAR_OF = { sword: 1, axe: 1, club: 1, cudgel: 1, seax: 1, spear: 1, greataxe: 1, bow: 1, sling: 1, javelin: 1, throwaxe: 1, pick: 1, knife: 1, rod: 1 }, GATHER_KINDS = { axe: 1, pick: 1, rod: 1 };   /* (the knife is a weapon since 2026-10-16: grass is pulled by hand) */
   function barBase() { return 0; }
   function handSlot() { return hand < 0 ? null : slots[hand]; }   // -1: empty hands (the thing was put away)
   function handItem() { var s = handSlot(); return s && s.kind === 'item' ? s.item : null; }   // (the argument older callers pass, a mode, is ignored: one hand)
@@ -5306,6 +5306,7 @@ __COMBAT__
     decal: function (d) { d.day = day.n; decals.push(d); },
     spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; trunks.push(o); },
     fell: function (q) { if (busy.indexOf(q) < 0) busy.push(q); },
+    fellRune: function (o) { if (Runes2.bound(R2, 'swing') !== 'thorsFell' || Math.random() >= Runes2.num(R2, 'thorsFell', 'chance')) return null; var g = Runes2.use(R2, 'thorsFell'); if (g) Combat.api.onRuneGrow('thorsFell', g); sfx('lightning_small'); note('Thor\u2019s fell'); return { fells: Runes2.num(R2, 'thorsFell', 'fells'), safe: Runes2.num(R2, 'thorsFell', 'safe'), logs: Runes2.num(R2, 'thorsFell', 'logs') }; },   /* Thor's fell, the swing's rune (Runes2): the felled tree fells the next ones, the trunk never flies at you, the logs come off by themselves, by its tier */
     hurt: function (dmg, fx, fy, dir) { var P = hero(); if (P.dead || ADMIN.immortal) return; P.hp -= dmg; P.flash = 1; P.hurtT = 0.3; P.kx = (P.kx || 0) + dir * 90; P.anim.sq = 1; sfx('hurt'); Combat.api.num(P.x, P.y - 30, '-' + dmg, '#ff8a7a'); if (P.hp <= 0) { P.hp = 0; } },
     bees: function (x, y) { if (false) { note('The bees let you be'); return; } for (var i = 0; i < 7; i++) bees.push({ x: x, y: y, t: 0, life: 7 + Math.random() * 3, a: Math.random() * 6.283 }); }
   };
@@ -7783,14 +7784,14 @@ __COMBAT__
     runeSite = item('runeAltar', ax, ay, { altar: true }); item('campfire', ax + 80, ay + 40, { hearth: true, light: 1 }); bDirty = true;
     P.x = ax; P.y = ay + 70; P.face = -Math.PI / 2; P.lvl = 0; P.mode = 'fight';
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
-    [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); });
+    [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
     sandboxRunes(); year.day = YEAR.days; runeAct('boar'); armsOut = true; save();
   }
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'boar', name: 'A boar out cold here' }, { id: 'deer', name: 'A deer out cold here' }, { id: 'hen', name: 'A hen out cold here' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'blood', name: 'Every blood ring full' },
+      { id: 'boar', name: 'A boar out cold here' }, { id: 'deer', name: 'A deer out cold here' }, { id: 'hen', name: 'A hen out cold here' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {
@@ -7807,6 +7808,7 @@ __COMBAT__
     else if (id === 'boarWild') { var kw = placeAnimal('boar', 0, { x: P.x + 140, y: P.y + 20 }, false); if (kw) { kw.awake = true; kw.aggro = 60; } }
     else if (id === 'men') { [0, 1].forEach(function (k) { var m2 = spawnMan(0, P.x + 140 + k * 30, P.y + (k ? 30 : -20), k ? 'axe' : 'sword', 1, 4); m2.awake = true; m2.aggro = 60; m2.loyal = true; }); }   /* (the Battle test's men, in leather with shields, come at you at once) */
     else if (id === 'blood') { Runes2.readyAll(R2); }
+    else if (id === 'trees') { Runes2.learn(R2, 'thorsFell', Math.max(1, Runes2.tierOf(R2, 'thorsFell'))); Runes2.bind(R2, 'swing', 'thorsFell'); var tx0 = P.x + 70, ty0 = P.y - 30, tk; for (tk = 0; tk < 4; tk++) (function (x, y) { var near = []; w.eachProp(function (o) { if (Math.hypot(o.x - x, o.y - y) < 30) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var tp = { name: 'pine', x: x, y: y, s: 0.58, r: 11, v: tk % 3, kind: 'tree', leanDir: 1 }; tp.max = tp.hp = World.HP.pine * (0.7 + 0.6 * tp.s); w.addProp(tp); })(tx0 + tk * 44, ty0); toast('Thor\u2019s fell on the swing: fell the first pine toward the others'); }
     else if (id === 'altar') { if (runeSite) { P.x = runeSite.x; P.y = runeSite.y + 60; P.lvl = 0; } }
     else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
     else if (id === 'home') { if (inCave) caveSwap(false); var cb = B.items.filter(function (it) { return it.altar; })[0]; if (cb) { P.x = cb.x; P.y = cb.y + 34; P.lvl = 0; } else if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
