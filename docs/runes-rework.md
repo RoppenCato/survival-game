@@ -1,4 +1,6 @@
-# The rune system, reworked (proposal, waiting for Robin, 2026-10-23)
+# The rune system, reworked (decided and built in its first form, 2026-10-23)
+
+**Built the same day** (Robin: "build this rune system so we have something to tweak and upgrade"): `src/runes2.js`, the altar and its board, the ceremony, the cudgel and the carried beast, the Rune Editor (`game.html?scene=runes`); what is in and what waits is in CLAUDE.md under "The runes". The sections below are the design as agreed.
 
 **Decided so far (Robin, 2026-10-23, after the first round):** the actives augment specific attacks and keys (slots by input: yes).
 **The altar:** a stone sacrifice altar you build; at a season's end you sacrifice an animal there to choose a rune, and different

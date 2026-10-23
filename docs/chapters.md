@@ -182,7 +182,7 @@ be raided until raiding is opened in chapter 3 (Robin).
 | The big island: the mountain (slopes, plateau, peaks, waterfall, lookout, rock shelter, cliff veins of copper) | Built |
 | The troll's cave, the troll and his young (Hårungen) | Built |
 | Copper: veins, furnace, bars, copper tools and weapons | Built |
-| The arm ring and the thirty runes, the carver's bench | Built |
+| The runes: the stone altar, the library, binding by blood, the storm's offer, the cudgel and the carried beast (the rework of 2026-10-23; the arm ring and the carver's bench are gone) | Built, first build; Thor's fell and the swing slot waiting |
 | The villages, Old Aslak and Hogni's story | Built |
 | The claim stone, Arnor joins, hirdmen and their jobs | Partly (the hird's next steps, `docs/hird.md`) |
 | **Home water bigger: more islands, villages only, the jarl's seat** (`docs/build-plan-waters.md`, steps 1 to 3) | Built (2026-10-20: the sea as waters, the climate field, home's peaceful places and one seat, home cannot be raided; the climate's first look and the seasons' slots; beasts on every island as the hero comes near) |
