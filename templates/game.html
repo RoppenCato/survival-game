@@ -6028,11 +6028,11 @@ __COMBAT__
   function vSide(x, y) { return roomInfo && roomInfo.at(x - 1, y) >= 0 && roomInfo.at(x, y) < 0 ? 1 : -1; }   // which way a north-south wall's outer face looks: east when it is the east wall of a room, else west
   function drawDebrisAll(c, hw, hh) {
     var k, p, ru, sp, x0, y0;
-    c.fillStyle = Build.ASH_FLOOR; for (k in B.ruin || {}) { ru = B.ruin[k]; if (ru.k !== 'burnt') continue; p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; c.fillRect(x0 - 0.3, y0 - 0.3, T + 0.6, TS + 0.6); }   /* the burnt room's floor, one opaque ash under all of it (2026-10-22, the Art Director's check), then each tile's patches over it */
+    c.fillStyle = w.season === 'winter' ? '#e6ecf2' : Build.ASH_FLOOR; for (k in B.ruin || {}) { ru = B.ruin[k]; if (ru.k !== 'burnt') continue; p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; c.fillRect(x0 - 0.3, y0 - 0.3, T + 0.6, TS + 0.6); }   /* the burnt room's floor, one opaque ash under all of it (2026-10-22, the Art Director's check), then each tile's patches over it */
     for (k in B.ruin || {}) {
       p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; ru = B.ruin[k];
       sp = debrisCache[k]; if (!sp || sp.sig !== ru.k + ru.m) { var cv = document.createElement('canvas'); cv.width = (T + 44) * 2; cv.height = (TS + 36) * 2; var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -(x0 - 22) * 2, -(y0 - 18) * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawDebris(c2, +p[0], +p[1], ru, BCFG); sp = debrisCache[k] = { cv: cv, sig: ru.k + ru.m }; }
-      c.drawImage(sp.cv, x0 - 22, y0 - 18, T + 44, TS + 36);
+      if (w.season === 'winter' && ru.k === 'burnt') { c.globalAlpha = 0.45; c.drawImage(sp.cv, x0 - 22, y0 - 18, T + 44, TS + 36); c.globalAlpha = 1; } else c.drawImage(sp.cv, x0 - 22, y0 - 18, T + 44, TS + 36);   /* (a burnt room lies open to the sky: snow over its ash in winter, the beams showing through) */
       if (ru.hot > 0) { var g = Math.min(1, ru.hot / 30), s = (+p[0]) * 3.7 + (+p[1]) * 1.9, i; c.save(); c.globalCompositeOperation = 'lighter'; for (i = 0; i < 4; i++) { var ex = x0 + 4 + ((s * (i + 1) * 7.3) % 1) * (T - 8), ey = y0 + 3 + ((s * (i + 2) * 3.1) % 1) * (TS - 6), fl = 0.5 + 0.5 * Math.sin(clock * (2 + i) + s + i); c.fillStyle = 'rgba(255,' + Math.round(90 + 70 * fl) + ',30,' + (0.35 * g * fl).toFixed(2) + ')'; c.beginPath(); c.ellipse(ex, ey, 2.4, 1.4, 0, 0, 7); c.fill(); } c.restore(); }
     }
   }
