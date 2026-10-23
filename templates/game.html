@@ -2330,7 +2330,7 @@ __COMBAT__
      when the sea is in sight, its water drawn over the painted sea before the world's things, what swims among them by depth,
      the gulls over everything. A shore point near the hero (the nearest coast, looked for every two seconds) is where the gulls
      circle when there is no ship. */
-  var KEEP_HERO = ['idle', 'idle_look', 'jog', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn'], KEEP_PEOPLE = ['idle', 'idle_look', 'walk', 'jog', 'run', 'sit'], trimT = 0;
+  var KEEP_HERO = ['idle', 'idle_look', 'jog', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'bash', 'bash_wpn'], KEEP_PEOPLE = ['idle', 'idle_look', 'walk', 'jog', 'run', 'sit'], trimT = 0;
   var rimDropT = 0;
   function rimTick(dt) { if (!SUN || SUN.rimK > 0.01) { rimDropT = 0; return; } rimDropT += dt; if (rimDropT > 30) { rimDropT = 0; w.rimDrop(); } }   /* (the lit copies dropped half a minute after the sun is high or down) */
   function trimTick(dt) {                  /* the hero's and the people's sheets of clips not drawn for two minutes let go (2026-10-21: the kit warmed eleven clips at the start and kept every clip ever used; now the resident set is what the last minutes used) */

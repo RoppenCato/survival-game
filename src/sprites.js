@@ -211,7 +211,7 @@
   function attach(Combat, H, opts) {
     opts = opts || {};
     if (!H) { Combat.api.heroSprite = null; return null; }
-    if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once
+    if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'bash', 'bash_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once (the bash clips with them, 2026-10-23: a bash is over in 0.3 s, too short to wait for a sheet)
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
       var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null };
