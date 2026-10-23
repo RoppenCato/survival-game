@@ -8,6 +8,12 @@ the carved symbol until it fills, from empty to blood red. **No cards:** a gift 
 altar, a storm rises and the stones become runes with their powers, you choose one, lightning strikes and breaks the other stones
 and carves the one you chose. **Passives are a fixed set, no slots opening over the game.** The sections below are updated to it;
 the answers to Robin's four questions are in section 5.
+**Third round (Robin, 2026-10-23): "This rune system sounds great!"** The shape of sections 2 and 5 stands as the design: slots by
+input, four fixed passives (hand, foot, eye, heart), the library as stones round the altar, binding by blood at the altar only,
+actives that charge on blood drawn, no plain-number runes, marks for the combinations; **a man may be sacrificed** (the dark road,
+with its price). At the altar you pick the slot you want to change (say the hand) and see only the runes of your library that fit
+it. The animals' tiers and the first marks are still mine to settle with him. The chapter that builds it is not yet said (the rune
+system is reworked when the pet chapter is worked on, Robin's earlier word).
 
 Robin's brief: the system today is convoluted and confusing, the learning paces oddly, the arm ring is too complicated to make
 work and too hard to see on the hero or on a jarl, and there are too many runes wanted for "choose a few". Kept: blood to wake a
