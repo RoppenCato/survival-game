@@ -38,6 +38,11 @@ and where each piece of work belongs. The older version of this file and `docs/r
 No gates between them: you may sail anywhere you can; you struggle until prepared (Robin, 2026-10-04). Distance from home
 sets how hard, direction what kind (Robin).
 
+**The pet system is a chapter's big new thing** (Robin, 2026-10-23: "the pet system should be another big thing to introduce in one
+chapter. As I've said before I like the idea of the game opening up with big new systems over time"): which chapter is not
+decided; it comes through a family close with animals who keep many pets (Robin: "I'll think more of that later"), the kinds
+differ in their uses, and a pet is a person you name and care for (Robin's yes to those two). `docs/pet.md` holds the proposal.
+
 ## Status words
 
 | Word | Meaning |

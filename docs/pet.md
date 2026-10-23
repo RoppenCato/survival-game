@@ -1,5 +1,10 @@
 # A pet: ideas to widen Robin's system (proposal, waiting for Robin, 2026-10-23)
 
+**Decided so far (Robin, 2026-10-23):** the pet system is one of the big new systems a chapter opens with ("the game opening up with big
+new systems over time"); which chapter is not yet said. It comes through **a family that is very close with animals and keeps a lot
+of pets** (Robin will think more on them; who they are and where they live is Alistair, LD's to shape when he does). **Different kinds
+of pets with different uses: yes. A pet is its own person, named and cared for: yes.** The rest below is still proposal.
+
 Robin's seed (in `idea-bank.md`): a pet that follows beside you and idles round the base at home, with a command mode: a held
 key turns the keys into pet orders, a yellow ring at the mouse, and whatever the ring points at lights up with the word for what
 the pet would do there ("Attack" on an enemy). Everything below is mine to propose and Robin's to pick from; none of it is built.
