@@ -90,6 +90,7 @@ Object.keys(PROFILES).forEach(function (k) { PROFILES[k].wu = k === 'greataxe' ?
 function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
+var BOW = { full: 1.5, dmgMin: 0.4, speedMin: 0.8 }; api.bowSpec = BOW;   /* the bow drawn and held (Robin, 2026-10-23: "mouse2 should ready and charge the bow, doing more damage the more its charged (up to 1,5 sec). Then you release with mouse1. You cant block or bash with bow"): full after BOW.full seconds; a shot let go early does dmgMin of the damage and flies at speedMin of the speed, rising to the whole; the numbers mine */
 function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: it ? it.kind : 'bow', R: (it && RANGED[it.kind]) || RANGED.bow }; }
 var critBonus = 0;
 
@@ -660,7 +661,8 @@ function updatePlayer(dt) {
   p.holdT = held ? p.holdT + dt : 0;
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
-  var want = (IN.rmb || IN.keys.KeyK) && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16) */
+  var want = (IN.rmb || IN.keys.KeyK) && !bow && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
+  if (bow) { var drawing = (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none'; p.bowDraw = drawing ? Math.min(BOW.full, (p.bowDraw || 0) + dt) : 0; if (p.guard) p.guard = false; } else p.bowDraw = 0;
   if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
     p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');
@@ -759,12 +761,12 @@ function updatePlayer(dt) {
 
   // ranged
   var rg = bow ? rangedOf() : null;
-  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
-    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null;
+  if (bow && (IN.pressed.lmb || IN.pressed.KeyJ) && p.bowDraw > 0 && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {   /* (the shot is the release: the draw must be on, the left button lets it go; a thrown thing the same) */
+    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null, bk = Math.min(1, p.bowDraw / BOW.full), bdm = BOW.dmgMin + (1 - BOW.dmgMin) * bk, bsp = BOW.speedMin + (1 - BOW.speedMin) * bk; p.bowDraw = 0; p.lastDraw = bk;
     p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
-    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed, vy: Math.sin(fa) * RR.speed, r: RR.r, dmg: dmgMul('bow') * (api.mods && api.mods().arrow ? api.mods().arrow : 1), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed * bsp, vy: Math.sin(fa) * RR.speed * bsp, r: RR.r, dmg: dmgMul('bow') * bdm * (api.mods && api.mods().arrow ? api.mods().arrow : 1), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
     if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
@@ -773,7 +775,8 @@ function updatePlayer(dt) {
 
   // facing
   var target = p.face, gT = null;
-  if (a.ph !== 'none' && a.ph !== 'charge' && !(a.ph === 'recover' && il > 0)) target = a.dir;
+  if (bow && p.bowDraw > 0) target = rangedAngle();   /* (the bow drawn: he faces where he aims) */
+  else if (a.ph !== 'none' && a.ph !== 'charge' && !(a.ph === 'recover' && il > 0)) target = a.dir;
   else if (lockValid()) target = Math.atan2(W.lock.y - p.y, W.lock.x - p.x);
   else if (p.guard && S.guardFace && (gT = guardThreat())) target = Math.atan2(gT.y - p.y, gT.x - p.x);   /* the shield up: he turns to the threat and keeps it, walking or backing off (GUARD_FACE) */
   else if (il > 0) target = Math.atan2(iy, ix);

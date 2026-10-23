@@ -96,6 +96,7 @@
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
+    if (P.bowDraw > 0) { if (A.bow_draw) return { a: 'bow_draw', f: frameAt(A.bow_draw, Math.min(0.999, P.bowDraw / 1.5)) }; if (A.bow_shoot) return { a: 'bow_shoot', f: 0 }; }   /* the bow drawn and held (BOW, 2026-10-23): the draw clip to the frame the charge has reached */
     if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder; the studio's clips when they come, the block held until then */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
       if (!(an && an.amt > 0.3)) return { a: bk, f: frameAt(A[bk], Math.min(0.999, H.blk)) };

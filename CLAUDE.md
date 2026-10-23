@@ -320,9 +320,14 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 
 ## Controls (the game)
 
-- **WASD** walk, **Shift** sprint, **Space** dash. **J** or left click: swing what is in hand or shoot the bow (hold for a
-  charged swing). **K** or right click: raise the guard (with a shield on the arm a shield's; in the instant a blow lands, a
-  parry). **Ctrl**: target the nearest foe, then the next, then let go.
+- **WASD** walk, **Shift** sprint, **Space** dash. **J** or left click: swing what is in hand (hold for a charged swing).
+  **K** or right click: raise the guard (with a shield on the arm a shield's; in the instant a blow lands, a parry). **With the
+  bow out, K or the right button draws it** (Robin, 2026-10-23: "mouse2 should ready and charge the bow, doing more damage the
+  more its charged (up to 1,5 sec). Then you release with mouse1. You cant block or bash with bow"): held, the draw fills over
+  `BOW.full` 1.5 s, he faces where he aims, and **J or the left button lets the arrow go** at `dmgMin` 0.4 of the damage and
+  `speedMin` 0.8 of the speed for a snap shot, rising to the whole at the full draw (mine; the full draw 2.2 times the snap
+  shot); nothing is shot without a draw, the draw let down when the button is let go; no guard and no bash with the bow; the
+  kit's `bow_draw` clip to the frame the draw has reached (`tests/bow.js`). **Ctrl**: target the nearest foe, then the next, then let go.
 - **The bar** is the bag's top row, six slots, one in hand (`hand`, -1 empty). **1 to 6** take a slot's thing in hand or use
   it (food, a torch); its number again puts it away. **Shift and drag on the toolbar** swaps two of its slots or puts a thing into the bag (Robin, 2026-10-20). The wheel picks a slot, **Enter** takes it. An axe, a pick or a rod in
   hand gathers (the engine's gather mode, `GATHER_KINDS`); anything else, or empty hands, fights (the knife is a weapon, Robin). A one-handed weapon
