@@ -145,6 +145,31 @@ could join); peat from a bog; bellows pumped in rhythm (Fantasy Life's blacksmit
 old workings in the cave (shoring, a ruined furnace at the mouth, a miner's pack); rubble walls opened with the pick; a rope
 drop to a lower level; petrified older trolls as ore; nuggets in a cave stream.
 
+## A pet (Robin, 2026-10-23)
+
+Robin's words: "Having a pet (dog, wolf, cat etc). The pet would follow next to you, and idle around your base when at home.
+The pet should have some sort of control system. For example holding a button, let's say Control, would change your keys to
+pet commands. Like Ctrl + mouse click 1 is attack. You would get a yellow circle around the mouse and mousing over things you
+can interact with a pet on would highlight it and say what it does. For example 'Attack' when highlighting an enemy."
+
+Notes toward it (Claude, not decided):
+- **The dog fits the age** (the Vikings kept dogs, hunting and herding; the elkhound and the spitz types; a wolf would be a
+  found-as-a-pup story, a cat a trader's rarity): the first pet a dog, met or bought, named by the player as the hero is.
+- **Where it lives in the code:** the hird's follow and home routines are most of it (a hirdman follows, works and idles at
+  home; the pet follows anywhere, as a hirdman does with no stone raised, and idles about the hearth at home); a beast's body
+  from the engine (a wolf's speed, a bite) on your side (`e.side` 1), so it fights as a friend does, goes down instead of
+  dying, and gets up. The animals' sheets already carry the wolf; a dog needs Colin, AD's model.
+- **The command mode:** Ctrl held (the key is free in the game only while no foe is targeted: Ctrl targets the nearest foe
+  today, so the pet's key may want to be another, or Ctrl held longer) shows the yellow ring at the mouse and a word over
+  whatever it points at: "Attack" on a foe, "Fetch" on a drop, "Flush" on a bush with a hidden beast, "Stay", "Come", "Guard
+  here" on the ground, "Track" on a blood trail (the deer's trail is there already); a click gives the order. The ring and
+  the word are the interface's and mine; the pet's own lines (barks) are nobody's.
+- **What a pet is for in play:** the hunt (it finds and flushes deer and boar, tracks a bleeding deer, holds a boar so you
+  can strike), the watch at night (it wakes you to the wolves, barks at a stranger at your door), a carrier of small things,
+  and company on the long walks. Never a meter to feed; a fed dog is quicker, an unfed one slower, as the hird.
+- **In the lore:** what folk believe about dogs and wolves is Alistair, LD's to say (the hound at the door, the dog in the
+  grave with its master).
+
 ## Smaller ideas
 
 - **The central trading hub** (Robin: "there was one in history"). The best fits are **Hedeby** (Denmark, the
