@@ -78,6 +78,16 @@
         for (var dy = -RC; dy <= RC; dy++) for (var dx = -RC; dx <= RC; dx++) { var xx = gx + dx, yy = gy + dy; if (xx < 0 || yy < 0 || xx >= cw || yy >= ch) continue; if (!cwat[yy * cw + xx]) { var dd = Math.hypot(dx, dy * 1.3) * CS; if (dd < best) best = dd; } }
         cd[bi] = best; }
       iceD = { cw: cw, CS: CS, d: cd }; }
+    var cls = null;
+    if (season === 'winter') {                 // which pixels take snow (1) and which are dark rock (2), read before any is changed
+      cls = new Uint8Array(w * h);
+      for (p = 0; p < w * h; p++) { i = p * 4; var xq = p % w, yq = (p - xq) / w; if (water(xq, yq)) continue; c = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+        var gq = c[0] > 60 && c[0] < 205 && c[1] > 0.07, sq = c[0] >= 30 && c[0] <= 60 && c[1] > 0.3 && c[2] > 0.5, dq = !gq && !sq && c[0] >= 12 && c[0] <= 55 && c[1] > 0.1 && c[2] < 0.55;
+        cls[p] = gq || sq || dq || c[2] > 0.3 ? 1 : 2; } }
+    function speck(x0, y0) {                   // a dark pixel with snow all round it: a pebble, a mark, not a rock face
+      var n = 0, k = 0, xx, yy; for (yy = y0 - 2; yy <= y0 + 2; yy++) for (xx = x0 - 2; xx <= x0 + 2; xx++) { if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue; n++; if (cls[yy * w + xx] === 1) k++; }
+      return k >= n * 0.6;
+    }
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       p = y * w + x; i = p * 4; c = rgb2hsl(d[i], d[i + 1], d[i + 2]); var hh = c[0], ss = c[1], ll = c[2];
       if (water(x, y)) {

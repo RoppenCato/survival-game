@@ -4534,12 +4534,13 @@ function make(kit, opts) {
     return { warm: Math.max(0, Math.min(1, warm)), wet: Math.max(0, Math.min(1, wet)) };
   }
   w.climate = function (wx, wy) { return climateT(wx / T, wy / T); };
-  w.season = 'summer'; w.setSeason = function (name) { if (!SEASONS[name] || name === w.season) return false; w.season = name; for (var ck in chunkCv) delete chunkCv[ck]; chunkOrder.length = 0; for (var ik in IMAGES) delete IMAGES[ik].gs; seasonalProps.forEach(function (p) { w.removeProp(p); }); seasonalProps = []; seasonalDone = {}; return true; };   /* (the ground bakes again in the new season, and every set piece is graded again on its first draw) */
+  w.season = 'summer'; w.setSeason = function (name) { if (!SEASONS[name] || name === w.season) return false; w.season = name; for (var ck in chunkCv) stale[ck] = 1; for (var ik in IMAGES) delete IMAGES[ik].gs; seasonalProps.forEach(function (p) { w.removeProp(p); }); seasonalProps = []; seasonalDone = {}; return true; };   /* (every baked piece is marked stale and bakes again one at a time, the old season's picture staying until the new one is ready: dropping them all at once left black holes and a second of 7 fps, Robin's "glitched out" of 2026-10-23; every set piece is graded again on its first draw) */
   /* The set pieces in a season (2026-10-23): a tree, plant or rock of SEASON_KINDS is drawn as a copy graded by the Art Director's
      module (spring's fresh green, autumn's gold and red, winter's snow laid on from its own outline), made on its first draw in the
      season and kept until the season turns (im.gs); in winter an oak or a birch is its bare picture (the trees_bare set, the same tree
      with twigs for leaves), with the dusting. The flower is not drawn in winter. Nothing else is graded: the people, the beasts, the
      buildings, the camp things keep their look (their snow caps are the studio's, still to come). */
+  var gradeN = 0, GRADE_A_FRAME = 3;
   var SEASON_KINDS = { pine: 1, oak: 1, birch: 1, bush: 1, berryBush: 1, juniper: 1, heather: 1, fern: 1, tallGrass: 1, reeds: 1, mushroom: 1, mushrooms: 1, flower: 1, wildHerbs: 1, rock: 1, boulder: 1, rockFormation: 1, dwarfBirch: 1, willow: 1 };
   function seasonSprite(name, v, im) {
     if (!im.sp || w.season === 'summer' || typeof Seasons === 'undefined') return null;
@@ -4547,6 +4548,8 @@ function make(kit, opts) {
     var src = im;
     if (w.season === 'winter') { var bn = Seasons.bareTree(name, v), bim = bn && IMAGES[bn]; if (bim) { if (!bim.sp && imgReady(bim.img)) bim.sp = { cv: bim.img, l: -bim.ax * bim.upp, t: -bim.ay * bim.upp, w: bim.w * bim.upp, h: bim.h * bim.upp, lights: [], fixed: true }; if (bim.sp) src = bim; } }
     if (src.gs && src.gs.season === w.season) return src.gs.sp;
+    if (src.gs && gradeN >= GRADE_A_FRAME) return src.gs.sp;   /* (the season has just turned: so many pictures graded a frame, the rest still drawn in the old season's look until their turn, so the turn does not freeze the frame) */
+    gradeN++;
     var cw = src.img.naturalWidth || src.img.width, chh = src.img.naturalHeight || src.img.height, cv = kit.mk(cw, chh), g = cv.getContext('2d'); g.drawImage(src.img, 0, 0);
     var id = g.getImageData(0, 0, cw, chh), ok = SEASON_KINDS[name] ? Seasons.gradeSprite(id.data, cw, chh, name, w.season, !!cap) : true;
     if (ok) g.putImageData(id, 0, 0);
@@ -4555,6 +4558,12 @@ function make(kit, opts) {
     return src.gs.sp;
   }
   w.seasonSprite = seasonSprite;
+  w.wetSprite = function (name, v) {        // the set piece's picture graded wet (the Art Director's Weather.wetPicture, 2026-10-23), made once a season per picture and drawn over the dry one at the ground's wetness
+    if (typeof Weather === 'undefined' || !Weather.wetPicture) return null; var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name]; if (!im || !im.sp) return null;
+    var base = seasonSprite(name, v, im) || im.sp; if (base.none) return null; if (im.wsp && im.wsp.from === base.cv) return im.wsp.cv;
+    var cw = base.cv.naturalWidth || base.cv.width, chh = base.cv.naturalHeight || base.cv.height, cv = kit.mk(cw, chh), g = cv.getContext('2d'); g.drawImage(base.cv, 0, 0); var id = g.getImageData(0, 0, cw, chh); Weather.wetPicture(id.data, cw, chh); g.putImageData(id, 0, 0);
+    im.wsp = { from: base.cv, cv: cv }; return cv;
+  };
   /* The season's own pieces (the studio's second drop, 2026-10-23): autumn's chanterelles, boletes and fly agarics, winter's drifts,
      dead grass, umbels and bracken, planted on the grass of a piece as it bakes in their season (so many a piece, by a hash of the
      place, so they stand where they stood), with no foot grass and no halo (they have no ink ring) and no shadow under a drift;
@@ -5717,6 +5726,7 @@ function make(kit, opts) {
   w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
+    gradeN = 0;
     var pw = CT * T, phh = CT * TS, baked = 0;
     if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
