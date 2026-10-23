@@ -1884,8 +1884,15 @@ __COMBAT__
     if (v.rowing && ph < seaSnd.ph - 0.5) sfx(crew > 1 ? 'oars' : 'oar', 0.45 + Math.random() * 0.1);   // (the phase wrapped: a new stroke's catch)
     seaSnd.ph = ph;
     if ((v.sailSet || 0) > 0.5 && seaSnd.set <= 0.5) sfx('sail_fill', 0.5); seaSnd.set = v.sailSet || 0;
-    if (v.beached && !seaSnd.beached) sfx('keel_sand', 0.6); else if (!v.beached && seaSnd.beached) sfx('keel_off', 0.45); seaSnd.beached = v.beached ? 1 : 0;
+    if (v.beached && !seaSnd.beached) { sfx('keel_sand', 0.6); crewLand(v); } else if (!v.beached && seaSnd.beached) sfx('keel_off', 0.45); seaSnd.beached = v.beached ? 1 : 0;
     if (Math.abs(v.speed || 0) > 20 && (seaSnd.creakT -= dt) <= 0) { seaSnd.creakT = 6 + Math.random() * 8; sfx('creak', Yard.rigged(v.kind) ? 0.35 : 0.2); }
+  }
+  function crewLand(v) {                   // a man of the crew says a word as she runs up a beach (line.crew.land, Alistair, LD's handoff 10, Robin's yes of 2026-10-23); once in 20 s, never the line just said
+    if (v !== raft || !v.aboard || !(v.crew > 0) || clock < (seaSnd.landT || 0)) return;
+    var who = hird.filter(function (m) { return m.aboard; }).concat(menAboard.filter(function (e) { return !e.down && e.name; })); if (!who.length) return;
+    var L = loreLines('line.crew.land'), pool = L.length > 1 ? L.filter(function (t) { return t !== seaSnd.landSaid; }) : L, line = pool[Math.floor(Math.random() * pool.length)]; if (!line) return;
+    var P = hero(), m = who[0]; who.forEach(function (q) { if (Math.hypot(q.x - P.x, q.y - P.y) < Math.hypot(m.x - P.x, m.y - P.y)) m = q; });   /* (the man nearest you speaks; aboard, the whole ship is within hearing: a karve is longer than HEAR) */
+    var near = Math.hypot(m.x - P.x, m.y - P.y) <= HEAR; seaSnd.landT = clock + 20; seaSnd.landSaid = line; sayAt(near ? m.x : P.x, near ? m.y : P.y, m.name, line, 5);
   }
   function shipsRefit() { fleet.forEach(function (v) { Yard.fit(v); v._gang = null; }); if (shipPanel) spPrev(); }   /* (a model arrived: its outline and seats are the ships' now) */
   function fleetTick() {                   // ashore, the ship in use is the one of yours you stand by

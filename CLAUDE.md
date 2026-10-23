@@ -68,7 +68,7 @@ and not built (`docs/idea-bank.md`).
   overgrown, and every island gets generated events (a new settlement with boats and a path, trolls in a new cave, new
   creatures such as Näcken, unraided places growing). **All of the year is for later.**
 - **The realm is Skargard** (Robin, 2026-10-16, through the Lore Director: from *skärgård*, archipelago; a part of Midgard), the
-  map's title. The gods may appear only in the background, never named, never bosses (Robin); Odin forged the last ring, the one the legends are about; **it is not called the dragon ring** (Robin, 2026-10-19: "dragon"
+  map's title. The gods are background figures (Robin, 2026-10-16): **a god who appears in the world comes in disguise, is never named as that god (the Wanderer is never called Odin), is never a boss and is gone by morning; folk may name the gods in what they say and in the Lore Book** (Robin, 2026-10-23: "Keep 'Somebody thank Njörd'"); Odin forged the last ring, the one the legends are about; **it is not called the dragon ring** (Robin, 2026-10-19: "dragon"
   is not Viking; the name is the Lore Director's to give, "Odin's ring" until then, `LORE?`; the id `dragon` stays in code). The dragon-head ship stems and the carved dragon post stay (Robin, 2026-10-19: they are
   historical, the *dreki*).
 - **The map:** the compass means something, the details are generated: north colder, south richer and settled ("England in
@@ -591,7 +591,7 @@ aboard within 28 of it; the engine's men on a raid shore the same by an errand, 
 and a helmsman) and a man says so. **Landing files them off** one every 0.35 s (`raft.landing`, `landingTick`) onto spots spread
 along the shore (`Yard.landingSpots`), each walking to his spot (`m.landTo`); on a raid's ground each becomes a man of the engine
 as he steps off; on another shore of home water they keep the boat. Admin's karve lays three thwarts aft of the mast and three
-before it. The lines are `LORE?` (asked). **Not built:** shooting from the deck (chapter 2), enemy ships, grappling and the fight on the
+before it. **A man of the crew speaks as she runs up a beach** (`crewLand`: the lore's `line.crew.land`, three lines, Alistair, LD's handoff 10 on Robin's yes of 2026-10-23; the man nearest you, once in 20 s, never the line just said; aboard the whole ship is within hearing); the other crew lines are `LORE?` (asked). **Not built:** shooting from the deck (chapter 2), enemy ships, grappling and the fight on the
 decks (chapter 3: Robin's yes), the fleet, the studio's surfaces on the hull (the plan's steps 5 to 8); your colours on the sail
 and the shields and a ship's name come later (Robin).
 
