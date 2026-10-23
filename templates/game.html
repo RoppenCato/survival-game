@@ -1313,7 +1313,8 @@ __COMBAT__
   var SHL = { cv: null };
   function drawSunShadows(c, hw, hh) {       // (his second round, 2026-10-23: the layer half the screen's size and the pictures themselves drawn into it, no copies; the figures cast too; a long low thing keeps its length along the screen)
     var st = SUN; if (!st || st.sk <= 0.01 || inCave || !STICK.cast) return false; var W = cv.width, H = cv.height, LW = Math.ceil(W / 2), LH = Math.ceil(H / 2), L = SHL.cv; if (!L || L.width !== LW || L.height !== LH) { L = SHL.cv = document.createElement('canvas'); L.width = LW; L.height = LH; }
-    var g = L.getContext('2d'), M = c.getTransform(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, LW, LH);
+    var g = L.getContext('2d'), M = c.getTransform(); M.e = Math.round(M.e / 2) * 2; M.f = Math.round(M.f / 2) * 2;   /* (the camera's offset snapped to whole pixels of the half-size layer: drawn through it at twice its size, a shadow's edge resampled at a new fraction every step shimmered, plain to see on snow; Robin, 2026-10-23: "the shadows of the trees are flimmering when walking, during winter") */
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, LW, LH);
     var ang = Sun.shadowAngle(st.sx), k = 0.5 * st.len, ca = Math.cos(ang), sa = Math.sin(ang), n = 0, P = hero();
     function foot(fx, fy, m) { var pxv = Math.sin(ang) * (1 - m) + m, pyv = -0.75 * Math.cos(ang) * (1 - m); g.setTransform(0.5 * M.a, 0.5 * M.b, 0.5 * M.c, 0.5 * M.d, 0.5 * M.e, 0.5 * M.f); g.transform(pxv, pyv, -k * ca, -k * sa, fx - pxv * fx + k * ca * fy, fy - pyv * fx + k * sa * fy); }
     var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
