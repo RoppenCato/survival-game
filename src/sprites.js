@@ -97,6 +97,7 @@
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
+    if (P.leap && P.roll && P.roll.t > 0 && A.leap) return { a: 'leap', f: frameAt(A.leap, Math.min(0.999, 1 - P.roll.t / (P.roll.len || 1))) };   /* the Long leap (Colin, AD's clip, 2026-10-24): the crouch, the push-off, the flight and the landing over the leap's time; the body rises in the frame, the shadow stays at the foot */
     if (P.bowDraw > 0) { if (A.bow_draw) return { a: 'bow_draw', f: frameAt(A.bow_draw, Math.min(0.999, P.bowDraw / 1.5)) }; if (A.bow_shoot) return { a: 'bow_shoot', f: 0 }; }   /* the bow drawn and held (BOW, 2026-10-23): the draw clip to the frame the charge has reached */
     if (P.cryT > 0 && A.war_cry) return { a: 'war_cry', f: frameAt(A.war_cry, Math.min(0.999, 1 - P.cryT / 1.1)) };   /* the War-cry (Colin, AD's clip, 2026-10-24) */
     if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder; the studio's clips when they come, the block held until then */
@@ -219,7 +220,7 @@
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
       var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
-      if (H.kit) { drawKit(c, H, x, y, face, an, dashing, P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }
+      if (H.kit) { drawKit(c, H, x, y, face, an, dashing && !(P.leap && P.roll && P.roll.t > 0 && H.meta.anims.leap), P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }   /* (no dash squash over the leap clip) */
       draw(c, H, x, y, face, an, dashing, P, o);
     };
     return H;
