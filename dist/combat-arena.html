@@ -5038,6 +5038,11 @@ function drawBowDraw(c, p, lift) {         /* the draw's cue (Robin, 2026-10-24:
   c.save(); c.lineCap = 'round'; c.strokeStyle = 'rgba(20,14,10,0.45)'; c.lineWidth = 2.6; c.beginPath(); c.arc(x, y, 7, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
   c.strokeStyle = k >= 1 ? 'rgba(255,214,110,' + (0.95).toFixed(2) + ')' : 'rgba(246,236,214,0.85)'; c.lineWidth = 1.6 + fl * 1.4; c.beginPath(); c.arc(x, y, 7, Math.PI * 1.15, Math.PI * (1.15 + 0.7 * k)); c.stroke();
   if (fl > 0) { c.globalAlpha = fl * 0.7; c.fillStyle = '#ffe9a0'; c.beginPath(); c.arc(x, y - 1, 3 + 6 * (1 - fl), 0, 7); c.fill(); }
+  /* the true aim (Robin, 2026-10-24: the body turns in the sheets' eight facings, so the aim looked stepped): a faint dotted line from the bow along the arrow's angle, and a ring where it points, at the mouse or on the target the aim has taken */
+  var ang = rangedAngle(), ax = p.x + Math.cos(ang) * 14, ay = p.y * K - 22 - (lift || 0) + Math.sin(ang) * K * 14, tx, ty, lk = lockValid() ? W.lock : null, tg = S.ranged === 'mouse' ? null : (lk || nearest(280, p.face, 1.6));
+  if (S.ranged === 'mouse') { tx = IN.mx; ty = IN.my; } else if (tg) { tx = tg.x; ty = tg.y * K - 12; } else { tx = p.x + Math.cos(ang) * 150; ty = p.y * K + Math.sin(ang) * K * 150; }
+  var dxl = tx - ax, dyl = ty - ay, dl = Math.hypot(dxl, dyl); if (dl > 20) { c.globalAlpha = 1; c.setLineDash([2.5, 5]); c.lineWidth = 1; c.strokeStyle = 'rgba(246,236,214,' + (0.22 + 0.2 * k).toFixed(2) + ')'; c.beginPath(); c.moveTo(ax + dxl / dl * 10, ay + dyl / dl * 10); c.lineTo(tx - dxl / dl * 8, ty - dyl / dl * 8); c.stroke(); c.setLineDash([]); }
+  c.lineWidth = 1.2; c.strokeStyle = k >= 1 ? 'rgba(255,214,110,0.9)' : 'rgba(246,236,214,0.7)'; c.beginPath(); c.arc(tx, ty, 4.5, 0, 7); c.stroke(); c.beginPath(); c.arc(tx, ty, 1, 0, 7); c.stroke();
   c.restore();
 }
 function drawProj(c, pr) {
