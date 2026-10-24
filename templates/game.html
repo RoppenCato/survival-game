@@ -352,7 +352,7 @@ __COMBAT__
   }
   function duckTick(dt) { var want = ceremony && riteMusicPick === 'none' ? 0 : 1; if (musicDuck === want) return; musicDuck += (want - musicDuck) * Math.min(1, dt * (want < musicDuck ? 1.4 : 0.35)); if (Math.abs(musicDuck - want) < 0.01) musicDuck = want; if (musicOn) Music.setVolume(OPTS.music * musicDuck); }   /* the music goes silent through the rite: only the place's sound, the rain and the thunder (Robin, 2026-10-23) */
   function musicTick(dt) {
-    omenTick(dt); duckTick(dt); burnLoopTick(dt); fireArrowsTick(dt); var Pm = hero(); if (sugarT > 0) { sugarT -= dt; if (Pm.hurtT > 0 || swim.on || Pm.dead) sugarT = 0; } if (fever.t > 0) { fever.t -= dt; if (fever.t <= 0) fever.n = 0; } if (!musicOn) return;
+    omenTick(dt); duckTick(dt); burnLoopTick(dt); fireArrowsTick(dt); fxTick(dt); var Pm = hero(); if (sugarT > 0) { sugarT -= dt; if (Pm.hurtT > 0 || swim.on || Pm.dead) sugarT = 0; } if (fever.t > 0) { fever.t -= dt; if (fever.t <= 0) fever.n = 0; } if (!musicOn) return;
     var want = riteTheme() || (isEvening() ? eveTheme() : dayTheme());   // the song follows the clock: the evening theme from dusk to dawn; the rite's piece through the rite
     if (want !== musicSong) {             // dusk or dawn: two recorded loops crossfade over seven seconds; a song is stopped and the other started
       var fl = fileOf(want), was = musicSong, fdT = /^rite/.test(want) ? 2 : /^rite/.test(was || '') ? 4 : 7;
@@ -5581,6 +5581,10 @@ __COMBAT__
     if (!World.IMAGES.fireArrow_0) return false; var sp = sprite('fireArrow_' + (Math.floor(clock * 12) % 6)); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
   };
+  var fxs = [];   /* Colin, AD's rune effects (assets/props/fx, 2026-10-24): the shield shattering under the Linden-splitter, the Shadowstep's puff; 8 frames at 16 fps where the engine asks (api.onFx) */
+  Combat.api.onFx = function (name, x, y, z) { if (fxs.length < 24) fxs.push({ name: name, x: x, y: y, z: z || 0, t: 0 }); };
+  function fxTick(dt) { for (var i = fxs.length - 1; i >= 0; i--) { fxs[i].t += dt; if (fxs[i].t >= 0.5) fxs.splice(i, 1); } }
+  function drawFx(c, q) { var nm = q.name + '_' + Math.min(7, Math.floor(q.t * 16)); if (!World.IMAGES[nm]) return; var sp = sprite(nm); if (!sp || !sp.cv || sp.w <= 1) return; c.drawImage(sp.cv, q.x + sp.l, q.y * K - q.z + sp.t, sp.w, sp.h); }
   function fireArrowsTick(dt) { for (var i = fireArrows.length - 1; i >= 0; i--) { fireArrows[i].t += dt; if (fireArrows[i].t > FA.life) fireArrows.splice(i, 1); } }
   function drawFireArrowStuck(c, fa) {   /* stuck in a wall facing the eye (the shaft out and down-right, flipped for the other side) or in the turf; burning, then burnt out with a thread of smoke */
     var base = fa.kind === 'wall' ? 'fireArrowWall' : 'fireArrowGround', nm = base + (fa.t < FA.burn ? '_' + (Math.floor(clock * 12) % 6) : '_out'); if (!World.IMAGES[nm]) return; var sp = sprite(nm); if (!sp || !sp.cv || sp.w <= 1) return;
@@ -6747,6 +6751,7 @@ __COMBAT__
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z, P = hero(), i;
       if (torchOn) items.push({ y: P.y + 1, f: function () { drawTorchHeld(ctx); } });
+      for (i = 0; i < fxs.length; i++) (function (q) { items.push({ y: q.y + 4, f: function () { drawFx(ctx, q); } }); })(fxs[i]);   /* the rune effects, over what stands at their foot */
       for (i = 0; i < fireArrows.length; i++) (function (fa) { if (Math.abs(fa.x - cam.x) < hw + 20 && Math.abs(fa.y * K - cam.y) < hh + 30) items.push({ y: fa.y + 2, f: function () { drawFireArrowStuck(ctx, fa); } }); })(fireArrows[i]);   /* the burning arrows stuck in walls and turf */
       if (sprHero && P.dead) items.push({ y: P.y, f: function () { Sprites.drawDead(ctx, sprHero, P.x, P.y * K - Combat.api.scene.heroLift(), P.faceVis, P.anim, P, { scale: Sprites.scaleOf(localStorage), shadow: false, stepData: Combat.api.stepData }); } });   // the fallen sprite hero (the engine draws no hero when dead)
       if (inCave) { pushCaveItems(items); return; }
