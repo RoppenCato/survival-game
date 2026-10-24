@@ -8,7 +8,7 @@ var WPRE = {
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
-var DASH_T = 0.18;
+var DASH_T = 0.18, LEAP = { crouch: 0.14, v: 520, t: 0.42, land: 0.18, h: 24 };   /* the Long leap as its own move (Robin, 2026-10-24: the dash runes felt the same, "that one should just be a leap and that it jumps further"): a crouch of crouch s standing, then the flight at v for t s (times the rune's length over 2.2: about 218 units at tier I, three times the dash), the body h screen units up at the top of its arc, the landing held land s; the numbers mine */
 var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
@@ -806,6 +806,7 @@ function updatePlayer(dt) {
     if (dRune === 'blinkStep' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 7); sfx('blink_step'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Blink-step: through the man before you */
     if (dRune === 'ghostStep') { W.shade = { x: p.x, y: p.y, t: runeN('ghostStep', 'shadeT') || 1, max: runeN('ghostStep', 'shadeT') || 1, dir: heroDir(), ph: p.anim.phase, open: runeN('ghostStep', 'open') }; }   /* the Ghost-step: a shade left where you stood */
     p.leap = dRune === 'longLeap' ? (runeN('longLeap', 'over') || 1) : 0;
+    if (p.leap) { p.leapCrouch = LEAP.crouch; p.leapDir = { x: rx, y: ry }; p.leapLen = (runeN('longLeap', 'len') || 2.2) / 2.2; p.roll.cd = runeN('dash', 'cd') || 0.3; p.charge = null; p.anim.sq = -0.5; p.anim.sqv = 0; runeSpend('dash', dRune); return; }   /* the leap: the crouch first, the flight when it ends (below) */
     p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
     dust(p.x, p.y, 7); sfx('dash'); perfectCheck();
   }
@@ -947,11 +948,13 @@ function updatePlayer(dt) {
      and the blow and 0.9 through the recovery.) */
   if (a.ph === 'recover' && il > 0 && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }
   if (a.ph === 'windup') spd *= 0.1; else if (a.ph === 'active') spd *= 0; else if (a.ph === 'recover') spd *= 0.2; else if (a.ph === 'charge') spd *= 0.6;
+  if (p.leapCrouch > 0) { p.leapCrouch -= dt; spd = 0; if (p.leapCrouch <= 0) { p.roll.t = LEAP.t * (p.leapLen || 1); p.roll.len = p.roll.t; p.roll.dx = p.leapDir.x; p.roll.dy = p.leapDir.y; p.invuln = Math.max(p.invuln, 0.2); p.ghostT = 0; dust(p.x, p.y, 6); sfx('dash'); } }   /* the leap's crouch, then the push-off */
+  if (p.leapLand > 0) { p.leapLand -= dt; spd *= 0.15; }   /* the landing taken in the knees */
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
     p.roll.t -= dt; rushHits(p);
-    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; } }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
-    var rs = (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));
+    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; p.leapLand = LEAP.land; } }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
+    var rs = p.leap ? LEAP.v : (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));   /* (the leap flies at one speed) */
     p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
     p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
   } else if (p.hurtT > 0) { p.vx *= Math.exp(-dt * 8); p.vy *= Math.exp(-dt * 8); }
@@ -2573,7 +2576,7 @@ function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers:
   return e;
 }
 function init(l) { lib = l; reset(); buildGround(); }
-return { HERO_GAIT: HERO_GAIT, tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { HERO_GAIT: HERO_GAIT, LEAP: LEAP, tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 

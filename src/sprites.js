@@ -98,7 +98,7 @@
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
-    if (P.leap && P.roll && P.roll.t > 0 && A.leap) return { a: 'leap', f: frameAt(A.leap, Math.min(0.999, 1 - P.roll.t / (P.roll.len || 1))) };   /* the Long leap (Colin, AD's clip, 2026-10-24): the crouch, the push-off, the flight and the landing over the leap's time; the body rises in the frame, the shadow stays at the foot */
+    if (A.leap) { var LP = (typeof Combat !== 'undefined' && Combat.LEAP) || { crouch: 0.14, land: 0.18 }; if (P.leap && P.leapCrouch > 0) return { a: 'leap', f: Math.min(2, Math.floor(3 * (1 - P.leapCrouch / LP.crouch))) }; if (P.leap && P.roll && P.roll.t > 0) return { a: 'leap', f: 3 + Math.min(4, Math.floor(5 * (1 - P.roll.t / (P.roll.len || 1)))) }; if (P.leapLand > 0) return { a: 'leap', f: 8 + Math.min(3, Math.floor(4 * (1 - P.leapLand / LP.land))) }; }   /* the Long leap (Colin, AD's clip, 2026-10-24): frames 0 to 2 the crouch, 3 to 7 the push-off and the flight, 8 to 11 the landing, each on its own phase of the engine's LEAP */
     if (P.bowDraw > 0) { if (A.bow_draw) return { a: 'bow_draw', f: frameAt(A.bow_draw, Math.min(0.999, P.bowDraw / 1.5)) }; if (A.bow_shoot) return { a: 'bow_shoot', f: 0 }; }   /* the bow drawn and held (BOW, 2026-10-23): the draw clip to the frame the charge has reached */
     if (P.cryT > 0 && A.war_cry) return { a: 'war_cry', f: frameAt(A.war_cry, Math.min(0.999, 1 - P.cryT / 1.1)) };   /* the War-cry (Colin, AD's clip, 2026-10-24) */
     if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder (Colin, AD's clips of 2026-10-23, in KEEP_HERO) */
@@ -220,7 +220,7 @@
     if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'bash', 'bash_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once (the bash clips with them, 2026-10-23: a bash is over in 0.3 s, too short to wait for a sheet)
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
+      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowDy: opts.shadowDy ? opts.shadowDy() : 0, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
       if (H.kit) { drawKit(c, H, x, y, face, an, dashing && !(P.leap && P.roll && P.roll.t > 0 && H.meta.anims.leap), P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }   /* (no dash squash over the leap clip) */
       draw(c, H, x, y, face, an, dashing, P, o);
     };
@@ -262,7 +262,7 @@
     var sx = p.sx, sy = p.sy, pw = p.w, ph = p.h, dx0 = (p.ox - AN.x) * s, dy0 = (p.oy - AN.y) * s, dw0 = pw * s, dh0 = ph * s;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
-    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, sx, sy, pw, ph, dx0, dy0, dw0, dh0, opts.lit && opts.lit.cast);
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, sx, sy, pw, ph, dx0, dy0 + (opts.shadowDy || 0), dw0, dh0, opts.lit && opts.lit.cast);   /* (shadowDy: the shadow kept on the ground under a body in the air, the Long leap) */
     litUnder(c, H, im, file, opts.lit, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
     if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     else c.drawImage(im, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
@@ -294,7 +294,7 @@
   function drawKit(c, H, x, y, face, an, dashing, P, o, look) {
     if (!look) return; o.layers = look.L.map(function (q) { return q.l; });
     var pk = pick(H, P, an, o); H.last = pk; if (!pk) return; var dead = !!P.dead;
-    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, sx: dashing ? 1.1 : 1, sy: dashing ? 0.92 : 1 });
+    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing ? 1.1 : 1, sy: dashing ? 0.92 : 1 });
     if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
   }
   /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).

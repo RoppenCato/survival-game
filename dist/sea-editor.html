@@ -8277,7 +8277,7 @@ var WPRE = {
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
-var DASH_T = 0.18;
+var DASH_T = 0.18, LEAP = { crouch: 0.14, v: 520, t: 0.42, land: 0.18, h: 24 };   /* the Long leap as its own move (Robin, 2026-10-24: the dash runes felt the same, "that one should just be a leap and that it jumps further"): a crouch of crouch s standing, then the flight at v for t s (times the rune's length over 2.2: about 218 units at tier I, three times the dash), the body h screen units up at the top of its arc, the landing held land s; the numbers mine */
 var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
@@ -9075,6 +9075,7 @@ function updatePlayer(dt) {
     if (dRune === 'blinkStep' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 7); sfx('blink_step'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Blink-step: through the man before you */
     if (dRune === 'ghostStep') { W.shade = { x: p.x, y: p.y, t: runeN('ghostStep', 'shadeT') || 1, max: runeN('ghostStep', 'shadeT') || 1, dir: heroDir(), ph: p.anim.phase, open: runeN('ghostStep', 'open') }; }   /* the Ghost-step: a shade left where you stood */
     p.leap = dRune === 'longLeap' ? (runeN('longLeap', 'over') || 1) : 0;
+    if (p.leap) { p.leapCrouch = LEAP.crouch; p.leapDir = { x: rx, y: ry }; p.leapLen = (runeN('longLeap', 'len') || 2.2) / 2.2; p.roll.cd = runeN('dash', 'cd') || 0.3; p.charge = null; p.anim.sq = -0.5; p.anim.sqv = 0; runeSpend('dash', dRune); return; }   /* the leap: the crouch first, the flight when it ends (below) */
     p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
     dust(p.x, p.y, 7); sfx('dash'); perfectCheck();
   }
@@ -9216,11 +9217,13 @@ function updatePlayer(dt) {
      and the blow and 0.9 through the recovery.) */
   if (a.ph === 'recover' && il > 0 && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }
   if (a.ph === 'windup') spd *= 0.1; else if (a.ph === 'active') spd *= 0; else if (a.ph === 'recover') spd *= 0.2; else if (a.ph === 'charge') spd *= 0.6;
+  if (p.leapCrouch > 0) { p.leapCrouch -= dt; spd = 0; if (p.leapCrouch <= 0) { p.roll.t = LEAP.t * (p.leapLen || 1); p.roll.len = p.roll.t; p.roll.dx = p.leapDir.x; p.roll.dy = p.leapDir.y; p.invuln = Math.max(p.invuln, 0.2); p.ghostT = 0; dust(p.x, p.y, 6); sfx('dash'); } }   /* the leap's crouch, then the push-off */
+  if (p.leapLand > 0) { p.leapLand -= dt; spd *= 0.15; }   /* the landing taken in the knees */
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
     p.roll.t -= dt; rushHits(p);
-    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; } }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
-    var rs = (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));
+    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; p.leapLand = LEAP.land; } }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
+    var rs = p.leap ? LEAP.v : (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));   /* (the leap flies at one speed) */
     p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
     p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
   } else if (p.hurtT > 0) { p.vx *= Math.exp(-dt * 8); p.vy *= Math.exp(-dt * 8); }
@@ -10842,7 +10845,7 @@ function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers:
   return e;
 }
 function init(l) { lib = l; reset(); buildGround(); }
-return { HERO_GAIT: HERO_GAIT, tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { HERO_GAIT: HERO_GAIT, LEAP: LEAP, tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 
@@ -10950,7 +10953,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
-    if (P.leap && P.roll && P.roll.t > 0 && A.leap) return { a: 'leap', f: frameAt(A.leap, Math.min(0.999, 1 - P.roll.t / (P.roll.len || 1))) };   /* the Long leap (Colin, AD's clip, 2026-10-24): the crouch, the push-off, the flight and the landing over the leap's time; the body rises in the frame, the shadow stays at the foot */
+    if (A.leap) { var LP = (typeof Combat !== 'undefined' && Combat.LEAP) || { crouch: 0.14, land: 0.18 }; if (P.leap && P.leapCrouch > 0) return { a: 'leap', f: Math.min(2, Math.floor(3 * (1 - P.leapCrouch / LP.crouch))) }; if (P.leap && P.roll && P.roll.t > 0) return { a: 'leap', f: 3 + Math.min(4, Math.floor(5 * (1 - P.roll.t / (P.roll.len || 1)))) }; if (P.leapLand > 0) return { a: 'leap', f: 8 + Math.min(3, Math.floor(4 * (1 - P.leapLand / LP.land))) }; }   /* the Long leap (Colin, AD's clip, 2026-10-24): frames 0 to 2 the crouch, 3 to 7 the push-off and the flight, 8 to 11 the landing, each on its own phase of the engine's LEAP */
     if (P.bowDraw > 0) { if (A.bow_draw) return { a: 'bow_draw', f: frameAt(A.bow_draw, Math.min(0.999, P.bowDraw / 1.5)) }; if (A.bow_shoot) return { a: 'bow_shoot', f: 0 }; }   /* the bow drawn and held (BOW, 2026-10-23): the draw clip to the frame the charge has reached */
     if (P.cryT > 0 && A.war_cry) return { a: 'war_cry', f: frameAt(A.war_cry, Math.min(0.999, 1 - P.cryT / 1.1)) };   /* the War-cry (Colin, AD's clip, 2026-10-24) */
     if (P.bashT > 0) { var bsn = bkS ? 'bash' : 'bash_wpn'; if (A[bsn]) return { a: bsn, f: frameAt(A[bsn], Math.min(0.999, 1 - P.bashT / 0.3)) }; }   /* the bash (CROWD.bashT): the shield driven forward, or the shoulder (Colin, AD's clips of 2026-10-23, in KEEP_HERO) */
@@ -11072,7 +11075,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'bash', 'bash_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once (the bash clips with them, 2026-10-23: a bash is over in 0.3 s, too short to wait for a sheet)
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
+      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowDy: opts.shadowDy ? opts.shadowDy() : 0, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
       if (H.kit) { drawKit(c, H, x, y, face, an, dashing && !(P.leap && P.roll && P.roll.t > 0 && H.meta.anims.leap), P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }   /* (no dash squash over the leap clip) */
       draw(c, H, x, y, face, an, dashing, P, o);
     };
@@ -11114,7 +11117,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var sx = p.sx, sy = p.sy, pw = p.w, ph = p.h, dx0 = (p.ox - AN.x) * s, dy0 = (p.oy - AN.y) * s, dw0 = pw * s, dh0 = ph * s;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
-    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, sx, sy, pw, ph, dx0, dy0, dw0, dh0, opts.lit && opts.lit.cast);
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, sx, sy, pw, ph, dx0, dy0 + (opts.shadowDy || 0), dw0, dh0, opts.lit && opts.lit.cast);   /* (shadowDy: the shadow kept on the ground under a body in the air, the Long leap) */
     litUnder(c, H, im, file, opts.lit, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
     if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     else c.drawImage(im, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
@@ -11146,7 +11149,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drawKit(c, H, x, y, face, an, dashing, P, o, look) {
     if (!look) return; o.layers = look.L.map(function (q) { return q.l; });
     var pk = pick(H, P, an, o); H.last = pk; if (!pk) return; var dead = !!P.dead;
-    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, sx: dashing ? 1.1 : 1, sy: dashing ? 0.92 : 1 });
+    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing ? 1.1 : 1, sy: dashing ? 0.92 : 1 });
     if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
   }
   /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
