@@ -128,7 +128,7 @@ for (var pk in PROFILES) PROFILES[pk].kind = pk;
    the men's own levers are MEN's (their windup, blow and recovery factors). */
 var MAN_PF = JSON.parse(JSON.stringify(PROFILES));
 Object.assign(PROFILES.sword, { wu: 0.11, ac: 0.4, rec: 0.2, reach: 50, lunge: 123 });   // Robin's sword (the Combat Arena, 2026-10-15: "this feels good")
-Object.keys(PROFILES).forEach(function (k) { PROFILES[k].wu = k === 'greataxe' ? 0.15 : 0.03; });   // the player's blows start on the press (Robin, 2026-10-20): a frame or two before the blow lands, so the swing's sound and smear still begin; the Dane axe keeps a short windup, its weight (Robin); a charged blow keeps the hold as its windup; the men keep theirs (MAN_PF above), the player's warning
+Object.keys(PROFILES).forEach(function (k) { PROFILES[k].wu = k === 'greataxe' || k === 'maul' ? 0.15 : 0.03; });   /* (the maul keeps the Dane axe's short windup too, its weight, so Colin, AD's smash shows its raise: mine, 2026-10-24) */   // the player's blows start on the press (Robin, 2026-10-20): a frame or two before the blow lands, so the swing's sound and smear still begin; the Dane axe keeps a short windup, its weight (Robin); a charged blow keeps the hold as its windup; the men keep theirs (MAN_PF above), the player's warning
 function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
