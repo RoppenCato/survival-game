@@ -8780,7 +8780,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
     blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy'); if (e.side === 1 && runeHas('shieldWall')) { if (e.inLine && runeN('shieldWall', 'unbroken')) broke = false; if (Math.hypot(e.x - P.x, e.y - P.y) < 48) dmg *= 0.5; }   /* the Shield-wall: a man of yours beside you stops more; a held line of yours cannot be broken (III) */   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
     dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1); if (e.inLine) dmg *= MEN.wallK;   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
-    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; if (!src && hitFlags.wkind === 'axe' && runeHas('axeBreaker')) { stag = Math.max(stag, 42); e.guardCd *= runeN('axeBreaker', 'downK') || 1; e.axeOpen = runeN('axeBreaker', 'open') || 1; } }   /* the Axe-breaker: a broken guard staggers, stays down longer, opens him */ else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
+    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; if (!src && hitFlags.wkind === 'axe' && runeHas('axeBreaker')) { stag = Math.max(stag, 42); e.guardCd *= runeN('axeBreaker', 'downK') || 1; e.axeOpen = runeN('axeBreaker', 'open') || 1; sfx('guard_break', 0, e); } else if (!src && hitFlags.guardBreak && kind !== 'proj' && swingRune() === 'overhead') sfx('guard_break', 0, e); }   /* the Axe-breaker: a broken guard staggers, stays down longer, opens him */ else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
   if (man) dmg *= 1 - (e.armor || 0);
   if (quiet) { dmg = Math.max(dmg * 3, e.hp + 1); e.quietKill = true; }   // one blow, and no cry
@@ -8922,7 +8922,8 @@ function startAttack() {
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = p.recFast ? (runeN('twinBlow', 'recK') || 0.5) : 1; p.recFast = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1); p.stDelay = 0.5; }
-  if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; }   /* the Whirl: a two-handed swing goes full round */
+  if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; sfx('whirl', 0, p); }   /* the Whirl: a two-handed swing goes full round */
+  if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind; if (swr0 === 'lunge') sfx('lunge', 0, p); else if (swr0 === 'sweep' && wk0 === 'spear') sfx('sweep', 0, p); else if (swr0 === 'overhead' && a.chg > 0.6) sfx('overhead', 0, p); }   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
   if (p.feintHeavy) { a.combo = chainLen() - 1; p.feintHeavy = 0; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
   swingSound(a);
@@ -9181,7 +9182,7 @@ function updatePlayer(dt) {
     if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
-    sfx('shoot');
+    sfx(shotRune === 'twinShot' ? 'twin_shot' : (shotRune === 'fireArrow' && firing) ? 'fire_arrow' : (shotRune === 'pinningShot' && (p.pinNext || pinning)) ? 'pin_shot' : 'shoot');   /* a rune's shot has its own sound (Derek, SD's, 2026-10-24) */
   }
 
   // facing

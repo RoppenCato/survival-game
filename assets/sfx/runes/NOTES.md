@@ -8,20 +8,24 @@ own (the whip's crack and flesh layers, Kenney's impacts, rubberduck's wood).
 
 **The letters.** **v** is the studio's, layered; **a** is plain, as recorded. Three variations of each, picked at random.
 
+**Robin's picks (2026-10-23, the Combat Arena):** `altar_lay` A, `lightning_small` A, `rune_ready` A. Their v's are in
+`out/_archive/sfx-unpicked-2026-10-23/runes/` (after Clive, GD's commit 931a889 dropped them); their gains below are blank for v.
+The other seven are not picked yet: v plays until they are.
+
 ## The sounds, in the order the game plays them
 
 | Sound | When | Gain v | Gain a |
 | --- | --- | --- | --- |
 | `cudgel_thud` | The cudgel knocking a beast out (as loud as a hit). | 0.410 | 0.449 |
-| `altar_lay` | A beast laid on the altar stone: a sack-like thump, hooves. | 0.233 | 0.233 |
+| `altar_lay` | A beast laid on the altar stone: a sack-like thump, hooves. | archived | 0.233 |
 | `storm_rise` | The storm rising over the altar, 3.5 s, once. | 0.247 | 0.173 |
 | `rune_carve` | Each stone that rises showing its carving, about 2 s. | 0.127 | 0.110 |
 | `lightning_strike` | The bolt on the altar with the white flash: the loudest of the rite. | 0.374 | 0.341 |
 | `stone_break` | The stones not chosen crumbling, just after the strike. | 0.322 | 0.414 |
 | `blood_drip` | The hero's blood dripping into the carving as a rune is bound (`BIND_T` 1.2 s). | 0.081 | 0.090 |
 | `rune_wake` | A rune bound: a low thrum and a short bright tail, about 1.5 s. | 0.128 | 0.087 |
-| `rune_ready` | An active rune's blood ring full, by the toolbar, in a fight: noticed, never in the way. | 0.068 | 0.033 |
-| `lightning_small` | Thor's wrath: a bolt on a man in a fight, shorter and lighter than the altar's. | 0.223 | 0.277 |
+| `rune_ready` | An active rune's blood ring full, by the toolbar, in a fight: noticed, never in the way. | archived | 0.033 |
+| `lightning_small` | Thor's wrath: a bolt on a man in a fight, shorter and lighter than the altar's. | archived | 0.277 |
 
 The gains are in `runes.json` (levelled by hearing-weighted loudness against the sword's hit, `sfx/runes/_levels.json`):
 the strike the loudest (as a hit), the cudgel as a hit, the break and Thor's wrath just under, the storm, the beast laid
@@ -42,7 +46,7 @@ and the bound rune in the middle, the carving and the blood quiet, the ready cue
 
 ## To listen
 
-- `preview.mp3`: the rite staged with the studio's (v), 24 s: the cudgel (0:00), the beast laid (0:02), the storm rising (0:04),
+- `preview.mp3`: the rite staged with the studio's (v) and Robin's picks, 24 s: the cudgel (0:00), the beast laid (0:02), the storm rising (0:04),
   three stones showing their carvings (0:05), the strike (0:11) and two stones crumbling, the binding: the blood (0:16) and the
   rune waking (0:17), then a fight: a rune ready (0:20), Thor's wrath twice (0:22).
 - `preview_<name>.mp3`: each sound alone, v's three then a's three, at the game's level (so `rune_ready` and `blood_drip` are quiet
@@ -61,3 +65,64 @@ its carving (a little apart if several rise together); `stone_break` once at the
   then the bright tail, the heartbeat); whether they feel right at the altar is yours.
 - **A suggestion:** the game says the stones not chosen "crumble and sink back into the blood". `stone_break` breaks them;
   if you would rather hear them sink, a crumble with a wet sound under it can be made.
+
+## Added 2026-10-24: the rite's last two, and the runes' own
+
+Clive, GD's full list of 2026-10-24 (every one called by the game already; 68 of the 72 runes work). Made the day Robin
+turned the audio back on ("Its on. Do the sounds."). Recordings added: BigSoundBank's gasoline fire, two heartbeats, a
+breathless man, a foley fire (`sfx/runes/ref/bsb_fire_heart/`, Robin's yes the same day); the medieval part 2 swings and
+draws (`sfx/runes/ref/oga_medieval2/`, unpacked from the archive); HaelDB's yells, Independent.nu's wood cracks, USC's
+arrow, Kenney's, from the studio's packs. All CC0. Every piece cut at its own sound into `ref/cut/`.
+
+| Sound | When | Seconds v | Gain v | Gain a |
+| --- | --- | --- | --- | --- |
+| `sacrifice_stab` | the rite: the knife into the beast on the slab | 0.42-0.59 | 0.444 | 0.378 |
+| `storm_gather` | the rite: the power gathering before the bolt, once | 2.60-2.60 | 0.194 | 0.173 |
+| `war_cry` | the War-cry: the hero's shout | 0.71-0.79 | 0.215 | 0.247 |
+| `berserk_roar` | Berserk waking: his roar, lower than the cry | 0.60-0.64 | 0.265 | 0.277 |
+| `last_stand` | the Last stand: a heartbeat and a gasp | 0.55-0.56 | 0.259 | 0.274 |
+| `riposte` | the Riposte: a flick of steel out of a parry | 0.11-0.14 | 0.337 | 0.444 |
+| `guard_break` | the Axe-breaker: a shield guard splitting | 0.34-0.37 | 0.277 | 0.325 |
+| `blink_step` | the Blink-step: a soft whip of air | 0.22-0.24 | 0.120 | 0.095 |
+| `leap_land` | the Long leap's landing on turf | 0.21-0.21 | 0.167 | 0.154 |
+| `lunge` | the Lunge: a step and a heavy swish, at the blow | 0.33-0.34 | 0.156 | 0.163 |
+| `whirl` | the Whirl: a two-handed weapon swung full round | 0.55-0.55 | 0.158 | 0.154 |
+| `overhead` | the Overhead: a heavy blow from above | 0.36-0.39 | 0.318 | 0.325 |
+| `sweep` | the Sweep: a low spear sweep | 0.38-0.40 | 0.169 | 0.159 |
+| `twin_shot` | the Twin shot: arrows loosed at once | 0.09-0.10 | 0.585 | 0.606 |
+| `pin_shot` | the Pinning shot: an arrow into a man and the earth | 0.27-0.31 | 0.329 | 0.290 |
+| `fire_arrow` | the Fire-arrow: the snap and the flame | 0.38-0.44 | 0.657 | 0.620 |
+| `rock_split` | the Stone-biter: a rock cracking whole | 0.39-0.43 | 0.405 | 0.378 |
+| `fire_burn_man` | a man burning (optional, Clive, GD's extra) | 2.00-2.00 | - | 0.290 |
+
+- `sacrifice_stab`: v: the meat of a blow, a wet splat on the same moment, a dull knock of the stone, a smaller splat at 0.2 s as the knife works in. a: the meat and the splat.
+- `storm_gather`: v: thunder played backwards to its crack, the sung bowl's hum, a drone rising a fifth, a thin tone climbing an octave, static thickening. a: the backwards thunder alone. Exactly 2.6 s (the render cut their near-silent start; padded back so the end lands on the bolt).
+- `war_cry`: v: a man's yell (HaelDB), a second take of the voice a touch lower 12 ms behind, a short open air. a: the yell plain. The yells open with up to 0.6 s of room: each starts at its voice.
+- `berserk_roar`: v: the deepest yells slowed (rate 0.82), a beast's growl under, a little grit; centre 280-810 Hz against the cry's 1 kHz. a: the deep yell slowed.
+- `last_stand`: v: one heartbeat (BigSoundBank's), a breath drawn hard on the second beat ("Breathless man"). a: the heartbeat alone.
+- `riposte`: v: a seax's and a dagger's draw from just before their ring, a dagger's swish, a light metal ting; attack 4-16 ms, centre 3.8-4.4 kHz. a: the draw alone. Shorter than the 0.25 s asked (0.08-0.14 s): the ring dies fast; for Robin's ear.
+- `guard_break`: v: a board splitting (Independent.nu), a heavy knock of wood, a plank's rattle. a: the split alone.
+- `blink_step`: v: the sword's swishes faster, softened under 3.5 kHz, a little drawn in backwards first. a: a spear's swish, its rumble off.
+- `leap_land`: v: two feet on grass 8 ms apart (Kenney), a body's weight under. a: the two steps.
+- `lunge`: v: a step on turf, the sword's swish F slowed, an axe's swing under it. a: swish F slowed.
+- `whirl`: v: the sword's E then F run together, a spear's swing under the turn. a: a spear's swing slowed.
+- `overhead`: v: a short heavy swish, the crack of a board splitting at 50 ms, a low punch and a knock of wood. a: the crack and the punch.
+- `sweep`: v: a spear's swing slowed and low, swish E under it, a brush of grass. a: the spear's swing.
+- `twin_shot`: v: three snaps of the recurve (your shot B's recordings) 12 and 26 ms apart. a: two snaps 18 ms apart.
+- `pin_shot`: v: USC's arrow striking, an earth thud (Kenney), the shaft quivering (a plank's knock shaken). a: the arrow striking.
+- `fire_arrow`: v: the recurve's snap, gasoline catching fire (BigSoundBank) faster, a few crackles. a: the snap and the flame.
+- `rock_split`: v: a stone's crack, a deep crack under it, the pick's rock hit, pieces falling. a: two stones together as recorded.
+- `fire_burn_man`: a only: BigSoundBank's "Fire, Foley" crackle, two seamless 2 s loops (seam steps 0.4 and 0.2 %FS), quiet (16 dB under a hit).
+
+**Fixed on the way:** the stone pieces (`stone_1` to `5`) open with 45 to 240 ms before their crack, so in `stone_break_v`
+the rock hit came first and the crack 50 ms later (a flam; attack 52 to 56 ms). Every stone now starts at its crack:
+`stone_break_v` re-rendered (attack 2.4 to 2.7 ms, gain 0.322 to 0.345; Clive, GD: recopy it), and `rock_split` built that way.
+
+**To listen:** `preview.mp3` the rite staged again, now with the stab (0:03) and the gathering (0:10) before the strike (0:13);
+`preview_fight.mp3` the runes in a fight, the v of each in a row (the cry, lunge, riposte, guard break, whirl, overhead, sweep,
+blink, leap, roar, last stand, ready, Thor's wrath, twin shot, pin shot, fire arrow and the burning, rock split), 19 s;
+`preview_<name>.mp3` each alone, v's three then a's three.
+
+**For Robin's ear:** a letter for each. Whether the cry and the roar sound like the hero (one voice, HaelDB's, for both);
+whether the breath in the last stand reads as a gasp (it is a man out of breath, drawn in); the riposte's shortness.
+
