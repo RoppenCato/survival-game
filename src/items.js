@@ -237,7 +237,7 @@ function iconImage(c, it, s) {
   var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
   c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were
   if (ok(wood)) c.drawImage(wood, -side / 2, -side / 2, side, side);
-  if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
+  if (ok(metal) && !(it.kind === 'rod' && it.mat === 'wood')) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
   c.restore(); return true;
 }
 /* The worn things' rendered icons (the art studio's, 2026-10-20): a page sets Items.setWorn({ layer: Image }, pick), pick(it) giving

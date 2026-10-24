@@ -76,7 +76,7 @@
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
     var A = H.meta.anims, t = now(), a = P.atk, dd = odo(P, P.x, P.y, nsOf(H.meta.elev)), sc = opts.scale || 1;
-    var twoH = !!(opts.layers && (holds(opts.layers, 'greataxeWood') || holds(opts.layers, 'maulWood'))); function h2(n) { return twoH && A[n + '_2h'] ? n + '_2h' : n; }   /* a two-handed weapon in hand (the Dane axe, the maul) takes a clip's _2h twin where the set has one (Colin, AD's two-handed set, asked 2026-10-24: idle, idle_look, walk, jog, run, attack1 the overhead smash, attack2 the side sweep, hit, block_wpn and its walk), else the one-handed clip */
+    var twoH = !!(opts.layers && (holds(opts.layers, 'greataxeWood') || holds(opts.layers, 'maulWood'))); function h2(n) { var rn = n === 'walk_fast' ? 'walk' : n === 'run' ? 'jog' : n; if (rodH && (rn === 'idle' || rn === 'walk' || rn === 'jog') && A[rn + '_rod']) return rn + '_rod'; return twoH && A[n + '_2h'] ? n + '_2h' : n; }   /* a rod in hand: Colin, AD's idle_rod, walk_rod and jog_rod (2026-10-25), the rod on his shoulder; no run_rod, so a sprint runs on jog_rod by stride */ var rodH = !!(opts.layers && holds(opts.layers, 'rodWood'));   /* a two-handed weapon in hand (the Dane axe, the maul) takes a clip's _2h twin where the set has one (Colin, AD's two-handed set, asked 2026-10-24: idle, idle_look, walk, jog, run, attack1 the overhead smash, attack2 the side sweep, hit, block_wpn and its walk), else the one-handed clip */
     if (P.dead) { if (!A.death) return null; return { a: 'death', f: Math.min(A.death.frames - 1, Math.floor((t - H.deadT) * A.death.fps)) }; }
     if (a && a.ph !== 'none' && opts.stepData) {                     // the attack's phases drive the clip: windup, the blow, the recovery
       var sd = opts.stepData(), tot = sd.wu + sd.ac + sd.rec, el = a.ph === 'windup' ? a.t : a.ph === 'active' ? sd.wu + a.t : sd.wu + sd.ac + a.t, k = Math.max(0, Math.min(0.999, el / tot)), nm;
@@ -118,7 +118,7 @@
     if (an && an.sneak) { var snc = an.amt > 0.12 ? 'sneak_walk' : 'sneak';   /* (the creep at 39 a second only just reaches the walk's 0.35 of the measure: 0.12 here) */ if (A[snc]) return { a: snc, f: gait(A[snc], dd, t, sc) }; }   /* sneaking (Colin, AD's clips when they come; without them the walk, crouched by the drawing) */
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.jog ? 'jog' : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle'))))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
     nm2 = h2(nm2); if (!A[nm2]) return null;                           // a sheet set with no such clip draws nothing (it threw)
-    if (nm2 === 'idle' || nm2 === 'idle_2h') { var li = loopAt(A[nm2], t); return { a: nm2, f: li.f, f2: li.f2, w: li.w }; }
+    if (nm2 === 'idle' || nm2 === 'idle_2h' || nm2 === 'idle_rod') { var li = loopAt(A[nm2], t); return { a: nm2, f: li.f, f2: li.f2, w: li.w }; }
     return { a: nm2, f: gait(A[nm2], dd, t, sc) };
   }
   // a sheet recoloured once per tint (the metal of a thing in the hand, by its material): the colour laid over the pixels at 0.6
@@ -161,6 +161,10 @@
   function hand(H, pk, face, which, scale) {
     var M = H.meta, A = M.anims[pk.a]; if (!A.hands) return null; var d = M.dirs[dirOf(M, face)], rows = A.hands[d]; if (!rows || !rows[pk.f]) return null;
     var h = rows[pk.f][which || 0], s = (scale || 1) / PX, AN = A.anchor || M.anchor; return h ? [(h[0] - AN.x) * s, (h[1] - AN.y) * s, h[2]] : null;
+  }
+  function tip(H, pk, face, scale) {        /* the rod's end on a fishing or rod-carrying clip (Colin, AD's tip meta, 2026-10-25: laid out as hands, one point a frame) */
+    var M = H.meta, A = M.anims[pk.a]; if (!A || !A.tip) return null; var d = M.dirs[dirOf(M, face)], rows = A.tip[d]; if (!rows || !rows[pk.f]) return null;
+    var h = rows[pk.f], s = (scale || 1) / PX, AN = A.anchor || M.anchor; return [(h[0] - AN.x) * s, (h[1] - AN.y) * s, h[2]];
   }
   function silOf(H, im, file, hue) {
     var cv2 = H.sil[file]; if (cv2) return cv2;
@@ -535,5 +539,5 @@
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, nsOf: nsOf, odoSpeed: odoSpeed, gaitClip: gaitClip, GAIT: GAIT, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, nsOf: nsOf, odoSpeed: odoSpeed, gaitClip: gaitClip, GAIT: GAIT, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tip: tip, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
