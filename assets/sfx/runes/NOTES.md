@@ -126,3 +126,16 @@ blink, leap, roar, last stand, ready, Thor's wrath, twin shot, pin shot, fire ar
 **For Robin's ear:** a letter for each. Whether the cry and the roar sound like the hero (one voice, HaelDB's, for both);
 whether the breath in the last stand reads as a gasp (it is a man out of breath, drawn in); the riposte's shortness.
 
+## Added 2026-10-24, late: the Slide, and five gains corrected
+
+- `slide` (Robin's new rune the same night, the Slide in the dash slot; the game calls it at the push-off): a body sliding low
+  over turf, fast then slowing to a stop. v: the push-off (a grass step), a run of grass brushes that comes fast and spreads
+  out as he slows (Kenney's), grit crunching (BigSoundBank's snow, high), a rush of body and air falling in pitch, the sword's
+  swish E soft under it; 0.40-0.42 s, attack 3-6 ms. a: the grass brushes alone in the same slowing run; 0.42 s.
+  Gains v 0.250, a 0.274: as loud as the dash, measured against `dash_1` at its gain (the dash, measured as the ear does,
+  sits 5 dB under the hit; the combat set's own ladder calls it -12, an older measure).
+- **Corrected** (the same check): the game's swings sit about 5 dB under the hit as the ear measures them, so the lunge, the
+  whirl and the sweep ("a heavier swish than the sword's") were too quiet at -7: now -4 (lunge 0.220 / 0.230, whirl 0.223 /
+  0.218, sweep 0.239 / 0.225); the blink-step and the leap's landing now -8, near the dash they belong to (blink 0.189 /
+  0.150, leap 0.210 / 0.194). The files did not change, only the gains.
+
