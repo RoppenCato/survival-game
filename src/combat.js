@@ -429,6 +429,7 @@ function rushHits(p) {                     // during a rush or a dash: the men t
   for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.type !== 'soldier' || e.dead || e.down || e.out || e.side === 1) continue; if (Math.hypot(e.x - p.x, e.y - p.y) > e.r + p.r + 6) continue;
     if (ch) { if (ch.hit.indexOf(e) >= 0) continue; ch.hit.push(e); if (ch.hit.length <= ch.down) knockDown(e, ang, 1); else { e.kx += Math.cos(ang) * 220; e.ky += Math.sin(ang) * 220; }
       if (ch.strike) { var sd = meleeProfile(); hitFlags.wkind = sd.kind || 'sword'; damageEnemy(e, sd.dmg * dmgMul('sword'), ang, 0, 10, 'melee'); hitFlags.wkind = null; } }
+    else if (p.slide && runeN('slide', 'trip') && !e.rushed) { e.rushed = 0.8; knockDown(e, ang, 0.8); }   /* the Slide II: the man you slide into is tripped */
     else if (runeHas('rushStep') && !e.rushed && (marked(e, 'struck') || (runeN('rushStep', 'any') && e.state === 'stagger'))) { e.rushed = 0.8; knockDown(e, ang, 0.8); if (runeN('rushStep', 'spread')) crowdBump(e, ang); } }
 }
 function crowdBump(best, ang) {            // the men a thrown man falls against stagger with him
@@ -806,9 +807,11 @@ function updatePlayer(dt) {
     if (dRune === 'blinkStep' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 7); sfx('blink_step'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Blink-step: through the man before you */
     if (dRune === 'ghostStep') { W.shade = { x: p.x, y: p.y, t: runeN('ghostStep', 'shadeT') || 1, max: runeN('ghostStep', 'shadeT') || 1, dir: heroDir(), ph: p.anim.phase, open: runeN('ghostStep', 'open') }; }   /* the Ghost-step: a shade left where you stood */
     p.leap = dRune === 'longLeap' ? (runeN('longLeap', 'over') || 1) : 0;
+    var sl0 = dRune === 'slide'; p.slide = sl0 ? 1 : 0; if (sl0 && runeN('slide', 'free')) p.st += 18 * mod('dash') * stK();   /* the Slide (Robin, 2026-10-24): a long low slide, fast then slowing, under a swung blade; free at tier III */
     if (p.leap) { p.leapCrouch = LEAP.crouch; p.leapDir = { x: rx, y: ry }; p.leapLen = (runeN('longLeap', 'len') || 2.2) / 2.2; p.roll.cd = runeN('dash', 'cd') || 0.3; p.charge = null; p.anim.sq = -0.5; p.anim.sqv = 0; runeSpend('dash', dRune); return; }   /* the leap: the crouch first, the flight when it ends (below) */
-    p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
-    dust(p.x, p.y, 7); sfx('dash'); perfectCheck();
+    p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : sl0 ? (runeN('slide', 'len') || 2.4) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
+    if (sl0) p.invuln = Math.max(p.invuln, p.roll.t * 0.85);   /* (the slide goes under the blade for most of its length) */
+    dust(p.x, p.y, 7); sfx(sl0 ? 'slide' : 'dash'); perfectCheck();
   }
 
   if (a.ph === 'none' && held && p.holdT > 0.25 && p.st >= 10 && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && p.atkBuf <= 0) { a.ph = 'charge'; a.t = 0; a.lvl = 0; }
@@ -953,8 +956,8 @@ function updatePlayer(dt) {
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
     p.roll.t -= dt; rushHits(p);
-    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; p.leapLand = LEAP.land; } }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
-    var rs = p.leap ? LEAP.v : (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));   /* (the leap flies at one speed) */
+    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; p.charge = null; if (p.leap) { dust(p.x, p.y, 8); sfx('leap_land', 0, p); if (runeN('longLeap', 'heavy')) p.feintHeavy = 1; p.leap = 0; p.leapLand = LEAP.land; } p.slide = 0; }   /* the leap's landing (Derek, SD's leap_land there, not at the push-off): the first blow heavy at tier III */
+    var rs = p.leap ? LEAP.v : p.slide ? 520 * Math.pow(Math.max(0, p.roll.t) / (p.roll.len || DASH_T), 0.7) : (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));   /* (the leap flies at one speed) */
     p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
     p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
   } else if (p.hurtT > 0) { p.vx *= Math.exp(-dt * 8); p.vy *= Math.exp(-dt * 8); }
@@ -2240,7 +2243,7 @@ function drawHero(c) {
   var p = P;
   var amt = p.flash;
   if (p.invuln > 0 && p.flash <= 0 && p.roll.t <= 0) amt = (Math.floor(W.t * 20) % 2) ? 0.5 : 0;
-  var dashing = p.roll.t > 0;
+  var dashing = p.roll.t > 0 ? (p.slide ? 2 : 1) : 0;   /* (2: the slide, drawn low and long) */
   for (var gi = 0; gi < W.ghosts.length; gi++) {
     var g = W.ghosts[gi];
     c.globalAlpha = 0.45 * g.life / g.max;

@@ -65,6 +65,10 @@ ok(s.P.x > ex + 10, 'the Blink-step: he stands behind the man (' + Math.round(s.
 s = setup({ runes: ['longLeap'], men: 0 }); s.D.W.pillars = [{ x: 230, y: 250, r: 12 }]; Combat.key('KeyD', true); Combat.update(DT); Combat.key('Space', true); Combat.update(DT); Combat.key('Space', false); for (let i = 0; i < 40; i++) Combat.update(DT); Combat.key('KeyD', false);
 ok(s.P.x > 250, 'the Long leap: over the pillar in the way (x ' + Math.round(s.P.x) + ')');
 
+// the Slide: a long low slide, further than the dash
+s = setup({ runes: ['slide'], men: 0 }); const sx0 = s.P.x; Combat.key('KeyD', true); Combat.update(DT); Combat.key('Space', true); Combat.update(DT); Combat.key('Space', false); for (let i = 0; i < 40; i++) Combat.update(DT); Combat.key('KeyD', false);
+ok(s.P.x > sx0 + 90, 'the Slide: ' + Math.round(s.P.x - sx0) + ' units along the ground');
+
 // the Ghost-step: a shade is left and the man runs at it
 s = setup({ runes: ['ghostStep'] }); s.e.x = 300; console.log('  (dash slot: ' + Combat.api.runeOf('dash') + ')'); Combat.key('Space', true); Combat.update(DT); Combat.key('Space', false); const shade = !!s.D.W.shade; let lured = false; for (let i = 0; i < 30; i++) { s.e.state = 'chase'; s.e.sw = null; Combat.update(DT); if (s.e.lure) lured = true; }
 ok(shade && lured, 'the Ghost-step: a shade left where he stood, the man lured to it');
