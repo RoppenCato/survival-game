@@ -8415,7 +8415,8 @@ function drawBowDraw(c, p, lift) {         /* the draw's cue (Robin, 2026-10-24:
   if (fl > 0) { c.globalAlpha = fl * 0.7; c.fillStyle = '#ffe9a0'; c.beginPath(); c.arc(x, y - 1, 3 + 6 * (1 - fl), 0, 7); c.fill(); }
   /* the true aim (Robin, 2026-10-24: the body turns in the sheets' eight facings, so the aim looked stepped; then "too guiding": only a short dotted line a few metres out of the bow along the arrow's angle, nothing at the target) */
   var ang = rangedAngle(), ax = p.x + Math.cos(ang) * 8, ay = p.y * K - 10 - (lift || 0) + Math.sin(ang) * K * 8, AIM_L = 55;   /* (from where the arrow leaves, at the height it flies: drawProj draws it 10 units up; Robin, 2026-10-24: the line did not come out on the arrow's line) */
-  c.globalAlpha = 1; c.setLineDash([2.5, 5]); c.lineWidth = 1; c.strokeStyle = 'rgba(246,236,214,' + (0.25 + 0.25 * k).toFixed(2) + ')'; c.beginPath(); c.moveTo(ax + Math.cos(ang) * 8, ay + Math.sin(ang) * K * 8); c.lineTo(ax + Math.cos(ang) * AIM_L, ay + Math.sin(ang) * K * AIM_L); c.stroke(); c.setLineDash([]);
+  c.globalAlpha = 1; c.setLineDash([2.5, 5]); c.lineWidth = 1; c.strokeStyle = 'rgba(246,236,214,' + (0.25 + 0.25 * k).toFixed(2) + ')'; var t0 = 8, bcx = p.x, bcy = p.y * K - 20 - (lift || 0); while (t0 < AIM_L - 6) { var qx = (ax + Math.cos(ang) * t0 - bcx) / 10, qy = (ay + Math.sin(ang) * K * t0 - bcy) / 24; if (qx * qx + qy * qy > 1) break; t0 += 2; }   /* (the line starts outside his body: aiming north it had run up over him, Robin, 2026-10-24) */
+  c.beginPath(); c.moveTo(ax + Math.cos(ang) * t0, ay + Math.sin(ang) * K * t0); c.lineTo(ax + Math.cos(ang) * AIM_L, ay + Math.sin(ang) * K * AIM_L); c.stroke(); c.setLineDash([]);
   c.restore();
 }
 function drawProj(c, pr) {
