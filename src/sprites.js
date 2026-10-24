@@ -222,7 +222,7 @@
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
       var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowDy: opts.shadowDy ? opts.shadowDy() : 0, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool, walkClip: opts.walkClip ? opts.walkClip() : null, carry: opts.carry };
-      if (H.kit) { drawKit(c, H, x, y, face, an, dashing && !(P.leap && P.roll && P.roll.t > 0 && H.meta.anims.leap), P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }   /* (no dash squash over the leap clip) */
+      if (H.kit) { drawKit(c, H, x, y, face, an, dashing && !(P.leap && P.roll && P.roll.t > 0 && H.meta.anims.leap) && !(P.slide && P.roll && P.roll.t > 0 && H.meta.anims.slide), P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }   /* (no dash squash over the leap clip) */
       draw(c, H, x, y, face, an, dashing, P, o);
     };
     return H;
@@ -295,7 +295,7 @@
   function drawKit(c, H, x, y, face, an, dashing, P, o, look) {
     if (!look) return; o.layers = look.L.map(function (q) { return q.l; });
     var pk = pick(H, P, an, o); H.last = pk; if (!pk) return; var dead = !!P.dead;
-    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing === 2 ? 1.3 : dashing ? 1.1 : 1, sy: dashing === 2 ? 0.7 : dashing ? 0.92 : 1 });   /* (2: the Slide, low and long until Colin, AD's slide clip comes) */
+    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing === 2 ? 1.3 : dashing ? 1.1 : 1, sy: dashing === 2 ? 0.7 : dashing ? 0.92 : 1 });   /* (2: the Slide drawn low and long where no slide clip is; the kit has Colin, AD's) */
     if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
   }
   /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
