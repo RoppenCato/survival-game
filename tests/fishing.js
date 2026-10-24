@@ -52,4 +52,11 @@ ids.forEach(id => {
 check('the bot that never reels lands nothing', play('perch', lazy, 500).phase !== 'landed');
 const sal = play('salmon', careful, 901), her = play('herring', careful, 902);
 check('a salmon takes longer than a herring', sal.secs > her.secs, sal.secs.toFixed(1) + 's vs ' + her.secs.toFixed(1) + 's');
+// a lake (2026-10-24): its own fish, no herring or cod, no sunken chest
+{ const R = rng(77), got = {}; for (let i = 0; i < 400; i++) { const f = Fishing.roll(R, 4, false, true); got[f.id] = (got[f.id] || 0) + 1; }
+  check('a lake gives perch, pike and now and then a salmon, never herring, cod or a chest', !got.herring && !got.cod && !got.chest && got.perch > got.pike && got.salmon > 0, JSON.stringify(got)); }
+// the rod's strength: a hazel rod's line tightens faster than an iron-hooked one's, so a pike snaps it more often under the greedy bot
+function snapsUnused(patience) { let lost = 0; for (let i = 0; i < 40; i++) { const R = rng(500 + i), st = Fishing.start(R, 4, true, { patience }); st.fish = (function () { let f; do { f = Fishing.roll(R, 5, true); } while (f.id !== 'pike'); return f; })(); let ev = null, t = 0; while (ev !== 'bite' && t < 40) { ev = Fishing.tick(st, 1 / 60, false); t += 1 / 60; } Fishing.press(st); let fr = 0; while (st.phase === 'fight' && fr < 7200) { Fishing.tick(st, 1 / 60, st.tension < 0.8); fr++; } if (st.phase === 'lost') lost++; } return lost; }
+function snapT(patience) { let sum = 0; for (let i = 0; i < 40; i++) { const R = rng(500 + i), st = Fishing.start(R, 4, true, { patience }); st.fish = (function () { let f; do { f = Fishing.roll(R, 5, true); } while (f.id !== 'pike'); return f; })(); let ev = null, t = 0; while (ev !== 'bite' && t < 40) { ev = Fishing.tick(st, 1 / 60, false); t += 1 / 60; } Fishing.press(st); let fr = 0; while (st.phase === 'fight' && fr < 7200) { Fishing.tick(st, 1 / 60, true); fr++; } sum += fr / 60; } return sum / 40; }
+{ const tw = snapT(1.15), ti = snapT(0.8); check('reeled without let-up, the line of a hazel rod snaps on a pike sooner than that of an iron-hooked one', tw < ti, tw.toFixed(1) + 's vs ' + ti.toFixed(1) + 's'); }
 console.log('bad = ' + bad);

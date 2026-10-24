@@ -8766,7 +8766,7 @@ var KINDS = {
   maul: { name: 'Maul', len: 30, w: 4.2, dmg: 1.7, tool: null, melee: true, desc: 'A heavy hammer-head on a long haft, swung with both hands. Slow, and it breaks what it meets: a shield, a guard, a man’s footing.' }   /* the two-handed blunt weapon (Robin, 2026-10-24); its hand layers and swings asked of Colin, AD, the club's stand in */,
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
-  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
+  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod and a line of twisted fiber. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
@@ -8806,6 +8806,7 @@ function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
   if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
@@ -12134,8 +12135,9 @@ var Fishing = (function () {
   var CHEST_CHANCE = 0.03;                                 // a sunken chest's share of bites in deep water
   // what bites where: depth is how deep the water is under the float (units of elevation below the waterline, 0.5 shallow, 6 deep);
   // lowland says the island is the second biome's. The weights favour the water each fish lives in.
-  function table(depth, lowland) {
+  function table(depth, lowland, fresh) {
     var deep = Math.max(0, Math.min(1, (depth - 1.5) / 4)), shallow = 1 - deep, t = {};
+    if (fresh) return { herring: 0, perch: FISH.perch.weight * 1.6, cod: 0, pike: FISH.pike.weight * (0.6 + deep), salmon: FISH.salmon.weight * 0.6 };   /* a lake (2026-10-24): perch in its shallows, pike lurking deeper, a salmon now and then; no herring or cod */
     t.herring = FISH.herring.weight;
     t.perch = FISH.perch.weight * (0.25 + shallow) * (lowland ? 0.6 : 1);
     t.cod = FISH.cod.weight * (0.1 + deep);
@@ -12143,20 +12145,20 @@ var Fishing = (function () {
     t.salmon = FISH.salmon.weight * (0.1 + deep);
     return t;
   }
-  function roll(R, depth, lowland) {
+  function roll(R, depth, lowland, fresh) {
     var deep = Math.max(0, Math.min(1, (depth - 1.5) / 4));
-    if (deep > 0.3 && R() < CHEST_CHANCE) return make(R, 'chest');
-    var t = table(depth, lowland), sum = 0, k; for (k in t) sum += t[k];
+    if (!fresh && deep > 0.3 && R() < CHEST_CHANCE) return make(R, 'chest');
+    var t = table(depth, lowland, fresh), sum = 0, k; for (k in t) sum += t[k];
     var u = R() * sum; for (k in t) { u -= t[k]; if (u <= 0) return make(R, k); }
     return make(R, 'herring');
   }
   function make(R, id) { var f = FISH[id], u = R(), kg = f.kg[0] + (f.kg[1] - f.kg[0]) * u * u; return { id: id, name: f.name, kg: Math.round(kg * 10) / 10, size: u, fight: f.fight * (0.75 + 0.5 * u), runs: f.runs, line: f.line }; }
-  function start(R, depth, lowland) {
-    var fish = roll(R, depth, lowland);
-    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, time: 0, snaps: 0 };
+  function start(R, depth, lowland, o) {   /* o: { fresh: a lake, patience: how fast the line's tension rises (a wooden rod 1.15, an iron one 0.8) } */
+    o = o || {}; var fish = roll(R, depth, lowland, o.fresh);
+    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, fresh: !!o.fresh, patience: o.patience || 1, time: 0, snaps: 0 };
   }
   function press(st) {
-    if (st.phase === 'nibble') { st.phase = 'wait'; st.t = 0; st.until = 4 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland); return 'scared'; }
+    if (st.phase === 'nibble') { st.phase = 'wait'; st.t = 0; st.until = 4 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'scared'; }
     if (st.phase === 'bite') { st.phase = 'fight'; st.t = 0; st.dist = 60 + st.fish.size * 60; st.tension = 0.15; st.runIn = (0.8 + st.R() * 2) / Math.max(0.3, st.fish.runs); st.run = 0; return 'hooked'; }
     return null;
   }
@@ -12164,7 +12166,7 @@ var Fishing = (function () {
     st.time += dt; st.t += dt;
     if (st.phase === 'wait') { st.bob = Math.sin(st.time * 2.2) * 0.5; if (st.t >= st.until) { st.phase = 'nibble'; st.t = 0; st.until = 0.6 + st.R() * 0.7; return 'nibble'; } return null; }
     if (st.phase === 'nibble') { st.bob = Math.sin(st.time * 14) * 1.6; if (st.t >= st.until) { st.phase = 'bite'; st.t = 0; st.until = 0.9 - st.fish.fight * 0.25; return 'bite'; } return null; }
-    if (st.phase === 'bite') { st.bob = 4 + Math.sin(st.time * 20) * 1.5; if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland); return 'missed'; } return null; }
+    if (st.phase === 'bite') { st.bob = 4 + Math.sin(st.time * 20) * 1.5; if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'missed'; } return null; }
     if (st.phase === 'fight') {
       var f = st.fish, ev = null;
       if (st.run > 0) { st.run -= dt; if (st.run <= 0) { st.run = 0; st.runIn = (1.2 + st.R() * 2.8) / Math.max(0.3, f.runs); } }
@@ -12679,6 +12681,8 @@ if (typeof module !== 'undefined') module.exports = Music;
       if (A[nm] && A[nm].contact != null) return onContact(nm);
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
+    if (P.fishPose) { var FP = { cast: A.fish_cast ? 'fish_cast' : 'throw', wait: A.fish_wait ? 'fish_wait' : 'idle', fight: A.fish_reel ? 'fish_reel' : 'block_wpn', land: A.fish_land ? 'fish_land' : 'pickup' }[P.fishPose], CL = FP && A[FP];   /* fishing (2026-10-24): Colin, AD's fish_* clips when they come; until then the throw for the cast, the idle while waiting, the weapon held braced across with a fish on, the pick-up as the catch is lifted */
+      if (CL) { H.clip = null; if (P.fishPose === 'cast' || P.fishPose === 'land') { var FD = P.fishPose === 'cast' ? 0.6 : 0.7; return { a: FP, f: Math.min(CL.frames - 1, Math.floor(CL.frames * (1 - Math.max(0, P.fishT) / FD))) }; } if (FP === 'idle' || FP === 'fish_wait') { var lf = loopAt(CL, t); return { a: FP, f: lf.f, f2: lf.f2, w: lf.w }; } return { a: FP, f: P.fishPose === 'fight' && FP === 'block_wpn' ? Math.min(CL.frames - 1, Math.floor(CL.frames * 0.9)) : loopFrame(CL, t) }; } }
     if (P.throwT > 0 && A.throw) { H.clip = null; var TC = (typeof Combat !== 'undefined' && Combat.api && Combat.api.throwSpec) || { clip: 0.6 }; return { a: 'throw', f: Math.min(A.throw.frames - 1, Math.floor(A.throw.frames * (1 - P.throwT / TC.clip))) }; }   /* the throw (Colin, AD's clip, 2026-10-24): before any clip the page has played (the bow's loose); the axe or the trap goes at its contact, frame 5 */
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip && H.clip.name === 'bow_shoot' && Math.hypot(P.vx || 0, P.vy || 0) > 12) H.clip = null;   /* a shot on the move: the loose is let go as soon as he walks, so the walk shows (Robin, 2026-10-24: the body locked in a pose after shooting while walking) */
@@ -17434,6 +17438,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'woodClub', cat: 'weapon', out: { item: ['club', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
     { id: 'trapTripper', cat: 'supply', out: { stack: ['trapTripper', 1] }, needs: { wood: 2, stone: 3, fiber: 2 }, at: 'trapper', key: 'trapper' },   /* the Trapper's traps (Robin, 2026-10-24): made at the trapper's bench; the costs mine */
     { id: 'trapPoison', cat: 'supply', out: { stack: ['trapPoison', 1] }, needs: { stone: 2, berries: 3, fiber: 1 }, at: 'trapper', key: 'trapper' },   /* (a clay pot of crushed troll-berries: Alistair, LD's thing.troll-berry-pot, handoff 12, Robin's yes of 2026-10-24) */
+    { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'arrows5', cat: 'supply', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
@@ -18459,15 +18464,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function castSpot(P) {                   // the first open water along the way the hero faces, 40 to 130 units out
     if (inCave || (raft && raft.aboard)) return null;
     var cx = Math.cos(P.face), cy = Math.sin(P.face);
-    for (var d = 40; d <= 130; d += 10) { var x = P.x + cx * d, y = P.y + cy * d; if (x < 0 || y < 0 || x > WX || y > WY) return null; if (w.isWater(x, y) && w.elevAt(x, y) < -0.6) return { x: x, y: y, d: d, cx: cx, cy: cy }; }
-    return null;
+    var first = null, last = null; for (var d = 40; d <= 140; d += 10) { var x = P.x + cx * d, y = P.y + cy * d; if (x < 0 || y < 0 || x > WX || y > WY) break; var wet = w.isWater(x, y) && w.elevAt(x, y) < -0.6; if (wet) { if (!first) first = d; last = d; if (d >= first + 80) break; } else if (first) break; }
+    if (!first) return null; var dd = Math.min(last, first + 80);   /* out over the open water, up to 80 units past its edge (2026-10-24: the float landed in the surf) */
+    return { x: P.x + cx * dd, y: P.y + cy * dd, d: dd, cx: cx, cy: cy };
   }
   function canCast(P) { return !fishing && !P.dead && !sleep && rodInHand() && !!castSpot(P); }
+  function inlandWater(x, y) {             /* a lake: water with land within 40 tiles every way round (the sea opens on at least one side) */
+    for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, hit = false; for (var s2 = 1; s2 <= 40; s2++) if (w.isLand(x + Math.cos(a) * s2 * T, y + Math.sin(a) * s2 * T)) { hit = true; break; } if (!hit) return false; }
+    return true;
+  }
+  var FISH_POSE = { cast: 0.6, loose: 0.3, land: 0.7 };   /* the cast's length and the moment the float leaves the rod (the throw clip's, Colin, AD's), and the lift of a landed fish (mine) */
   function castLine() {
-    var P = hero(), sp = castSpot(P); if (!sp) return;
-    var depth = -w.elevAt(sp.x, sp.y), low = w.biomeAt(Math.floor(sp.x / T), Math.floor(sp.y / T)) > 128;
-    fishing = Fishing.start(Math.random, depth, low); if (false) { fishing.until *= 0.5; fishing.patience = 0.6; } fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0.5 };
-    P.vx = P.vy = 0; sfx('pick');
+    var P = hero(), sp = castSpot(P), rod = handItem(); if (!sp) return;
+    var depth = -w.elevAt(sp.x, sp.y), low = w.biomeAt(Math.floor(sp.x / T), Math.floor(sp.y / T)) > 128, fresh = inlandWater(sp.x, sp.y);
+    fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, patience: rod && rod.mat === 'iron' ? 0.8 : 1.15 }); fishing.until += FISH_POSE.cast; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: FISH_POSE.cast - FISH_POSE.loose };
+    P.vx = P.vy = 0; P.face = Math.atan2(sp.cy, sp.cx); P.fishPose = 'cast'; P.fishT = FISH_POSE.cast; sfx('swing', 0.5);
   }
   function fishPress() {
     if (!fishing) return; var ev = Fishing.press(fishing);
@@ -18475,11 +18486,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (ev === 'hooked') { sfx('craft'); fishFloat.splash = 0.8; }
   }
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
-  function fishEnd() { fishing = null; fishFloat = null; }
+  function fishEnd() { fishing = null; fishFloat = null; var P = hero(); P.fishPose = null; P.fishT = 0; }
   function fishTick(dt) {
     if (!fishing) return; var P = hero(), K2 = Combat.dbg().IN.keys;
     if (P.dead || sleep || K2.KeyW || K2.KeyA || K2.KeyS || K2.KeyD || P.mode !== 'gather' || !rodInHand()) { fishEnd(); return; }   // walking off, or the rod put away, ends the round
     P.vx = P.vy = 0; if (fishFloat.splash > 0) fishFloat.splash -= dt;
+    if (P.fishT > 0) { P.fishT -= dt; if (P.fishT <= 0) P.fishT = 0; }   /* the cast plays, then the pose follows the round */
+    if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.splash = 0.5; sfx('pick'); }   /* the float leaves the rod at the cast's loose and lands with a splash */
+    if (P.fishT <= 0) P.fishPose = fishing.phase === 'fight' ? 'fight' : 'wait';
     var ev = Fishing.tick(fishing, dt, eHeld);
     if (ev === 'nibble') { fishFloat.splash = 0.25; }
     else if (ev === 'bite') { sfx('clink'); fishFloat.splash = 0.6; }
@@ -18493,18 +18507,20 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var f = fishing.fish, P = hero();
     if (f.id === 'chest') { var n = 4 + Math.floor(Math.random() * 9); addItem('silver', n); if (Math.random() < 0.35) { var kinds = ['sword', 'axe', 'seax', 'knife'], th = Items.make(kinds[Math.floor(Math.random() * kinds.length)], Math.random() < 0.5 ? 'iron' : 'copper'); if (!addThing(th)) dropThing(th, P.x, P.y + 10); toast('A sunken chest: ' + n + ' silver and ' + Items.name(th).toLowerCase()); } else toast('A sunken chest: ' + n + ' silver'); }
     else { if (addItem(f.id, 1) > 0) drop(f.id, fishFloat.x, fishFloat.y, 1); toast(f.name + ', ' + f.kg + ' kg'); var lg = fishLog[f.id] || (fishLog[f.id] = { n: 0, best: 0 }); lg.n++; if (f.kg > lg.best) lg.best = f.kg; }
-    deed('fish'); sfx('craft'); fishEnd(); save();
+    deed('fish'); sfx('craft'); fishEnd(); P.fishPose = 'land'; P.fishT = FISH_POSE.land; P.fishLift = f.id; save();
   }
+  function fishPoseTick(dt) { var P = hero(); if (!fishing && P.fishPose === 'land') { P.fishT -= dt; if (P.fishT <= 0 || !rodInHand()) { P.fishPose = null; P.fishT = 0; P.fishLift = null; } } }   /* the catch lifted a moment after the round ends */
   function drawFishing(c) {                // the line from the rod's tip to the float, the float, the fish's shadow and splashes
-    if (!fishing || !fishFloat) return; var P = hero(), st = fishing, fx = fishFloat.x, fy = fishFloat.y * K + st.bob * 0.6, tipX = P.x + Math.cos(P.face) * 22, tipY = P.y * K - 34 - (hero().lvl ? UP : 0);
+    if (!fishing || !fishFloat) return; var P = hero(), st = fishing, fx = fishFloat.x, fy = fishFloat.y * K + st.bob * 0.6, tipX = rodTip ? rodTip.x : P.x + Math.cos(P.face) * 22, tipY = rodTip ? rodTip.y : P.y * K - 34 - (hero().lvl ? UP : 0);
+    if (fishFloat.flyT > 0) return;   /* (the float still on the rod: the cast has not let go yet) */
     if (st.phase === 'fight') { var sh = Math.max(4, 5 + st.fish.size * 7), away = st.run > 0 ? 10 : 4; c.fillStyle = 'rgba(20,30,40,0.38)'; c.beginPath(); c.ellipse(fx + fishFloat.cx * away, fy + fishFloat.cy * away * K + 2, sh, sh * 0.42, Math.atan2(fishFloat.cy * K, fishFloat.cx), 0, 7); c.fill(); }   // the fish, a shadow under the surface
     c.strokeStyle = 'rgba(245,238,220,0.75)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && eHeld ? 2 : 14), fx, fy); c.stroke();
     if (fishFloat.splash > 0) { var sp = fishFloat.splash; c.strokeStyle = 'rgba(235,250,255,' + (sp * 0.9).toFixed(2) + ')'; c.lineWidth = 1; c.beginPath(); c.ellipse(fx, fishFloat.y * K + 1, 6 + (0.8 - sp) * 14, (6 + (0.8 - sp) * 14) * 0.45, 0, 0, 7); c.stroke(); }
     c.fillStyle = '#efe6cf'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(fx, fy, 2.2, 3.2, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#b83a2e'; c.beginPath(); c.ellipse(fx, fy - 1.4, 2.2, 1.8, 0, Math.PI, 0); c.fill();   // the cork float, red on top
     if (st.phase === 'fight') {            // the line's tension over the hero: a small bar that fills red, the fish's distance under it
-      var bx = P.x - 16, by = P.y * K - 48 - (hero().lvl ? UP : 0), t = st.tension;
-      c.fillStyle = 'rgba(20,16,30,0.7)'; c.fillRect(bx - 1, by - 1, 34, 5); c.fillStyle = t > 0.75 ? '#e0483a' : t > 0.5 ? '#e8a040' : '#9be58b'; c.fillRect(bx, by, 32 * t, 3);
-      c.fillStyle = 'rgba(20,16,30,0.7)'; c.fillRect(bx - 1, by + 5, 34, 3); c.fillStyle = '#cfe0ff'; c.fillRect(bx, by + 5.5, 32 * (1 - Math.min(1, st.dist / (60 + st.fish.size * 60))), 2);
+      var bx = P.x + 14, by = P.y * K - 40 - (hero().lvl ? UP : 0), t = st.tension, got = 1 - Math.min(1, st.dist / (60 + st.fish.size * 60));   /* upright beside him, clear of the prompt over his head (2026-10-24): the line's tension, and the fish drawn in */
+      c.fillStyle = 'rgba(20,16,30,0.7)'; c.fillRect(bx - 1, by - 1, 5, 34); c.fillStyle = t > 0.75 ? '#e0483a' : t > 0.5 ? '#e8a040' : '#9be58b'; c.fillRect(bx, by + 32 * (1 - t), 3, 32 * t);
+      c.fillStyle = 'rgba(20,16,30,0.7)'; c.fillRect(bx + 5, by - 1, 3, 34); c.fillStyle = '#cfe0ff'; c.fillRect(bx + 5.5, by + 32 * (1 - got), 2, 32 * got);
     }
   }
   function signNear(P) { if (P.mode === 'build') return null; for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.sign && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 36) return it; } return null; }
@@ -21424,6 +21440,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (tr.kind === 'poison' && tr.state === 'sprung' && World.IMAGES.poisonCloud_0) { var pt = runeN('pinningShot', 'poisonT') || 6, fa = Math.max(0, Math.min(1, tr.t / 0.3)) * Math.max(0, 1 - tr.t / pt), cl = sprite('poisonCloud_' + (Math.floor(clock * 8) % 6)); if (fa > 0.01 && cl && cl.cv && cl.w > 1) { c.save(); c.globalAlpha = fa; c.drawImage(cl.cv, x + cl.l, y + cl.t, cl.w, cl.h); c.restore(); } }
     return true;
   };
+  var rodTip = null;   /* the rod in the hero's right hand (2026-10-24, until Colin, AD's rod layers): from the drawn frame's hand (Sprites.hand), up and out the way he faces, swung back and over in the cast, raised and bent with a fish on; the line hangs from its tip */
+  function drawRod(c, x, y, face) {
+    var P = hero(), it = handItem(); rodTip = null; if (!it || it.kind !== 'rod' || P.mode !== 'gather' || !sprHero || !sprHero.last || !Sprites.hand) return;
+    var h = Sprites.hand(sprHero, sprHero.last, face, 0, Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1)); if (!h) return;
+    var hx = x + h[0], hy = y + h[1], fx = Math.cos(face), fy = Math.sin(face) * K, L = 50 * (it.size || 1), lift = 0.95, out = 0.55, bend = 0;
+    if (P.fishPose === 'cast') { var u = 1 - P.fishT / FISH_POSE.cast; if (u < 0.45) { out = -0.35 + u * 0.4; lift = 1; } else { var v = Math.min(1, (u - 0.45) / 0.2); out = -0.2 + v * 1.0; lift = 1 - v * 0.55; } }
+    else if (P.fishPose === 'wait') { out = 0.75; lift = 0.8; }
+    else if (P.fishPose === 'fight') { out = 0.4; lift = 1.1; bend = fishing && fishing.run > 0 ? 10 : 6; }
+    else if (P.fishPose === 'land') { out = 0.3; lift = 1.05; }
+    else { out = 0.25; lift = 1; }
+    var tx = hx + fx * L * out, ty = hy + fy * L * out - L * lift, mx = (hx + tx) / 2 + fx * bend, my = (hy + ty) / 2 + Math.abs(fy) * bend + bend * 0.6;
+    if (P.fishPose === 'fight' && fishFloat) { var fax = fishFloat.x - P.x, fay = (fishFloat.y - P.y) * K, fl = Math.hypot(fax, fay) || 1; tx += fax / fl * bend; ty += bend * 0.8; }
+    c.save(); c.lineCap = 'round'; c.strokeStyle = '#2e1c10'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(mx, my, tx, ty); c.stroke();
+    c.strokeStyle = it.mat === 'iron' ? '#8a6a48' : '#b08458'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(mx, my, tx, ty); c.stroke();
+    if (!fishing) { c.strokeStyle = 'rgba(245,238,220,0.7)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + fx * 1.5, ty + 7); c.stroke(); }   /* (the line and hook hanging from the tip when he is not fishing) */
+    if (P.fishPose === 'land' && P.fishLift) { c.fillStyle = '#b8c4cc'; c.strokeStyle = '#3a3036'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(tx + fx * 1.5, ty + 9, 2.2, 4.5, 0.2, 0, 6.283); c.fill(); c.stroke(); }   /* the catch on the line as he lifts it */
+    c.restore(); rodTip = { x: tx, y: ty };
+  }
+  var hdRod = Combat.api.heroSprite; if (hdRod) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { var behind = Math.sin(face) < -0.35; if (behind) drawRod(c, x, y, face); hdRod(c, x, y, face, an, dashing); if (!behind) drawRod(c, x, y, face); };   /* (facing north the rod is behind him) */
   var hdTrap = Combat.api.heroSprite; if (hdTrap) Combat.api.heroSprite = function (c, x, y, face, an, dashing) {   /* a trap in the right hand through the throw until its loose (the throw's hands meta, Colin, AD's icon at about a hand's size) */
     hdTrap(c, x, y, face, an, dashing); var PT = Combat.dbg().P; if (!PT.throwQ || !PT.throwQ.trap || !sprHero || !sprHero.last || sprHero.last.a !== 'throw' || !Sprites.hand) return;
     var h = Sprites.hand(sprHero, sprHero.last, face, 0, Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1)), im = STACK_IMG[PT.throwQ.trap === 'poison' ? 'trapPoison' : 'trapTripper']; if (h && im && im.complete && im.naturalWidth) c.drawImage(im, x + h[0] - 4.5, y + h[1] - 4.5, 9, 9);
@@ -24034,7 +24069,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

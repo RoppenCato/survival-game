@@ -27,8 +27,9 @@ var Fishing = (function () {
   var CHEST_CHANCE = 0.03;                                 // a sunken chest's share of bites in deep water
   // what bites where: depth is how deep the water is under the float (units of elevation below the waterline, 0.5 shallow, 6 deep);
   // lowland says the island is the second biome's. The weights favour the water each fish lives in.
-  function table(depth, lowland) {
+  function table(depth, lowland, fresh) {
     var deep = Math.max(0, Math.min(1, (depth - 1.5) / 4)), shallow = 1 - deep, t = {};
+    if (fresh) return { herring: 0, perch: FISH.perch.weight * 1.6, cod: 0, pike: FISH.pike.weight * (0.6 + deep), salmon: FISH.salmon.weight * 0.6 };   /* a lake (2026-10-24): perch in its shallows, pike lurking deeper, a salmon now and then; no herring or cod */
     t.herring = FISH.herring.weight;
     t.perch = FISH.perch.weight * (0.25 + shallow) * (lowland ? 0.6 : 1);
     t.cod = FISH.cod.weight * (0.1 + deep);
@@ -36,20 +37,20 @@ var Fishing = (function () {
     t.salmon = FISH.salmon.weight * (0.1 + deep);
     return t;
   }
-  function roll(R, depth, lowland) {
+  function roll(R, depth, lowland, fresh) {
     var deep = Math.max(0, Math.min(1, (depth - 1.5) / 4));
-    if (deep > 0.3 && R() < CHEST_CHANCE) return make(R, 'chest');
-    var t = table(depth, lowland), sum = 0, k; for (k in t) sum += t[k];
+    if (!fresh && deep > 0.3 && R() < CHEST_CHANCE) return make(R, 'chest');
+    var t = table(depth, lowland, fresh), sum = 0, k; for (k in t) sum += t[k];
     var u = R() * sum; for (k in t) { u -= t[k]; if (u <= 0) return make(R, k); }
     return make(R, 'herring');
   }
   function make(R, id) { var f = FISH[id], u = R(), kg = f.kg[0] + (f.kg[1] - f.kg[0]) * u * u; return { id: id, name: f.name, kg: Math.round(kg * 10) / 10, size: u, fight: f.fight * (0.75 + 0.5 * u), runs: f.runs, line: f.line }; }
-  function start(R, depth, lowland) {
-    var fish = roll(R, depth, lowland);
-    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, time: 0, snaps: 0 };
+  function start(R, depth, lowland, o) {   /* o: { fresh: a lake, patience: how fast the line's tension rises (a wooden rod 1.15, an iron one 0.8) } */
+    o = o || {}; var fish = roll(R, depth, lowland, o.fresh);
+    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, fresh: !!o.fresh, patience: o.patience || 1, time: 0, snaps: 0 };
   }
   function press(st) {
-    if (st.phase === 'nibble') { st.phase = 'wait'; st.t = 0; st.until = 4 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland); return 'scared'; }
+    if (st.phase === 'nibble') { st.phase = 'wait'; st.t = 0; st.until = 4 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'scared'; }
     if (st.phase === 'bite') { st.phase = 'fight'; st.t = 0; st.dist = 60 + st.fish.size * 60; st.tension = 0.15; st.runIn = (0.8 + st.R() * 2) / Math.max(0.3, st.fish.runs); st.run = 0; return 'hooked'; }
     return null;
   }
@@ -57,7 +58,7 @@ var Fishing = (function () {
     st.time += dt; st.t += dt;
     if (st.phase === 'wait') { st.bob = Math.sin(st.time * 2.2) * 0.5; if (st.t >= st.until) { st.phase = 'nibble'; st.t = 0; st.until = 0.6 + st.R() * 0.7; return 'nibble'; } return null; }
     if (st.phase === 'nibble') { st.bob = Math.sin(st.time * 14) * 1.6; if (st.t >= st.until) { st.phase = 'bite'; st.t = 0; st.until = 0.9 - st.fish.fight * 0.25; return 'bite'; } return null; }
-    if (st.phase === 'bite') { st.bob = 4 + Math.sin(st.time * 20) * 1.5; if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland); return 'missed'; } return null; }
+    if (st.phase === 'bite') { st.bob = 4 + Math.sin(st.time * 20) * 1.5; if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'missed'; } return null; }
     if (st.phase === 'fight') {
       var f = st.fish, ev = null;
       if (st.run > 0) { st.run -= dt; if (st.run <= 0) { st.run = 0; st.runIn = (1.2 + st.R() * 2.8) / Math.max(0.3, f.runs); } }

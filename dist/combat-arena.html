@@ -2440,7 +2440,7 @@ var KINDS = {
   maul: { name: 'Maul', len: 30, w: 4.2, dmg: 1.7, tool: null, melee: true, desc: 'A heavy hammer-head on a long haft, swung with both hands. Slow, and it breaks what it meets: a shield, a guard, a man’s footing.' }   /* the two-handed blunt weapon (Robin, 2026-10-24); its hand layers and swings asked of Colin, AD, the club's stand in */,
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
-  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
+  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod and a line of twisted fiber. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
@@ -2480,6 +2480,7 @@ function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
   if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
@@ -5527,6 +5528,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (A[nm] && A[nm].contact != null) return onContact(nm);
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
+    if (P.fishPose) { var FP = { cast: A.fish_cast ? 'fish_cast' : 'throw', wait: A.fish_wait ? 'fish_wait' : 'idle', fight: A.fish_reel ? 'fish_reel' : 'block_wpn', land: A.fish_land ? 'fish_land' : 'pickup' }[P.fishPose], CL = FP && A[FP];   /* fishing (2026-10-24): Colin, AD's fish_* clips when they come; until then the throw for the cast, the idle while waiting, the weapon held braced across with a fish on, the pick-up as the catch is lifted */
+      if (CL) { H.clip = null; if (P.fishPose === 'cast' || P.fishPose === 'land') { var FD = P.fishPose === 'cast' ? 0.6 : 0.7; return { a: FP, f: Math.min(CL.frames - 1, Math.floor(CL.frames * (1 - Math.max(0, P.fishT) / FD))) }; } if (FP === 'idle' || FP === 'fish_wait') { var lf = loopAt(CL, t); return { a: FP, f: lf.f, f2: lf.f2, w: lf.w }; } return { a: FP, f: P.fishPose === 'fight' && FP === 'block_wpn' ? Math.min(CL.frames - 1, Math.floor(CL.frames * 0.9)) : loopFrame(CL, t) }; } }
     if (P.throwT > 0 && A.throw) { H.clip = null; var TC = (typeof Combat !== 'undefined' && Combat.api && Combat.api.throwSpec) || { clip: 0.6 }; return { a: 'throw', f: Math.min(A.throw.frames - 1, Math.floor(A.throw.frames * (1 - P.throwT / TC.clip))) }; }   /* the throw (Colin, AD's clip, 2026-10-24): before any clip the page has played (the bow's loose); the axe or the trap goes at its contact, frame 5 */
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip && H.clip.name === 'bow_shoot' && Math.hypot(P.vx || 0, P.vy || 0) > 12) H.clip = null;   /* a shot on the move: the loose is let go as soon as he walks, so the walk shows (Robin, 2026-10-24: the body locked in a pose after shooting while walking) */

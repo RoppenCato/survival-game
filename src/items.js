@@ -21,7 +21,7 @@ var KINDS = {
   maul: { name: 'Maul', len: 30, w: 4.2, dmg: 1.7, tool: null, melee: true, desc: 'A heavy hammer-head on a long haft, swung with both hands. Slow, and it breaks what it meets: a shield, a guard, a man’s footing.' }   /* the two-handed blunt weapon (Robin, 2026-10-24); its hand layers and swings asked of Colin, AD, the club's stand in */,
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
-  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
+  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod and a line of twisted fiber. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
@@ -61,6 +61,7 @@ function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
   if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
