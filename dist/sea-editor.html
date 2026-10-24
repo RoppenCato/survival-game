@@ -5090,7 +5090,7 @@ function make(kit, opts) {
   function onPlank(wx, wy) { return code(Math.floor(wx / T), Math.floor(wy / T)) === 4; }
   w.eTile = eTile; w.elevAt = elevAt; w.code = code; w.onPlank = onPlank; w.beachAt = beachAt;
   w.isLand = function (wx, wy) { return onPlank(wx, wy) || (elevAt(wx, wy) > 0.05 && !(mtn && (cellAt(wx, wy) & M_BLOCK))); };   // not a cliff face, its rim or a peak
-  function wadeDepth(wx, wy) { return -1.1 - 1.1 * (0.5 + 0.5 * Math.sin(wx * 0.011 + 1.3) * Math.sin(wy * 0.009 + 0.4)); }   /* how deep the shallows go here: -1.1 to -2.2, varying along the coast, so the wade is wider in places (Robin, 2026-10-24: "varying areas ... a little more shallow in places along the beach") */
+  function wadeDepth(wx, wy) { return -2.0 - 1.6 * (0.5 + 0.5 * Math.sin(wx * 0.011 + 1.3) * Math.sin(wy * 0.009 + 0.4)); }   /* how deep the shallows go here: -2.0 to -3.6 (a band of about two to six metres at the beaches' slope; it was -1.1, a stride wide), varying along the coast, so the wade is wider in places (Robin, 2026-10-24: "varying areas ... a little more shallow in places along the beach") */
   w.wadeDepth = wadeDepth;
   w.isWade = function (wx, wy) { return elevAt(wx, wy) > wadeDepth(wx, wy) && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // the turquoise shallows: you wade through them, the deep water beyond is swum
   w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // not where a sea cliff's foot stands in it
