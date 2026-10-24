@@ -18,6 +18,7 @@ var KINDS = {
   seax: { name: 'Seax', len: 16, w: 2.6, dmg: 0.6, tool: null, melee: true, desc: 'The long knife every Norseman carries. Fast stabs, little reach, and it finds the gaps.' },
   spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
+  maul: { name: 'Maul', len: 30, w: 4.2, dmg: 1.7, tool: null, melee: true, desc: 'A heavy hammer-head on a long haft, swung with both hands. Slow, and it breaks what it meets: a shield, a guard, a man’s footing.' }   /* the two-handed blunt weapon (Robin, 2026-10-24); its hand layers and swings asked of Colin, AD, the club's stand in */,
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
   rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
@@ -47,7 +48,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe', 'maul'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -91,7 +92,7 @@ function desc(it) {
 }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
-  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel') ? 1 : 0.8 + it.sharp * 0.4;
+  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
 }
@@ -153,6 +154,11 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
       c.fillStyle = P.dark; c.fillRect(-1.6, -3 * s, 3.2, 3.5 * s);
     }
     c.restore();
+  } else if (it.kind === 'maul') {
+    // a long haft and a squared iron head (drawn until Colin, AD's maul): the head's weight at the far end
+    outlined(c, function () { c.beginPath(); c.rect(-6, -w * 0.3, L - 4, w * 0.6); }, '#8a5a3a', 1.1);
+    outlined(c, function () { c.beginPath(); c.rect(L - 8, -w * 1.9 + tw, 11, w * 3.8); }, P.face, 1.3);
+    c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(L - 7, -w * 1.7 + tw, 3, w * 3.4); c.fillStyle = 'rgba(0,0,0,0.22)'; c.fillRect(L + 0.5, -w * 1.7 + tw, 2, w * 3.4);
   } else if (it.kind === 'club' || it.kind === 'cudgel') {
     // a knotted stick (the cudgel shares it, shorter): thicker toward the end, a knob at the tip, bands of bark
     outlined(c, function () { c.beginPath(); c.moveTo(-6, -w * 0.45); c.quadraticCurveTo(L * 0.5, -w * 0.7 + tw * 0.4, L - 4, -w * 1.1 + tw); c.quadraticCurveTo(L + 1, -w * 0.9 + tw, L + 1, tw); c.quadraticCurveTo(L + 1, w * 0.9 + tw, L - 4, w * 1.1 + tw); c.quadraticCurveTo(L * 0.5, w * 0.7 + tw * 0.4, -6, w * 0.45); c.closePath(); }, it.mat === 'wood' ? '#8a5a3a' : P.face, 1.2);

@@ -111,7 +111,8 @@ var PROFILES = {
   seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
   knife:    { arc: 1.0, reach: 21, blade: 11, wu: 0.07, ac: 0.07, rec: 0.16, dmg: 1, kb: 40, stag: 3, lunge: 60, chain: 3, motion: 'thrust', st: 3, crit: 0.15, wt: 0.5 },   // (2026-10-16: the knife is a weapon now, a smaller seax)
   spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 },
+  maul:     { arc: 2.4, reach: 38, blade: 28, wu: 0.4, ac: 0.16, rec: 0.64, dmg: 1, kb: 320, stag: 46, lunge: 55, chain: 2, motion: 'smash', st: 13, heavy: true, wt: 1.9 }   /* the maul (Robin, 2026-10-24): two-handed and blunt, slower than the club, heavier than the Dane axe's blow; the numbers mine */   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -473,6 +474,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     }
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? gd.heavy : gd.light; if (runeHas('stoneGuard') && gd.kind === 'shield') { red *= runeN('stoneGuard', 'throughK') || 1; if (kind === 'proj' && runeN('stoneGuard', 'arrows')) red = 0; }   /* the Stone guard: the shield lets less through, an arrow nothing (Robin, 2026-10-24) */
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
+    if (runeHas('oakArm') && gd.kind !== 'shield' && !bareHanded() && meleeProfile().kind === 'maul') { p.oakHits = (p.oakHits || 0) + 1; d2 = Math.min(d2, p.maxHp * ((runeN('oakArm', 'cap') || 0.06) + (runeN('oakArm', 'step') || 0.02) * (p.oakHits - 1))); if (runeN('oakArm', 'stagBack') && src && src.type === 'soldier') { src.state = 'stagger'; src.t = 0; src.dur = 0.6; } }   /* The oak (Robin, 2026-10-24): blocking with the maul, a blow takes at most a sixteenth of your health, two hundredths more each blow blocked in a row */
     if (runeHas('ironSkin')) d2 *= 1 - runeN('ironSkin', 'armor');
     if (runeHas('midgardsWall') && runeN('midgardsWall', 'back') && src && src.type === 'soldier' && !src.dead) damageEnemy(src, dmg * 0.5, toSrc + Math.PI, 60, 10, 'melee');   /* Midgard's wall II: a blow it stops is given back */
     p.hp -= d2; p.st -= gd.st * (gbH ? 1.8 : 1) * mod('block') * (runeHas('stoneGuard') ? runeN('stoneGuard', 'stK') : 1); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');   /* the Stone guard: a block costs less, or nothing */
@@ -493,6 +495,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
   if (berserkOn()) hit *= runeN('berserk', 'taken');   /* Berserk: you take more */
   if (runeHas('lastStand') && hit >= p.hp) { if (W.t - (p.lastHurtT || -99) > 6) p.stands = 0; if ((p.stands || 0) < runeN('lastStand', 'times')) { p.stands = (p.stands || 0) + 1; hit = Math.max(0, p.hp - 1); p.invuln = Math.max(p.invuln, runeN('lastStand', 'invuln') || 0.2); num(p.x, p.y - 34, 'LAST STAND', '#ff9a4a', true); ring(p.x, p.y, 0, 30, 0.4, '255,170,90', false, 3); sfx('last_stand'); } }   /* the Last stand: a killing blow leaves one health, once a fight */
   logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
+  p.oakHits = 0;   /* (a blow taken unguarded starts The oak's count again) */
   if (berserkOn() && hit >= p.hp && p.hp > 1) { hit = p.hp - 1; num(p.x, p.y - 34, 'BERSERK', '#ff9a4a', true); }   /* Berserk: a blow that would kill you leaves you one health, unless you are at one already (Robin, 2026-10-24) */
   p.hp -= hit; p.chain = 0; p.rally = Math.min(p.maxHp, (p.rally || 0) + hit * RALLY.share * (runeHas('thickHide') ? runeN('thickHide', 'rallyK') || 1 : 1)); p.rally0 = p.rally; p.rallyT = 0;   // (the win-back: RALLY; Thick hide keeps more of it)
   p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;

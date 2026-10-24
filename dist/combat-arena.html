@@ -2438,6 +2438,7 @@ var KINDS = {
   seax: { name: 'Seax', len: 16, w: 2.6, dmg: 0.6, tool: null, melee: true, desc: 'The long knife every Norseman carries. Fast stabs, little reach, and it finds the gaps.' },
   spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
+  maul: { name: 'Maul', len: 30, w: 4.2, dmg: 1.7, tool: null, melee: true, desc: 'A heavy hammer-head on a long haft, swung with both hands. Slow, and it breaks what it meets: a shield, a guard, a man’s footing.' }   /* the two-handed blunt weapon (Robin, 2026-10-24); its hand layers and swings asked of Colin, AD, the club's stand in */,
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
   rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
@@ -2467,7 +2468,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe', 'maul'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -2511,7 +2512,7 @@ function desc(it) {
 }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
-  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel') ? 1 : 0.8 + it.sharp * 0.4;
+  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
 }
@@ -2573,6 +2574,11 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
       c.fillStyle = P.dark; c.fillRect(-1.6, -3 * s, 3.2, 3.5 * s);
     }
     c.restore();
+  } else if (it.kind === 'maul') {
+    // a long haft and a squared iron head (drawn until Colin, AD's maul): the head's weight at the far end
+    outlined(c, function () { c.beginPath(); c.rect(-6, -w * 0.3, L - 4, w * 0.6); }, '#8a5a3a', 1.1);
+    outlined(c, function () { c.beginPath(); c.rect(L - 8, -w * 1.9 + tw, 11, w * 3.8); }, P.face, 1.3);
+    c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(L - 7, -w * 1.7 + tw, 3, w * 3.4); c.fillStyle = 'rgba(0,0,0,0.22)'; c.fillRect(L + 0.5, -w * 1.7 + tw, 2, w * 3.4);
   } else if (it.kind === 'club' || it.kind === 'cudgel') {
     // a knotted stick (the cudgel shares it, shorter): thicker toward the end, a knob at the tip, bands of bark
     outlined(c, function () { c.beginPath(); c.moveTo(-6, -w * 0.45); c.quadraticCurveTo(L * 0.5, -w * 0.7 + tw * 0.4, L - 4, -w * 1.1 + tw); c.quadraticCurveTo(L + 1, -w * 0.9 + tw, L + 1, tw); c.quadraticCurveTo(L + 1, w * 0.9 + tw, L - 4, w * 1.1 + tw); c.quadraticCurveTo(L * 0.5, w * 0.7 + tw * 0.4, -6, w * 0.45); c.closePath(); }, it.mat === 'wood' ? '#8a5a3a' : P.face, 1.2);
@@ -2790,7 +2796,8 @@ var PROFILES = {
   seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
   knife:    { arc: 1.0, reach: 21, blade: 11, wu: 0.07, ac: 0.07, rec: 0.16, dmg: 1, kb: 40, stag: 3, lunge: 60, chain: 3, motion: 'thrust', st: 3, crit: 0.15, wt: 0.5 },   // (2026-10-16: the knife is a weapon now, a smaller seax)
   spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 },
+  maul:     { arc: 2.4, reach: 38, blade: 28, wu: 0.4, ac: 0.16, rec: 0.64, dmg: 1, kb: 320, stag: 46, lunge: 55, chain: 2, motion: 'smash', st: 13, heavy: true, wt: 1.9 }   /* the maul (Robin, 2026-10-24): two-handed and blunt, slower than the club, heavier than the Dane axe's blow; the numbers mine */   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -3152,6 +3159,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     }
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? gd.heavy : gd.light; if (runeHas('stoneGuard') && gd.kind === 'shield') { red *= runeN('stoneGuard', 'throughK') || 1; if (kind === 'proj' && runeN('stoneGuard', 'arrows')) red = 0; }   /* the Stone guard: the shield lets less through, an arrow nothing (Robin, 2026-10-24) */
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
+    if (runeHas('oakArm') && gd.kind !== 'shield' && !bareHanded() && meleeProfile().kind === 'maul') { p.oakHits = (p.oakHits || 0) + 1; d2 = Math.min(d2, p.maxHp * ((runeN('oakArm', 'cap') || 0.06) + (runeN('oakArm', 'step') || 0.02) * (p.oakHits - 1))); if (runeN('oakArm', 'stagBack') && src && src.type === 'soldier') { src.state = 'stagger'; src.t = 0; src.dur = 0.6; } }   /* The oak (Robin, 2026-10-24): blocking with the maul, a blow takes at most a sixteenth of your health, two hundredths more each blow blocked in a row */
     if (runeHas('ironSkin')) d2 *= 1 - runeN('ironSkin', 'armor');
     if (runeHas('midgardsWall') && runeN('midgardsWall', 'back') && src && src.type === 'soldier' && !src.dead) damageEnemy(src, dmg * 0.5, toSrc + Math.PI, 60, 10, 'melee');   /* Midgard's wall II: a blow it stops is given back */
     p.hp -= d2; p.st -= gd.st * (gbH ? 1.8 : 1) * mod('block') * (runeHas('stoneGuard') ? runeN('stoneGuard', 'stK') : 1); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');   /* the Stone guard: a block costs less, or nothing */
@@ -3172,6 +3180,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
   if (berserkOn()) hit *= runeN('berserk', 'taken');   /* Berserk: you take more */
   if (runeHas('lastStand') && hit >= p.hp) { if (W.t - (p.lastHurtT || -99) > 6) p.stands = 0; if ((p.stands || 0) < runeN('lastStand', 'times')) { p.stands = (p.stands || 0) + 1; hit = Math.max(0, p.hp - 1); p.invuln = Math.max(p.invuln, runeN('lastStand', 'invuln') || 0.2); num(p.x, p.y - 34, 'LAST STAND', '#ff9a4a', true); ring(p.x, p.y, 0, 30, 0.4, '255,170,90', false, 3); sfx('last_stand'); } }   /* the Last stand: a killing blow leaves one health, once a fight */
   logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
+  p.oakHits = 0;   /* (a blow taken unguarded starts The oak's count again) */
   if (berserkOn() && hit >= p.hp && p.hp > 1) { hit = p.hp - 1; num(p.x, p.y - 34, 'BERSERK', '#ff9a4a', true); }   /* Berserk: a blow that would kill you leaves you one health, unless you are at one already (Robin, 2026-10-24) */
   p.hp -= hit; p.chain = 0; p.rally = Math.min(p.maxHp, (p.rally || 0) + hit * RALLY.share * (runeHas('thickHide') ? runeN('thickHide', 'rallyK') || 1 : 1)); p.rally0 = p.rally; p.rallyT = 0;   // (the win-back: RALLY; Thick hide keeps more of it)
   p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;
@@ -5986,7 +5995,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   /* the weapons: one melee and one ranged thing in hand (F swaps); the tools stay copper */
   var arm = { melee: 'sword', ranged: 'bow', mat: 'iron' }, GEAR = [{ id: 'cloth', name: 'Cloth', armor: 0, text: 'Nothing turns a blow aside.' }, { id: 'leather', name: 'Leather', armor: 0.3, text: 'The leather set: 30% of every blow turned aside.' }, { id: 'mail', name: 'Mail and an iron helm', armor: 0.55, text: 'Mail, helm and leather: 55% turned aside, near the cap of 60.' }], gear = GEAR[1];
   function armed(k) { return Items.make(k, arm.mat); }
-  function twoHands() { return arm.melee === 'greataxe'; }
+  function twoHands() { return arm.melee === 'greataxe' || arm.melee === 'maul'; }
   Combat.api.items = {
     held: function () { var P = Combat.dbg().P; if (P.mode === 'fight') return P.weapon === 'ranged' ? armed(arm.ranged) : armed(arm.melee); if (P.mode === 'gather') return Items.make(Combat.api.tools[P.tool].id, 'copper'); return null; },
     tool: function (i) { return Items.make(Combat.api.tools[i].id, 'copper'); },
@@ -6246,50 +6255,50 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   }
   /* The Rune trial (Robin, 2026-10-24: "a trial of all the runes ... test the rune, decide if it should stay or be retired, if it needs modification; simple and clear, like the combat arena; go through each rune one by one and note what I think"): every rune in the library's order, each with how to try it and what the arena sets up for it; a verdict and a note a rune, kept in runetrial; Export gives the text for the Game Developer. The how-lines and the set-ups are mine. */
   var TRIAL_HOW = {
-    bash: { how: 'K held and J (or the right button held and the left) at a man with his shield up: it breaks, he is thrown back. At a man with it down: a low blow and a push.', set: 'manHold' },
-    charge: { how: 'K held and J: a rush three strides long; the first man in the way goes down.', set: 'men2' },
-    riposte: { how: 'Parry a blow (K in the instant it lands), then K held and J: an instant strike that cannot be blocked.', set: 'man' },
-    warCry: { how: 'K held and J: every man within hearing hesitates; your men take heart.', set: 'friend' },
-    dash: { how: 'Space: a short dash, untouchable for a breath. Dash through a blow.', set: 'man' },
-    roll: { how: 'Space: a roll, longer, longer untouchable, slower to rise. Roll through a blow.', set: 'man' },
-    blinkStep: { how: 'Space with a man before you: you stand behind him.', set: 'man' },
+    bash: { how: 'K held and J (or the right button held and the left) at a man with his shield up: it breaks and he stands open a moment, no throw: strike at once. With it down: a low blow and a push.', set: 'manHold' },
+    charge: { how: 'K held and J: a rush; the first man in the way goes down three seconds and takes no harm while down: deal with the other.', set: 'men2' },
+    riposte: { how: 'Parry a blow (K in the instant it lands): he stands stunned; run round him and strike his back: he is thrown and down two seconds. K held and J after a parry is still the instant strike.', set: 'man' },
+    warCry: { how: 'K held and J: every man within hearing covers and backs off a second and a half; your man strikes a quarter harder for four seconds.', set: 'friend' },
+    dash: { how: 'Space at a man as he swings: you pass through him and he keeps facing the wrong way a second. At nothing, a short dash.', set: 'man' },
+    roll: { how: 'Space with a man before you: a dash a quarter turn round him, out of his blow.', set: 'man' },
+    blinkStep: { how: 'With the seax, Space at a man: smoke, and you stand behind him; he is confused until you strike or a second and a half.', set: 'man', wpn: 'seax' },
     longLeap: { how: 'Space: a crouch, a leap and a landing. In the Rune Editor, over the shore and a fence.', set: 'none' },
     slide: { how: 'Space: a long low slide, fast then slowing, under a swung blade. At tier II slide into a man: he trips.', set: 'man', tier: 2 },
-    ghostStep: { how: 'Space away from a man: a shade stays where you stood and he strikes at it.', set: 'men2' },
+    ghostStep: { how: 'Space away from the men: a pale blue shade stays where you stood and they strike at it; two blows and it goes.', set: 'men2' },
     thorsFell: { how: 'In the Rune Editor: the row Four pines in a line, fell the first toward the others.', set: 'none', where: 'runes' },
-    thorsWrath: { how: 'Land blows: one in four calls lightning down on the man.', set: 'man' },
-    bloodlust: { how: 'Fell a man: a little of his strength is yours for a while (the bars).', set: 'men2' },
-    rushStep: { how: 'Strike a man, then Space through him: he is knocked down.', set: 'man' },
+    thorsWrath: { how: 'With the club or the maul: one blow in ten calls lightning down on the man, who stands stunned a second.', set: 'man', wpn: 'club' },
+    bloodlust: { how: 'Fell a man: a twentieth of your health back.', set: 'men2' },
+    rushStep: { how: 'Strike a man, then Space through him within a breath: he is knocked down, whatever he was doing.', set: 'man' },
     catFoot: { how: 'In the game, at a place with men: a man at his post hears you only from close by.', set: 'none', where: 'game' },
-    stormsEye: { how: 'With Thor\u2019s wrath bound in the hand too: the lightning leaps to a second man.', set: 'men3' },
+    stormsEye: { how: 'With the club and Thor\u2019s wrath bound in the hand too: the lightning leaps to a second man.', set: 'men3', wpn: 'club' },
     keenEye: { how: 'In the game at night without a torch: you see twice as far.', set: 'none', where: 'game' },
-    hammer: { how: 'With the club: a blow on a man you have struck does double and staggers him.', set: 'man', wpn: 'club' },
-    thickHide: { how: 'Take the first blow of a fight: it does half.', set: 'man' },
-    axeBreaker: { how: 'With the axe against a man with his shield up: the break staggers him too.', set: 'manHold', wpn: 'axe' },
+    hammer: { how: 'With the club or the maul at a man holding his shield up: hold J a second and let go: the shield shatters and he stands stunned.', set: 'manHold', wpn: 'club' },
+    thickHide: { how: 'Take a blow: twice as much of it stays on the bar to be won back, for half again as long.', set: 'man' },
+    axeBreaker: { how: 'With the axe against a man with his shield up: half the time the break staggers him too.', set: 'manHold', wpn: 'axe' },
     serpentTongue: { how: 'With the seax: one blow in four crits, and a crit bleeds him.', set: 'man', wpn: 'seax' },
-    spearWall: { how: 'With the spear, two men in a line: a thrust that runs the first through hits the second.', set: 'men2', wpn: 'spear' },
+    spearWall: { how: 'With the spear: hold J a second and let go: a second and a half of fast stabs, half of them through a raised shield.', set: 'manHold', wpn: 'spear' },
     ringOfSteel: { how: 'With the sword: parry, strike, parry again; the chain lasts six seconds.', set: 'man' },
-    berserk: { how: 'Fight down to under half health: the roar, red eyes, blows a third harder, a fifth more taken.', set: 'men2' },
-    oakArm: { how: 'With the club: a blow throws the man a step back.', set: 'man', wpn: 'club' },
-    twinBlow: { how: 'With the Dane axe: after a kill it recovers in half the time.', set: 'men2', wpn: 'greataxe' },
+    berserk: { how: 'Fight down to under half health: the roar, red eyes, melee blows harder the lower you are, and a killing blow leaves you one health.', set: 'men2' },
+    oakArm: { how: 'With the maul (two hands, no shield), K to block: a blow takes at most a sixteenth of your health, a little more each blow in a row; a blow taken unguarded resets it.', set: 'men2', wpn: 'maul' },
+    twinBlow: { how: 'With the Dane axe or the maul among men: hold J a second and let go: the Whirlwind, every man round you hit.', set: 'men3', wpn: 'greataxe' },
     lastStand: { how: 'Let a blow that would kill you land: it leaves you with one health, once a fight.', set: 'men2' },
     ironSkin: { how: 'Take blows: a tenth of each turns aside (the log shows the numbers).', set: 'man' },
-    stoneGuard: { how: 'Block with K: a block costs half the stamina.', set: 'man' },
+    stoneGuard: { how: 'Block with K: a tenth gets through, not a fifth, and an arrow nothing.', set: 'bowman' },
     windFoot: { how: 'Run about: a tenth faster.', set: 'none' },
     sureFoot: { how: 'In the game: snow, sand and the shallows slow you no more.', set: 'none', where: 'game' },
-    hunterStride: { how: 'In the game: walk toward a deer; it does not spook until you are half as near.', set: 'none', where: 'game' },
+    hunterStride: { how: 'In the game: the boars and deer go for nobody unless struck.', set: 'none', where: 'game' },
     lunge: { how: 'J: the swing is a lunge, a stride forward and a strike.', set: 'man' },
     whirl: { how: 'With the Dane axe or the spear among men: J turns you full round, every man round you hit.', set: 'men3', wpn: 'greataxe' },
     overhead: { how: 'Hold J a second and let go at a man with his shield up: the blow breaks it and staggers him.', set: 'manHold' },
-    sweep: { how: 'With the spear among men: J sweeps low, every man in the arc staggers.', set: 'men3', wpn: 'spear' },
+    sweep: { how: 'With the spear among men: hold J a second and let go: the ground sweep, every guard broken and every man staggered.', set: 'men3', wpn: 'spear' },
     feint: { how: 'Wait a second, then J: a feint; the man guards against nothing and is open.', set: 'man' },
     twinShot: { how: 'With the bow (F): K held to the full draw, J: two arrows.', set: 'man', ranged: true },
     pinningShot: { how: 'With the bow (F): a full draw pins the man where he stands.', set: 'man', ranged: true },
-    fireArrow: { how: 'With the bow (F): a full draw looses a burning arrow; the man burns. (Tier II needs no torch.)', set: 'man', ranged: true, tier: 2 },
+    fireArrow: { how: 'With the bow (F): a full draw looses a burning arrow; one man in four catches, burns and is slowed.', set: 'man', ranged: true },
     hawkEye: { how: 'With the bow (F): the arrow flies a third further.', set: 'bowman', ranged: true },
-    bleedingPoint: { how: 'In the game: a shot deer bleeds out in half the time.', set: 'none', where: 'game' },
-    quickDraw: { how: 'With the bow (F): the draw fills in a second.', set: 'man', ranged: true },
-    stillHand: { how: 'With the bow (F): stand still two seconds, then shoot: half again.', set: 'man', ranged: true },
+    bleedingPoint: { how: 'Bleed a man (the Serpent\u2019s tongue, Weak spot master), then shoot him: a quarter more and he bleeds further.', set: 'man', ranged: true },
+    quickDraw: { how: 'With the bow (F): hold the draw past full, as long again: the second arc fills, and the arrow does two and a half times.', set: 'man', ranged: true },
+    stillHand: { how: 'With the bow (F): stand still two seconds, then shoot: three times in twenty the weak spot, and he bleeds.', set: 'man', ranged: true },
     stoneBiter: { how: 'In the Rune Editor: mine a rock; one pick blow in three cracks it whole.', set: 'none', where: 'runes' },
     greenThumb: { how: 'In the game: a picked bush grows its berries again in half the time.', set: 'none', where: 'game' },
     keenNose: { how: 'In the game: mushrooms and herbs near you show on the chart.', set: 'none', where: 'game' },

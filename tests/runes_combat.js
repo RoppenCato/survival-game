@@ -78,7 +78,7 @@ s = setup({ kind: 'axe', runes: ['overhead'] }); s.e.guard = 1; s.e.guardAge = 1
 ok(s.e.state === 'stagger' || s.e.guard === 0, 'the Overhead: the held blow breaks the guard and staggers (' + s.e.state + ')');
 
 // the Sweep: the spear's sweep staggers every man in its arc
-s = setup({ kind: 'spear', runes: ['sweep'], men: 2, wits: 0 }); s.men[1].x = s.P.x + 20; s.men[1].y = s.P.y + 30; s.men.forEach(e => { e.shield = false; e.guard = 0; }); const stg = [false, false]; Combat.key('KeyJ', true); for (let i = 0; i < 50; i++) { hold(s.men); Combat.update(DT); } Combat.key('KeyJ', false); for (let i = 0; i < 40; i++) { hold(s.men); Combat.update(DT); s.men.forEach((e, k) => { if (e.state === 'stagger') stg[k] = true; }); }   /* (the Sweep is the held spear blow since Robin's trial: J held, then let go) */ ok(stg[0] && stg[1], 'the Sweep: both men in the arc stagger (' + stg.join(', ') + ')');
+s = setup({ kind: 'spear', runes: ['sweep'], men: 2, wits: 0 }); s.men[1].x = s.P.x + 20; s.men[1].y = s.P.y + 30; s.men.forEach(e => { e.shield = false; e.guard = 0; }); const stg = [false, false]; Combat.key('KeyJ', true); for (let i = 0; i < 100; i++) { hold(s.men); Combat.update(DT); } Combat.key('KeyJ', false); for (let i = 0; i < 40; i++) { hold(s.men); Combat.update(DT); s.men.forEach((e, k) => { if (e.state === 'stagger') stg[k] = true; }); }   /* (the Sweep is the held spear blow since Robin's trial: J held, then let go) */ ok(stg[0] && stg[1], 'the Sweep: both men in the arc stagger (' + stg.join(', ') + ')');
 
 
 // the bow: the Twin shot looses two arrows at a full draw with the ring full

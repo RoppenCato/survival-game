@@ -192,14 +192,14 @@ __COMBAT__
        '<sound>_<kind>' if it has one, else the plain sound: the sword keeps the plain ring, the axe chops, the club thuds, the seax cuts thin, the
        spear punches, the Dane axe is the heavy hit deeper; the swings are whooshes of the weapon's weight */
     hit_axe: function () { tone(150, 0.12, 'square', 0.1, 55); tone(78, 0.18, 'sine', 0.22, 36); noise(0.07, 0.3, 1700, 0.9); },
-    hit_club: function () { tone(92, 0.2, 'sine', 0.32, 38); tone(58, 0.26, 'triangle', 0.16, 30); noise(0.09, 0.18, 650, 0.6); },
+    hit_club: function () { tone(92, 0.2, 'sine', 0.32, 38); tone(58, 0.26, 'triangle', 0.16, 30); noise(0.09, 0.18, 650, 0.6); }, hit_maul: function () { tone(70, 0.26, 'sine', 0.4, 30); tone(44, 0.34, 'triangle', 0.2, 24); noise(0.12, 0.24, 520, 0.7); },
     hit_seax: function () { tone(430, 0.06, 'square', 0.06, 180); tone(140, 0.07, 'sine', 0.1, 70); noise(0.035, 0.26, 3800, 1.4); },
     hit_spear: function () { tone(250, 0.08, 'triangle', 0.11, 90); tone(105, 0.11, 'sine', 0.15, 48); noise(0.045, 0.22, 2300, 1); },
     hit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
     heavyhit_club: function () { tone(85, 0.26, 'sine', 0.36, 34); tone(50, 0.34, 'triangle', 0.2, 26); noise(0.12, 0.22, 600, 0.6); },
     heavyhit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
     swing_axe: function () { noise(0.13, 0.21, 1300, 0.7); },
-    swing_club: function () { noise(0.16, 0.2, 1000, 0.6); },
+    swing_club: function () { noise(0.16, 0.2, 1000, 0.6); }, swing_maul: function () { noise(0.22, 0.26, 800, 0.7); },
     swing_seax: function () { noise(0.07, 0.16, 2400, 1.1); },
     swing_spear: function () { noise(0.09, 0.16, 2000, 1.0); },
     swing_greataxe: function () { noise(0.24, 0.24, 800, 0.5); },
@@ -284,7 +284,7 @@ __COMBAT__
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
     if (Sfx.has(n)) return pickOf(n); var pkn = pickOf(n); return pkn !== n ? pkn : null;   /* a sound with no recording of its own but a picked candidate (the world's sounds, 2026-10-20) */
   }
-  var HIT_RATE = { seax: 1.12, spear: 1.05, sword: 1, axe: 0.95, club: 0.9, greataxe: 0.85 };   /* a picked hit on a lighter weapon a little higher and quicker, on a heavier one lower and slower (as the swishes are) */
+  var HIT_RATE = { seax: 1.12, spear: 1.05, sword: 1, axe: 0.95, club: 0.9, greataxe: 0.85, maul: 0.8 };   /* a picked hit on a lighter weapon a little higher and quicker, on a heavier one lower and slower (as the swishes are) */
   function recSfx(n, v, x) {
     var a = AC; if (!a) return false;
     if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
@@ -409,7 +409,7 @@ __COMBAT__
     var P = hero(), M = sprHero && sprHero.meta, out = ['body']; if (!M) return out;
     if (riteKnife) { if (M.layers.indexOf('knifeWood') >= 0) out.push('knifeWood'); if (M.layers.indexOf('knifeMetal') >= 0) out.push({ layer: 'knifeMetal', tint: Items.MATS.iron.face }); return out; }   /* the sacrifice's knife */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
-    var lk = it ? it.kind : null;
+    var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : 'arrowNock'; if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
@@ -423,7 +423,7 @@ __COMBAT__
      without one K only fends: narrow, most of a blow through, no arrow stopped. It is drawn on his left arm whenever his
      weapon is out (handLayers), comes across with the block clip when K is held, and is held across through a walk.
      A wooden shield is bare boards; any other is painted: your colour, quartered with bone. */
-  var TWO_HANDS = { greataxe: 1, bow: 1 };
+  var TWO_HANDS = { greataxe: 1, bow: 1, maul: 1 };
   function shieldFits() { if (typeof equip === 'undefined' || !equip || !equip.shield) return false; var it = handItem('fight'); return !(it && TWO_HANDS[it.kind]); }   /* (one is worn, and what the Fight bar's hand holds leaves the other arm free) */
   function shieldHeld() { var P = hero(); return shieldFits() && P.mode === 'fight' && !carrying; }
   function shieldPaint() { var sh = equip.shield; return sh && sh.mat !== 'wood' ? { face: YOURS, mark: Sprites.SHIELD_MARK } : { face: Sprites.SHIELD_WOOD }; }
@@ -1560,6 +1560,7 @@ __COMBAT__
     { id: 'copperSeax', cat: 'weapon', out: { item: ['seax', 'copper'] }, needs: { copperBar: 2, wood: 1 }, at: 'bench', key: 'copperBar' },
     { id: 'copperSpear', cat: 'weapon', out: { item: ['spear', 'copper'] }, needs: { copperBar: 2, wood: 3 }, at: 'bench', key: 'copperBar' },
     { id: 'copperGreataxe', cat: 'weapon', out: { item: ['greataxe', 'copper'] }, needs: { copperBar: 5, wood: 2 }, at: 'bench', key: 'copperBar' },
+    { id: 'copperMaul', cat: 'weapon', out: { item: ['maul', 'copper'] }, needs: { copperBar: 4, wood: 3 }, at: 'bench', key: 'copperBar' },   /* the maul (Robin, 2026-10-24) */
     // iron (2026-10-07, the lowlands): bog iron from the marsh and charcoal in the furnace make a bar; the bar makes the tools and arms
     { id: 'ironBar', cat: 'supply', out: { stack: ['ironBar', 1] }, needs: { bogIron: 3, charcoal: 3 }, at: 'furnace', key: 'bogIron', dur: 12 },
     { id: 'ironAxe', cat: 'tool', out: { item: ['axe', 'iron'] }, needs: { ironBar: 3, wood: 2 }, at: 'bench', key: 'ironBar' },
@@ -1569,6 +1570,7 @@ __COMBAT__
     { id: 'ironSword', cat: 'weapon', out: { item: ['sword', 'iron'] }, needs: { ironBar: 4, wood: 1, leather: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'ironSeax', cat: 'weapon', out: { item: ['seax', 'iron'] }, needs: { ironBar: 2, wood: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'ironSpear', cat: 'weapon', out: { item: ['spear', 'iron'] }, needs: { ironBar: 2, wood: 3 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironMaul', cat: 'weapon', out: { item: ['maul', 'iron'] }, needs: { ironBar: 4, wood: 3 }, at: 'bench', key: 'ironBar' },
     { id: 'ironGreataxe', cat: 'weapon', out: { item: ['greataxe', 'iron'] }, needs: { ironBar: 5, wood: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'paintedShield', cat: 'weapon', out: { item: ['shield', 'iron'] }, needs: { ironBar: 1, wood: 5, leather: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'gambeson', cat: 'armour', out: { item: ['tunic', 'wool'] }, needs: { fiber: 8, leather: 1 }, at: 'bench', key: 'leather' },
