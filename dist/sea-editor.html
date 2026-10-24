@@ -8277,7 +8277,7 @@ var WPRE = {
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
-var DASH_T = 0.18, LEAP = { crouch: 0.14, v: 520, t: 0.42, land: 0.18, h: 24 };   /* the Long leap as its own move (Robin, 2026-10-24: the dash runes felt the same, "that one should just be a leap and that it jumps further"): a crouch of crouch s standing, then the flight at v for t s (times the rune's length over 2.2: about 218 units at tier I, three times the dash), the body h screen units up at the top of its arc, the landing held land s; the numbers mine */
+var DASH_T = 0.18, LEAP = { crouch: 0.14, v: 420, t: 0.26, land: 0.18, h: 20 };   /* the Long leap as its own move (Robin, 2026-10-24: the dash runes felt the same, "that one should just be a leap and that it jumps further"): a crouch of crouch s standing, then the flight at v for t s (times the rune's length over 2.2: about 110 units at tier I, half of the first try's 218: Robin, "about half the distance"), the body h screen units up at the top of its arc, the landing held land s; the numbers mine */
 var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
