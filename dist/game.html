@@ -16980,6 +16980,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var i, n = thin ? 3 : 6; for (i = 0; i < n; i++) { var u = ((t * 0.22 + i * 0.17) % 1), px = x + Math.sin(t * 0.7 + i * 1.9) * 3 + u * 10, py = y - u * 46, r = (thin ? 2 : 3) + u * 7; c.fillStyle = 'rgba(214,212,208,' + ((1 - u) * (thin ? 0.22 : 0.42)).toFixed(2) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill(); }
   }
   function ringNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'fireRing' && Math.hypot(o.x - P.x, o.y - P.y) < 40 && (!best || Math.hypot(o.x - P.x, o.y - P.y) < Math.hypot(best.x - P.x, best.y - P.y))) best = o; }); return best; }
+  var WEED_NAMES = { flower: 1, reeds: 1, dwarfBirch: 1 }, weeded = {};
+  function isWeed(o) { return !o.r && (o.kind === 'bush' || WEED_NAMES[o.name]); }   /* the soft plants a floor or a room clears: bushes with no footprint, heather, juniper, tall grass, herbs, flowers, reeds, dwarf birch */
+  function weedTile(tx, ty) { var x0 = tx * T, y0 = ty * T, hit = []; around(x0 + T / 2, y0 + T / 2, function (o) { if (isWeed(o) && o.x >= x0 - 2 && o.x < x0 + T + 2 && o.y >= y0 - 2 && o.y < y0 + T + 2) hit.push(o); }); hit.forEach(function (o) { w.removeProp(o); gone[propKey(o)] = 1; }); return hit.length; }   /* (the building review of 2026-10-24: flowers, heather and a juniper grew through a flagstone floor and inside the walls) */
+  function weedRooms() { if (!roomInfo) return; var n = 0; roomInfo.rooms.forEach(function (r) { if (weeded[r.id]) return; weeded[r.id] = 1; if (villageAt(r.tiles[0][0] * T, r.tiles[0][1] * T) >= 0) return; r.tiles.forEach(function (t) { n += weedTile(t[0], t[1]); }); }); if (n) save(); }   /* once for each room of yours when its walls close */
   function ringTake(o) { drop('charcoal', o.x, o.y + 6, 2); w.removeProp(o); gone[propKey(o)] = 1; sfx('pick'); save(); }
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
@@ -17515,7 +17519,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function dockAt(tx, ty) { var f = B.floors[Build.key(tx, ty)]; return f != null && !!(Build.FLOORS[f] || {}).water; }
   function dockOk(tx, ty) {                 // water beside land or a dock (not the deep sea), or any land tile
-    var cd = code(tx, ty); if (cd >= 1 && cd !== 255) return true; if (cd !== 0 || w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) < -4) return false;   // the shallows reach a little past the wading water
+    var cd = code(tx, ty); if (cd >= 1 && cd !== 255) return true; if (cd !== 0 || w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) < -7) return false;   // out to the depth the villages' jetties reach (-7; it was -4, two tiles off a steep shore: the building review, 2026-10-24)
     var n = [[1, 0], [-1, 0], [0, 1], [0, -1]]; for (var i = 0; i < 4; i++) { var cx = tx + n[i][0], cy = ty + n[i][1], c2 = code(cx, cy); if ((c2 >= 1 && c2 !== 255) || dockAt(cx, cy)) return true; } return false;
   }
   // the mountains and building (2026-10-12): level ground only. A cliff face, its rim and a peak are not land at all (w.isLand);
@@ -17524,7 +17528,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function fellSame(ax, ay, bx, by) { return !w.mt || (fellOk(ax, ay) && fellOk(bx, by) && w.levelAt(ax, ay) === w.levelAt(bx, by)); }
   function edgeFell(ed) { var a = ed.L === 'H' ? [ed.x * T + 3, ed.y * T, (ed.x + 1) * T - 3, ed.y * T] : [ed.x * T, ed.y * T + 3, ed.x * T, (ed.y + 1) * T - 3]; return fellSame(a[0], a[1], a[2], a[3]) && fellOk((a[0] + a[2]) / 2, (a[1] + a[3]) / 2); }
   function tileFell(tx, ty) { return !w.mt || (code(tx, ty) !== 5 && fellSame(tx * T + 4, ty * T + 4, (tx + 1) * T - 4, (ty + 1) * T - 4)); }
-  function fellWhy(x, y) { return !w.mt ? '' : (w.cliffAt(x, y) ? 'Not on a cliff' : (w.rampAt(x, y) ? 'Not on a slope' : (w.waterAt(x, y) ? 'Not in the water' : ''))); }
+  function fellWhy(x, y) { var m = !w.mt ? '' : (w.cliffAt(x, y) ? 'Not on a cliff' : (w.rampAt(x, y) ? 'Not on a slope' : (w.waterAt(x, y) ? 'Not in the water' : ''))); return m || blockWhy(x, y); }
+  function blockWhy(x, y) {                /* what stops a piece here, named (2026-10-24, the building review: every refusal said "Blocked, or not on land", even for a tree a step away) */
+    if (!isLand(x, y)) return w.isWater && w.isWater(x, y) ? 'Not in the water' : 'Not on land'; var what = '';
+    around(x, y, function (o) { if (what || !o.r || Math.hypot(o.x - x, o.y - y) >= o.r * o.s + 10) return; var k = o.kind || '', n = o.name || ''; what = k === 'tree' || /tree|pine|oak|birch|beech|ash|apple/.test(n) ? 'A tree stands in the way: fell it' : /rock|boulder|stone/.test(k + n) ? 'A rock is in the way: break it' : /bush|fern|juniper|heather/.test(k + n) ? 'A bush is in the way: clear it' : 'Something stands in the way'; });
+    return what;
+  }
   function spotClear(x, y) { var ok = isLand(x, y) && fellOk(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
   function cornerAt(wx, wy) { var cx = Math.round(wx / T), cy = Math.round(wy / T); return { x: cx, y: cy, d: Math.hypot(wx / T - cx, wy / T - cy) }; }
   function floorBeside(ed) { return ed.L === 'H' ? (upFloorAt(ed.x, ed.y - 1) || upFloorAt(ed.x, ed.y)) : (upFloorAt(ed.x - 1, ed.y) || upFloorAt(ed.x, ed.y)); }
@@ -17656,7 +17665,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade' || t.piece.id === 'rail' || t.piece.id === 'drystone' || t.piece.id === 'post';
     if (!first && (id === lastPlaced || !drags)) return;   // drag lays floors, walls, fences and posts; doors, gates and windows one per click
     lastPlaced = id;
-    if (t.kind === 'tile') { var old = BB.floors[Build.key(t.tx, t.ty)]; if (old != null) pay(costOfFloor(old), 1); pay(buildCost(t.piece.cost)); deed('built'); BB.floors[Build.key(t.tx, t.ty)] = t.piece.m; }   // a new floor over an old one gives the old one back
+    if (t.kind === 'tile') { var old = BB.floors[Build.key(t.tx, t.ty)]; if (old != null) pay(costOfFloor(old), 1); pay(buildCost(t.piece.cost)); deed('built'); BB.floors[Build.key(t.tx, t.ty)] = t.piece.m; if (!L && !(Build.FLOORS[t.piece.m] || {}).water) weedTile(t.tx, t.ty); }   // a new floor over an old one gives the old one back; it clears the plants on its tile
     else if (t.kind === 'post') { pay(buildCost(t.piece.cost)); deed('built'); BB.posts[Build.key(t.cx, t.cy)] = { m: t.piece.m }; }
     else { pay(buildCost(t.piece.cost)); deed('built'); BB[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; }
     bDirty = true; sfx('build'); save();
@@ -17677,7 +17686,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var SOUTHF = {};
   function rebuildRooms() {
     bDirty = false; navStale = true; ensureB(); BSH.rev++;   /* (the buildings' shadows are laid again: bldShadows) */
-    roomInfo = roomsOf(B);
+    roomInfo = roomsOf(B); weedRooms();
     SOUTHF = {}; roomInfo.rooms.forEach(function (r) { if (!r.tiles || !r.tiles.length) return; Build.roofRects(r.tiles).forEach(function (rc) { var f = { x0: rc.x0 * T, x1: (rc.x1 + 1) * T }, x; for (x = rc.x0; x <= rc.x1; x++) if (B.H[Build.key(x, rc.y1 + 1)]) SOUTHF[Build.key(x, rc.y1 + 1)] = f; }); });   /* a room's south face, its walls shaded from the west end to the east (the depth board, 2026-10-22) */
     var k, p, auto = {};
     roofCache = {};
@@ -23025,7 +23034,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       (sv.drops || []).forEach(function (d) { if (d.kind === 'log' && !(d.n > 0)) return; drops.push({ kind: d.kind, tree: d.tree, n: d.n, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0, lie: d.lie ? 1 : 0, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : 0 }); });
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
-      w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing' || o.weirNet) && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
+      w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing' || o.weirNet || WEED_NAMES[o.name]) && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.groundDiff && typeof sv.groundDiff === 'object') groundApply(sv.groundDiff); else if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // what the player painted over the world's ground; an older save holds the whole field (and is saved as a diff from now on), the oldest its strokes alone
       if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && sv.caveSeen) Cave.seenLoad(cave, sv.caveSeen);
       (sv.caves2 || []).forEach(function (q) { var cv = caves.filter(function (c2) { return c2.kind === q.kind && (q.kind !== 'crypt' || c2.vi === q.vi); })[0]; if (!cv) return; if (q.hoardN != null && cv.cave.hoard) { cv.cave.hoard.n = q.hoardN; if (!q.hoardN && cv.cave.chest) cv.cave.chest.name = 'heavyChest_broken'; }   /* (a crypt by its church; its silver once taken stays taken) */
