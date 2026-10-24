@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>World monsters</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:76ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.stat{margin:0 2px;font-size:.95rem;font-weight:600}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="index.html">&larr; Back to the menu</a>
+<h1>World monsters</h1>
+<p class="lede">The sea's beasts on the game's own water, to look at and to tune: the kraken first (Colin, AD's set pieces of 2026-10-21). WASD sails the ship between the arms; the panel rouses the beast. Nothing here is in the game yet.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="The sea with the monster"></canvas></div>
+      <p class="note" id="status"></p>
+    </div>
+    <div class="right">
+      <div class="panel">
+        <h2>The monster</h2>
+        <div class="row"><label>Which <select id="monster" aria-label="The monster"><option value="kraken">The kraken</option></select></label></div>
+        <div class="row">
+          <button id="sceneArms">Between the arms</button>
+          <button id="sceneHead">The beast turns up</button>
+          <button id="sceneRoar">The rearing</button>
+          <button id="sceneSink">Down again</button>
+        </div>
+        <p class="note">Between the arms: a field of tentacles rising and sinking out of step, the ship threading between. The beast turns up: the sea goes dark and the head rises at the field's middle, the eyes lit. The rearing: the head tips back and the maw opens on the ship.</p>
+      </div>
+      <div class="panel">
+        <h2>The field</h2>
+        <div id="sliders"></div>
+        <div class="row"><button id="newField">New field</button><button id="resetShip">The ship back to the edge</button></div>
+      </div>
+      <div class="panel">
+        <h2>The ship</h2>
+        <div class="row"><label>Kind <select id="ship" aria-label="The ship"><option value="rowboat">Rowboat</option><option value="karve8" selected>Karve, eight rowers</option><option value="longship">Longship</option></select></label></div>
+        <p class="note">W forward, A and D turn, S back. The view pulls back by the hull as at sea in the game.</p>
+      </div>
+      <div class="panel">
+        <h2>Settings</h2>
+        <textarea id="settings" rows="4" readonly aria-label="The settings as text"></textarea>
+        <div class="row"><button id="useGame">Use in the game</button><span class="note" id="useNote">(kept as game.monsters; the game does not read it yet: where the kraken lives and what the meeting costs are not built)</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+__LIB__
+__WORLD__
+__YARD__
+__SEALIB__
+__MONSTERS_JS__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), PS = 2;
+  function fitCanvas() { var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4; if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); } PS = ps; }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var kit = StyleLab.kit, K = 0.75, T = kit.TW; kit.setup(kit.STYLE);
+  var w = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); w.meadowLook = World.GRASS_INK; w.plant(); w.camp(); w.sortBuckets();
+  var WX = w.WX, WY = w.WY, fx = Math.min(WX - 500, w.home.x + 1100), fy = Math.max(300, Math.min(WY - 300, w.home.y));
+  var MON = __MONSTERS__ || {}, IMG = {}, mk = function (wd, hd) { var c2 = document.createElement('canvas'); c2.width = wd; c2.height = hd; return c2; };
+  function imgOf(name) { if (IMG[name]) return IMG[name]; var J = MON[name]; if (!J) return null; var im = new Image(); im.src = J.src; return (IMG[name] = { img: im, J: J }); }
+  /* the field */
+  var SL = [['arms', 'Arms', 2, 10, 1], ['spacing', 'Spacing, metres', 12, 60, 1], ['spread', 'Spread', 0.5, 2, 0.05], ['cycle', 'Rise and sink, seconds', 6, 60, 1], ['dark', 'The sea’s dark under the field', 0, 0.6, 0.02], ['darkUp', 'The dark with the head up', 0, 0.7, 0.02], ['riseT', 'The head’s rise, seconds', 3, 30, 1], ['roarT', 'The rearing, seconds', 1, 8, 0.5], ['zoom', 'The view', 0.5, 1.6, 0.05]];
+  var spec = { zoom: 1 }, kk; for (kk in Monsters.DEF) spec[kk] = Monsters.DEF[kk]; try { var sv = JSON.parse(localStorage.getItem('monsters.spec') || 'null'); if (sv) for (kk in sv) spec[kk] = sv[kk]; } catch (e0) {}
+  var seed = 7, F = Monsters.make(spec, fx, fy, seed);
+  function remake() { var hw = F.head.want, hk = F.head.k; F = Monsters.make(spec, fx, fy, seed); F.head.want = hw; F.head.k = hk; }
+  function saveSpec() { try { localStorage.setItem('monsters.spec', JSON.stringify(spec)); } catch (e1) {} settingsText(); }
+  function settingsText() { var o = {}; SL.forEach(function (s) { o[s[0]] = spec[s[0]]; }); o.ship = ship.value; document.getElementById('settings').value = JSON.stringify(o); }
+  (function () { var host = document.getElementById('sliders'); SL.forEach(function (s) { var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('label'); lab.textContent = s[1] + ' '; var inp = document.createElement('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; inp.value = spec[s[0]]; inp.setAttribute('aria-label', s[1]); var val = document.createElement('span'); val.className = 'note'; val.textContent = ' ' + spec[s[0]];
+    inp.addEventListener('input', function () { spec[s[0]] = +inp.value; val.textContent = ' ' + inp.value; if (s[0] === 'arms' || s[0] === 'spacing' || s[0] === 'spread' || s[0] === 'cycle') remake(); else F.spec[s[0]] = spec[s[0]]; saveSpec(); }); lab.appendChild(inp); lab.appendChild(val); row.appendChild(lab); host.appendChild(row); }); })();
+  document.getElementById('newField').addEventListener('click', function () { seed = (seed * 31 + 7) % 10007; remake(); });
+  document.getElementById('sceneArms').addEventListener('click', function () { F.head.want = 0; });
+  document.getElementById('sceneHead').addEventListener('click', function () { F.head.want = 1; });
+  document.getElementById('sceneRoar').addEventListener('click', function () { F.head.want = 1; F.head.roar = F.spec.roarT; });
+  document.getElementById('sceneSink').addEventListener('click', function () { F.head.want = 0; F.head.roar = 0; });
+  /* the ship */
+  var ship = document.getElementById('ship'), ZOOM = { rowboat: 0.65, karve8: 0.55, longship: 0.45 }, v = null;
+  function partsOf(kind) { var KJ = Yard.KJ, HD = Yard.HULLS[kind], parts = [], i; if (!HD) return parts; if (HD.mast) { for (i = HD.mast - 1; i >= 2 && parts.length < Math.floor((HD.thwarts ? HD.thwarts[1] : 6) / 2); i--) parts.push({ id: 'thwart', i: i, j: KJ }); for (i = HD.mast + 1; i <= HD.n - 1 && parts.length < (HD.thwarts ? HD.thwarts[1] : 6); i++) parts.push({ id: 'thwart', i: i, j: KJ }); parts.push({ id: 'mast', i: HD.mast, j: KJ }, { id: 'sail', i: HD.mast, j: KJ }, { id: 'rudder', i: HD.rudder, j: KJ }, { id: 'dragon', i: HD.n, j: KJ }, { id: 'shields', i: 4, j: KJ }); } else parts.push({ id: 'thwart', i: 2, j: KJ }); return parts; }
+  function makeShip() { var kind = ship.value; v = { kind: kind, parts: partsOf(kind), x: fx - spec.spacing * Monsters.M * spec.spread * 2.2, y: fy + 40, h: 0, vx: 0, vy: 0, speed: 0, crew: kind === 'longship' ? 26 : kind === 'karve8' ? 8 : 0, sailFill: 0, aboard: true, rowing: true }; try { Yard.fit(v); } catch (e2) {} }
+  makeShip(); ship.addEventListener('change', function () { makeShip(); saveSpec(); });
+  document.getElementById('resetShip').addEventListener('click', makeShip);
+  document.getElementById('useGame').addEventListener('click', function () { try { localStorage.setItem('game.monsters', document.getElementById('settings').value); document.getElementById('useNote').textContent = 'Kept as game.monsters (the game does not read it yet).'; } catch (e3) {} });
+  function free(x, y) { return x > 40 && y > 40 && x < WX - 40 && y < WY - 40 && w.isWater(x, y); }
+  var keys = {}; window.addEventListener('keydown', function (e) { if (/^(KeyW|KeyA|KeyS|KeyD|Space)$/.test(e.code) && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) { keys[e.code] = true; e.preventDefault(); } }); window.addEventListener('keyup', function (e) { keys[e.code] = false; });
+  /* the sea */
+  var sea = Sea.make(), env = null, cam = { x: fx, y: fy * K, z: 0.55 }, clock = 0, last = performance.now(), windA = -0.6;
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
+    var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
+    try { Yard.sail(v, { ix: ix, iy: iy }, dt, free, Yard.HANDLING[v.kind] || Yard.HANDLING.karve, { a: windA, k: 0.5 }); } catch (e4) {}
+    Monsters.tick(F, dt); var want = Monsters.need(F), nm; for (nm in want) imgOf(nm);
+    var z = (ZOOM[v.kind] || 0.55) * spec.zoom, hw = 200 / z, hh = 125 / z;
+    cam.z = z; cam.x += (Math.max(hw, Math.min(WX - hw, v.x)) - cam.x) * Math.min(1, dt * 3); cam.y += (Math.max(hh, Math.min(WY * K - hh, v.y * K)) - cam.y) * Math.min(1, dt * 3);
+    env = { x: cam.x, y: cam.y / K, hw: hw, hh: hh / K, z: z, wind: { a: windA, s: 0.45 }, water: function (x, y) { return x > 0 && y > 0 && x < WX && y < WY && w.isWater(x, y); }, night: 0, ship: { x: v.x, y: v.y }, shore: null }; Sea.tick(sea, dt, env);
+    var c = ctx; c.setTransform(PS, 0, 0, PS, 0, 0); c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250); c.save(); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); c.lineJoin = 'round'; c.lineCap = 'round';
+    w.drawGround(c, cam, hw, hh); Sea.drawWater(c, sea, env); w.drawWaves(c, cam, hw, hh, clock, 0.75, 1.05); Monsters.darken(c, F, cam, hw, hh);
+    var items = Monsters.items(F, IMG, mk, []); items.push({ y: v.y, f: function (c2) { try { Yard.drawVessel(c2, v, clock); } catch (e5) {} } }); items.sort(function (a, b) { return a.y - b.y; }); items.forEach(function (it) { it.f(c); });
+    c.restore(); c.setTransform(PS, 0, 0, PS, 0, 0); c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,236,214,0.7)'; c.textAlign = 'left'; c.fillText('WASD sails', 6, 244);
+    var hp = Monsters.headPiece(F.head); document.getElementById('status').textContent = 'The kraken: ' + F.arms.length + ' arms over the sea' + (hp ? ', the head up (' + hp.name + ')' : F.head.want ? ', the head rising' : '') + '. The ship ' + Math.round(Math.hypot(v.x - F.x, v.y - F.y) / Monsters.M) + ' m from the field’s middle.';
+    requestAnimationFrame(frame);
+  }
+  settingsText(); requestAnimationFrame(frame);
+  window.monstersDbg = { field: function () { return F; }, ship: function () { return v; }, img: IMG, spec: spec };
+})();
+</script>
+</body>
+</html>

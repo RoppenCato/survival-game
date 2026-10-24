@@ -20,7 +20,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes2.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes2.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js'), '__MONSTERS_JS__': read('src', 'monsters.js')}
 
 # The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09): the Character Editor and the Blender Editor get each sheet's
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
@@ -181,6 +181,21 @@ def prop_images():
             tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; tj[name]['set'] = sub; j[name] = tj[name]   # (set: its folder, for the Art Editor's set-piece browser)
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
+def monster_images():
+    """the world's monsters' pieces (assets/monsters/<beast>/<piece>.png + .json with its marks: origin, water, eyes, ppm; Colin, AD's kraken, 2026-10-24)"""
+    out = {}; mdir = os.path.join(ROOT, 'assets', 'monsters')
+    if not os.path.isdir(mdir): return 'null'
+    for beast in sorted(os.listdir(mdir)):
+        bdir = os.path.join(mdir, beast)
+        if not os.path.isdir(bdir): continue
+        for fn in sorted(os.listdir(bdir)):
+            if not fn.endswith('.json'): continue
+            name = fn[:-5]; fp = os.path.join(bdir, name + '.png')
+            if not os.path.exists(fp): continue
+            j = json.load(open(os.path.join(bdir, fn), encoding='utf-8')); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8]
+            j['src'] = '../assets/monsters/' + beast + '/' + name + '.png?v=' + tag; j['beast'] = beast; out[name] = j
+    return json.dumps(out)
+SRC['__MONSTERS__'] = monster_images()
 def file_tag(*parts):   # the sound bundle and the music scripts carry a hash of their bytes too (2026-10-16: a browser kept the old bundle)
     fp = os.path.join(ROOT, *parts)
     return hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
@@ -225,6 +240,7 @@ PAGES = [
     ('index', 'index'),
     ('art-editor', 'art'),          # the Art Editor's set pieces (2026-10-21; its figures are game.html?scene=models)
     ('sea-editor', 'sea'),
+    ('world-monsters', 'monsters'),
     ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'), ('rune-browser', 'runes'),   # the Rune Browser (2026-10-23)
 ]
 # ?mute=1 on any page silences it: every sound the page makes goes to a gain of nothing (Robin, 2026-10-13: the sound was on
