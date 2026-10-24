@@ -139,3 +139,37 @@ whether the breath in the last stand reads as a gasp (it is a man out of breath,
   0.218, sweep 0.239 / 0.225); the blink-step and the leap's landing now -8, near the dash they belong to (blink 0.189 /
   0.150, leap 0.210 / 0.194). The files did not change, only the gains.
 
+## Added 2026-10-24, the rune trial: the Hammer, the Throwing axe, the traps, the Shadowstep
+
+Robin's rune trial of 2026-10-24 (Clive, GD's `docs/rune-trial-2026-10-24.md`): nine sounds the game calls by name. Robin has
+picked the plain recording every time so far (nine of nine), so each sound leads with a plain one, **a** (and **b** where a
+second recording is as good), and a layered **v** beside it. New recordings: BigSoundBank's rat traps, a small chain, two steam
+hisses and a glass ball breaking (`sfx/runes/ref/bsb_traps/`, Robin's yes the same day); the medieval crossbow's mechanism, on
+disk since the bow. Every snap and click starts at its own sound (the crossbow's cuts opened with 30 to 60 ms of silence).
+
+| Sound | When | Seconds a | Gain v | Gain a | Gain b |
+| --- | --- | --- | --- | --- | --- |
+| `shield_break` | the Hammer: a raised shield shattered under a held blunt blow, at the man struck | 0.34-0.45 | 0.329 | 0.337 | 0.345 |
+| `axe_throw` | the Throwing axe leaving the hand, spinning, at the hero | 0.19-0.38 | 0.297 | 0.337 | - |
+| `axe_catch` | the Throwing axe caught again, at the hero | 0.03-0.04 | 0.349 | 0.642 | 0.233 |
+| `trap_throw` | a small iron trap tossed underhand, where it is | 0.39-0.42 | 0.145 | 0.088 | - |
+| `trap_land` | the trap landing on sand or turf with a clink, where it lies | 0.11-0.23 | 0.152 | 0.131 | - |
+| `trap_arm` | the trap setting, a soft click, three seconds after it lands | 0.11-0.12 | 0.113 | 0.114 | - |
+| `trap_snap` | the Tripper's jaws closing on a foot: iron, short, mean | 0.09-0.10 | 0.528 | 0.487 | 0.781 |
+| `trap_poison` | a clay pot of poison breaking with a wet hiss, where it lies | 0.68-0.76 | 0.325 | 0.283 | - |
+| `shadowstep` | the Shadowstep: a dash in a puff of smoke, darker than the dash, at the hero | 0.38-0.38 | 0.218 | 0.213 | - |
+
+- `shield_break`: v: a board splitting, the iron rim ringing, the planks rattling, a blunt thump. a: the board splitting alone. b: the split and the rim, two recordings.
+- `axe_throw`: v: an axe's swing shaken fast so it flutters, a dagger's swish on top. a: the axe's swing alone (its rumble off).
+- `axe_catch`: v: a hand's slap with a small wooden knock and a little weight. a: the slap alone (very short). b: a wooden knock alone.
+- `trap_throw`: v: a small chain's jingle, slowed and softened, a soft swish. a: the chain's jingle as recorded (bright).
+- `trap_land`: v: a soft thud on turf, the iron's clink, a last jingle. a: the clink alone (Kenney's light metal).
+- `trap_arm`: v: a crossbow's catch clicking home with a tiny ring of iron. a: the click alone.
+- `trap_snap`: v: a crossbow loosing (a hard iron snap), a rat trap's jaws slowed into iron, the meat of a foot. a: the crossbow's snap alone. b: a rat trap snapping shut (BigSoundBank's).
+- `trap_poison`: v: a stone's crack and shards, a glass ball's break slowed and dulled under it, a wet splat, a steam hiss rising. a: the glass ball breaking and the hiss, two recordings. No free recording of a clay pot exists; the stones are the nearest.
+- `shadowstep`: v: the sword's swish F slowed and darkened, a breath let out hard through it, a puff of air. a: the breath alone (BigSoundBank's breathless man).
+
+Levels against the hit: the shield break as loud as a hit (0), the snap just under (-2), the poison -4, the throw and the
+shadowstep like the dash (-5), the catch and the landing -8, the toss -10, the arming click -14. `preview_trial.mp3` stages
+them (the v of each) in the order they would come; `preview_<name>.mp3` each alone, v then a then b.
+

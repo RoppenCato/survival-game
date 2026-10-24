@@ -1,5 +1,5 @@
 # The sounds the game plays (Robin's picks locked in, 2026-10-20); the bundle is built from these only:
-# node tools/sfxjs.js "<the folders>" combat @assets/sfx/keep.txt
+# node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|C:/dev/SG/Sound Director/out/sfx/chapter1|C:/dev/SG/Sound Director/out/sfx/flesh|C:/dev/SG/Sound Director/out/sfx/ui|assets/sfx/free|assets/sfx/bow|assets/sfx/runes|assets/sfx/robin|assets/sfx/ships" combat @assets/sfx/keep.txt   (the folders as of 2026-10-24; checked: the rebuilt bundle lost nothing)
 # the studio's fight sounds (out/sfx/combat)
 broken chain_2 chain_3 chain_4 crit dash die finish heavytell hurt parry perfect slam stagger tele
 swish_axe swish_club swish_greataxe swish_seax swish_spear
@@ -29,3 +29,6 @@ cudgel_thud_v cudgel_thud_a altar_lay_a storm_rise_v storm_rise_a rune_carve_v r
 # The weather's sounds are their own bundle, assets/sfx/weather.js, built from the whole folder (Derek, SD's candidates of 2026-10-23; Robin picks in the arena):
 #   node tools/sfxjs.js assets/sfx/weather weather
 # rain_light_a rain_a rain_heavy_v rain_water_a thunder_a step_snow_b step_mud_a step_wetsand_v splash_a gust_a (Robin's picks of 2026-10-23: the thunder A, the snow step B; the unpicked ones removed)
+
+# the rune trial's nine (Derek, SD's drop of 2026-10-24: a, a second plain b where there was a good one, and v; a until Robin picks, he has picked the plain recording nine times of nine)
+shield_break_v shield_break_a shield_break_b axe_throw_v axe_throw_a axe_catch_v axe_catch_a axe_catch_b trap_throw_v trap_throw_a trap_land_v trap_land_a trap_arm_v trap_arm_a trap_snap_v trap_snap_a trap_snap_b trap_poison_v trap_poison_a shadowstep_v shadowstep_a
