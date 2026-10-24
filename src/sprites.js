@@ -94,6 +94,7 @@
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
+    if (H.clip && H.clip.name === 'bow_shoot' && Math.hypot(P.vx || 0, P.vy || 0) > 12) H.clip = null;   /* a shot on the move: the loose is let go as soon as he walks, so the walk shows (Robin, 2026-10-24: the body locked in a pose after shooting while walking) */
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
