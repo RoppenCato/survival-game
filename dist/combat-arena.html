@@ -6167,7 +6167,9 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   function LEAD_K() { return 1 / (clockK || 1); }   /* the arena's clock at half or a quarter: the blow lands later in real time */   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
+  function typing(e) { var t = e.target; return !!(t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.isContentEditable)); }   /* the keys stay with the writing (Robin, 2026-10-24: writing a trial note walked him about) */
   window.addEventListener('keydown', function (e) {
+    if (typing(e)) return;
     if (e.code === 'KeyG') { if (!e.repeat) gDown = performance.now(); e.preventDefault(); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); ac();
@@ -6175,6 +6177,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     held[e.code] = true; Combat.key(e.code, true);
   });
   window.addEventListener('keyup', function (e) {
+    if (typing(e)) return;
     if (e.code === 'KeyG') { if (gDown) Combat.order(performance.now() - gDown > 380 ? 'hold' : 'follow'); gDown = 0; e.preventDefault(); return; }   // tapped: with me; held: hold here
     if (!codes[e.code]) return;
     e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
