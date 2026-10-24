@@ -5564,6 +5564,17 @@ __COMBAT__
   };
   var fireArrows = [], FA = { burn: 6, life: 26, fade: 3 };   /* the burning arrows stuck where they landed (Colin, AD's pictures, 2026-10-24): burning FA.burn s, then burnt out, gone after FA.life */
   Combat.api.onFireArrow = function (x, y, ang, hit) { var fa = fireAtHand({ x: x, y: y, face: ang || 0, mode: 'fight' }, true); if (fa) lightFire(fa); if (!hit) fireArrows.push({ x: x, y: y, kind: fa ? 'wall' : 'ground', t: 0, flip: Math.cos(ang || 0) < 0 }); };
+  Combat.api.drawTrapPic = function (c, tr) {   /* the Trapper's traps in Colin, AD's pictures (assets/props/runes_traps, 2026-10-24): set or sprung, and over the shattered pot his green cloud (assets/props/poison_cloud, 8 fps) fading as the poison wears off */
+    var nm = (tr.kind === 'poison' ? 'trapPoison' : 'trapTripper') + (tr.state === 'sprung' ? '_sprung' : '_set'); if (!World.IMAGES[nm]) return false; var sp = sprite(nm); if (!sp || !sp.cv || sp.w <= 1) return false;
+    var x = tr.x, y = tr.y * K - (tr.z || 0); if (tr.z > 0.5) { c.fillStyle = 'rgba(20,30,60,0.2)'; c.beginPath(); c.ellipse(x, tr.y * K + 1, 6, 2.2, 0, 0, 6.283); c.fill(); }
+    c.drawImage(sp.cv, x + sp.l, y + sp.t, sp.w, sp.h);
+    if (tr.kind === 'poison' && tr.state === 'sprung' && World.IMAGES.poisonCloud_0) { var pt = runeN('pinningShot', 'poisonT') || 6, fa = Math.max(0, Math.min(1, tr.t / 0.3)) * Math.max(0, 1 - tr.t / pt), cl = sprite('poisonCloud_' + (Math.floor(clock * 8) % 6)); if (fa > 0.01 && cl && cl.cv && cl.w > 1) { c.save(); c.globalAlpha = fa; c.drawImage(cl.cv, x + cl.l, y + cl.t, cl.w, cl.h); c.restore(); } }
+    return true;
+  };
+  var hdTrap = Combat.api.heroSprite; if (hdTrap) Combat.api.heroSprite = function (c, x, y, face, an, dashing) {   /* a trap in the right hand through the throw until its loose (the throw's hands meta, Colin, AD's icon at about a hand's size) */
+    hdTrap(c, x, y, face, an, dashing); var PT = Combat.dbg().P; if (!PT.throwQ || !PT.throwQ.trap || !sprHero || !sprHero.last || sprHero.last.a !== 'throw' || !Sprites.hand) return;
+    var h = Sprites.hand(sprHero, sprHero.last, face, 0, Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1)), im = STACK_IMG[PT.throwQ.trap === 'poison' ? 'trapPoison' : 'trapTripper']; if (h && im && im.complete && im.naturalWidth) c.drawImage(im, x + h[0] - 4.5, y + h[1] - 4.5, 9, 9);
+  };
   Combat.api.drawFireArrow = function (c, pr) {   /* in flight: the loop at 12 fps, pointing along +x, turned to the flight angle as drawProj turns the drawn one */
     if (!World.IMAGES.fireArrow_0) return false; var sp = sprite('fireArrow_' + (Math.floor(clock * 12) % 6)); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;

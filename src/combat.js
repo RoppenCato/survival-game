@@ -451,7 +451,7 @@ function trapTick(dt) {                    /* the Trapper's traps (Robin's trial
   for (var i = W.traps.length - 1; i >= 0; i--) { var tr = W.traps[i]; tr.t += dt;
     if (tr.state === 'fly') { var u = Math.min(1, tr.t / TRAP.fly); tr.x = tr.x0 + (tr.x1 - tr.x0) * u; tr.y = tr.y0 + (tr.y1 - tr.y0) * u; tr.z = Math.sin(u * Math.PI) * 26; if (u >= 1) { tr.state = 'arming'; tr.t = 0; tr.z = 0; dust(tr.x, tr.y, 2); sfx('trap_land', 0.5, tr); } continue; }
     if (tr.state === 'arming') { if (tr.t >= tr.arm) { tr.state = 'armed'; tr.t = 0; sfx('trap_arm', 0.6, tr); } continue; }
-    if (tr.state === 'sprung') { if (tr.t > 1.6) W.traps.splice(i, 1); continue; }
+    if (tr.state === 'sprung') { if (tr.t > (tr.kind === 'poison' ? (runeN('pinningShot', 'poisonT') || 6) : (runeN('pinningShot', 'bindT') || 4)) + 0.8) W.traps.splice(i, 1); continue; }   /* (a sprung trap lies as long as what it does: the pot's cloud fades with the poison) */
     if (tr.t > TRAP.life) { W.traps.splice(i, 1); continue; }
     for (var j = 0; j < W.enemies.length; j++) { var e = W.enemies[j]; if (e.dead || e.down || e.out || e.side === 1 || e.away || e.hidden || e.ko || e.boundT > 0) continue; if (Math.hypot(e.x - tr.x, e.y - tr.y) > TRAP.r + e.r * 0.5) continue; springTrap(tr, e); break; }
   }
@@ -463,12 +463,12 @@ function springTrap(tr, e) {
 }
 function throwTrap(x, y, kind) {
   var p = P; if (trapHave(kind) <= 0) { num(p.x, p.y * K - 46, 'NO TRAP', '#e0a080'); return; } if (api.trapUse) api.trapUse(kind); if (!W.traps) W.traps = []; while (W.traps.length >= TRAP.max) W.traps.shift();   /* (one out at a time: a new throw loses the old) */
-  p.st = Math.max(0, p.st - TRAP.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.trapCd = TRAP.cd; p.fireT = 0.2; var fa = Math.atan2(y - p.y, x - p.x); p.face = fa; p.faceVis = fa;
-  p.throwT = THROW.clip; p.throwQ = { t: THROW.loose, fn: function () { while (W.traps.length >= TRAP.max) W.traps.shift(); W.traps.push({ kind: kind, state: 'fly', t: 0, x0: p.x + Math.cos(fa) * 8, y0: p.y + Math.sin(fa) * 8, x1: x, y1: y, x: p.x, y: p.y, z: 0, arm: runeN('pinningShot', 'arm') || 3 }); runeUse('pinningShot'); sfx('trap_throw', 0.6, p); } };   /* the trap leaves the hand at the throw clip's loose; taken from the bag on the press */
+  p.st = Math.max(0, p.st - TRAP.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.trapCd = TRAP.cd; var fa = Math.atan2(y - p.y, x - p.x); p.face = fa; p.faceVis = fa;
+  p.throwT = THROW.clip; p.throwQ = { t: THROW.loose, trap: kind, fn: function () { while (W.traps.length >= TRAP.max) W.traps.shift(); W.traps.push({ kind: kind, state: 'fly', t: 0, x0: p.x + Math.cos(fa) * 8, y0: p.y + Math.sin(fa) * 8, x1: x, y1: y, x: p.x, y: p.y, z: 0, arm: runeN('pinningShot', 'arm') || 3 }); runeUse('pinningShot'); sfx('trap_throw', 0.6, p); } };   /* the trap leaves the hand at the throw clip's loose; taken from the bag on the press */
 }
 function throwAxe() {                      /* the Throwing axe (Robin's trial of 2026-10-24): the axe in hand flies spinning to what it strikes and comes back */
   var p = P, fa = rangedAngle(), ti = itemOf('tool', p.tool), tl = TOOLS[p.tool], pw = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
-  p.st = Math.max(0, p.st - THROW.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.face = fa; p.faceVis = fa; p.fireT = 0.2; p.axeAim = false;
+  p.st = Math.max(0, p.st - THROW.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.face = fa; p.faceVis = fa; p.axeAim = false;
   p.throwT = THROW.clip; p.throwQ = { t: THROW.loose, fn: function () { var fb = p.face; W.axe = { x: p.x + Math.cos(fb) * 10, y: p.y + Math.sin(fb) * 10, x0: p.x, y0: p.y, ang: fb, spin: 0, t: 0, phase: 'out', range: runeN('thorsFell', 'range') || 180, pw: pw, it: ti }; runeUse('thorsFell'); sfx('axe_throw', 0.8, p); } };   /* the axe leaves the hand at the throw clip's loose */
 }
 function axeTick(dt) {
@@ -484,12 +484,16 @@ function axeTick(dt) {
 }
 function drawTrap(c, tr) {                 /* drawn in code until Colin, AD's pieces: the Tripper an iron jaw, the Poison a clay pot; a small clock over one arming */
   var x = tr.x, y = tr.y * K - (tr.z || 0), pois = tr.kind === 'poison';
+  if (api.drawTrapPic && api.drawTrapPic(c, tr)) { if (tr.state === 'arming') drawTrapClock(c, tr, x, y); return; }   /* a page with Colin, AD's pictures draws them */
   if (tr.state !== 'fly') { c.fillStyle = 'rgba(20,30,60,0.22)'; c.beginPath(); c.ellipse(x, tr.y * K + 1, 8, 3, 0, 0, 6.283); c.fill(); }
   c.save(); c.translate(x, y); c.lineWidth = 1.4; c.lineCap = 'round';
   if (pois) { c.fillStyle = '#6a5a4a'; c.strokeStyle = '#2a1e18'; c.beginPath(); c.ellipse(0, -3, 5, 4.2, 0, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#3a2a22'; c.beginPath(); c.ellipse(0, -6.5, 2.6, 1.2, 0, 0, 6.283); c.fill(); if (tr.state === 'sprung') { c.fillStyle = 'rgba(143,216,106,0.5)'; c.beginPath(); c.ellipse(0, 0, 14 * Math.min(1, tr.t / 0.4), 5, 0, 0, 6.283); c.fill(); } else if (tr.state === 'armed') { c.fillStyle = '#8fd86a'; c.beginPath(); c.arc(0, -6.5, 1, 0, 6.283); c.fill(); } }
   else { var open = tr.state === 'sprung' ? 0.15 : 1; c.strokeStyle = '#2a2a30'; c.fillStyle = '#6e7078'; c.beginPath(); c.ellipse(0, 0, 7, 3, 0, 0, 6.283); c.fill(); c.stroke(); c.strokeStyle = '#8b8d95'; c.lineWidth = 1.8; c.beginPath(); c.arc(0, 0, 7, Math.PI + 0.3 * open, 2 * Math.PI - 0.3 * open); c.stroke(); c.beginPath(); c.arc(0, 0, 7, 0.3 * open, Math.PI - 0.3 * open); c.stroke(); if (tr.state === 'sprung') { c.strokeStyle = '#2a2a30'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-6, -2); c.lineTo(6, -2); c.moveTo(-6, 2); c.lineTo(6, 2); c.stroke(); } }
   c.restore();
-  if (tr.state === 'arming') { var u = tr.t / tr.arm; c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y - 14, 4, 0, 6.283); c.stroke(); c.strokeStyle = '#ffd34d'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y - 14, 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke(); }
+  if (tr.state === 'arming') drawTrapClock(c, tr, x, y);
+}
+function drawTrapClock(c, tr, x, y) {
+  { var u = tr.t / tr.arm; c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y - 14, 4, 0, 6.283); c.stroke(); c.strokeStyle = '#ffd34d'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y - 14, 4, -Math.PI / 2, -Math.PI / 2 + 6.283 * u); c.stroke(); }
 }
 function drawTrapAim(c, p) {               /* the Trapper's menu at the mouse while the button is held: the spot ringed, the traps listed, the chosen one in gold (the wheel picks) */
   var ta = p.trapAim; if (!ta) return; var kinds = trapKinds(), x = ta.x, y = ta.y * K, i;
@@ -744,7 +748,7 @@ function startAttack() {
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
-  if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1); p.stDelay = 0.5; }
+  if (p.mode === 'fight') { p.st = Math.max(0, p.st - (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1));   /* (floored: a blow may start at 7 and cost more; the fuzz of 2026-10-24 found the stamina below nothing) */ p.stDelay = 0.5; }
   if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; sfx('whirl', 0, p); }   /* the Whirl: a two-handed swing goes full round */
   a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind, oneH = wk0 !== 'greataxe' && wk0 !== 'spear'; if (a.spin && a.whirl) a.clipRune = 'whirl'; else if (a.feint) { if (oneH) a.clipRune = 'feint'; } else if (swr0 === 'lunge') { sfx('lunge', 0, p); a.clipRune = wk0 === 'spear' ? 'thrust_long' : wk0 === 'greataxe' ? null : 'lunge'; } else if (swr0 === 'sweep' && wk0 === 'spear') { sfx('sweep', 0, p); a.clipRune = 'sweep'; } }   /* a.clipRune: Colin, AD's lunge and overhead clips, one-handed, picked by Sprites.pick (2026-10-24); the Overhead's is set in releaseCharge, the held blow's own path */   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
   if (p.feintHeavy) { a.combo = chainLen() - 1; p.feintHeavy = 0; }
@@ -762,7 +766,7 @@ function swingSound(a) { if (P.mode !== 'fight' || P.weapon === 'ranged') return
 function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
   a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
-  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st = Math.max(0, p.st - 10); p.stDelay = 0.6;
   a.clipRune = null; var rwk = bareHanded() ? null : meleeProfile().kind;
   if (p.mode === 'fight' && rwk && swingRune() === 'overhead' && c > 0.6) { sfx('overhead', 0, p); if (rwk !== 'greataxe') a.clipRune = 'overhead'; }   /* the Overhead: a held blow brought down (Colin, AD's clip and Derek, SD's sound, 2026-10-24) */
   if (p.mode === 'fight' && rwk === 'spear' && c > 0.6 && runeHas('spearWall')) { a.ph = 'none'; p.reckless = { t: runeN('spearWall', 't') || 1.5, next: 0 }; }   /* the Reckless thrust: the held spear blow is let go as fast stabs (Robin, 2026-10-24) */
@@ -902,7 +906,7 @@ function updatePlayer(dt) {
   // roll
   if (p.dashBuf > 0 && p.roll.cd <= 0 && p.roll.t <= 0 && p.hurtT <= 0 && p.st >= 18) {
     p.dashBuf = 0;
-    p.st -= 18 * mod('dash') * stK(); p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0; if (api.onDeed) api.onDeed('dash');
+    p.st = Math.max(0, p.st - 18 * mod('dash') * stK()); p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0; if (api.onDeed) api.onDeed('dash');
     var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
     var dRune = rune('dash'), rl = dRune === 'roll' || modZ('roll') > 0 ? 1 : 0;                           // the dash slot (Runes2): the Roll is longer, longer untouchable, slower to rise
     if (dRune === 'blinkStep' && !bareHanded() && meleeProfile().kind === 'seax' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 16); sfx('shadowstep'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Shadowstep: with the seax, through the man before you in a puff of smoke, who is confused (Robin, 2026-10-24) */
@@ -1013,7 +1017,7 @@ function updatePlayer(dt) {
   if (bow && (IN.pressed.lmb || IN.pressed.KeyJ) && p.bowDraw > 0 && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {   /* (the shot is the release: the draw must be on, the left button lets it go; a thrown thing the same) */
     var RR = rg.R, thrownIt = RR.thrown ? rg.it : null, bk = Math.min(1, p.bowDraw / bowFull()), akk = bowOver() > 0 ? Math.max(0, Math.min(1, (p.bowDraw - bowFull()) / (bowFull() * bowOver()))) : 0, bdm = (bowSnap() + (1 - bowSnap()) * bk) * (1 + ((runeN('quickDraw', 'dmgK') || 2.5) - 1) * akk), bsp = BOW.speedMin + (1 - BOW.speedMin) * bk; p.bowDraw = 0; p.lastDraw = bk;
     var shotRune = bk >= 0.999 && rune('shot') && runeReady('shot') ? rune('shot') : null, stillK = 1, weakK = runeHas('stillHand') && (p.stillT || 0) >= (runeN('stillHand', 'stillT') || 2) ? 1 : 0, noShield = akk >= 0.999 && runeN('quickDraw', 'noShield') ? 1 : 0; p.stillT = 0;   /* the shot slot's rune at a full draw with the ring full; the Still hand's heavy arrow */
-    p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
+    p.fireCd = RR.cd; p.fireT = 0.2; p.st = Math.max(0, p.st - RR.st); p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
     var nArr = shotRune === 'twinShot' ? (runeN('twinShot', 'arrows') || 2) : 1, eachK = shotRune === 'twinShot' ? (runeN('twinShot', 'each') || 0.7) : 1, lifeK = runeHas('hawkEye') ? (runeN('hawkEye', 'range') || 1) : 1, firing = shotRune === 'fireArrow';   /* (the Fire-arrow needs no torch: Robin, 2026-10-24; the Pinning shot is the Trapper now, below) */ if (shotRune && (nArr > 1 || firing)) runeSpend('shot', shotRune);
@@ -1083,7 +1087,7 @@ function updatePlayer(dt) {
   var lvx = 0, lvy = 0;
   if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), gA = gapAhead(a.dir), lf = clamp((gA - 3) / 14, 0, 1) * (gA < sd2.reach + 60 ? 1 : 0.15); var lgK = swingRune() === 'lunge' ? 1 + 0.6 * (runeN('lunge', 'stride') || 1) : 1; lvx = Math.cos(a.dir) * sd2.lunge * lf * lgK; lvy = Math.sin(a.dir) * sd2.lunge * lf * lgK; }   /* (the step into a blow is taken toward a foe in front, within the reach and 60 units; at nothing, a small step: 2026-10-15, with Robin's long lunge a blow at the air slid him 35 units, which read as gliding) */
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
-  if (p.leap && p.roll.t > 0) { var lnx = p.x + (p.vx + p.kx) * dt, lny = p.y + (p.vy + p.ky) * dt, lrs = Math.hypot(p.vx, p.vy), lex = p.x + p.roll.dx * lrs * p.roll.t * 0.7, ley = p.y + p.roll.dy * lrs * p.roll.t * 0.7, canW = !api.scene || !api.scene.walk, okNow = canW || api.scene.walk(lnx, lny, p), okEnd = canW || api.scene.walk(lex, ley, p), wallNow = wallBetween(p.x, p.y, lnx, lny) || wallPillarCross(p.x, p.y, lnx, lny, p.r); if ((okNow || okEnd) && !wallNow) { p.x = lnx; p.y = lny; } else { p.roll.t = 0; p.vx = p.vy = 0; } }   /* (no leap through a shut edge, a house wall or a palisade: the walls' pillars still stop him; over every other thing) */   /* the Long leap: over what stands in the way, a stream or a fence, as long as he can land beyond it; else it stops at the edge */
+  if (p.leap && p.roll.t > 0) { var lnx = p.x + (p.vx + p.kx) * dt, lny = p.y + (p.vy + p.ky) * dt, lrs = Math.hypot(p.vx, p.vy), lex = p.x + p.roll.dx * lrs * p.roll.t * 0.7, ley = p.y + p.roll.dy * lrs * p.roll.t * 0.7, canW = !api.scene || !api.scene.walk, okNow = canW || api.scene.walk(lnx, lny, p), okEnd = canW || api.scene.walk(lex, ley, p), wallNow = wallBetween(p.x, p.y, lnx, lny) || wallPillarCross(p.x, p.y, lnx, lny, p.r); if ((okNow || okEnd) && !wallNow) { p.x = lnx; p.y = lny; var LB = api.scene && api.scene.bounds; if (LB) { p.x = clamp(p.x, LB.x0, LB.x1); p.y = clamp(p.y, LB.y0, LB.y1); } else { p.x = clamp(p.x, 24, AW - 24); p.y = clamp(p.y, 40, AH - 20); } } else { p.roll.t = 0; p.vx = p.vy = 0; } }   /* (kept inside the field as a walk is: the fuzz of 2026-10-24 found the leap carrying him out of the arena's ring) */   /* (no leap through a shut edge, a house wall or a palisade: the walls' pillars still stop him; over every other thing) */   /* the Long leap: over what stands in the way, a stream or a fence, as long as he can land beyond it; else it stops at the edge */
   else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
   shadeTick(dt);
   updateAnim(dt, p.roll.t > 0);
@@ -1912,7 +1916,7 @@ function updateEnemies(dt) {
 var STUCK = { life: 60, inBody: 1e9, max: 60, fade: 0.8, dropT: 0.35, dropH: 10 };   /* an arrow stays where it struck (Robin, 2026-10-24: "stick to anything it hits ... unless its stone", then "the arrows can stay a lot longer"): in a man or a beast it rides with him as long as he is there, in wood or earth it stands where it stopped for life s, on stone it drops and lies; at most max at once, the oldest fading first; the numbers mine */
 function stickArrow(pr) {
   if (pr.thing || pr.kind === 'stone' || pr.fire || pr.reflected || pr.owner === 'enemy') return; var on = pr.stuckOn || null, drop = !on && pr.hitSurf === 'stone';
-  if (!W.stuck) W.stuck = []; while (W.stuck.length >= STUCK.max) { var old = W.stuck[0]; if (old.life - old.t > STUCK.fade) old.life = old.t + STUCK.fade; else break; if (W.stuck.length > STUCK.max + 10) W.stuck.shift(); else break; }   /* (past the cap the oldest fades out) */
+  if (!W.stuck) W.stuck = []; if (W.stuck.length >= STUCK.max) { for (var si = 0; si < W.stuck.length; si++) { var old = W.stuck[si]; if (old.life - old.t > STUCK.fade) { old.life = old.t + STUCK.fade; break; } } } while (W.stuck.length >= STUCK.max + 10) W.stuck.shift();   /* (past the cap the oldest not yet fading begins to fade, and never more than ten over it: the fuzz of 2026-10-24 found the list growing while the oldest faded) */
   W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: on ? STUCK.inBody : STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected });
 }
 function stuckTick(dt) { if (!W.stuck) return; for (var i = W.stuck.length - 1; i >= 0; i--) { var st = W.stuck[i]; st.t += dt; var gone = st.on && (st.on.away || st.on.hidden || (st.on.dead && st.on.deadFor != null && st.on.deadT >= st.on.deadFor) || (st.on !== P && W.enemies.indexOf(st.on) < 0 && (st.on.dead || st.on.gone))); if (gone && st.life > st.t + STUCK.fade) st.life = st.t + STUCK.fade; if (st.t > st.life) W.stuck.splice(i, 1); } }   /* (in a body: it goes as the body goes, fading with it; a page's person, a villager, when he is dead or gone) */
