@@ -10055,12 +10055,13 @@ function updateEnemies(dt) {
     if (dd < mn && dd > 0.01 && !wallBetween(A.x, A.y, B.x, B.y)) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }   // (not through a wall: a man hard against one side of it stopped a man walking along the other)
   }
 }
-var STUCK = { life: 3.2, fade: 0.6, dropT: 0.35, dropH: 10 };   /* an arrow stays where it struck for a few seconds (Robin, 2026-10-24: "stick to anything it hits ... unless its stone"): in a man or a beast it rides with him, in wood or earth it stands where it stopped, on stone it drops and lies; the numbers mine */
+var STUCK = { life: 60, inBody: 1e9, max: 60, fade: 0.8, dropT: 0.35, dropH: 10 };   /* an arrow stays where it struck (Robin, 2026-10-24: "stick to anything it hits ... unless its stone", then "the arrows can stay a lot longer"): in a man or a beast it rides with him as long as he is there, in wood or earth it stands where it stopped for life s, on stone it drops and lies; at most max at once, the oldest fading first; the numbers mine */
 function stickArrow(pr) {
   if (pr.thing || pr.kind === 'stone' || pr.fire || pr.reflected || pr.owner === 'enemy') return; var on = pr.stuckOn || null, drop = !on && pr.hitSurf === 'stone';
-  if (!W.stuck) W.stuck = []; W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected });
+  if (!W.stuck) W.stuck = []; while (W.stuck.length >= STUCK.max) { var old = W.stuck[0]; if (old.life - old.t > STUCK.fade) old.life = old.t + STUCK.fade; else break; if (W.stuck.length > STUCK.max + 10) W.stuck.shift(); else break; }   /* (past the cap the oldest fades out) */
+  W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: on ? STUCK.inBody : STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected });
 }
-function stuckTick(dt) { if (!W.stuck) return; for (var i = W.stuck.length - 1; i >= 0; i--) { var st = W.stuck[i]; st.t += dt; if (st.t > st.life || (st.on && st.on.away)) W.stuck.splice(i, 1); } }
+function stuckTick(dt) { if (!W.stuck) return; for (var i = W.stuck.length - 1; i >= 0; i--) { var st = W.stuck[i]; st.t += dt; var gone = st.on && (st.on.away || st.on.hidden || (st.on.dead && st.on.deadFor != null && st.on.deadT >= st.on.deadFor) || (st.on !== P && W.enemies.indexOf(st.on) < 0 && (st.on.dead || st.on.gone))); if (gone && st.life > st.t + STUCK.fade) st.life = st.t + STUCK.fade; if (st.t > st.life) W.stuck.splice(i, 1); } }   /* (in a body: it goes as the body goes, fading with it; a page's person, a villager, when he is dead or gone) */
 function drawStuck(c, st) {
   var x = st.on ? st.on.x + st.ox : st.x, y = st.on ? st.on.y + st.oy : st.y, al = Math.min(1, (st.life - st.t) / STUCK.fade), ang = st.ang, dy = -10;
   if (st.drop) { var dk = Math.min(1, st.t / STUCK.dropT); dy = -10 + STUCK.dropH * dk; ang = st.ang + (st.lie - st.ang * 0.9) * dk; }
