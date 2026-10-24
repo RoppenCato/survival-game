@@ -35,7 +35,7 @@ function spot(G, o, t) {
   if (!G.sweetSpot) return null;
   var seed = hash(Math.round(o.x), Math.round(o.y), 3), fixed = o.kind === 'tree' ? G.spotLook >= 3 : G.crackLook === 4, step = G.spotWander && !fixed ? Math.floor((t + seed * 9) / 7) : 0;
   if (o.kind === 'tree') { if (G.spotLook === 5) return o.notch ? { side: -o.notch } : null; return { side: G.spotLook === 4 ? SUN_SIDE : (hash(seed * 100, step, 5) < 0.5 ? -1 : 1) }; }   // the notch (Robin, 2026-10-07): the first blow cuts a notch on its side; the back cut from the other side bites deep and fells the tree toward the notch
-  if (o.kind === 'stone') { if (G.cracks) return null; return { ang: G.crackLook === 4 ? LIT_ANG : hash(seed * 100, step, 6) * 6.283 }; }
+  if (o.kind === 'stone') { if (o.spotAng != null) return { ang: o.spotAng }; if (G.cracks) return null; return { ang: G.crackLook === 4 ? LIT_ANG : hash(seed * 100, step, 6) * 6.283 }; }   /* (o.spotAng: a weak spot the Stone-biter left) */
   return null;
 }
 function spotHit(G, o, t, hero) {              // does a blow from where the hero stands land on the sweet spot?

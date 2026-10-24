@@ -33,12 +33,13 @@ function runeN(id, key) { var st = RS2(); return st && typeof Runes2 !== 'undefi
 function swingRune() { return rune('swing'); }
 function chainKeep() { return runeHas('ringOfSteel') ? Math.max(CHAIN.keep, runeN('ringOfSteel', 'chainT')) : CHAIN.keep; }   /* Counter King (Robin's rename, 2026-10-24): the parry chain goes to five, ten with a sword */
 function chainMax() { return runeHas('ringOfSteel') ? (hitKind() === 'sword' ? runeN('ringOfSteel', 'sword') : runeN('ringOfSteel', 'chainMax')) : CHAIN.max; }
-var BLUNT = { club: 1, maul: 1 };   /* the blunt weapons: Thor's wrath and the Storm's eye only with these (Robin, 2026-10-24), the Hammer's shattering too */
+var BLUNT = { club: 1, maul: 1 }, SPEAR_PASS = 0.25;   /* a spear passes a raised shield a quarter of the time, half in the Reckless thrust (Robin, 2026-10-24) */   /* the blunt weapons: Thor's wrath and the Storm's eye only with these (Robin, 2026-10-24), the Hammer's shattering too */
 function hitKind() { var it = itemOf('weapon', 'sword'); return it ? it.kind : null; }
 function stK() { return runeHas('berserk') && runeN('berserk', 'freeAt') > 0 && P.hp < P.maxHp * runeN('berserk', 'freeAt') ? 0 : 1; }   /* Berserk at tier III: stamina costs nothing under a quarter */
 function berserkOn() { return runeHas('berserk') && P.hp < P.maxHp * runeN('berserk', 'at'); }
-function bowFull() { return runeHas('quickDraw') ? runeN('quickDraw', 'full') : BOW.full; }
-function bowSnap() { return runeHas('quickDraw') ? runeN('quickDraw', 'snapK') : BOW.dmgMin; }
+function bowFull() { return BOW.full; }
+function bowSnap() { return BOW.dmgMin; }
+function bowOver() { return runeHas('quickDraw') ? (runeN('quickDraw', 'over') || 1) : 0; }   /* the Aimed shot (Robin, 2026-10-24): the draw goes on past full for as long again */
 function runeReady(slot) { var st = RS2(); return !st || typeof Runes2 === 'undefined' ? true : Runes2.ready(st, slot); }
 function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; Runes2.spend(st, slot); var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
 function runeBlood(n) { var st = RS2(); if (st && typeof Runes2 !== 'undefined') Runes2.drawBlood(st, n); }
@@ -345,7 +346,7 @@ var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
    guard up: the man before you within shoveReach is thrown back shoveD and staggers shoveT, and a man he is thrown into
    staggers too; it costs shoveSt stamina, once in shoveCd; with no shield the weapon's haft does it for half the throw). Each
    is a switch: 0 turns it off. */
-var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3, bashDmg: 0.35, bashKb: 90 };   /* (the bash comes always, Robin 2026-10-23: on a blocking man it breaks his block and throws him; on a man with his guard down it does low damage, bashDmg of the held weapon's blow with a small push; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
+var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3, bashDmg: 0.35, bashKb: 90, bashStun: 0.6 }   /* bashStun: a block broken by the bash, the man open this long, less than a parry's 1.0 (Robin, 2026-10-24) */;   /* (the bash comes always, Robin 2026-10-23: on a blocking man it breaks his block and throws him; on a man with his guard down it does low damage, bashDmg of the held weapon's blow with a small push; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
 function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
@@ -377,10 +378,10 @@ function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23:
   if (!best) { ring(p.x + Math.cos(face) * 20, p.y + Math.sin(face) * 20, 0, 14, 0.2, '200,200,200', false, 1.5); logEv({ k: 'shove', hit: false }); return false; }   /* (a bash at the air) */
   var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : CROWD.shoulderK;
   if (!(best.guard > 0)) { var it = api.items && api.items.held ? api.items.held() : null, wd = 1; if (it) { try { var sd2 = Items.stats(it).dmg; if (isFinite(sd2) && sd2 > 0) wd = sd2; } catch (eI) {} } damageEnemy(best, CROWD.bashDmg * wd * dmgMul('sword') * k, ang, CROWD.bashKb * k, 0, 'melee'); logEv({ k: 'shove', hit: true, e: best, low: true }); return true; }   /* (no block to break: a low blow and a push) */
-  best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * CROWD.shoveD * k; best.ky += Math.sin(ang) * CROWD.shoveD * k;
-  best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.guardAge = 0; best.guardCd = CROWD.breakCd; best.brokeT = 1; best.showBar = 2; postureAdd(best, POSTURE.block);   /* (his block is broken: as the axe breaks it, and no guard again for breakCd) */
+  best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * 40 * k; best.ky += Math.sin(ang) * 40 * k;   /* (no throw off a broken block: you strike at once, Robin 2026-10-24) */
+  best.state = 'stagger'; best.t = 0; best.dur = CROWD.bashStun; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.guardAge = 0; best.guardCd = runeN('bash', 'breakCd') || CROWD.breakCd; best.brokeT = 1; best.showBar = 2; postureAdd(best, POSTURE.block);   /* (his block is broken: as the axe breaks it, and no guard again for breakCd) */
   for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
-    var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead) continue;
+    var dq = Math.hypot(q.x - best.x, q.y - best.y), ahead = Math.cos(Math.atan2(q.y - best.y, q.x - best.x) - ang) > 0.3; if (dq > CROWD.bump + q.r + best.r || !ahead || !runeN('bash', 'bump')) continue;
     q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
   ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'BLOCK BROKEN', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best }); return true;
 }
@@ -391,8 +392,8 @@ function crowdWarCry(p) {                 // the War-cry: the clip plays (p.cryT
 function warCryOut(p) {
   var n = 0, i, hes = runeN('warCry', 'hesitate') || 1;
   for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.dead || e.down || e.out) continue; var d = Math.hypot(e.x - p.x, e.y - p.y); if (d > 240) continue;
-    if (e.side === 1) { if (runeN('warCry', 'heavy')) e.cryHeavy = 1; continue; }
-    if (e.type === 'soldier') { e.freezeT = Math.max(e.freezeT || 0, hes); e.pkx = e.pky = 0; if (runeN('warCry', 'run') && (e.nerve || 0.55) < 0.6 && !e.loyal) breakMan(e, 'flee'); n++; } else if (e.type === 'beast') { e.state = 'flee'; e.t = 0; e.cd = hes; n++; } }
+    if (e.side === 1) { e.cryDmgT = runeN('warCry', 'allyT') || 4; continue; }   /* (your men strike harder a while) */
+    if (e.type === 'soldier') { e.cryBack = hes; e.pkx = e.pky = 0; if (runeN('warCry', 'run') && (e.nerve || 0.55) < 0.6 && !e.loyal) breakMan(e, 'flee'); n++; }   /* (he covers and backs off: Robin, 2026-10-24) */ else if (e.type === 'beast') { e.state = 'flee'; e.t = 0; e.cd = hes; n++; } }
   ring(p.x, p.y, 0, 240, 0.5, '255,220,150', false, 2.5); num(p.x, p.y - 32, 'WAR-CRY', '#ffd34d', true); sfx('war_cry'); logEv({ k: 'warcry', n: n });
 }
 function crowdRiposte(p) {                 // the Riposte: in the moment after a parry the guard-blow is an instant strike that cannot be blocked
@@ -407,6 +408,9 @@ function crowdCharge(p) {                 // the Charge (a rune of the guard-blo
 function wallPillarCross(x0, y0, x1, y1, r) {   // does the segment cross a wall's pillar (the page marks the walls' solids wall: true): a leap or a blink stops before a shut edge
   var dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, i; for (i = 0; i < W.pillars.length; i++) { var q = W.pillars[i]; if (!q.wall) continue; var t = Math.max(0, Math.min(1, ((q.x - x0) * dx + (q.y - y0) * dy) / L2)), cx = x0 + dx * t, cy = y0 + dy * t; if (Math.hypot(q.x - cx, q.y - cy) < q.r + r) return true; } return false;
 }
+function frontMan(p, ang, reach, arc, attacking) {   /* the nearest man before you within reach and arc; attacking: only one in his swing */
+  var best = null, bd = 1e9, i; for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.type !== 'soldier' || e.dead || e.side === 1 || e.down || e.out) continue; var d = Math.hypot(e.x - p.x, e.y - p.y); if (d > reach || Math.abs(wrap(Math.atan2(e.y - p.y, e.x - p.x) - ang)) > arc) continue; if (attacking && !(e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) continue; if (d < bd) { bd = d; best = e; } } return best;
+}
 function blinkStep(p, rx, ry) {            // the Blink-step: the man before you within reach is passed, you stand behind him, he is open for a breath (tier II); through two at tier III
   var best = null, bd = 1e9, n = runeN('blinkStep', 'through') || 1, i, ang = Math.atan2(ry, rx);
   for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.dead || e.side === 1 || e.down || e.out) continue; var d = Math.hypot(e.x - p.x, e.y - p.y); if (d > 60 || Math.abs(wrap(Math.atan2(e.y - p.y, e.x - p.x) - ang)) > 0.7 || wallBetween(p.x, p.y, e.x, e.y)) continue; if (d < bd) { bd = d; best = e; } }
@@ -414,7 +418,7 @@ function blinkStep(p, rx, ry) {            // the Blink-step: the man before you
   if (n > 1) for (i = 0; i < W.enemies.length; i++) { var e2 = W.enemies[i]; if (e2 === best || e2.dead || e2.side === 1 || e2.down) continue; var d2 = Math.hypot(e2.x - tx, e2.y - ty); if (d2 < 44 && Math.abs(wrap(Math.atan2(e2.y - ty, e2.x - tx) - ang)) < 0.8) { tx = e2.x + Math.cos(ang) * (e2.r + p.r + 8); ty = e2.y + Math.sin(ang) * (e2.r + p.r + 8); hops.push(e2); break; } }
   if (pillarHit(tx, ty, p.r) || wallBetween(p.x, p.y, tx, ty) || wallPillarCross(p.x, p.y, tx, ty, p.r) || (api.scene && api.scene.walk && !api.scene.walk(tx, ty, p))) return false;   /* (never through a wall) */
   W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.3, max: 0.3 }); p.x = tx; p.y = ty; p.invuln = Math.max(p.invuln, 0.3); p.vx = 0; p.vy = 0;
-  hops.forEach(function (h) { if (runeN('blinkStep', 'open') > 0) h.exposedT = Math.max(h.exposedT || 0, runeN('blinkStep', 'open')); }); logEv({ k: 'blink', n: hops.length }); return true;
+  hops.forEach(function (h) { h.confusedT = runeN('blinkStep', 'confuse') || 1.5; h.tgt = null; }); logEv({ k: 'blink', n: hops.length }); return true;   /* (the men passed are confused: no blow, no turn, until struck or the time) */
 }
 function shadeTick(dt) {                   // the Ghost-step's shade: the men within sight go for it while it lasts
   var sh = W.shade; if (!sh) return; sh.t -= dt; if (sh.t <= 0) { W.shade = null; return; }
@@ -422,16 +426,16 @@ function shadeTick(dt) {                   // the Ghost-step's shade: the men wi
 }
 function markTick(e, dt) {                 // the marks that hurt: bleeding (the Serpent's tongue, the Bleeding point) and burning (the Fire-arrow)
   if (!e.marks || e.dead) return;
-  if (e.marks.bleeding > 0 && e.type === 'soldier') { e.hp -= (e.bleedDmg || 3) * dt; e.showBar = 1; if (Math.random() < dt * 6 && api.onBlood) api.onBlood(e.x, e.y, 1, 0); if (e.out && e.state === 'flee' && runeHas('serpentTongue') && runeN('serpentTongue', 'fall') && !e.fellBleeding) { e.fellBleeding = true; knockDown(e, e.face, 0.5); } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
+  if (e.marks.bleeding > 0 && e.type === 'soldier') { e.hp -= (e.bleedDmg || 3) * dt; e.showBar = 1; if (Math.random() < dt * 12 && api.onBlood) api.onBlood(e.x + (Math.random() - 0.5) * 8, e.y + 2, 1, 0); if (e.out && e.state === 'flee' && runeHas('serpentTongue') && runeN('serpentTongue', 'fall') && !e.fellBleeding) { e.fellBleeding = true; knockDown(e, e.face, 0.5); } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
   if (e.marks.burning > 0 && e.type === 'soldier') { e.hp -= (e.burnDmg || 1) * dt; e.showBar = 1; if (Math.random() < dt * 8) spark(e.x + (Math.random() - 0.5) * 10, e.y - 10 - Math.random() * 16, 2, '#ff9a40', 60); if (runeHas('torchHand') && runeN('torchHand', 'fear') && !e.out && e.type === 'soldier') breakMan(e, 'flee'); if (e.burnSpread && Math.random() < dt * 0.8) for (var j = 0; j < W.enemies.length; j++) { var o = W.enemies[j]; if (o !== e && o.type === 'soldier' && !o.dead && !marked(o, 'burning') && Math.hypot(o.x - e.x, o.y - e.y) < 30) { markOn(o, 'burning', 4); o.burnDmg = e.burnDmg; } } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
 }
 function rushHits(p) {                     // during a rush or a dash: the men the hero runs into
   var ch = p.charge, i, ang = ch ? ch.ang : Math.atan2(p.roll.dy, p.roll.dx);
   for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.type !== 'soldier' || e.dead || e.down || e.out || e.side === 1) continue; if (Math.hypot(e.x - p.x, e.y - p.y) > e.r + p.r + 6) continue;
-    if (ch) { if (ch.hit.indexOf(e) >= 0) continue; ch.hit.push(e); if (ch.hit.length <= ch.down) knockDown(e, ang, 1); else { e.kx += Math.cos(ang) * 220; e.ky += Math.sin(ang) * 220; }
+    if (ch) { if (ch.hit.indexOf(e) >= 0) continue; ch.hit.push(e); if (ch.hit.length <= ch.down) { knockDown(e, ang, 1); e.dur = runeN('charge', 'downT') || 3; e.noHarm = e.dur; p.roll.t = Math.min(p.roll.t, 0.06); } else { e.kx += Math.cos(ang) * 220; e.ky += Math.sin(ang) * 220; }   /* (the Charge: down three seconds and no harm while down, the rush spent on him: Robin, 2026-10-24) */
       if (ch.strike) { var sd = meleeProfile(); hitFlags.wkind = sd.kind || 'sword'; damageEnemy(e, sd.dmg * dmgMul('sword'), ang, 0, 10, 'melee'); hitFlags.wkind = null; } }
     else if (p.slide && runeN('slide', 'trip') && !e.rushed) { e.rushed = 0.8; knockDown(e, ang, 0.8); }   /* the Slide II: the man you slide into is tripped */
-    else if (runeHas('rushStep') && !e.rushed && (marked(e, 'struck') || (runeN('rushStep', 'any') && e.state === 'stagger'))) { e.rushed = 0.8; knockDown(e, ang, 0.8); if (runeN('rushStep', 'spread')) crowdBump(e, ang); } }
+    else if (runeHas('rushStep') && !e.rushed && W.t - (e.heroHitAt || -99) < (runeN('rushStep', 'window') || 1.2)) { e.rushed = 0.8; knockDown(e, ang, 0.8); if (runeN('rushStep', 'spread')) crowdBump(e, ang); } }   /* the Rush-step: a man you struck within the window goes down, whatever he was doing (Robin, 2026-10-24) */
 }
 function crowdBump(best, ang) {            // the men a thrown man falls against stagger with him
   for (var i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
@@ -504,7 +508,9 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
-  if (!src && e.type === 'beast') e.angered = true;   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */   // src: the man whose blow this is; none is the hero
+  if (!src && e.type === 'beast') e.angered = true;   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */
+  if (e.noHarm > 0) { num(e.x, headY(e), 'DOWN', '#dfe8ff'); return; }   /* (a man the Charge put down takes no harm while down) */
+  if (!src && kind !== 'proj') { e.heroHitAt = W.t; e.confusedT = 0; }   /* (the Rush-step's mark; a blow wakes a confused man) */   // src: the man whose blow this is; none is the hero
   var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && (e.asleep || Math.abs(wrap(ang - e.face)) < 1.25);   // the hero's blade in the back of a man at his post who has noticed nothing
   if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
@@ -512,7 +518,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   if (e.dead || e.down) return;
   var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
-  if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
+  if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front) && !(!src && hitFlags.wkind === 'spear' && kind !== 'proj' && Math.random() < (hitFlags.reckless ? (runeN('spearWall', 'pass') || 0.5) : SPEAR_PASS))) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it   /* (a spear passes a raised shield a quarter of the time, the Reckless thrust half: Robin, 2026-10-24) */
     blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy'); if (e.side === 1 && runeHas('shieldWall')) { if (e.inLine && runeN('shieldWall', 'unbroken')) broke = false; if (Math.hypot(e.x - P.x, e.y - P.y) < 48) dmg *= 0.5; }   /* the Shield-wall: a man of yours beside you stops more; a held line of yours cannot be broken (III) */   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
     dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1); if (e.inLine) dmg *= MEN.wallK;   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; if (!src && hitFlags.wkind === 'axe' && runeHas('axeBreaker') && Math.random() < (runeN('axeBreaker', 'chance') || 0.5)) { stag = Math.max(stag, 42); e.guardCd *= runeN('axeBreaker', 'downK') || 1; e.axeOpen = runeN('axeBreaker', 'open') || 1; sfx('guard_break', 0, e); } else if (!src && hitFlags.guardBreak && kind !== 'proj' && swingRune() === 'overhead') sfx('guard_break', 0, e); }   /* the Axe-breaker: a broken guard staggers, stays down longer, opens him */ else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
@@ -536,9 +542,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   if (berserkOn() && kind !== 'bow') mult *= 1 + Math.max(0, (runeN('berserk', 'at') || 0.5) - P.hp / P.maxHp) * 2 * (runeN('berserk', 'bonusK') || 1);   /* Berserk: the melee bonus grows with the health you lack below half, half more at the last point (Robin, 2026-10-24) */
   if (!src && kind === 'proj' && man && e.awake === false && runeHas('hawkEye')) mult *= runeN('hawkEye', 'unseen') || 1;   /* the Hawk's eye: a man who has not seen you takes double */
   if (!src && hitFlags.still > 1) mult *= hitFlags.still;   /* the Still hand: the arrow after two seconds standing still */
-  if (!src && (hitFlags.wkind === 'club' || hitFlags.wkind === 'cudgel') && runeHas('oakArm')) { kb += runeN('oakArm', 'kb') || 0; if (runeN('oakArm', 'drop') && e.errand) e.errand.hold = false; if (runeN('oakArm', 'wallStun')) stag = Math.max(stag, 40); }   /* the Oak-arm: a club blow throws the man back */
   if (quiet) crit = true;                                     // (shown as a critical blow)
-  if (!src && man && marked(e, 'struck') && runeHas('hammer')) { var hk = (hitFlags.wkind === 'club' || hitFlags.wkind === 'cudgel') ? runeN('hammer', 'club') : runeN('hammer', 'any'); if (hk > 1) { mult *= hk; if (hk >= 2) stag = Math.max(stag, 42); } }   /* the Hammer: a blow on a struck man (Runes2) */
+  if (!src && man && BLUNT[hitFlags.wkind] && hitFlags.chg > 0.6 && runeHas('hammer')) { mult *= runeN('hammer', 'dmg') || 1; if (e.shield && e.guard > 0) { e.shield = false; e.shattered = 1; e.guard = 0; e.guardCd = 9; stag = Math.max(stag, 30); spark(e.x, e.y - 22, 22, '#d9c7a0', 130); num(e.x, headY(e), 'SHIELD SHATTERED', '#ffd34d', true); sfx('shield_break', 0, e); if (runeN('hammer', 'spread')) crowdBump(e, ang); } }   /* the Hammer: a held blunt blow on a raised shield shatters it (Robin, 2026-10-24); its clip and sound asked */
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   if (fin) crowdFear(e);
   if (fin && runeHas('ringOfSteel') && runeN('ringOfSteel', 'finish') && (P.chain || 0) >= chainMax()) e.maxHp = Math.min(e.maxHp, 40);   /* the Ring of steel III: a chain of five finishes any man */
@@ -554,7 +559,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   var killing = e.hp <= 0;
   if (killing && !src && hitFlags.wkind === 'cudgel' && e.type === 'beast' && !e.human) { e.hp = 1; killing = false; knockOut(e); }
   if (fin && !src && e.type === 'beast' && !e.human && runeHas('fenrirsJaw') && runeN('fenrirsJaw', 'tame')) { e.hp = 1; killing = false; knockOut(e); e.tame = true; e.side = 1; num(e.x, headY(e), 'YOURS', '#ffd34d'); }   /* Fenrir's jaw III: a finishing blow on a beast makes it yours */
-  if (!src && hitFlags.wkind === 'greataxe' && runeHas('twinBlow') && (killing || runeN('twinBlow', 'onAny'))) P.recFast = 1;   /* the Twin blow */   /* the cudgel never kills a beast: out cold instead (Robin, 2026-10-23) */
+   /* the cudgel never kills a beast: out cold instead (Robin, 2026-10-23) */
   if (!src && dealt > 0 && !(blocked && !broke) && hitFlags.wkind !== 'lightning') runeBlood(1);   /* a blow landed feeds the blood rings of the actives (Runes2) */
   if (!src && man && !killing && hitFlags.wkind !== 'lightning' && BLUNT[hitFlags.wkind] && runeHas('thorsWrath') && Math.random() < runeN('thorsWrath', 'chance')) lightning(e, runeHas('stormsEye') ? runeN('stormsEye', 'leaps') : 0, runeN('thorsWrath', 'dmg') * dmgMul('sword'), 0);   /* (blunt only: Robin, 2026-10-24) */
   if (!src && !killing && !fin) postureAdd(e, blocked && !broke ? POSTURE.block : broke ? POSTURE.block * 1.5 : reeling ? 0 : POSTURE.hit);   // his balance: what he stops on his shield, and a little of what lands
@@ -654,7 +659,7 @@ function startAttack() {
   a.riposte = false; a.ripRune = false; if (p.riposteT > 0 && p.mode === 'fight' && rune('guardBlow') !== 'riposte') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
-  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = p.recFast ? (runeN('twinBlow', 'recK') || 0.5) : 1; p.recFast = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1); p.stDelay = 0.5; }
   if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; sfx('whirl', 0, p); }   /* the Whirl: a two-handed swing goes full round */
@@ -675,7 +680,11 @@ function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
   a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
-  a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && swingRune() === 'overhead' && c > 0.6) { sfx('overhead', 0, p); if (meleeProfile().kind !== 'greataxe') a.clipRune = 'overhead'; }   /* the Overhead: a held blow brought down (Colin, AD's clip and Derek, SD's sound, 2026-10-24) */
+  a.clipRune = null; var rwk = bareHanded() ? null : meleeProfile().kind;
+  if (p.mode === 'fight' && rwk && swingRune() === 'overhead' && c > 0.6) { sfx('overhead', 0, p); if (rwk !== 'greataxe') a.clipRune = 'overhead'; }   /* the Overhead: a held blow brought down (Colin, AD's clip and Derek, SD's sound, 2026-10-24) */
+  if (p.mode === 'fight' && rwk === 'spear' && c > 0.6 && runeHas('spearWall')) { a.ph = 'none'; p.reckless = { t: runeN('spearWall', 't') || 1.5, next: 0 }; }   /* the Reckless thrust: the held spear blow is let go as fast stabs (Robin, 2026-10-24) */
+  else if (p.mode === 'fight' && rwk === 'spear' && c > 0.6 && swingRune() === 'sweep') { a.spin = true; a.whirl = 1; a.sweepAll = true; a.clipRune = 'sweep'; sfx('sweep', 0, p); }   /* the Sweep: the held spear blow sweeps the ground round you */
+  else if (p.mode === 'fight' && (rwk === 'greataxe' || rwk === 'maul') && c > 0.6 && runeHas('twinBlow')) { a.spin = true; a.whirl = runeN('twinBlow', 'turns') || 1; a.clipRune = 'whirl'; if (runeN('twinBlow', 'noParry')) a.noParry = 1; sfx('whirl', 0, p); }   /* the Whirlwind: a held two-handed blow spins full round */
   swingSound(a);
 }
 function stepData(a) {
@@ -792,7 +801,7 @@ function updatePlayer(dt) {
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
   var want = (IN.rmb || IN.keys.KeyK) && !bow && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
-  if (bow) { var drawing = (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none'; p.bowDraw = drawing ? Math.min(bowFull(), (p.bowDraw || 0) + dt) : 0; if (p.guard) p.guard = false; } else p.bowDraw = 0;
+  if (bow) { var drawing = (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none'; p.bowDraw = drawing ? Math.min(bowFull() * (1 + bowOver()), (p.bowDraw || 0) + dt) : 0; if (p.guard) p.guard = false; } else p.bowDraw = 0;
   if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
     p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');
@@ -807,12 +816,14 @@ function updatePlayer(dt) {
     p.st -= 18 * mod('dash') * stK(); p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0; if (api.onDeed) api.onDeed('dash');
     var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
     var dRune = rune('dash'), rl = dRune === 'roll' || modZ('roll') > 0 ? 1 : 0;                           // the dash slot (Runes2): the Roll is longer, longer untouchable, slower to rise
-    if (dRune === 'blinkStep' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 7); sfx('blink_step'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Blink-step: through the man before you */
-    if (dRune === 'ghostStep') { W.shade = { x: p.x, y: p.y, t: runeN('ghostStep', 'shadeT') || 1, max: runeN('ghostStep', 'shadeT') || 1, dir: heroDir(), ph: p.anim.phase, open: runeN('ghostStep', 'open') }; }   /* the Ghost-step: a shade left where you stood */
+    if (dRune === 'blinkStep' && !bareHanded() && meleeProfile().kind === 'seax' && blinkStep(p, il > 0 ? ix : Math.cos(p.face), il > 0 ? iy : Math.sin(p.face))) { dust(p.x, p.y, 16); sfx('shadowstep'); runeSpend('dash', dRune); p.roll.cd = runeN('blinkStep', 'cd') || 0.5; return; }   /* the Shadowstep: with the seax, through the man before you in a puff of smoke, who is confused (Robin, 2026-10-24) */
+    if (dRune === 'dash') { var dm = frontMan(p, il > 0 ? Math.atan2(iy, ix) : p.face, 70, 0.8, true); if (dm) { var dang = Math.atan2(dm.y - p.y, dm.x - p.x), dtx = dm.x + Math.cos(dang) * (dm.r + p.r + 8), dty = dm.y + Math.sin(dang) * (dm.r + p.r + 8); if (!pillarHit(dtx, dty, p.r) && !wallBetween(p.x, p.y, dtx, dty) && !wallPillarCross(p.x, p.y, dtx, dty, p.r) && (!api.scene || !api.scene.walk || api.scene.walk(dtx, dty, p))) { W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.25, max: 0.25 }); p.x = dtx; p.y = dty; p.vx = p.vy = 0; p.invuln = Math.max(p.invuln, 0.3); dm.faceLockT = runeN('dash', 'wrong') || 1; dm.lockFace = dm.face; dm.tgt = null; dust(p.x, p.y, 7); sfx('dash'); runeSpend('dash', dRune); p.roll.cd = runeN('dash', 'cd') || 0.08; logEv({ k: 'dashThrough', e: dm }); return; } } }   /* the Dash (Robin, 2026-10-24): at a man in his swing you pass through him; he keeps facing the way he was for a second */
+    if (dRune === 'roll') { var sm = frontMan(p, il > 0 ? Math.atan2(iy, ix) : p.face, 140, 1.3, false); if (sm) { var toT = Math.atan2(sm.y - p.y, sm.x - p.x), cross = il > 0 ? ix * Math.sin(toT) - iy * Math.cos(toT) : 1, side = cross >= 0 ? -1 : 1; rx = Math.cos(toT + side * Math.PI / 2); ry = Math.sin(toT + side * Math.PI / 2); } }   /* the Sidestep: a dash a quarter turn round the man before you (Robin, 2026-10-24) */
+    if (dRune === 'ghostStep') { W.shade = { x: p.x, y: p.y, t: runeN('ghostStep', 'shadeT') || 4, max: runeN('ghostStep', 'shadeT') || 4, dir: heroDir(), ph: p.anim.phase, face: p.faceVis, open: runeN('ghostStep', 'open'), hits: runeN('ghostStep', 'hits') || 2 }; }   /* The shade (Robin, 2026-10-24): a pale blue shade left where you stood, the men strike at it, two blows and it goes */
     p.leap = dRune === 'longLeap' ? (runeN('longLeap', 'over') || 1) : 0;
     var sl0 = dRune === 'slide'; p.slide = sl0 ? 1 : 0; if (sl0 && runeN('slide', 'free')) p.st += 18 * mod('dash') * stK();   /* the Slide (Robin, 2026-10-24): a long low slide, fast then slowing, under a swung blade; free at tier III */
     if (p.leap) { p.leapCrouch = LEAP.crouch; p.leapDir = { x: rx, y: ry }; p.leapLen = (runeN('longLeap', 'len') || 2.2) / 2.2; p.roll.cd = runeN('dash', 'cd') || 0.3; p.charge = null; p.anim.sq = -0.5; p.anim.sqv = 0; runeSpend('dash', dRune); return; }   /* the leap: the crouch first, the flight when it ends (below) */
-    p.roll.t = DASH_T * (rl ? (runeN('roll', 'len') || 1.7) : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : sl0 ? (runeN('slide', 'len') || 2.4) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
+    p.roll.t = DASH_T * (rl ? 1.3 : dRune === 'longLeap' ? (runeN('longLeap', 'len') || 2.2) : sl0 ? (runeN('slide', 'len') || 2.4) : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? (runeN('roll', 'cd') || 0.35) : (runeN('dash', 'cd') || 0.08); p.invuln = Math.max(p.invuln, rl ? (runeN('roll', 'invuln') || 0.42) : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0; p.charge = null; if (dRune) runeSpend('dash', dRune);
     if (sl0) p.invuln = Math.max(p.invuln, p.roll.t * 0.85);   /* (the slide goes under the blade for most of its length) */
     dust(p.x, p.y, 7); sfx(sl0 ? 'slide' : 'dash'); perfectCheck();
   }
@@ -862,7 +873,7 @@ function updatePlayer(dt) {
             a.hit.push(o);
             var right = o.kind === tl.good || (o.kind === 'trunk' && tl.good === 'tree'), pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1) * (a.heavyG ? 3 : 1);
             if (a.heavyG && S.juice) { dust(o.x, o.y, 5); }
-            var hr = hv.hit(o, pw, right, tl.id) || {}, shown = hr.dealt != null ? hr.dealt : pw;   // the page may answer { dealt, crit, clean }: a sweet spot is a crit, gold
+            var hr = hv.hit(o, pw, right, tl.id, a.chg || 0) || {}, shown = hr.dealt != null ? hr.dealt : pw;   // the page may answer { dealt, crit, clean }: a sweet spot is a crit, gold
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
             num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + Math.max(1, Math.round(shown)), hr.crit ? '#ffd34d' : (right ? '#ffffff' : '#d9d0c0'), heavyHit(a) || !!hr.crit || !!hr.clean, !right);
             sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
@@ -876,24 +887,25 @@ function updatePlayer(dt) {
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
         if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
-        var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), wk = bareHanded() ? null : meleeProfile().kind, rbn = swingReachBonus(wk), halfR = swingRune() === 'sweep' && wk === 'spear' ? Math.max(half, (runeN('sweep', 'arc') || 2.4) / 2) : half;
+        var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), wk = bareHanded() ? null : meleeProfile().kind, rbn = swingReachBonus(wk), halfR = half;
         if (e.type === 'soldier' && e.awake === false && runeHas('quietBlade')) rbn += 24 * (runeN('quietBlade', 'reach') || 1);   /* the Quiet blade: the blow from behind from a stride further */
         if (d <= sd.reach + rbn + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= halfR + 0.12) && !wallBetween(p.x, p.y, e.x, e.y)) {
           a.hit.push(e);
           if (a.feint) { if (e.type === 'soldier' && !e.dead) { e.guard = 0; e.guardAge = 0; e.guardCd = runeN('feint', 'openT') || 0.8; e.exposedT = Math.max(e.exposedT || 0, runeN('feint', 'openT') || 0.8); num(e.x, headY(e), 'FEINTED', '#ffe27a'); logEv({ k: 'feint', e: e }); if (runeN('feint', 'heavy')) p.feintHeavy = 1; } continue; }   /* the Feint lands no blow: it opens him */
           critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
-          hitFlags.guardBreak = !!sd.guardBreak; hitFlags.wt = bareHanded() ? 0.5 : (sd.wt || 1); hitFlags.wkind = bareHanded() ? 'fist' : (P.mode === 'fight' ? meleeProfile().kind || null : 'tool');
+          hitFlags.guardBreak = !!sd.guardBreak; hitFlags.wt = bareHanded() ? 0.5 : (sd.wt || 1); hitFlags.wkind = bareHanded() ? 'fist' : (P.mode === 'fight' ? meleeProfile().kind || null : 'tool'); hitFlags.chg = a.chg || 0; hitFlags.reckless = !!a.reckless;
           var swr = swingRune(), sdmg = sd.dmg * dmgMul('sword') * (a.riposte ? (a.ripRune ? (runeN('riposte', 'dmg') || 1) : 1.5) : 1), skb = sd.kb, sstag = sd.stag, skind = heavyHit(a) ? 'heavy' : 'melee';
           if (a.ripRune) { hitFlags.guardBreak = true; if (runeN('riposte', 'stag')) sstag = Math.max(sstag, 42); }   /* the Riposte: cannot be blocked */
+          if (runeHas('riposte') && e.state === 'stunned' && e.type === 'soldier' && Math.cos(e.face - a.dir) > 0.3) { knockDown(e, a.dir, 1.5); e.dur = runeN('riposte', 'downT') || 2; e.kx += Math.cos(a.dir) * 200; e.ky += Math.sin(a.dir) * 200; if (runeN('riposte', 'spread')) crowdBump(e, a.dir); }   /* the Riposte (Robin, 2026-10-24): a blow from behind on a stunned man throws him and down two seconds */
+          if (a.sweepAll) { hitFlags.guardBreak = true; sstag = Math.max(sstag, runeN('sweep', 'trip') ? 60 : 40); }   /* the Sweep: the held spear's ground sweep breaks every guard and staggers */
           if (swr === 'overhead' && a.chg > 0.6) { hitFlags.guardBreak = true; sstag = Math.max(sstag, 42); sdmg *= runeN('overhead', 'dmg') || 1; if (runeN('overhead', 'down')) sstag = Math.max(sstag, 60); }   /* the Overhead: a held swing breaks a guard and staggers, double at II, down at III */
-          if (swr === 'sweep' && wk === 'spear') { sstag = Math.max(sstag, 40); if (runeN('sweep', 'trip')) sstag = Math.max(sstag, 60); }   /* the Sweep: every man in its arc staggers, trips at II */
           if (swr === 'lunge' && runeN('lunge', 'kb')) skb += runeN('lunge', 'kb');
           if (swr === 'whirl' && runeN('whirl', 'noParry')) skind = 'heavy';
           if (runeHas('spearWall') && wk === 'spear' && runeN('spearWall', 'pierce') && W.t - (p.backAt || -99) < 1.2) hitFlags.guardBreak = true;   /* the Spear-wall II: a step back then a thrust is a pierce */
           if (sstag >= 60 && e.type === 'soldier') { damageEnemy(e, sdmg, Math.atan2(dy, dx), skb, 40, skind); if (!e.dead && !e.down) knockDown(e, Math.atan2(dy, dx), 0.7); }
           else damageEnemy(e, sdmg, Math.atan2(dy, dx), skb, sstag, skind);
           critBonus = 0; hitFlags.guardBreak = false; hitFlags.wt = 1; hitFlags.wkind = null;
-          if (runeHas('spearWall') && wk === 'spear' && e.type === 'soldier') { var tb = null, tbd = 1e9; for (var sj = 0; sj < W.enemies.length; sj++) { var se = W.enemies[sj]; if (se === e || se.dead || se.side === 1 || se.down || a.hit.indexOf(se) >= 0) continue; var sdx = se.x - p.x, sdy = se.y - p.y, sdd = Math.hypot(sdx, sdy); if (sdd < d || sdd > sd.reach * 1.7 + rbn + se.r || Math.abs(wrap(Math.atan2(sdy, sdx) - a.dir)) > 0.28) continue; if (sdd < tbd) { tbd = sdd; tb = se; } } if (tb) { a.hit.push(tb); hitFlags.wkind = 'spear'; damageEnemy(tb, sdmg * 0.8, Math.atan2(tb.y - p.y, tb.x - p.x), skb, sstag, skind); hitFlags.wkind = null; } }   /* the Spear-wall: the thrust runs through to the man behind */
+          if (false && wk === 'spear' && e.type === 'soldier') { var tb = null, tbd = 1e9; for (var sj = 0; sj < W.enemies.length; sj++) { var se = W.enemies[sj]; if (se === e || se.dead || se.side === 1 || se.down || a.hit.indexOf(se) >= 0) continue; var sdx = se.x - p.x, sdy = se.y - p.y, sdd = Math.hypot(sdx, sdy); if (sdd < d || sdd > sd.reach * 1.7 + rbn + se.r || Math.abs(wrap(Math.atan2(sdy, sdx) - a.dir)) > 0.28) continue; if (sdd < tbd) { tbd = sdd; tb = se; } } if (tb) { a.hit.push(tb); hitFlags.wkind = 'spear'; damageEnemy(tb, sdmg * 0.8, Math.atan2(tb.y - p.y, tb.x - p.x), skb, sstag, skind); hitFlags.wkind = null; } }   /* the Spear-wall: the thrust runs through to the man behind */
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
@@ -910,14 +922,14 @@ function updatePlayer(dt) {
   // ranged
   var rg = bow ? rangedOf() : null;
   if (bow && (IN.pressed.lmb || IN.pressed.KeyJ) && p.bowDraw > 0 && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {   /* (the shot is the release: the draw must be on, the left button lets it go; a thrown thing the same) */
-    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null, bk = Math.min(1, p.bowDraw / bowFull()), bdm = bowSnap() + (1 - bowSnap()) * bk, bsp = BOW.speedMin + (1 - BOW.speedMin) * bk; p.bowDraw = 0; p.lastDraw = bk;
-    var shotRune = bk >= 0.999 && rune('shot') && runeReady('shot') ? rune('shot') : null, stillK = runeHas('stillHand') && (p.stillT || 0) >= runeN('stillHand', 'stillT') ? runeN('stillHand', 'dmg') : 1, noShield = stillK > 1 && runeN('stillHand', 'noShield') ? 1 : 0; p.stillT = 0;   /* the shot slot's rune at a full draw with the ring full; the Still hand's heavy arrow */
+    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null, bk = Math.min(1, p.bowDraw / bowFull()), akk = bowOver() > 0 ? Math.max(0, Math.min(1, (p.bowDraw - bowFull()) / (bowFull() * bowOver()))) : 0, bdm = (bowSnap() + (1 - bowSnap()) * bk) * (1 + ((runeN('quickDraw', 'dmgK') || 2.5) - 1) * akk), bsp = BOW.speedMin + (1 - BOW.speedMin) * bk; p.bowDraw = 0; p.lastDraw = bk;
+    var shotRune = bk >= 0.999 && rune('shot') && runeReady('shot') ? rune('shot') : null, stillK = 1, weakK = runeHas('stillHand') && (p.stillT || 0) >= (runeN('stillHand', 'stillT') || 2) ? 1 : 0, noShield = akk >= 0.999 && runeN('quickDraw', 'noShield') ? 1 : 0; p.stillT = 0;   /* the shot slot's rune at a full draw with the ring full; the Still hand's heavy arrow */
     p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
     var nArr = shotRune === 'twinShot' ? (runeN('twinShot', 'arrows') || 2) : 1, eachK = shotRune === 'twinShot' ? (runeN('twinShot', 'each') || 0.7) : 1, lifeK = runeHas('hawkEye') ? (runeN('hawkEye', 'range') || 1) : 1, firing = shotRune === 'fireArrow', pinning = shotRune === 'pinningShot';   /* (the Fire-arrow needs no torch: Robin, 2026-10-24) */ if (shotRune && (nArr > 1 || firing || pinning)) runeSpend('shot', shotRune);
     for (var ai = 0; ai < nArr; ai++) { var fa2 = fa + (nArr > 1 ? (ai - (nArr - 1) / 2) * 0.12 : 0);
-    W.projs.push({ x: p.x + Math.cos(fa2) * 8, y: p.y + Math.sin(fa2) * 8, vx: Math.cos(fa2) * RR.speed * bsp, vy: Math.sin(fa2) * RR.speed * bsp, r: RR.r, dmg: dmgMul('bow') * bdm * eachK * stillK * (api.mods && api.mods().arrow ? api.mods().arrow : 1), owner: 'player', life: RR.life * lifeK, ang: fa2, pin: !!p.pinNext || pinning, pinT: pinning ? runeN('pinningShot', 'pinT') : 0, pinNoGuard: pinning && runeN('pinningShot', 'noGuard'), fire: firing, noShield: noShield, still: stillK, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false; }
+    W.projs.push({ x: p.x + Math.cos(fa2) * 8, y: p.y + Math.sin(fa2) * 8, vx: Math.cos(fa2) * RR.speed * bsp, vy: Math.sin(fa2) * RR.speed * bsp, r: RR.r, dmg: dmgMul('bow') * bdm * eachK * stillK * (api.mods && api.mods().arrow ? api.mods().arrow : 1), owner: 'player', life: RR.life * lifeK, ang: fa2, pin: !!p.pinNext || pinning, pinT: pinning ? runeN('pinningShot', 'pinT') : 0, pinNoGuard: pinning && runeN('pinningShot', 'noGuard'), fire: firing, noShield: noShield, still: stillK, weak: weakK, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false; }
     if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
@@ -955,6 +967,7 @@ function updatePlayer(dt) {
      and the blow and 0.9 through the recovery.) */
   if (a.ph === 'recover' && il > 0 && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }
   if (a.ph === 'windup') spd *= 0.1; else if (a.ph === 'active') spd *= 0; else if (a.ph === 'recover') spd *= 0.2; else if (a.ph === 'charge') spd *= 0.6;
+  if (p.reckless) { p.reckless.t -= dt; p.reckless.next -= dt; if (p.reckless.next <= 0 && a.ph === 'none' && p.mode === 'fight') { p.reckless.next = 0.22; p.atkBuf = 0; startAttack(); a.combo = 0; a.reckless = true; a.clipRune = 'thrust_long'; if (runeN('spearWall', 'stag')) a.recklessStag = 1; } if (p.reckless.t <= 0) p.reckless = null; }   /* the Reckless thrust's stabs */
   if (p.leapCrouch > 0) { p.leapCrouch -= dt; spd = 0; if (p.leapCrouch <= 0) { p.roll.t = LEAP.t * (p.leapLen || 1); p.roll.len = p.roll.t; p.roll.dx = p.leapDir.x; p.roll.dy = p.leapDir.y; p.invuln = Math.max(p.invuln, 0.2); p.ghostT = 0; dust(p.x, p.y, 6); sfx('dash'); } }   /* the leap's crouch, then the push-off */
   if (p.leapLand > 0) { p.leapLand -= dt; spd *= 0.15; }   /* the landing taken in the knees */
   var tvx = ix * spd, tvy = iy * spd;
@@ -1404,7 +1417,7 @@ function strike(e) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
       if (r === 'parry') { parried(e); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
-    } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
+    } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK * (e.cryDmgT > 0 && e.side === 1 ? (runeN('warCry', 'ally') || 1.25) : 1), h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
 function dodges(e, th) { if (e.thr !== th || e.thrN !== th.swingN) { e.thr = th; e.thrN = th.swingN; e.willDodge = Math.random() < 0.3 + 0.5 * e.w01; } return e.willDodge; }   // decided once a blow
@@ -1527,7 +1540,13 @@ function makingOff(T, e) {                  // is this man making off: going awa
   if (T === P) { var dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1, away = ((P.vx || 0) * dx + (P.vy || 0) * dy) / d; return away > 35 && Math.abs(wrap(P.face - Math.atan2(-dy, -dx))) > 1.9; }
   return !!T.errand || T.state === 'flee';
 }
-function soldierAI(e, dt) {
+function soldierAI(e, dt) {   /* (the wrapper: the counts the trial's runes added, 2026-10-24) */
+  if (e.noHarm > 0) e.noHarm -= dt; if (e.cryDmgT > 0) e.cryDmgT -= dt; if (e.confusedT > 0) { e.confusedT -= dt; e.cd = Math.max(e.cd || 0, 0.25); if (e.state === 'chase' || e.state === 'idle') return; }
+  soldierAI0(e, dt);
+  if (e.faceLockT > 0) { e.faceLockT -= dt; if (e.lockFace != null) e.face = e.lockFace; }
+  if (e.cryBack > 0) { e.cryBack -= dt; if (e.shield && !(e.guard > 0)) raiseGuard(e); e.guard = Math.max(e.guard || 0, 0.4); var cbA = Math.atan2(P.y - e.y, P.x - e.x); moveCircle(e, -Math.cos(cbA) * MEN.speed * 0.45 * dt, -Math.sin(cbA) * MEN.speed * 0.45 * dt); e.cd = Math.max(e.cd || 0, 0.3); }
+}
+function soldierAI0(e, dt) {
   var shL = lureAt(e); if (shL && !e.dead && !e.down && !e.out && e.state !== 'stagger' && e.state !== 'stunned' && e.freezeT <= 0) { var dxs = shL.x - e.x, dys = shL.y - e.y, ds = Math.hypot(dxs, dys); if (ds > 16) { stepTo(e, shL.x, shL.y, MEN.run, dt); e.face = turnToward(e.face, Math.atan2(dys, dxs), MEN.turn * dt); return; } if (shL.open) e.exposedT = Math.max(e.exposedT || 0, shL.open); e.lure = null; W.shade = null; num(e.x, headY(e), 'a shade', '#9fd8ff'); logEv({ k: 'shade', e: e }); return; }   /* the Ghost-step's shade: he runs at it and strikes air, open at tier III */
   var i, T, dx, dy, d, ang;
   e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; e.hopCd -= dt; if (e.rushed > 0) e.rushed -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
@@ -1635,7 +1654,7 @@ function soldierAI(e, dt) {
     case 'lunge':
       if (d > T.r + e.r + 5) { var lsp = makingOff(T, e) ? Math.max(e.pf.lunge * 0.5, MEN.run) : e.pf.lunge * 0.5; moveCircle(e, Math.cos(e.dirLock) * lsp * dt, Math.sin(e.dirLock) * lsp * dt); }
       if (!e.hitDone && e.t >= e.dur * MEN.hitAt) { e.hitDone = true; strike(e); }
-      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.sw.rec; e.swung = true; }
+      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.sw.rec; e.swung = true; var lu0 = lureAt(e); if (lu0 && Math.hypot(lu0.x - e.x, lu0.y - e.y) < 70) { lu0.hits = (lu0.hits == null ? 2 : lu0.hits) - 1; spark(lu0.x, lu0.y - 16, 8, '#bfe3ff', 90); if (lu0.hits <= 0) W.shade = null; } }   /* (a blow at the shade: two and it goes) */
       break;
     case 'recover':
       if (e.swung && e.chainLeft > 0 && e.t >= e.dur * 0.45 && d <= keep + 14 && slotFree(T, e, 0.7)) { e.chainLeft--; beginBlow(e, T, ang, true); break; }
@@ -1828,7 +1847,7 @@ function updateProjs(dt) {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
           if (e.dead || e.side === 1 || e.down) continue;
-          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { pr.stuckOn = e; hitFlags.still = pr.still || 1; if (pr.noShield) hitFlags.guardBreak = true; damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); hitFlags.still = 1; hitFlags.guardBreak = false; if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, pr.pinT || 1.6); e.pkx = e.pky = 0; if (pr.pinNoGuard) { e.guard = 0; e.guardCd = pr.pinT || 1.6; } num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } if (pr.fire && !e.dead && e.type === 'soldier' && Math.random() < (runeN('fireArrow', 'catchK') || 0.25)) { var bT = runeN('fireArrow', 'burnT') || 5; markOn(e, 'burning', bT); e.burnDmg = pr.dmg * (runeN('fireArrow', 'burnMore') || 0.25) / bT; e.burnSlow = runeN('fireArrow', 'slow') || 0.6; e.burnSpread = runeN('fireArrow', 'spread');   /* (one in four catches: a quarter of the blow more over the burn, and slowed: Robin, 2026-10-24) */ } gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { pr.stuckOn = e; if (pr.weak && Math.random() < (runeN('stillHand', 'chance') || 0.15)) { var wb = pr.dmg * (runeN('stillHand', 'bleedK') || 0.25); if (e.shy) e.bleedT = Math.max(e.bleedT || 0, SHY.bleedT * 0.6); else { markOn(e, 'bleeding', 5); e.bleedDmg = Math.max(e.bleedDmg || 0, wb / 5); } if (runeN('stillHand', 'stag')) e.stagT = 0.5; num(e.x, headY(e), 'WEAK SPOT', '#ffd34d'); } hitFlags.still = pr.still || 1; if (pr.noShield) hitFlags.guardBreak = true; damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); hitFlags.still = 1; hitFlags.guardBreak = false; if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, pr.pinT || 1.6); e.pkx = e.pky = 0; if (pr.pinNoGuard) { e.guard = 0; e.guardCd = pr.pinT || 1.6; } num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } if (pr.fire && !e.dead && e.type === 'soldier' && Math.random() < (runeN('fireArrow', 'catchK') || 0.25)) { var bT = runeN('fireArrow', 'burnT') || 5; markOn(e, 'burning', bT); e.burnDmg = pr.dmg * (runeN('fireArrow', 'burnMore') || 0.25) / bT; e.burnSlow = runeN('fireArrow', 'slow') || 0.6; e.burnSpread = runeN('fireArrow', 'spread');   /* (one in four catches: a quarter of the blow more over the burn, and slowed: Robin, 2026-10-24) */ } gone = true; hit = true; break; }
         }
         if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; pr.stuckOn = o3; break; } } }   // (an arrow, too)
       }
@@ -2268,6 +2287,7 @@ function drawHero(c) {
     flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
     c.globalAlpha = 1;
   }
+  if (W.shade && W.shade.t > 0 && api.heroSprite) { c.save(); c.globalAlpha = 0.5 * Math.min(1, W.shade.t / 0.6); c.filter = 'sepia(1) hue-rotate(175deg) saturate(2.4) brightness(1.3)'; try { api.heroSprite(c, W.shade.x, W.shade.y * K, W.shade.face != null ? W.shade.face : p.faceVis, { phase: W.shade.ph, amt: 0, sq: 0, sqv: 0 }, false); } catch (eSh) {} c.restore(); }   /* The shade (Robin, 2026-10-24): pale blue and translucent where he left */
   if (api.heroSprite) {                                           // a page draws the hero from a sprite sheet (the Blender trial, 2026-10-09)
     var liftS = api.scene && api.scene.heroLift ? api.scene.heroLift() : 0;
     c.save(); c.globalAlpha = amt > 0 ? 1 - amt * 0.5 : 1; api.heroSprite(c, p.x, p.y * K - liftS, p.faceVis, p.anim, dashing); c.restore(); drawBowDraw(c, p, liftS); return;
@@ -2565,7 +2585,7 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
-  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') { var by0 = eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10); bar(c, eb.x - 10, by0, 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); if (eb.side !== 1 && (eb.posture > 0.01 || eb.finish)) bar(c, eb.x - 10, by0 + 5, 20, 1.6, eb.finish ? 1 : eb.posture, eb.finish ? (Math.floor(W.t * 8) % 2 ? '#ffb05a' : '#ff7a2a') : '#e8b04a'); } } }   /* (his balance under his health: POSTURE; flashing when the finishing blow is ready) */
+  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') { var by0 = eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10); bar(c, eb.x - 10, by0, 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); if (eb.marks && eb.marks.bleeding > 0) { var tb = Math.min(eb.hp, (eb.bleedDmg || 3) * eb.marks.bleeding), f0 = Math.max(0, (eb.hp - tb) / eb.maxHp), f1 = eb.hp / eb.maxHp; c.fillStyle = '#5a0f1e'; c.fillRect(eb.x - 10 + 20 * f0, by0, 20 * (f1 - f0), 3); }   /* (the bleed to come, dark on his bar: Robin, 2026-10-24) */ if (eb.side !== 1 && (eb.posture > 0.01 || eb.finish)) bar(c, eb.x - 10, by0 + 5, 20, 1.6, eb.finish ? 1 : eb.posture, eb.finish ? (Math.floor(W.t * 8) % 2 ? '#ffb05a' : '#ff7a2a') : '#e8b04a'); } } }   /* (his balance under his health: POSTURE; flashing when the finishing blow is ready) */
   if (sc && sc.end) sc.end(c, P);
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);

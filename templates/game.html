@@ -5322,8 +5322,8 @@ __COMBAT__
   }
   Combat.api.harvest = {
     list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
-    hit: function (o, power, right, tool) {
-      if (o.kind === 'stone' && right && runeHas('stoneBiter') && Math.random() < runeN('stoneBiter', 'chance')) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */
+    hit: function (o, power, right, tool, chg) {
+      if (o.kind === 'stone' && right && false) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
       if (o.gate) { gateBlow(o, power, tool); return { dealt: power }; }   /* (a catacomb's iron gate) */
@@ -5334,6 +5334,7 @@ __COMBAT__
       var P = hero(), s = o.kind === 'trunk' ? null : sprite(o.name, o.v);
       if (o.cave) caveHear(o);
       var isTree = o.kind === 'tree' || o.kind === 'trunk'; if (isTree && gatherEv.treeHit) gatherEv.treeHit();
+      if (o.kind === 'stone' && chg > 0.6 && runeHas('stoneBiter')) { var Pq = hero(); o.spotAng = Math.atan2((Pq.y - o.y) * K, Pq.x - o.x); chip(o.x, o.y, 10, '#cfd0cc', 5, 80); note('A weak spot'); if (runeN('stoneBiter', 'crack')) o.hp -= power * 0.5; }   /* the Stone-biter (Robin, 2026-10-24): a held pick blow leaves the rock's weak spot where it struck */
       var r = Gather.hit(GT, o, { power: power * (isTree && fever.n > 0 ? 1 + fever.n * (runeN('quickHands', 'stack') || 0.02) : 1), right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: gatherEv });   /* (the Woodcutter's fever: each stack more on a tree) */
       if (busy.indexOf(o) < 0) busy.push(o);
       if (o.hp <= 0 && o.dying != null && o.kind !== 'trunk') {
