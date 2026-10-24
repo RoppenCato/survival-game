@@ -16000,12 +16000,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
     meadowEvening: { url: '../assets/music/meadow-night.js?v=482ee75a', frames: 7680000 },
     meadowDaySpring: { url: '../assets/music/meadow-day-spring.js?v=604e8c72', frames: 9290323 },   /* the seasons' meadow by day (Derek, SD; Robin, 2026-10-23: "I like spring and winter"; autumn comes when its start is reworked, summer stays the meadow) */
     meadowDayWinter: { url: '../assets/music/meadow-day-winter.js?v=9ee2a479', frames: 12800000 },
-    meadowDayAutumn: { url: '../assets/music/meadow-day-autumn.js?v=5723f9a4', frames: 11076923 }   /* (Robin: "Autumn is good now", the start reworked) */
+    meadowDayAutumn: { url: '../assets/music/meadow-day-autumn.js?v=5723f9a4', frames: 11076923 },   /* (Robin: "Autumn is good now", the start reworked) */
+    riteA: { url: '../assets/music/rite-a.js?v=bf2f1aae', frames: 3072000 }, riteB: { url: '../assets/music/rite-b.js?v=65558c30', frames: 3085714 }, riteC: { url: '../assets/music/rite-c.js?v=e9ea7137', frames: 2880000 }, riteD: { url: '../assets/music/rite-d.js?v=d6060989', frames: 2792727 }   /* the rite's music, Derek, SD's four of 2026-10-24 (the drum and the horn, the hum, the procession, the storm gathering), one seamless loop each; Admin's Rite music row picks one, none until Robin does (his silence of 2026-10-23) */
   };
+  var riteMusicPick = 'none'; try { riteMusicPick = localStorage.getItem('game.ritemusic') || 'none'; } catch (eRM) {}
+  function riteTheme() { return ceremony && ceremony.phase !== 'done' && riteMusicPick !== 'none' ? 'rite' + riteMusicPick.toUpperCase() : null; }   /* the rite's piece from "Make the sacrifice" to the bolt (faded in over 2 s, out over 4 s after it) */
   function fileOf(id) { var f = MUSIC_FILES[id]; if (!f) return null; return { url: f.url, loopStart: 1105 / 48000, loopEnd: (1105 + f.frames) / 48000 }; }
   function startMusic() {                 // browsers allow sound only after the first key or click
     if (musicOn || OPTS.music <= 0) return;
-    musicSong = isEvening() ? eveTheme() : dayTheme();
+    musicSong = riteTheme() || (isEvening() ? eveTheme() : dayTheme());
     Music.setVolume(OPTS.music); musicOn = true;
     var fl = fileOf(musicSong), want = musicSong;
     if (fl) Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fadeIn: 2 }).then(function (ok) { if (!ok && musicOn && musicSong === want) Music.play(songOf(want)); });   // the file, or the song if it cannot be had
@@ -16020,13 +16023,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (any && !BURNH) { burnOff = 0; if (S_sound() && ac() && AC.state === 'running' && Sfx.has('fire_burn_man_a')) BURNH = Sfx.loop(AC, weatherSfxDest(), 'fire_burn_man_a', { v: 1, ramp: 0.4 }); }
     else if (BURNH) { if (!any) { burnOff += dt; if (burnOff > 1) { Sfx.cut(AC, BURNH, 0.6); BURNH = null; } } else burnOff = 0; }
   }
-  function duckTick(dt) { var want = ceremony ? 0 : 1; if (musicDuck === want) return; musicDuck += (want - musicDuck) * Math.min(1, dt * (want < musicDuck ? 1.4 : 0.35)); if (Math.abs(musicDuck - want) < 0.01) musicDuck = want; if (musicOn) Music.setVolume(OPTS.music * musicDuck); }   /* the music goes silent through the rite: only the place's sound, the rain and the thunder (Robin, 2026-10-23) */
+  function duckTick(dt) { var want = ceremony && riteMusicPick === 'none' ? 0 : 1; if (musicDuck === want) return; musicDuck += (want - musicDuck) * Math.min(1, dt * (want < musicDuck ? 1.4 : 0.35)); if (Math.abs(musicDuck - want) < 0.01) musicDuck = want; if (musicOn) Music.setVolume(OPTS.music * musicDuck); }   /* the music goes silent through the rite: only the place's sound, the rain and the thunder (Robin, 2026-10-23) */
   function musicTick(dt) {
     duckTick(dt); burnLoopTick(dt); if (!musicOn) return;
-    var want = isEvening() ? eveTheme() : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
+    var want = riteTheme() || (isEvening() ? eveTheme() : dayTheme());   // the song follows the clock: the evening theme from dusk to dawn; the rite's piece through the rite
     if (want !== musicSong) {             // dusk or dawn: two recorded loops crossfade over seven seconds; a song is stopped and the other started
-      var fl = fileOf(want), was = musicSong;
-      if (fl && Music.trackPlaying()) { musicSong = want; Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fade: 7 }).then(function (ok) { var old = fileOf(was); if (old) setTimeout(function () { Music.releaseTrack(old.url); }, 12000); if (!ok && musicSong === want) { Music.stopTrack(1); Music.play(songOf(want)); } }); return; }
+      var fl = fileOf(want), was = musicSong, fdT = /^rite/.test(want) ? 2 : /^rite/.test(was || '') ? 4 : 7;
+      if (fl && Music.trackPlaying()) { musicSong = want; Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fade: fdT }).then(function (ok) { var old = fileOf(was); if (old) setTimeout(function () { Music.releaseTrack(old.url); }, 12000); if (!ok && musicSong === want) { Music.stopTrack(1); Music.play(songOf(want)); } }); return; }
       Music.stop(); musicOn = false; dangerT = 0; startMusic(); return;
     }
     var next = isEvening() ? (day.t > DAY_LEN - 40 ? dayTheme() : null) : (day.t > DUSK_AT - 40 ? eveTheme() : null), nf = next && fileOf(next); if (nf) Music.loadTrack(nf.url);   // the next loop decoded a little before it is wanted
@@ -20384,7 +20387,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
     { id: 'trees', get name() { var k = 'old'; try { k = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.old)[2]); }, text: 'How big the trees are drawn: as before (the default), twice their old size, one and a half, or tall and thin. The page reloads.' },
     { id: 'weather', get name() { return 'Weather: ' + (WTH.force || 'the day’s own') + ' (next)'; }, text: 'Forces a weather to look at: overcast, mist, shower, rain, storm, snow, heavy snow, blizzard, then the day’s own again.' },
-    { id: 'season', get name() { return 'Season: ' + YEAR.names[year.season] + ' (turn it)'; }, text: 'Turns the year to the next season at once, without the blót, to see each one.' },
+    { id: 'riteMusic', get name() { return 'Rite music: ' + (riteMusicPick === 'none' ? 'none, silence' : riteMusicPick.toUpperCase()) + ' (next)'; } }, { id: 'season', get name() { return 'Season: ' + YEAR.names[year.season] + ' (turn it)'; }, text: 'Turns the year to the next season at once, without the blót, to see each one.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
     { id: 'stroll', name: 'The hero walks at 60 (yesterday\u2019s pace)', text: 'He walks at 60 on the power walk as on 2026-10-21 instead of jogging at 78; Shift still sprints. To compare the two.', toggle: true },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
@@ -20481,6 +20484,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (what === 'wind') { wind.sTo = +v; wind.s = +v; return; }
   }
   function adminAct(id) {
+    if (id === 'riteMusic') { var rmq = ['none', 'a', 'b', 'c', 'd']; riteMusicPick = rmq[(rmq.indexOf(riteMusicPick) + 1) % rmq.length]; try { localStorage.setItem('game.ritemusic', riteMusicPick); } catch (eRM2) {} if (riteMusicPick !== 'none') { var rf = fileOf('rite' + riteMusicPick.toUpperCase()); if (rf) Music.loadTrack(rf.url); } return; }   /* the rite's piece, Derek, SD's four or the silence (Robin, 2026-10-23), to hear at the altar */
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
     if (id === 'trees') { var tk = ['old', 'big', 'mid', 'tall'], cur0 = 'old'; try { cur0 = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }

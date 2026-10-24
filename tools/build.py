@@ -191,6 +191,7 @@ SRC['__TAG_NIGHT__'] = file_tag('assets', 'music', 'meadow-night.js')
 SRC['__TAG_DAY_SPRING__'] = file_tag('assets', 'music', 'meadow-day-spring.js')   # the seasons' meadow by day (Derek, SD, Robin's picks of 2026-10-23: spring and winter; autumn comes)
 SRC['__TAG_DAY_WINTER__'] = file_tag('assets', 'music', 'meadow-day-winter.js')
 SRC['__TAG_DAY_AUTUMN__'] = file_tag('assets', 'music', 'meadow-day-autumn.js')
+for _k in 'abcd': SRC['__TAG_RITE_' + _k.upper() + '__'] = file_tag('assets', 'music', 'rite-' + _k + '.js')   # the rite's four (Derek, SD, 2026-10-24), Robin picks one by ear
 
 def portraits():
     """the talk window's and the Lore Book's pictures (Colin, AD's; docs/talk-and-lore-book.md): assets/portraits/<lore id>.png as
