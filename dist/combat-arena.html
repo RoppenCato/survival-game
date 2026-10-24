@@ -4518,7 +4518,7 @@ function updateProjs(dt) {
         if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; break; } } }   // (an arrow, too)
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang); }
+    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang, hit); }
     else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }
@@ -5019,6 +5019,7 @@ function drawEnemy(c, e) {
   }, e.flash, e.flashRgb);
 }
 function drawProj(c, pr) {
+  if (pr.fire && api.drawFireArrow && api.drawFireArrow(c, pr)) return;   /* the burning arrow in flight: the page's picture (Colin, AD's, 2026-10-24) */
   var x = pr.x, y = pr.y * K - 10;
   if (pr.owner === 'enemy') {
     lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);
