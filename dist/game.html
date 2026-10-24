@@ -18523,13 +18523,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function fishPoseTick(dt) { var P = hero(); if (!fishing && P.fishPose === 'land') { P.fishT -= dt; if (P.fishT <= 0 || !rodInHand()) { P.fishPose = null; P.fishT = 0; P.fishLift = null; } } }   /* the catch lifted a moment after the round ends */
   function drawFishing(c) {                // the line from the rod's tip to the float, the float, the fish's shadow and splashes
     if (!fishing || !fishFloat) return; var P = hero(), st = fishing, fx = fishFloat.x, fy = fishFloat.y * K + st.bob * 0.6, tipX = rodTip ? rodTip.x : P.x + Math.cos(P.face) * 22, tipY = rodTip ? rodTip.y : P.y * K - 34 - (hero().lvl ? UP : 0);
-    var hookC = (function () { var r = handItem(); return r && r.mat === 'iron' ? '#5a5f66' : '#efe6cf'; })();   /* the hook beside the float: iron on the iron-hooked rod, bone on the hazel (Colin, AD: the two rods look alike in the hand, the hook tells them apart) */
+    var hookC = (function () { var r = handItem(); return r && r.mat === 'iron' ? '#5a5f66' : 'rgba(239,230,210,0.8)'; })();   /* the hook beside the float: iron on the iron-hooked rod, bone on the hazel (Colin, AD: the two rods look alike in the hand, the hook tells them apart) */
     function floatAt(x, y) { c.fillStyle = '#efe6cf'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(x, y, 2.2, 3.2, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#b83a2e'; c.beginPath(); c.ellipse(x, y - 1.4, 2.2, 1.8, 0, Math.PI, 0); c.fill(); }
     function hookAt(x, y) { c.strokeStyle = hookC; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.4); c.arc(x - 0.9, y + 2.4, 0.9, 0, Math.PI * 0.85); c.stroke(); }
-    if (fishFloat.flyT > 0) { c.strokeStyle = 'rgba(245,238,220,0.75)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(tipX, tipY + 8); c.stroke(); floatAt(tipX, tipY + 9); hookAt(tipX + 0.5, tipY + 12); return; }   /* (the float hangs a short line from the tip until the cast lets it go) */
-    if (fishFloat.fly > 0) { var fu = 1 - fishFloat.fly / FISH_POSE.fly, f0 = fishFloat.from || { x: tipX, y: tipY }, ax = f0.x + (fx - f0.x) * fu, ay = f0.y + (fy - f0.y) * fu - Math.sin(fu * Math.PI) * 18; c.strokeStyle = 'rgba(245,238,220,0.75)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(ax, ay); c.stroke(); floatAt(ax, ay); return; }   /* its flight out over the water */
+    if (fishFloat.flyT > 0) { c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(tipX, tipY + 8); c.stroke(); floatAt(tipX, tipY + 9); hookAt(tipX + 0.5, tipY + 12); return; }   /* (the float hangs a short line from the tip until the cast lets it go) */
+    if (fishFloat.fly > 0) { var fu = 1 - fishFloat.fly / FISH_POSE.fly, f0 = fishFloat.from || { x: tipX, y: tipY }, ax = f0.x + (fx - f0.x) * fu, ay = f0.y + (fy - f0.y) * fu - Math.sin(fu * Math.PI) * 18; c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(ax, ay); c.stroke(); floatAt(ax, ay); return; }   /* its flight out over the water */
     if (st.phase === 'fight') { var sh = Math.max(4, 5 + st.fish.size * 7), away = st.run > 0 ? 10 : 4; c.fillStyle = 'rgba(20,30,40,0.38)'; c.beginPath(); c.ellipse(fx + fishFloat.cx * away, fy + fishFloat.cy * away * K + 2, sh, sh * 0.42, Math.atan2(fishFloat.cy * K, fishFloat.cx), 0, 7); c.fill(); }   // the fish, a shadow under the surface
-    c.strokeStyle = 'rgba(245,238,220,0.75)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && eHeld ? 2 : 14), fx, fy); c.stroke();
+    c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && eHeld ? 2 : 14), fx, fy); c.stroke();
     if (fishFloat.splash > 0) { var sp = fishFloat.splash; c.strokeStyle = 'rgba(235,250,255,' + (sp * 0.9).toFixed(2) + ')'; c.lineWidth = 1; c.beginPath(); c.ellipse(fx, fishFloat.y * K + 1, 6 + (0.8 - sp) * 14, (6 + (0.8 - sp) * 14) * 0.45, 0, 0, 7); c.stroke(); }
     floatAt(fx, fy); if (st.phase !== 'fight') hookAt(fx + 3.2, fy + 1.5);   // the cork float, red on top, the hook beside it
     if (st.phase === 'fight') {            // the line's tension over the hero: a small bar that fills red, the fish's distance under it
@@ -21460,9 +21460,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), it = handItem(); rodTip = null; if (!it || it.kind !== 'rod' || P.mode !== 'gather' || !sprHero || !sprHero.last || !Sprites.hand) return;
     var tsc = Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1), tp = Sprites.tip && Sprites.tip(sprHero, sprHero.last, face, tsc);
     if (tp) {                              /* Colin, AD's rod layer is drawn with him (2026-10-25): only the line, the hook and the catch hang from its tip here */
-      var qx = x + tp[0], qy = y + tp[1], hk = it.mat === 'iron' ? '#5a5f66' : '#efe6cf'; c.save(); c.lineCap = 'round';
-      if (!fishing && P.fishPose !== 'land') { c.strokeStyle = 'rgba(245,238,220,0.7)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(qx, qy); c.lineTo(qx, qy + 7); c.stroke(); c.strokeStyle = hk; c.lineWidth = 0.7; c.beginPath(); c.moveTo(qx, qy + 7); c.lineTo(qx, qy + 9); c.arc(qx - 0.9, qy + 9, 0.9, 0, Math.PI * 0.85); c.stroke(); }   /* the line and its hook hanging from the tip */
-      if (P.fishPose === 'land' && P.fishLift) { var ln = sprHero.last.f >= 6 ? 10 : 14; c.strokeStyle = 'rgba(245,238,220,0.75)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(qx, qy); c.lineTo(qx, qy + ln); c.stroke(); c.fillStyle = '#b8c4cc'; c.strokeStyle = '#3a3036'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(qx, qy + ln + 4.5, 2.2, 4.5, 0.15, 0, 6.283); c.fill(); c.stroke(); }   /* the catch on a short line from the tip, arriving at his right side by fish_land's contact */
+      var qx = x + tp[0], qy = y + tp[1], hk = it.mat === 'iron' ? '#5a5f66' : 'rgba(239,230,210,0.8)'; c.save(); c.lineCap = 'round';
+      if (!fishing && P.fishPose !== 'land') { c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(qx, qy); c.lineTo(qx, qy + 7); c.stroke(); c.strokeStyle = hk; c.lineWidth = 0.7; c.beginPath(); c.moveTo(qx, qy + 7); c.lineTo(qx, qy + 9); c.arc(qx - 0.9, qy + 9, 0.9, 0, Math.PI * 0.85); c.stroke(); }   /* the line and its hook hanging from the tip */
+      if (P.fishPose === 'land' && P.fishLift) { var ln = sprHero.last.f >= 6 ? 10 : 14; c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(qx, qy); c.lineTo(qx, qy + ln); c.stroke(); c.fillStyle = '#b8c4cc'; c.strokeStyle = '#3a3036'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(qx, qy + ln + 4.5, 2.2, 4.5, 0.15, 0, 6.283); c.fill(); c.stroke(); }   /* the catch on a short line from the tip, arriving at his right side by fish_land's contact */
       c.restore(); rodTip = { x: qx, y: qy }; return;
     }
     var h = Sprites.hand(sprHero, sprHero.last, face, 0, tsc); if (!h) return;
@@ -21476,7 +21476,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P.fishPose === 'fight' && fishFloat) { var fax = fishFloat.x - P.x, fay = (fishFloat.y - P.y) * K, fl = Math.hypot(fax, fay) || 1; tx += fax / fl * bend; ty += bend * 0.8; }
     c.save(); c.lineCap = 'round'; c.strokeStyle = '#2e1c10'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(mx, my, tx, ty); c.stroke();
     c.strokeStyle = it.mat === 'iron' ? '#8a6a48' : '#b08458'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(mx, my, tx, ty); c.stroke();
-    if (!fishing) { c.strokeStyle = 'rgba(245,238,220,0.7)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + fx * 1.5, ty + 7); c.stroke(); }   /* (the line and hook hanging from the tip when he is not fishing) */
+    if (!fishing) { c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + fx * 1.5, ty + 7); c.stroke(); }   /* (the line and hook hanging from the tip when he is not fishing) */
     if (P.fishPose === 'land' && P.fishLift) { c.fillStyle = '#b8c4cc'; c.strokeStyle = '#3a3036'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(tx + fx * 1.5, ty + 9, 2.2, 4.5, 0.2, 0, 6.283); c.fill(); c.stroke(); }   /* the catch on the line as he lifts it */
     c.restore(); rodTip = { x: tx, y: ty };
   }
@@ -22837,7 +22837,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       drawWorkBars(c);
       var ew = !invOpen && P.mode !== 'build' && !menu && !altarOpen && !sleep ? eWhat(P) : null;   // E to cook, read, sleep, open, talk: over the hero, what it would do here (eWhat)
       if (ew && ew.say) {
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = ew.say;
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = ew.say; if ((fishing || P.fishPose) && rodTip && Math.abs((rodTip.x - cam.x) * cam.z + 200 - tx) < 40) ty = Math.min(ty, (rodTip.y - cam.y) * cam.z + 125 - 9);   /* fishing: the bubble over the rod's tip, not on it (2026-10-25) */
         c.font = '600 6px system-ui, sans-serif'; var pw = c.measureText(pt).width + 20, px0 = tx - pw / 2; promptBox = { x1: px0 + pw, y: ty };
         c.fillStyle = 'rgba(35,26,22,0.78)'; c.beginPath(); c.roundRect(px0, ty - 6, pw, 11, 5.5); c.fill();
         c.fillStyle = '#f6e2b8'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.roundRect(px0 + 2.5, ty - 4.3, 7.5, 7.5, 1.5); c.fill(); c.stroke();   // a small key cap
