@@ -1029,3 +1029,74 @@ Sources: [enemy telegraph shape language](https://gamineai.com/blog/enemy-telegr
 - **Releasing the game, and playing it with friends** (Robin, 2026-10-21): the assessment and my recommendation are in `docs/release-and-coop.md`; the open question is whether playing together is a must or a nice-to-have.
 
 - **The jog** (Robin, 2026-10-21: "im still not sure about 'the jog' of hero and villagers. But we'll do it like this for now"): the hero moves at 84 units a second and the raiders at 60, both a jog; a walk would mean those speeds coming down to about 45 (the stroll plants its feet only to there), a change on the developer's side.
+
+## Base building: making it fun in 2D (Robin and Claude, 2026-10-24; not decided except where marked)
+
+From the building review (`docs/building-review.md`, with the pictures in `docs/pictures/building/` and Colin, AD's view in
+`C:\dev\SG\Art Director\out\building_review\VIEW.md`) and the talk with Robin after it. **Decided and built:** the world outside dims
+and softens when you stand in a room (Robin's idea, the gentle look; `INS` in the game). **Liked by Robin, not built:** the cutaway
+inside (the roof gone, the north wall full height, the south wall a knee-high stub, only the storey you are on).
+
+**Why 2D building is different (Claude).** The 3D builders (Valheim, Enshrouded, Minecraft, Grounded) win on free form: shaping a
+building and walking round it. From above a house is mostly its roof, so ours should win on what a building does and means. What
+the good 2D builders share: everything placed does something (Stardew's sprinklers and scarecrows), rooms are for people and their
+quality matters (RimWorld, Terraria's housing), what stands next to what is the game (Islanders, Dorfromantik), and the system does
+the craft so anyone makes something lovely (Townscaper).
+
+**Robin's ideas (2026-10-24):**
+- **Things boost what is round them.** A well gives access to water; a bag of salt opens more recipes; building is about boosting
+  parts with different things and expanding and improving your village.
+- **Houses and rooms with jobs.** For example a treasure hall: the more valuables in it, the more respect, but the same silver is
+  wanted at markets, so the player chooses between showing it and spending it.
+- **The outside dims when you go in** (built).
+- **Your hirdmen and the people of your village idle round it and do simple tasks.**
+
+**Claude's shape for them:**
+- **Stations with a reach.** Things placed within it improve the station or open new things, like Valheim's tanning rack by the
+  workbench. Historical pairs: a well by the hearth opens stews and brewing (and water for a bucket line); a salt barrel opens salted
+  meat and fish that keep through winter; a smokehouse by the drying racks, smoked fish; bee skeps near flowers, honey, and with a mead
+  barrel by the hearth, mead for the feast; a tanning rack by the workbench, better leather gear; an anvil by the furnace, better
+  metalwork; a loom by the hearth, cloth. Placing the salt barrel is holding the salt, so it keeps the rule that recipes appear from
+  their key ingredient. While placing, the reach shows as a soft ring and what it touches lights up (how things look, not a label).
+  It gives the seasons work too: winter is when salted and smoked food matters.
+- **A room is what its contents make it** (RimWorld): a high seat and chests of valuables make a treasure hall; beds a sleeping hall;
+  a forge a smithy; stalls and hay a byre (on the end of the house it warms it, as the animals did); a storehouse, a brewhouse, a
+  boathouse, a bathhouse. Its name shows quietly the first time you step in.
+- **Treasure and trophies.** Treasure (silver, rings, church plate) can be shown in the hall or spent; trophies (the jarl's shield, a
+  raided hall's carved post, a famous enemy's weapon) cannot be sold and only add respect, each with its story. What respect buys:
+  better men willing to join, the jarl's notice (the story onward), better prices and welcome at markets, the villagers' words (the Lore
+  Director's). Not a hall that draws raiders for now: defending your home is a later chapter, and as a punishment it fights Robin's rule.
+- **The hall tells your saga.** What raids bring home goes on display; a carved post for each great raid; a runestone with his name for
+  each fallen hirdman; people speak of what they see.
+- **You plan a steading and it grows.** You mark the ground (the hall here, the byre, the smithy by the well, the boathouse at the
+  shore) and the hird raises it over days and seasons by the villages' own grammar (`src/village.js`), in their look; every wall and
+  bench can still be placed by hand. Robin did not answer yet whether this feels like building to him.
+- **The hird's homes.** Each man wants a bed, then a place of his own, then a better one; a good hall draws better men.
+- **The hird and the people live in your steading.** Give it the villages' routines (spots, a round, sitting at the fire, sleeping,
+  watching you), the spots taken from what you have built: the fire pit to sit at in the evening, the beds to sleep in, the table to eat
+  at dawn, the well to fetch water from. Tasks you can see, their animations already the villagers': a woodcutter splitting logs at the
+  chopping block and stacking the woodpile, water carried from the well to the hearth, a cook at the pot, a fisher at the end of the
+  jetty, a smith at the anvil. What you place decides what your men do. Today the hird's jobs (`Hird.DEF.jobs`: crafter, woodcutter,
+  cook, keeper) are numbers ticking over while a man stands at his place.
+
+**Colin, AD's view (2026-10-24):**
+- What the generator's houses have: long and narrow (2:1 to 3:1) with the gable and door to the yard; a yard (trodden earth, a fire
+  ring, things against the walls, a path out); wear where people walk; lean-tos, porches and outbuildings; an inside dressed by trade.
+- Nearly every decorating piece is drawn already and could go on the menu: wall hangings, shelf, cupboard, cradle, loom, stool, hams,
+  root bin, cask rack, sack pile, hanging fish, heavy chest, bucket, ladder, quern, shield rack; for the yard the camp, steading, yard,
+  faces and fences pieces, plants and rocks. New first: wall-hung things that snap to walls (shields, pelts, antlers, herbs, tools, a
+  horn), rugs and pelts in sizes, a lean-to, porch and awning to build, a redrawn window, replacements for the old drawn props.
+- Paths as a ground layer: worn earth with a ragged fading edge (the villages' street ground), gravel with pebbles, stepping flags along
+  the stroke, edging stones; the ground wearing where the hero walks.
+- A style from the materials (fisher, farm, fell, hall) with the menu offering that style first and a small comfort bonus for a
+  matching set; a "Make it lived in" button dressing a house as the generator does (he offers to lift it out of `village.js`); smart
+  placement; free variants by tile; one painted door as the house's accent; life from the game running (smoke, glowing windows,
+  washing, hens, wear).
+- A window small, high, wider than tall, with shutters and a sill; a side door shown by its threshold, a trodden patch and a little
+  porch; an inland lake as its own water (peaty shallows, reeds, lily pads, a grassy or muddy bank), a recipe like the shore's.
+
+**Claude's order (from the review):** first make what exists read right (the cutaway, the window and side door, real paths and wear,
+every drawn piece on the menu, a village's ground only its fence or houses, the lake's water); then make it easy and fun (house plans
+to drag out as a ghost that fills as you pay, "Make it lived in", comfort by variety and a style bonus in place of today's checklist of
+seven, things that snap, porch and lean-to, the painted door); then alive (smoke, glowing windows, washing, hens in a yard, the hird
+using the house). Open questions for Robin are at the end of `docs/building-review.md`.
