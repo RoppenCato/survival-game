@@ -395,7 +395,7 @@ function warCryOut(p) {
   ring(p.x, p.y, 0, 240, 0.5, '255,220,150', false, 2.5); num(p.x, p.y - 32, 'WAR-CRY', '#ffd34d', true); sfx('war_cry'); logEv({ k: 'warcry', n: n });
 }
 function crowdRiposte(p) {                 // the Riposte: in the moment after a parry the guard-blow is an instant strike that cannot be blocked
-  if (!(p.riposteT > 0)) return false; p.riposteT = 0; p.guard = false; p.atkBuf = 0; startAttack(); P.atk.riposte = true; P.atk.ripRune = true; P.atk.combo = chainLen() - 1; sfx('riposte'); return true;
+  if (!(p.riposteT > 0)) return false; p.riposteT = 0; p.guard = false; p.atkBuf = 0; startAttack(); P.atk.riposte = true; P.atk.ripRune = true; P.atk.combo = chainLen() - 1; var rk = bareHanded() ? null : meleeProfile().kind; P.atk.clipRune = rk && rk !== 'greataxe' && rk !== 'spear' ? 'riposte' : null; sfx('riposte'); return true;   /* (Colin, AD's riposte clip, one-handed) */
 }
 function crowdCharge(p) {                 // the Charge (a rune of the guard-blow): a rush so many strides long; the first man in the way goes down, the next is pushed, at tier III the rush strikes with the weapon
   var face = P.inAng !== null ? P.inAng : P.face, len = runeN('charge', 'len') || 3;
@@ -654,7 +654,7 @@ function startAttack() {
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1); p.stDelay = 0.5; }
   if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; sfx('whirl', 0, p); }   /* the Whirl: a two-handed swing goes full round */
-  a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind; if (swr0 === 'lunge') { sfx('lunge', 0, p); if (wk0 !== 'greataxe') a.clipRune = 'lunge'; } else if (swr0 === 'sweep' && wk0 === 'spear') sfx('sweep', 0, p); }   /* a.clipRune: Colin, AD's lunge and overhead clips, one-handed, picked by Sprites.pick (2026-10-24); the Overhead's is set in releaseCharge, the held blow's own path */   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
+  a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind, oneH = wk0 !== 'greataxe' && wk0 !== 'spear'; if (a.spin && a.whirl) a.clipRune = 'whirl'; else if (a.feint) { if (oneH) a.clipRune = 'feint'; } else if (swr0 === 'lunge') { sfx('lunge', 0, p); a.clipRune = wk0 === 'spear' ? 'thrust_long' : wk0 === 'greataxe' ? null : 'lunge'; } else if (swr0 === 'sweep' && wk0 === 'spear') { sfx('sweep', 0, p); a.clipRune = 'sweep'; } }   /* a.clipRune: Colin, AD's lunge and overhead clips, one-handed, picked by Sprites.pick (2026-10-24); the Overhead's is set in releaseCharge, the held blow's own path */   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
   if (p.feintHeavy) { a.combo = chainLen() - 1; p.feintHeavy = 0; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
   swingSound(a);
