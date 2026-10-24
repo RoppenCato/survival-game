@@ -1396,14 +1396,17 @@ function make(kit, opts) {
     gradeN = 0; rimN = 0;
     var pw = CT * T, phh = CT * TS, baked = 0;
     if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
-    for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
+    var bakeK = -1, bakeD = 1e18, qy, qx;   /* the piece to bake this call: the one nearest the middle of the view (2026-10-24: they baked in reading order from the top left, and a load showed the hero's own ground last) */
+    for (qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) { var ck0 = qy * CW + qx; if (!landChunk[ck0] || !(!chunkCv[ck0] || (stale[ck0] && pnow() - lastBake > 60))) continue; var dq = Math.pow((qx + 0.5) * pw - cam.x, 2) + Math.pow((qy + 0.5) * phh - cam.y, 2); if (dq < bakeD) { bakeD = dq; bakeK = ck0; } }
+    if (!w.landCv) { w.landCv = (typeof document !== 'undefined' ? document.createElement('canvas') : (global.__mk ? global.__mk(8, 8) : null)); if (w.landCv) { w.landCv.width = 8; w.landCv.height = 8; var lcx = w.landCv.getContext('2d'); lcx.fillStyle = '#5f8a42'; lcx.fillRect(0, 0, 8, 8); } }   /* a land piece not yet baked stands as plain meadow green, not as the sea (2026-10-24: a loaded game showed its paths and its green as water until they baked) */
+    for (qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
-        if ((!chunkCv[ck] || (stale[ck] && pnow() - lastBake > 60)) && baked < 1) {   // one bake a call; a repainted piece waits a few frames between bakes so painting keeps up
+        if (ck === bakeK && baked < 1) {   // one bake a call, the nearest first; a repainted piece waits a few frames between bakes so painting keeps up
           var tb0 = pnow(); if (stale[ck]) { delete stale[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); }
           chunkCv[ck] = bakeChunk(qx, qy); seasonDress(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; lastBake = pnow(); chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) { var old = chunkOrder.shift(); delete chunkCv[old]; delete stale[old]; }
         }
-        if (chunkCv[ck]) piece = chunkCv[ck];
+        if (chunkCv[ck]) piece = chunkCv[ck]; else if (w.landCv) piece = w.landCv;
       }
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
     }

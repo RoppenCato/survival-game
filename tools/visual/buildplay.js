@@ -14,8 +14,8 @@
   function D() { return Combat.api.debug(); } function P() { return Combat.dbg().P; } var T = 32;
   var BP = { log: [], placed: 0 };
   function idx(id, m) { return D().pieceIndex(id, m); }
-  function put(i, x, y, what) { var p = P(); var r = D().place(i, x, y); if (r && r.ok) BP.placed++; else BP.log.push(what + ': ' + ((r && r.why) || 'nothing to aim at')); return r && r.ok; }
-  function near(x, y) { var p = P(); if (Math.hypot(p.x - x, p.y - y) > 110) { p.x = x; p.y = y + 40; p.vx = p.vy = 0; } }
+  function put(i, x, y, what) { var p = P(); var r = D().place(i, x, y - (p.lvl ? Build.UP / 0.75 : 0));   /* (upstairs the game reads the cursor a storey lower, so the point is raised by a storey, as a player's mouse would be) */ if (r && r.ok) BP.placed++; else BP.log.push(what + ': ' + ((r && r.why) || 'nothing to aim at')); return r && r.ok; }
+  function near(x, y) { var p = P(), up = p.lvl ? 1 : 0; if (Math.hypot(p.x - x, p.y - y) > (up ? 30 : 110)) { p.x = x; p.y = y + (up ? 10 : 40); p.vx = p.vy = 0; } }   /* (upstairs the cursor points a storey lower: stand close) */
   BP.free = function () { var A = D(); try { A.admin('free'); } catch (e) {} var s = A.seenAll(); ['slept', 'leather', 'honey', 'copper', 'mason', 'charcoal', 'ironBar', 'bogIron', 'silver', 'snakeBlood', 'raft', 'trapper'].forEach(function (k) { s[k] = 1; }); return 'free building on'; };
   BP.at = function (x, y) { D().goto(x, y); H2.sim(20, D().tick); return [Math.round(P().x), Math.round(P().y)]; };
   BP.house = function (tx, ty, w, h, o) {
@@ -23,6 +23,7 @@
     var p = P(); p.lvl = L;
     var doorAt = { s: tx + Math.floor(w / 2), n: tx + Math.floor(w / 2), e: ty + Math.floor(h / 2), w: ty + Math.floor(h / 2) };
     function edge(kind, m, x, y, what) { near(x, y); return put(idx(kind, m), x, y, what); }
+    if (L && o.floor != null) for (a = 0; a < w; a++) for (b = 0; b < h; b++) { var ux = (tx + a + 0.5) * T, uy = (ty + b + 0.5) * T; near(ux, uy); put(idx('floor', o.floor), ux, uy, 'upper floor ' + a + ',' + b); }   /* upstairs the floor comes first: a wall there stands only beside floor */
     for (a = 0; a < w; a++) {
       var xs = (tx + a + 0.5) * T, top = doors.indexOf('n') >= 0 && tx + a === doorAt.n, bot = doors.indexOf('s') >= 0 && tx + a === doorAt.s;
       var winTop = !top && wins < nwin && a === Math.floor(w / 4) && w >= 4; if (winTop) wins++;

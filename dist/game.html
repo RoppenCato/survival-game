@@ -6509,14 +6509,17 @@ function make(kit, opts) {
     gradeN = 0; rimN = 0;
     var pw = CT * T, phh = CT * TS, baked = 0;
     if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
-    for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
+    var bakeK = -1, bakeD = 1e18, qy, qx;   /* the piece to bake this call: the one nearest the middle of the view (2026-10-24: they baked in reading order from the top left, and a load showed the hero's own ground last) */
+    for (qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) { var ck0 = qy * CW + qx; if (!landChunk[ck0] || !(!chunkCv[ck0] || (stale[ck0] && pnow() - lastBake > 60))) continue; var dq = Math.pow((qx + 0.5) * pw - cam.x, 2) + Math.pow((qy + 0.5) * phh - cam.y, 2); if (dq < bakeD) { bakeD = dq; bakeK = ck0; } }
+    if (!w.landCv) { w.landCv = (typeof document !== 'undefined' ? document.createElement('canvas') : (global.__mk ? global.__mk(8, 8) : null)); if (w.landCv) { w.landCv.width = 8; w.landCv.height = 8; var lcx = w.landCv.getContext('2d'); lcx.fillStyle = '#5f8a42'; lcx.fillRect(0, 0, 8, 8); } }   /* a land piece not yet baked stands as plain meadow green, not as the sea (2026-10-24: a loaded game showed its paths and its green as water until they baked) */
+    for (qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
-        if ((!chunkCv[ck] || (stale[ck] && pnow() - lastBake > 60)) && baked < 1) {   // one bake a call; a repainted piece waits a few frames between bakes so painting keeps up
+        if (ck === bakeK && baked < 1) {   // one bake a call, the nearest first; a repainted piece waits a few frames between bakes so painting keeps up
           var tb0 = pnow(); if (stale[ck]) { delete stale[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); }
           chunkCv[ck] = bakeChunk(qx, qy); seasonDress(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; lastBake = pnow(); chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) { var old = chunkOrder.shift(); delete chunkCv[old]; delete stale[old]; }
         }
-        if (chunkCv[ck]) piece = chunkCv[ck];
+        if (chunkCv[ck]) piece = chunkCv[ck]; else if (w.landCv) piece = w.landCv;
       }
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
     }
@@ -17603,7 +17606,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(my / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
       if (!pc.flat) { var fit = fitItem(ix, iy, ft.hw, ft.hd, L); if (fit) { ix = fit.x; iy = fit.y; } else wallWhy = 'Too close to a wall'; }
       var clear = L ? upFloorAt(Math.floor(ix / T), Math.floor(iy / T)) : spotClear(ix, iy);
-      for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
+      var nearIt = null; for (i = 0; i < B.items.length; i++) { var oi = B.items[i]; if ((oi.lvl || 0) !== L || (pc.flat ? oi.name !== 'rug' : oi.name === 'rug')) continue; var gapI = pc.flat ? 24 : Math.max(6, (oi.r || 4) + (pc.r || 4) + 2); if (Math.hypot(oi.x - ix, oi.y - iy) < gapI) { clear = false; nearIt = oi; } }   /* a rug lies under furniture, so only rugs block rugs; furniture keeps the two things' own footprints apart, not a flat 24 units (the building review of 2026-10-24: a chair could not be drawn up to a table) */
       if (!L && B.stairs[Build.key(Math.floor(ix / T), Math.floor(iy / T))]) clear = false;
       var dTx = Math.floor(ix / T), dTy = Math.floor(iy / T), BBd = Bl(L), isDoor = function (e) { return !!(e && (e.t === 'door' || e.t === 'gate')); }, doorway = isDoor(BBd.H[Build.key(dTx, dTy)]) || isDoor(BBd.H[Build.key(dTx, dTy + 1)]) || isDoor(BBd.V[Build.key(dTx, dTy)]) || isDoor(BBd.V[Build.key(dTx + 1, dTy)]);   // nothing stands in a doorway
       var shipWhy = doorway && !pc.flat ? 'Keep the doorway clear' : '';
@@ -17613,7 +17616,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (L && (pc.ship || pc.claim || pc.id === 'well' || pc.id === 'charcoal')) shipWhy = 'Not up here';
       if ((pc.id === 'campfire' || pc.id === 'hearth') && (L || (roomInfo && roomInfo.at(Math.floor(ix / T), Math.floor(iy / T)) >= 0))) shipWhy = 'Not indoors';   /* (Robin, 2026-10-16: a fire burns outside; a fireplace goes in the house) */
       if (pc.id === 'fireplace' && homeIsle(ix, iy) === 0) shipWhy = 'Not on this island';
-      return { kind: 'item', x: ix, y: iy, piece: pc, prop: nf ? 'naust_' + nf.f : null, nf: nf, ok: !far && clear && !shipWhy && !wallWhy && canAfford(buildCost(pc.cost)), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (L ? 'No floor here' : (fellWhy(ix, iy) || 'Blocked, or not on land')) : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
+      return { kind: 'item', x: ix, y: iy, piece: pc, prop: nf ? 'naust_' + nf.f : null, nf: nf, ok: !far && clear && !shipWhy && !wallWhy && canAfford(buildCost(pc.cost)), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (nearIt ? 'Too close to the ' + (nearIt.name || 'thing').replace(/([A-Z])/g, ' $1').toLowerCase() : L ? 'No floor here' : (fellWhy(ix, iy) || 'Blocked, or not on land')) : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), fw = !!(Build.FLOORS[pc.m] || {}).water, onLand = L ? (roomInfo && roomInfo.at(tx, ty) >= 0 && !fw) : (fw ? dockOk(tx, ty) : (code(tx, ty) >= 1 && code(tx, ty) !== 255 && tileFell(tx, ty))), hasF = BB.floors[fk2] != null && BB.floors[fk2] === pc.m, auto = L && B.up.auto[fk2];
       return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && !auto && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? (L ? 'Only over a closed room' : fw ? 'Lay it from the shore out over the shallows' : (w.mt && (code(tx, ty) === 5 || w.cliffAt((tx + 0.5) * T, (ty + 0.5) * T)) ? (w.waterAt((tx + 0.5) * T, (ty + 0.5) * T) ? 'Not in the water' : 'Not on a cliff or a slope') : 'Not on land')) : auto ? 'The stairs hold this floor up' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
