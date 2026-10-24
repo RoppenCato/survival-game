@@ -136,7 +136,7 @@ var BOW = { full: 1.5, dmgMin: 0.4, speedMin: 0.8 }; api.bowSpec = BOW;
 var SNEAK = { speed: 0.5, hear: 0.5 }; api.sneakSpec = SNEAK;   /* sneaking (Robin, 2026-10-24: "when we introduce sneaking (on ctrl i think) we probably put standard on 50%", then, asked, "Sneak toggles on C"): C turns it on and off, a sneak at speed of the walk, seen and heard from hear of the distance; a sprint, a dash or a fall ends it; Ctrl targets as before; the Cat's Hush changes both numbers */
 var TRAP = { range: 230, r: 14, fly: 0.5, life: 120, max: 1, st: 8, cd: 1.2 }; api.trapSpec = TRAP;   /* the Trapper's traps (Robin's trial of 2026-10-24): thrown up to range, sprung by a foe within r, in the air fly seconds, gone unsprung after life, st stamina a throw and cd between throws (mine); one out at a time, a new throw losing the old (Robin, asked the same day); each from the bag where the page keeps them (api.trapHave, api.trapUse: made at the trapper's bench), free where it keeps none (the arena) */
 var TRAP_KINDS = [{ id: 'tripper', name: 'Tripper' }, { id: 'poison', name: 'Poison' }];
-var THROW = { speed: 440, back: 560, st: 6, catchR: 16 }; api.throwSpec = THROW;   /* the Throwing axe (the same trial): out at speed, back at back, caught within catchR of the hand; mine */
+var THROW = { speed: 440, back: 560, st: 6, catchR: 16, clip: 0.6, loose: 0.3 }; api.throwSpec = THROW;   /* (clip and loose: Colin, AD's throw clip, 0.6 s with the loose at frame 5 of 10; the axe or the trap leaves the hand there, 2026-10-24) */   /* the Throwing axe (the same trial): out at speed, back at back, caught within catchR of the hand; mine */
 function runeUse(id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return; var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }   /* a use that costs no blood (the traps, the throw) */
 function sneakK() { if (!P || !P.sneak) return 1; var h = runeHas('catFoot') ? runeN('catFoot', 'hear') : null; return h != null ? h : SNEAK.hear; }   /* how far he is noticed from while sneaking */
 function stealthK() { return (api.mods && api.mods().stealth ? api.mods().stealth : 1) * sneakK(); }
@@ -464,12 +464,12 @@ function springTrap(tr, e) {
 function throwTrap(x, y, kind) {
   var p = P; if (trapHave(kind) <= 0) { num(p.x, p.y * K - 46, 'NO TRAP', '#e0a080'); return; } if (api.trapUse) api.trapUse(kind); if (!W.traps) W.traps = []; while (W.traps.length >= TRAP.max) W.traps.shift();   /* (one out at a time: a new throw loses the old) */
   p.st = Math.max(0, p.st - TRAP.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.trapCd = TRAP.cd; p.fireT = 0.2; var fa = Math.atan2(y - p.y, x - p.x); p.face = fa; p.faceVis = fa;
-  W.traps.push({ kind: kind, state: 'fly', t: 0, x0: p.x + Math.cos(fa) * 8, y0: p.y + Math.sin(fa) * 8, x1: x, y1: y, x: p.x, y: p.y, z: 0, arm: runeN('pinningShot', 'arm') || 3 }); runeUse('pinningShot'); sfx('trap_throw', 0.6, p);
+  p.throwT = THROW.clip; p.throwQ = { t: THROW.loose, fn: function () { while (W.traps.length >= TRAP.max) W.traps.shift(); W.traps.push({ kind: kind, state: 'fly', t: 0, x0: p.x + Math.cos(fa) * 8, y0: p.y + Math.sin(fa) * 8, x1: x, y1: y, x: p.x, y: p.y, z: 0, arm: runeN('pinningShot', 'arm') || 3 }); runeUse('pinningShot'); sfx('trap_throw', 0.6, p); } };   /* the trap leaves the hand at the throw clip's loose; taken from the bag on the press */
 }
 function throwAxe() {                      /* the Throwing axe (Robin's trial of 2026-10-24): the axe in hand flies spinning to what it strikes and comes back */
   var p = P, fa = rangedAngle(), ti = itemOf('tool', p.tool), tl = TOOLS[p.tool], pw = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
   p.st = Math.max(0, p.st - THROW.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.face = fa; p.faceVis = fa; p.fireT = 0.2; p.axeAim = false;
-  W.axe = { x: p.x + Math.cos(fa) * 10, y: p.y + Math.sin(fa) * 10, x0: p.x, y0: p.y, ang: fa, spin: 0, t: 0, phase: 'out', range: runeN('thorsFell', 'range') || 180, pw: pw, it: ti }; runeUse('thorsFell'); sfx('axe_throw', 0.8, p);
+  p.throwT = THROW.clip; p.throwQ = { t: THROW.loose, fn: function () { var fb = p.face; W.axe = { x: p.x + Math.cos(fb) * 10, y: p.y + Math.sin(fb) * 10, x0: p.x, y0: p.y, ang: fb, spin: 0, t: 0, phase: 'out', range: runeN('thorsFell', 'range') || 180, pw: pw, it: ti }; runeUse('thorsFell'); sfx('axe_throw', 0.8, p); } };   /* the axe leaves the hand at the throw clip's loose */
 }
 function axeTick(dt) {
   var ax = W.axe, p = P; if (!ax) return; ax.t += dt; ax.spin += dt * 24;
@@ -840,7 +840,8 @@ function updatePlayer(dt) {
   }
   var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
   if ((p.axeCd || 0) > 0) p.axeCd -= dt; if ((p.trapCd || 0) > 0 && !p.trapAim) p.trapCd -= dt;
-  p.axeAim = axeThrowOn() && !W.axe && (p.axeCd || 0) <= 0 && (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none';   /* the Throwing axe readied */
+  if (p.throwT > 0) p.throwT -= dt; if (p.throwQ) { p.throwQ.t -= dt; if (p.throwQ.t <= 0 || p.dead) { var tq = p.throwQ; p.throwQ = null; if (!p.dead) tq.fn(); } }   /* a throw in the hand: the thing goes at the loose */
+  p.axeAim = axeThrowOn() && !W.axe && !p.throwQ && (p.axeCd || 0) <= 0 && (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none';   /* the Throwing axe readied */
   if (p.axeAim && (IN.pressed.lmb || IN.pressed.KeyJ) && p.st >= THROW.st) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; p.atkBuf = 0; throwAxe(); }
   var hb = p.mode === 'gather' && modZ('heavyblow') > 0;
   if (hb) {                                     // the heavy blow rune: hold to wind up, let go to land one blow worth three
@@ -850,7 +851,7 @@ function updatePlayer(dt) {
   p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt); if (p.cryT > 0) { p.cryT = Math.max(0, p.cryT - dt); if (p.cryDue && p.cryT <= CRY_T - CRY_AT) { p.cryDue = false; warCryOut(p); } }
   var gbRune = rune('guardBlow'), shoving = CROWD.shove > 0 && !!gbRune && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the guard-blow: the blow with the guard held, what the bound rune makes of it (the Bash, the Charge: CROWD, Runes2, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : gbRune === 'warCry' ? crowdWarCry(p) : gbRune === 'riposte' ? crowdRiposte(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
-  if (!shoving && !p.axeAim && !W.axe && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -869,7 +870,7 @@ function updatePlayer(dt) {
 
   p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
   var bow = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && !(p.throwT > 0) && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
   if (IN.pressed.Space) p.dashBuf = 0.18;
   // B enters and leaves build mode; Q swaps fight and gather (and leaves build mode for fight)
   if (IN.pressed.KeyB) { if (p.mode === 'build') p.mode = p.lastMode || 'fight'; else { p.lastMode = p.mode; p.mode = 'build'; } p.wreck = false; a.ph = 'none'; a.since = 9; a.tr = null; p.atkBuf = 0; p.holdT = 0; p.guard = false; W.lock = null; sfx('tele'); }
@@ -1026,7 +1027,7 @@ function updatePlayer(dt) {
 
   // the Trapper (Robin's trial of 2026-10-24): the bow in hand and no draw on, the left button held aims a trap at the mouse (the wheel picks it); let go, it is thrown
   var trapping = bow && rune('shot') === 'pinningShot' && p.mode === 'fight';
-  if (trapping && !p.trapAim && (IN.pressed.lmb || IN.pressed.KeyJ) && !(p.bowDraw > 0) && p.fireCd <= 0 && (p.trapCd || 0) <= 0 && p.st >= TRAP.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none') { p.trapAim = { t: 0, sel: 0, x: p.x, y: p.y }; IN.pressed.lmb = false; IN.pressed.KeyJ = false; }
+  if (trapping && !p.trapAim && !p.throwQ && (IN.pressed.lmb || IN.pressed.KeyJ) && !(p.bowDraw > 0) && p.fireCd <= 0 && (p.trapCd || 0) <= 0 && p.st >= TRAP.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none') { p.trapAim = { t: 0, sel: 0, x: p.x, y: p.y }; IN.pressed.lmb = false; IN.pressed.KeyJ = false; }
   if (p.trapAim) { p.trapAim.t += dt; var ttx, tty; if (S.ranged === 'mouse') { ttx = IN.mx; tty = IN.my / K; } else { var tra = rangedAngle(); ttx = p.x + Math.cos(tra) * TRAP.range * 0.7; tty = p.y + Math.sin(tra) * TRAP.range * 0.7; }
     var tdx = ttx - p.x, tdy = tty - p.y, tdd = Math.hypot(tdx, tdy), tkk = Math.min(1, TRAP.range / Math.max(1, tdd)); p.trapAim.x = p.x + tdx * tkk; p.trapAim.y = p.y + tdy * tkk; p.trapAim.far = tdd > TRAP.range;
     if (!trapping || p.hurtT > 0 || p.roll.t > 0 || p.dead) p.trapAim = null;
@@ -1058,7 +1059,7 @@ function updatePlayer(dt) {
   }
   if (p.guard) spd *= sprint ? 0.55 : (runeHas('sureFoot') && runeN('sureFoot', 'guardWalk') ? 1 : HERO_GAIT.guard / HERO_GAIT.walk);
   if (p.sneak && !sprint) spd *= sneakSpeed();   /* sneaking: half the pace, Cat's tread four fifths (Robin, 2026-10-24) */
-  if (p.bowDraw > 0 || p.trapAim || p.axeAim) spd *= HERO_GAIT.guard / HERO_GAIT.walk;   /* aiming, he walks slowly, at the guard walk's pace (Robin, 2026-10-24: the body stood still while he moved at full speed) */   /* the Sure-foot II: the guard walk at a walk's pace */   // the guard walk at its own pace (46.2, the clip's), whatever the walk; with a sprint as before
+  if (p.bowDraw > 0 || p.trapAim || p.axeAim || p.throwT > 0) spd *= HERO_GAIT.guard / HERO_GAIT.walk;   /* aiming, he walks slowly, at the guard walk's pace (Robin, 2026-10-24: the body stood still while he moved at full speed) */   /* the Sure-foot II: the guard walk at a walk's pace */   // the guard walk at its own pace (46.2, the clip's), whatever the walk; with a sprint as before
   /* (2026-10-15, Robin: attacking on and moving at once, the legs did not move and he glided: the sheets' slash is the whole body, so a
      walk under it cannot be shown. Now the blow is a commitment: a shuffle in the windup, no walking in the blow itself (its step is
      the lunge), little in the first half of the recovery, and moving in the second half ends the recovery (the walk shows at once);
