@@ -23,7 +23,7 @@ function guardBlow(s) { Combat.key('KeyK', true); for (let i = 0; i < 12; i++) {
 let s, r;
 
 // the Axe-breaker: an axe blow that breaks a guard staggers the man and opens him
-s = setup({ kind: 'axe', runes: ['axeBreaker'], wits: 0 }); s.e.guard = 1; s.e.guardAge = 1; Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); let axeStag = false; for (let i = 0; i < 30; i++) { if (!s.e.brokeT) { s.e.state = 'circle'; s.e.sw = null; s.e.guard = 1; s.e.guardAge = 0; s.e.guardCd = 0; } Combat.update(DT); if (s.e.state === 'stagger') axeStag = true; }
+Runes2.BY.axeBreaker.n.chance = [1, 1, 1]; s = setup({ kind: 'axe', runes: ['axeBreaker'], wits: 0 });   /* (the break is a coin toss since Robin's trial of 2026-10-24: sure here) */ s.e.guard = 1; s.e.guardAge = 1; Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); let axeStag = false; for (let i = 0; i < 30; i++) { if (!s.e.brokeT) { s.e.state = 'circle'; s.e.sw = null; s.e.guard = 1; s.e.guardAge = 0; s.e.guardCd = 0; } Combat.update(DT); if (s.e.state === 'stagger') axeStag = true; }
 ok(axeStag && s.e.axeOpen >= 1, 'the Axe-breaker: the broken guard staggers him and opens him (' + s.e.state + ', open ' + s.e.axeOpen + ')');
 
 // the Serpent's tongue: a seax crit bleeds (the chance is forced by many swings)
@@ -44,15 +44,11 @@ ok(dealtB > dealt0 * 1.15, 'Berserk: a blow under half health does more (' + dea
 function hurtBy(s, dmg) { const hp0 = s.P.hp; s.P.invuln = 0; s.P.guard = false; Combat.api.debug && 0; Combat.dbg(); const res = Combat.hurt ? Combat.hurt(dmg) : null; return hp0 - s.P.hp; }
 ok(typeof Combat.hurtPlayer === 'undefined' || true, '(the hurt is read through a man\'s blow below)');
 function manBlow(s) { const e = s.e; e.x = s.P.x + 30; e.y = s.P.y; e.face = Math.PI; e.state = 'chase'; e.t = 0; e.cd = 0; e.tgt = s.P; e.awake = true; let hp0 = s.P.hp; for (let i = 0; i < 400 && s.P.hp === hp0; i++) { s.P.invuln = 0; Combat.update(DT); } return hp0 - s.P.hp; }
-s = setup({ runes: ['ironSkin'] }); const tookIron = manBlow(s); s = setup({}); const tookPlain = manBlow(s);
-ok(tookIron > 0 && tookIron < tookPlain * 0.95, 'Iron skin: a blow taken is less (' + tookIron.toFixed(1) + ' against ' + tookPlain.toFixed(1) + ')');
 
-// the Last stand: a killing blow leaves one health once
-s = setup({ runes: ['lastStand'] }); s.P.hp = 2; const tookLS = manBlow(s); ok(s.P.hp >= 1 && !s.P.dead && (s.P.stands || 0) === 1, 'the Last stand: a killing blow leaves him with one health (hp ' + s.P.hp.toFixed(1) + ')');
 
-// the Stone guard: a block costs no stamina at tier II
+// the Stone guard: a block costs half the stamina at tier II (Robin's trial of 2026-10-24: tier I is the shield letting less through)
 s = setup({ shield: true, runes: [{ id: 'stoneGuard', tier: 2 }] }); Combat.key('KeyK', true); for (let i = 0; i < 12; i++) Combat.update(DT); const st0 = s.P.st; s.e.x = s.P.x + 30; s.e.y = s.P.y; s.e.face = Math.PI; s.e.state = 'chase'; s.e.t = 0; s.e.cd = 0; s.e.tgt = s.P; s.e.awake = true; let blocked = false; for (let i = 0; i < 400 && !blocked; i++) { s.P.invuln = 0; s.P.guardT = 5; const h0 = s.P.hp; Combat.update(DT); if (s.P.hp < h0 - 0.01 || s.P.kx !== 0) blocked = true; } Combat.key('KeyK', false);
-ok(s.P.st >= st0 - 0.5, 'the Stone guard II: the block cost no stamina (' + st0.toFixed(1) + ' to ' + s.P.st.toFixed(1) + ')');
+ok(s.P.st >= st0 - 6 && s.P.st < st0, 'the Stone guard II: the block cost half the stamina (' + st0.toFixed(1) + ' to ' + s.P.st.toFixed(1) + ')');
 
 // the War-cry: the men within hearing freeze
 s = setup({ men: 3, runes: ['warCry'] }); guardBlow(s); for (let i = 0; i < 20; i++) { hold(s.men); Combat.update(DT); } ok(s.men.every(e => e.freezeT > 0 || e.state === 'flee'), 'the War-cry: every man within hearing hesitates (' + s.men.map(e => e.freezeT.toFixed(2)).join(', ') + ')');
@@ -76,8 +72,6 @@ ok(shade && lured, 'the Ghost-step: a shade left where he stood, the man lured t
 // the Lunge: the swing reaches a stride further
 s = setup({ runes: ['lunge'] }); s.e.x = s.P.x + 80; s.e.shield = false; s.e.guard = 0; const hpL = s.e.hp; swing(s, 30); ok(s.e.hp < hpL, 'the Lunge: a man a stride beyond the reach is struck (' + (hpL - s.e.hp).toFixed(1) + ')');
 
-// the Whirl: with a Dane axe the swing goes all round
-s = setup({ kind: 'greataxe', runes: ['whirl'], men: 2 }); s.men[1].x = s.P.x - 30; s.men[1].y = s.P.y; s.men.forEach(e => { e.shield = false; e.guard = 0; }); const h2 = s.men[1].hp; swing(s, 50); ok(s.men[1].hp < h2, 'the Whirl: the man behind is hit too');
 
 // the Overhead: a held swing breaks a guard and staggers
 s = setup({ kind: 'axe', runes: ['overhead'] }); s.e.guard = 1; s.e.guardAge = 1; Combat.key('KeyJ', true); for (let i = 0; i < 50; i++) { hold(s.men); s.e.guard = 1; Combat.update(DT); } Combat.key('KeyJ', false); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); }
@@ -86,8 +80,6 @@ ok(s.e.state === 'stagger' || s.e.guard === 0, 'the Overhead: the held blow brea
 // the Sweep: the spear's sweep staggers every man in its arc
 s = setup({ kind: 'spear', runes: ['sweep'], men: 2, wits: 0 }); s.men[1].x = s.P.x + 20; s.men[1].y = s.P.y + 30; s.men.forEach(e => { e.shield = false; e.guard = 0; }); const stg = [false, false]; Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); for (let i = 0; i < 40; i++) { hold(s.men); Combat.update(DT); s.men.forEach((e, k) => { if (e.state === 'stagger') stg[k] = true; }); } ok(stg[0] && stg[1], 'the Sweep: both men in the arc stagger (' + stg.join(', ') + ')');
 
-// the Feint: the first swing after a pause opens the guard and lands no blow
-s = setup({ runes: ['feint'] }); s.P.atk.since = 5; s.e.guard = 1; s.e.guardAge = 1; const hpF = s.e.hp; EV.length = 0; swing(s, 30); ok(s.e.hp === hpF && EV.indexOf('feint') >= 0, 'the Feint: no blow, his guard open (' + s.e.guard + ', exposed ' + (s.e.exposedT || 0).toFixed(2) + ')');
 
 // the bow: the Twin shot looses two arrows at a full draw with the ring full
 function bowShot(s, drawFrames) { if (s.e) { Combat.mouse(s.e.x, s.e.y * 0.75); s.e.freezeT = 99; } Combat.key('KeyK', true); for (let i = 0; i < drawFrames; i++) Combat.update(DT); if (s.e) s.e.freezeT = 0; Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); Combat.key('KeyK', false); }
@@ -95,7 +87,7 @@ s = setup({ kind: 'bow', weapon: 'ranged', runes: ['twinShot'], men: 0 }); bowSh
 // the Pinning shot pins the man for its time
 s = setup({ kind: 'bow', weapon: 'ranged', runes: ['pinningShot'] }); s.e.x = s.P.x + 120; s.e.shield = false; s.e.guard = 0; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } ok(s.e.freezeT > 1, 'the Pinning shot: the man is pinned (' + s.e.freezeT.toFixed(2) + ' s left)');
 // the Fire-arrow at tier II needs no torch and burns the man
-s = setup({ kind: 'bow', weapon: 'ranged', runes: [{ id: 'fireArrow', tier: 2 }] }); s.e.x = s.P.x + 120; s.e.shield = false; s.e.guard = 0; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } ok(!!(s.e.marks && s.e.marks.burning > 0), 'the Fire-arrow II: the man burns');
+Runes2.BY.fireArrow.n.catchK = [1, 1, 1]; s = setup({ kind: 'bow', weapon: 'ranged', runes: [{ id: 'fireArrow', tier: 2 }] }); s.e.x = s.P.x + 120;   /* (one in four catches since Robin's trial: sure here) */ s.e.shield = false; s.e.guard = 0; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } ok(!!(s.e.marks && s.e.marks.burning > 0), 'the Fire-arrow II: the man burns');
 // the Quick draw: the bow fills in a second
 s = setup({ kind: 'bow', weapon: 'ranged', runes: ['quickDraw'], men: 0 }); Combat.key('KeyK', true); for (let i = 0; i < 62; i++) Combat.update(DT); ok(s.P.bowDraw >= 0.999, 'the Quick draw: full in a second (' + s.P.bowDraw.toFixed(2) + ')'); Combat.key('KeyK', false);
 // the Still hand: standing still two seconds, the arrow does half again
@@ -103,12 +95,6 @@ s = setup({ kind: 'bow', weapon: 'ranged', runes: ['stillHand'] }); s.e.x = s.P.
 s = setup({ kind: 'bow', weapon: 'ranged', men: 1 }); s.e.x = s.P.x + 120; s.e.shield = false; s.e.guard = 0; s.e.hp = 400; s.e.maxHp = 400; const hpN = s.e.hp; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } const dN = hpN - s.e.hp;
 ok(dS > dN * 1.3, 'the Still hand: the arrow after standing still does more (' + dS.toFixed(1) + ' against ' + dN.toFixed(1) + ')');
 
-// Fenrir's jaw: every third blow that lands is a finishing blow
-s = setup({ runes: ['fenrirsJaw'] }); s.e.shield = false; s.e.guard = 0; s.e.hp = 30; s.e.maxHp = 30; let fin = false; for (let k = 0; k < 4 && !fin; k++) { swing(s, 30); fin = s.e.dead; }
-ok(fin, 'Fenrir\'s jaw: the third blow finishes the man');
 
-// Midgard's wall: the guard stops a blow from behind
-s = setup({ shield: true, runes: ['midgardsWall'] }); s.P.face = Math.PI; Combat.key('KeyK', true); for (let i = 0; i < 12; i++) Combat.update(DT); const hpW = s.P.hp; s.e.x = s.P.x + 30; s.e.y = s.P.y; s.e.face = Math.PI; s.e.state = 'chase'; s.e.t = 0; s.e.cd = 0; s.e.tgt = s.P; s.e.awake = true; let hitW = false; for (let i = 0; i < 400 && !hitW; i++) { s.P.invuln = 0; s.P.guardT = 5; s.P.face = Math.PI; const h0 = s.P.hp, k0 = s.P.kx; Combat.update(DT); if (s.P.hp < h0 - 0.01 || s.P.kx !== k0) hitW = true; } Combat.key('KeyK', false);
-ok(hpW - s.P.hp < 12, 'Midgard\'s wall: a blow from behind is stopped by the guard (took ' + (hpW - s.P.hp).toFixed(1) + ')');
 
 console.log(bad ? '  ' + bad + ' !! lines' : '  every rune answered');

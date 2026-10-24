@@ -352,7 +352,7 @@ __COMBAT__
   }
   function duckTick(dt) { var want = ceremony && riteMusicPick === 'none' ? 0 : 1; if (musicDuck === want) return; musicDuck += (want - musicDuck) * Math.min(1, dt * (want < musicDuck ? 1.4 : 0.35)); if (Math.abs(musicDuck - want) < 0.01) musicDuck = want; if (musicOn) Music.setVolume(OPTS.music * musicDuck); }   /* the music goes silent through the rite: only the place's sound, the rain and the thunder (Robin, 2026-10-23) */
   function musicTick(dt) {
-    omenTick(dt); duckTick(dt); burnLoopTick(dt); fireArrowsTick(dt); if (!musicOn) return;
+    omenTick(dt); duckTick(dt); burnLoopTick(dt); fireArrowsTick(dt); var Pm = hero(); if (sugarT > 0) { sugarT -= dt; if (Pm.hurtT > 0 || swim.on || Pm.dead) sugarT = 0; } if (fever.t > 0) { fever.t -= dt; if (fever.t <= 0) fever.n = 0; } if (!musicOn) return;
     var want = riteTheme() || (isEvening() ? eveTheme() : dayTheme());   // the song follows the clock: the evening theme from dusk to dawn; the rite's piece through the rite
     if (want !== musicSong) {             // dusk or dawn: two recorded loops crossfade over seven seconds; a song is stopped and the other started
       var fl = fileOf(want), was = musicSong, fdT = /^rite/.test(want) ? 2 : /^rite/.test(was || '') ? 4 : 7;
@@ -3231,7 +3231,7 @@ __COMBAT__
     yieldDrop('fiber', o.x, o.y + 10, BUSH_FIBER); chip(o.x, o.y, 6, '#8a9a4a', 7, 60); sfx('pick');
     removeProp(o); decals.push({ k: 'grass', x: o.x, y: o.y, name: o.name, s: o.s, v: o.v, day: day.n });
   }
-  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, Math.round(BERRIES * (runeHas('greenThumb') ? runeN('greenThumb', 'yield') || 1 : 1))); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360 * (runeHas('greenThumb') ? runeN('greenThumb', 'regrowK') || 1 : 1); sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
+  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360 * (runeHas('greenThumb') ? runeN('greenThumb', 'regrowK') || 1 : 1); if (runeHas('greenThumb')) { sugarT = runeN('greenThumb', 'last') || 120; note('Sugar rush'); } sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
   /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
      A point of interest found by exploring: four huts round a green with a well, a woodpile, a haystack and a fence,
@@ -5328,7 +5328,8 @@ __COMBAT__
       if (o.vein) { veinHit(o, power); return { dealt: power }; }
       var P = hero(), s = o.kind === 'trunk' ? null : sprite(o.name, o.v);
       if (o.cave) caveHear(o);
-      var r = Gather.hit(GT, o, { power: power, right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: gatherEv });
+      var isTree = o.kind === 'tree' || o.kind === 'trunk'; if (isTree && gatherEv.treeHit) gatherEv.treeHit();
+      var r = Gather.hit(GT, o, { power: power * (isTree && fever.n > 0 ? 1 + fever.n * (runeN('quickHands', 'stack') || 0.02) : 1), right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: gatherEv });   /* (the Woodcutter's fever: each stack more on a tree) */
       if (busy.indexOf(o) < 0) busy.push(o);
       if (o.hp <= 0 && o.dying != null && o.kind !== 'trunk') {
         if (o.kind === 'tree') sfx('treefall');   /* (a recorded fall, if one is picked, is played from the felling blow: 2026-10-20) */
@@ -5340,12 +5341,13 @@ __COMBAT__
       return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };   // the engine shows the number: gold for the sweet spot, large for a clean hit
     }
   };
-  Combat.api.gatherPace = function () { return GT.pace * (runeHas('quickHands') ? runeN('quickHands', 'pace') || 1 : 1); };   /* the Quick hands: a tool swings faster */
+  Combat.api.gatherPace = function () { return GT.pace; };
+  var sugarT = 0, fever = { n: 0, t: 0 };   /* Sugar rush (the berries' pace, lost to a blow, the water or a fall) and the Woodcutter's fever (a stack a blow on a tree), Robin's reworks of 2026-10-24 */
   // what gathering does to the world: chips, drops, stumps, trunks, the chain, the fall on the hero, bees
   var gatherEv = {
     fellRuneLogs: function (o) { return runeHas('woodwright') && runeN('woodwright', 'noTrunk') ? true : false; },   /* the Woodwright II: a felled tree drops its logs with no chopping */
     log: function (tree, x, y, n, dir) { if (!World.IMAGES[tree + '_log']) { gatherEv.drop('wood', x, y, n); return; } var nn = Math.max(1, Math.round(n * yieldK())); drops.push({ kind: 'log', tree: tree, n: nn, x: x, y: y, z: 10, vx: dir * (40 + Math.random() * 30), vy: (Math.random() - 0.5) * 24, vz: 70 + Math.random() * 40, t: 0, spin: (Math.random() - 0.5) * 0.5 }); if (Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); },   /* a log rolls out of the trunk as the studio's log picture (2026-10-20) and gives its wood when walked over */
-    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < (runeHas('quickHands') && runeN('quickHands', 'fibre') ? 1 : 0.3)) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
+    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < (runeHas('quickHands') && runeN('quickHands', 'fibre') ? 1 : 0.3)) yieldDrop('fiber', x + 8, y + 3, 1); }, treeHit: function () { if (runeHas('quickHands')) { fever.n = Math.min(runeN('quickHands', 'max') || 50, fever.n + 1); fever.t = runeN('quickHands', 'last') || 20; } }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
     decal: function (d) { d.day = day.n; decals.push(d); },
     spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; if (runeHas('woodwright')) o.logs = Math.max(o.logs, runeN('woodwright', 'logs') || o.logs); trunks.push(o); },   /* the Woodwright: a fifth log */
     fell: function (q) { if (busy.indexOf(q) < 0) busy.push(q); },
@@ -5399,8 +5401,8 @@ __COMBAT__
   function deed(kind, n) { }   /* (the old runes' deeds: counted no more since the rework of 2026-10-23; the calls stay as marks of what the hero does) */
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
-    var carryK = carrying ? (runeHas('heavyBack') ? runeN('heavyBack', 'carryK') : runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
-    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: runeHas('windFoot') ? runeN('windFoot', 'sprintK') : 1, speed: carryK * (runeHas('windFoot') ? runeN('windFoot', 'speed') : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
+    var carryK = carrying ? (runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
+    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: 1, speed: carryK * (sugarT > 0 ? runeN('greenThumb', 'speed') || 1.1 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
       stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: 0, charge: 0, roll: 0, heavyblow: 0 };   /* (the runes' own switches live in the engine now, Runes2: these are the page's buffs) */
   };
   Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
@@ -5530,7 +5532,7 @@ __COMBAT__
   function runeTick() {
     var bz = berserkNow(); if (bz && !wasBerserk) { sfx('berserk_roar'); note('Berserk'); } wasBerserk = bz;   /* the roar as Berserk wakes */                     // what the page reads from the runes each frame (Runes2): the stack's size (the Strong back), the sea's numbers (the Following wind, the Long oar)
     STACK = runeHas('strongBack') ? runeN('strongBack', 'stack') || 25 : 25;
-    var X = Yard.extra; X.sailK = runeHas('followingWind') ? runeN('followingWind', 'sailK') : 1; X.oarK = runeHas('longOar') ? runeN('longOar', 'oarK') : 1; X.turnK = runeHas('longOar') && runeN('longOar', 'turn') ? 2.2 : 1; X.abeam = runeHas('followingWind') ? runeN('followingWind', 'abeam') : 0; X.never = runeHas('followingWind') ? runeN('followingWind', 'never') : 0;
+    var X = Yard.extra; X.sailK = runeHas('followingWind') ? runeN('followingWind', 'sailK') : 1; X.oarK = 1; X.turnK = 1; X.abeam = runeHas('followingWind') ? runeN('followingWind', 'abeam') : 0; X.never = runeHas('followingWind') ? runeN('followingWind', 'never') : 0;
   }
   Combat.api.torchLit = function () { return !!torchOn; };
   Combat.api.arrowSurface = function (x, y) {   /* what an arrow stopped on: stone (a rock, a stone or cut-stone wall, the altar, a cave's wall) or wood and earth; stone it drops from, the rest it sticks in (2026-10-24) */
