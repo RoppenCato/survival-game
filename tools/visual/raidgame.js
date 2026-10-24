@@ -5,7 +5,7 @@
 (function () {
   function D() { return Combat.api.debug(); }
   function W() { return Combat.dbg().W; }
-  function town() { var vs = D().villages(), L = Array.isArray(vs) ? vs : vs.list, i; for (i = 0; i < L.length; i++) if (L[i].arch === 'town' && L[i].ring >= 1) return { i: i, v: L[i] }; return null; }
+  function town() { var vs = D().villages(), L = Array.isArray(vs) ? vs : vs.list, i, k, ORDER = ['town', 'seat', 'village', 'trading']; for (k = 0; k < ORDER.length; k++) for (i = 0; i < L.length; i++) if (L[i].arch === ORDER[k] && L[i].ring >= 1) return { i: i, v: L[i] }; return null; }   /* (a town grows only on a lowland island, not spawned in this scope: the far seat, then a far village, 2026-10-24) */
   function men(vi) { return W().enemies.filter(function (e) { return e.type === 'soldier' && e.side === 0 && e.vi === vi && e.gi != null; }); }
   function sim(s) { H2.sim(Math.round(s * 60), D().tick); H2.step(1); }
   // Step 1: the settlement's men come as the hero comes near, stand on land at their posts with the same names each visit, a man
@@ -67,7 +67,7 @@
     d.giveBoat('karve', { x: 200, y: 200 }); var r = d.raftObj(); r.x = sh.sea.x; r.y = sh.sea.y; r.h = sh.h; r.vx = r.vy = 0; r.aboard = false; r.cargo = [];
     d.goto(sh.land.x, sh.land.y); d.giveMen(4); out.hird1 = d.hirdList().length; sim(1);   // at the ship's side, the men at your back
     d.raftUse(); sim(0.5); out.aboard = d.hirdList().filter(function (m) { return m.aboard; }).length; out.raftAboard = r.aboard;   // E at the ship: aboard with the men at the oars
-    d.raftUse(); sim(1); out.ashoreMen = own().length; out.asMan = d.hirdList().filter(function (m) { return m.asMan; }).length;   // E again: ashore on the raid as the engine's men
+    d.raftUse(); sim(2); out.ashoreMen = own().length;   /* (four men file off one every 0.35 s: two seconds, 2026-10-24) */ out.asMan = d.hirdList().filter(function (m) { return m.asMan; }).length;   // E again: ashore on the raid as the engine's men
     var B = d.B, chest = B.items.filter(function (it) { return it.heavy && it.heavy.silver; })[0]; out.silver = chest ? chest.heavy.silver : null;
     if (chest) { delete chest.locked; d.goto(chest.x + 6, chest.y + 10); sim(0.3); d.raid().lift(chest); sim(0.3); out.carrying = !!d.raid().carrying; d.goto(sh.land.x, sh.land.y); sim(0.3); d.raid().stow(); sim(0.3); out.cargo = (r.cargo || []).length; }
     var ms = own(); var left = ms[ms.length - 1]; left.x = sh.dry.x + 900; left.y = sh.dry.y; left.order = 'hold'; left.holdAt = { x: left.x, y: left.y };   // one man far from the ship when it sails
@@ -75,7 +75,7 @@
     d.raftUse(); sim(0.5); out.aboard2 = d.hirdList().filter(function (m) { return m.aboard; }).length; out.stillAshore = own().length;
     r.x = sh.sea.x + 3000; r.y = sh.sea.y; P.x = r.x; P.y = r.y; sim(5); out.lost = d.hirdList().filter(function (m) { return m.lost; }).map(function (m) { return m.name; });   // the ship far off: he is lost
     r.aboard = true; r.x = homeSea.x; r.y = homeSea.y; P.x = r.x; P.y = r.y;                                                             // home: the karve at the steading's shore, within the first stone's reach
-    d.raftUse(); sim(0.5); out.homeHird = d.hirdList().filter(function (m) { return !m.aboard && !m.asMan && !m.lost; }).length; out.homeMen = own().length;
+    d.raftUse(); sim(2); out.homeHird = d.hirdList().filter(function (m) { return !m.aboard && !m.asMan && !m.lost; }).length; out.homeMen = own().length;
     out.silverBefore = d.inv.silver || 0; d.raid().unload(); out.silverAfter = d.inv.silver || 0;
     d.saveNow(); out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
     out.fault = out.aboard !== 4 || out.ashoreMen !== 4 || (out.silver != null && out.cargo !== 1) || out.lost.length !== 1 || out.homeHird !== 4 || out.homeMen !== 0 || (out.silver != null && out.silverAfter <= out.silverBefore) ? '!!' : '';   // (Arnor stays at his bench: four given men board)
@@ -98,7 +98,7 @@
     sim(45); d.toVillage(vi); sim(0.3); var body = ms.filter(function (e) { return e.dead && !e.held; })[0]; if (body) { d.goto(body.x + 10, body.y); out.prompt = d.eWhat() && d.eWhat().say; d.dragBody(body); d.goto(body.x + 300, body.y + 40); sim(0.5); out.dragged = Math.round(Math.hypot(body.x - P.x, body.y - P.y)); d.putDown(); sim(0.3); out.laid = [!body.held, Math.round(Math.hypot(body.x - P.x, body.y - P.y))]; }
     // theft in plain sight: a chest of theirs with a villager before it
     var chest = d.B.items.filter(function (it) { return it.store && !it.heavy && d.villages && true && Math.abs(it.x - c.x) < 1500 && Math.abs(it.y - c.y) < 1500; })[0];
-    if (chest) { var fk = d.folk().filter(function (f) { return f.vi === vi && !f.dead && !f.hidden; })[0]; if (fk) { fk.x = chest.x + 40; fk.y = chest.y + 10; fk.face = Math.PI; fk.hidden = false; fk.fleeing = false; } var lv0 = d.raid().raid ? d.raid().raid.lvl : 0; d.goto(chest.x, chest.y + 12); sim(0.3); d.theft(chest); sim(0.5); out.theft = { before: lv0, after: d.raid().raid ? d.raid().raid.lvl : 0, cry: fk && fk.say }; }
+    if (chest) { var fk = d.folk().filter(function (f) { return f.vi === vi && !f.dead && !f.hidden; })[0]; if (fk) { fk.x = chest.x; fk.y = chest.y + 18; fk.face = -Math.PI / 2;   /* (beside the chest: 40 units east was through the house's wall at the far seat, 2026-10-24) */ fk.hidden = false; fk.fleeing = false; } var lv0 = d.raid().raid ? d.raid().raid.lvl : 0; d.goto(chest.x, chest.y + 12); sim(0.3); d.theft(chest); sim(0.5); out.theft = { before: lv0, after: d.raid().raid ? d.raid().raid.lvl : 0, cry: fk && fk.say }; }
     out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
     out.fault = !out.dayWatch.length || !out.onRound || !out.found.after || out.found.raid < 2 || (out.dragged != null && out.dragged > 30) || (out.theft && out.theft.after < 2) ? '!!' : '';
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
@@ -146,9 +146,9 @@
     try {
     d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(400); d.clearMen(); var c = d.toVillage(t.i); sim(3); var vi = t.i;
     // a man of yours lost here: he stands bound and is won back
-    d.giveMen(1); var hl = d.hirdList(); var mName = hl[hl.length - 1].name; var W2 = W(); var em = W2.enemies.filter(function (e) { return e.side === 1 && e.hirdOf; })[0];
-    if (em) { em.x = c.x + 3000; var hm = em.hirdOf; hm.lost = { vi: vi, day: 1, x: em.x, y: em.y }; em.away = true; em.hirdOf = null; hm.asMan = null; }
-    d.goto(c.x + 4000, c.y); sim(46); d.toVillage(vi); sim(3.5);
+    d.giveMen(1); var hl = d.hirdList(); var mName = hl[hl.length - 1].name; var W2 = W(); var em = W2.enemies.filter(function (e) { return e.side === 1 && e.hirdOf && e.hirdOf.name === mName && !e.dead; })[0];   /* (the man just given: clearMen leaves the engine's men of earlier steps standing, 2026-10-24) */
+    if (em) { var vb = d.villages(), vv = (Array.isArray(vb) ? vb : vb.list)[vi]; em.x = (vv.tx + vv.w + 8) * 32; em.y = (vv.ty + vv.h / 2) * 32; d.hirdLost(em.hirdOf); }   /* (lost through the game's own hirdLost, a little outside the place, as on its beach: 2026-10-24) */
+    sim(1); if (!d.folk().some(function (f) { return f.bound; })) { d.goto(c.x + 4000, c.y); sim(46); d.toVillage(vi); sim(3.5); }
     var bound = d.folk().filter(function (f) { return f.bound; })[0]; out.bound = bound ? [bound.name, bound.name === mName] : null;
     if (bound) { d.goto(bound.x, bound.y + 12); sim(0.3); out.prompt = d.eWhat(); d.cutLoose(bound); sim(0.3); out.wonBack = d.hirdList().filter(function (m) { return m.name === mName && !m.lost; }).length; out.boundLeft = d.folk().filter(function (f) { return f.bound; }).length; }
     // a thrall cut loose
