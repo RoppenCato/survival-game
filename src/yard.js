@@ -55,7 +55,8 @@ var T = 32, TS = 24, K = 0.75;
   /* What a ship holds (mine): heavy things aboard (chests, sacks, the church's silver) by its size, twice with a Cargo hold; the sea
      chest's places, twice with Cargo. fitOf(v): its fitting's numbers, or none. */
   var HOLD = { rowboat: 1, karve4: 2, karve8: 3, karve: 4, longship16: 4, longship20: 5, longship: 6 }, NOFIT = {};
-  function fitOf(v) { return (v && FITTINGS[v.fit]) || NOFIT; }
+  var EXTRA = { sailK: 1, oarK: 1, turnK: 1, abeam: 0, never: 0 };   /* what the runes add to every ship of the hero's (the Following wind, the Long oar), set by the page each frame; Yard.extra */
+  function fitOf(v) { var f = (v && FITTINGS[v.fit]) || NOFIT; if (EXTRA.sailK === 1 && EXTRA.oarK === 1) return f; var o = {}; for (var k in f) o[k] = f[k]; o.sailK = (f.sailK || 1) * EXTRA.sailK; o.oarK = (f.oarK || 1) * EXTRA.oarK; return o; }
   function holdOf(v) { return (HOLD[v.kind] || 2) * (fitOf(v).heavyK || 1); }
   function chestK(v) { return fitOf(v).chestK || 1; }
   function heroSeat(v) {                   // where the hero is along the keel (the bow at +): alone on a rowing hull on the aft-most thwart at the oars; alone on a rigged hull at the steering oar; with any man aboard in the bow, looking ahead (Robin, 2026-10-21)
@@ -366,17 +367,17 @@ var T = 32, TS = 24, K = 0.75;
     v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   /* (the true fill: the speed's buff, and whether the oars rest) */
     v.sailSet = (v.sailSet || 0) + ((v.sail && (iy < 0 || (!H.steer && (ix || iy)) || Math.abs(v.speed) > 20) ? 1 : 0) - (v.sailSet || 0)) * Math.min(1, dt * 1.5);   /* (Robin, 2026-10-21: the sail furling whenever the wind was not behind read as random; now it is SET while she is driven and furled at rest, its belly by the wind) */   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
-    H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn, glide: H.glide, grip: H.grip };
+    H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn * EXTRA.turnK, glide: H.glide, grip: H.grip };
     if (!H.steer) {
       if (ix || iy) {
-        var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * dt;
+        var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * EXTRA.turnK * dt;
         var nh = Math.abs(diff) <= stepA ? target : v.h + (diff > 0 ? stepA : -stepA);
         if (stuck || free(v.x, v.y, nh)) v.h = nh;
         want = H.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
       }
     } else {
       want = iy < 0 ? (v.beached ? 0 : H.top) : (iy > 0 ? -H.top * 0.4 : 0);
-      var wayK = Math.max(0.28, Math.min(1, Math.abs(v.speed) / (H.top * 0.35))), nh2 = v.h + ix * H.turn * dt * wayK * (v.speed < -2 ? -1 : 1);   // (a little turn with no way on: the oars turn her)
+      var wayK = Math.max(0.28, Math.min(1, Math.abs(v.speed) / (H.top * 0.35))), nh2 = v.h + ix * H.turn * EXTRA.turnK * dt * wayK * (v.speed < -2 ? -1 : 1);   // (a little turn with no way on: the oars turn her)
       if (!v.beached) { if (stuck || free(v.x, v.y, nh2)) v.h = nh2; else if (ix && nudged(v, free, nh2)) v.h = nh2; }
       else if (ix && (free(v.x, v.y, nh2) || (beach && beach(v.x, v.y, nh2)))) v.h = nh2;   // beached, she pivots slowly on her bow where the sand lets her (never caught with sand at both ends)
     }
@@ -704,7 +705,7 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
 
-return { setModel: setModel, artOf: artOf, bigModel: bigModel, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, PARTS: ALL_PARTS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { setModel: setModel, artOf: artOf, bigModel: bigModel, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, HANDLING: HANDLING, WIND: WIND, sail: sail, extra: EXTRA, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, PARTS: ALL_PARTS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partOf: partOf, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();

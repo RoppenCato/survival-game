@@ -9046,74 +9046,74 @@ var LIST = [
   /* ---- the set of 2026-10-23 (Robin: about fifty runes across kinds, combat and playstyles first; the names and words are placeholders, LORE?, Alistair, LD's to give; the numbers mine, first settings;
      status 'data' means the rune exists in the library and the storm's offer but its working is not yet built: the browser (runes.html) lists what each wants of Colin, AD and Derek, SD) ---- */
   // combat: the weapons' own ways (hand and heart passives)
-  { id: 'axeBreaker', name: 'The Axe-breaker', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['An axe blow that breaks a guard staggers the man too.', 'The broken guard stays down twice as long.', 'A man whose guard you break takes the next blow double.'], n: { stag: [1, 1, 1], downK: [1, 2, 2], open: [1, 1, 2] }, wants: { sfx: ['guard_break'] } },
-  { id: 'serpentTongue', name: 'The Serpent’s tongue', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['The seax crits one blow in four, and a crit bleeds: three health a second for five seconds.', 'One in three.', 'A bleeding man who runs falls.'], n: { crit: [0.25, 0.34, 0.34], bleed: [3, 3, 4], fall: [0, 0, 1] }, lays: 'bleeding' },
-  { id: 'spearWall', name: 'The Spear-wall', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['A thrust that runs a man through hits the one behind him too.', 'A step back then a thrust is a pierce: no guard stops it.', 'The thrust reaches a stride further.'], n: { through: [1, 1, 1], pierce: [0, 1, 1], reach: [0, 0, 24] }, wants: { art: ['thrust_long: the spear thrust reaching a stride further'] } },
-  { id: 'ringOfSteel', name: 'The Ring of steel', kind: 'combat', slot: 'heart', pool: 'storm', status: 'data', text: ['With a sword the parry chain lasts six seconds, not four and a half.', 'The chain goes to five.', 'A chain of five is a finishing blow on any man.'], n: { chainT: [6, 6, 6], chainMax: [4, 5, 5], finish: [0, 0, 1] } },
-  { id: 'berserk', name: 'Berserk', kind: 'combat', slot: 'heart', pool: 'storm', status: 'data', text: ['Under half health your blows do a third more, and you take a fifth more.', 'Under half health you do half again more.', 'And stamina costs nothing under a quarter.'], n: { at: [0.5, 0.5, 0.5], dmg: [1.33, 1.5, 1.5], taken: [1.2, 1.2, 1.2], freeAt: [0, 0, 0.25] }, wants: { sfx: ['berserk_roar'], art: ['the red eyes and the bared teeth on the kit face while berserk'] } },
-  { id: 'oakArm', name: 'The Oak-arm', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['A club blow throws the man a step back.', 'Two steps, and he drops what he carries.', 'A thrown man who hits a wall is stunned.'], n: { kb: [60, 120, 120], drop: [0, 1, 1], wallStun: [0, 0, 1] } },
-  { id: 'twinBlow', name: 'The Twin blow', kind: 'combat', slot: 'hand', pool: 'storm', status: 'data', text: ['The Dane axe recovers in half the time after a kill.', 'After any blow that lands.', 'The second blow of a chain cannot be parried either.'], n: { recK: [0.5, 0.5, 0.5], onAny: [0, 1, 1], noParry2: [0, 0, 1] } },
-  { id: 'lastStand', name: 'The Last stand', kind: 'combat', slot: 'heart', pool: 'world', status: 'data', source: 'the first time you fall', text: ['A blow that would kill you leaves you with one health, once a fight.', 'And gives you a breath of untouchable time.', 'Twice a fight.'], n: { times: [1, 1, 2], invuln: [0, 0.8, 0.8] }, wants: { sfx: ['last_stand'] } },
-  { id: 'ironSkin', name: 'Iron skin', kind: 'combat', slot: 'heart', pool: 'storm', status: 'data', text: ['A tenth of every blow turns aside.', 'A sixth.', 'A fifth, and arrows a third.'], n: { armor: [0.1, 0.16, 0.2], arrow: [0, 0, 0.33] } },
-  { id: 'stoneGuard', name: 'The Stone guard', kind: 'combat', slot: 'heart', pool: 'storm', status: 'data', text: ['A block costs half the stamina.', 'A block costs nothing.', 'A heavy blow on your shield no longer breaks the guard.'], n: { stK: [0.5, 0, 0], noBreak: [0, 0, 1] } },
-  { id: 'riposte', name: 'The Riposte', kind: 'combat', slot: 'guardBlow', pool: 'storm', status: 'data', text: ['The guard-blow in the moment after a parry is an instant strike that cannot be blocked.', 'It does half again.', 'And staggers.'], n: { need: [2, 2, 2], window: [0.6, 0.6, 0.8], dmg: [1, 1.5, 1.5], stag: [0, 0, 1] }, wants: { art: ['riposte: a short flicking blow from the guard, one-handed and with the shield'], sfx: ['riposte'] } },
-  { id: 'warCry', name: 'The War-cry', kind: 'raiding', slot: 'guardBlow', pool: 'storm', status: 'data', text: ['A shout: every foe within hearing hesitates a second, every man of yours holds his line.', 'Two seconds, and the frightened run.', 'Your men’s next blows are heavy.'], n: { need: [4, 4, 3], hesitate: [1, 2, 2], run: [0, 1, 1], heavy: [0, 0, 1] }, wants: { art: ['war_cry: the hero throwing his head back, the weapon raised'], sfx: ['war_cry (the hero’s shout, three variations)'] } },
+  { id: 'axeBreaker', name: 'The Axe-breaker', kind: 'combat', slot: 'hand', pool: 'storm', status: 'built', text: ['An axe blow that breaks a guard staggers the man too.', 'The broken guard stays down twice as long.', 'A man whose guard you break takes the next blow double.'], n: { stag: [1, 1, 1], downK: [1, 2, 2], open: [1, 1, 2] }, wants: { sfx: ['guard_break'] } },
+  { id: 'serpentTongue', name: 'The Serpent’s tongue', kind: 'combat', slot: 'hand', pool: 'storm', status: 'built', text: ['The seax crits one blow in four, and a crit bleeds: three health a second for five seconds.', 'One in three.', 'A bleeding man who runs falls.'], n: { crit: [0.25, 0.34, 0.34], bleed: [3, 3, 4], fall: [0, 0, 1] }, lays: 'bleeding' },
+  { id: 'spearWall', name: 'The Spear-wall', kind: 'combat', slot: 'hand', pool: 'storm', status: 'built', text: ['A thrust that runs a man through hits the one behind him too.', 'A step back then a thrust is a pierce: no guard stops it.', 'The thrust reaches a stride further.'], n: { through: [1, 1, 1], pierce: [0, 1, 1], reach: [0, 0, 24] }, wants: { art: ['thrust_long: the spear thrust reaching a stride further'] } },
+  { id: 'ringOfSteel', name: 'The Ring of steel', kind: 'combat', slot: 'heart', pool: 'storm', status: 'built', partial: 'the chain of five is the engine’s chainMax with a sword', text: ['With a sword the parry chain lasts six seconds, not four and a half.', 'The chain goes to five.', 'A chain of five is a finishing blow on any man.'], n: { chainT: [6, 6, 6], chainMax: [4, 5, 5], finish: [0, 0, 1] } },
+  { id: 'berserk', name: 'Berserk', kind: 'combat', slot: 'heart', pool: 'storm', status: 'built', text: ['Under half health your blows do a third more, and you take a fifth more.', 'Under half health you do half again more.', 'And stamina costs nothing under a quarter.'], n: { at: [0.5, 0.5, 0.5], dmg: [1.33, 1.5, 1.5], taken: [1.2, 1.2, 1.2], freeAt: [0, 0, 0.25] }, wants: { sfx: ['berserk_roar'], art: ['the red eyes and the bared teeth on the kit face while berserk'] } },
+  { id: 'oakArm', name: 'The Oak-arm', kind: 'combat', slot: 'hand', pool: 'storm', status: 'built', partial: 'III, the stun against a wall: a stagger instead', text: ['A club blow throws the man a step back.', 'Two steps, and he drops what he carries.', 'A thrown man who hits a wall is stunned.'], n: { kb: [60, 120, 120], drop: [0, 1, 1], wallStun: [0, 0, 1] } },
+  { id: 'twinBlow', name: 'The Twin blow', kind: 'combat', slot: 'hand', pool: 'storm', status: 'built', text: ['The Dane axe recovers in half the time after a kill.', 'After any blow that lands.', 'The second blow of a chain cannot be parried either.'], n: { recK: [0.5, 0.5, 0.5], onAny: [0, 1, 1], noParry2: [0, 0, 1] } },
+  { id: 'lastStand', name: 'The Last stand', kind: 'combat', slot: 'heart', pool: 'world', status: 'built', source: 'the first time you fall', text: ['A blow that would kill you leaves you with one health, once a fight.', 'And gives you a breath of untouchable time.', 'Twice a fight.'], n: { times: [1, 1, 2], invuln: [0, 0.8, 0.8] }, wants: { sfx: ['last_stand'] } },
+  { id: 'ironSkin', name: 'Iron skin', kind: 'combat', slot: 'heart', pool: 'storm', status: 'built', text: ['A tenth of every blow turns aside.', 'A sixth.', 'A fifth, and arrows a third.'], n: { armor: [0.1, 0.16, 0.2], arrow: [0, 0, 0.33] } },
+  { id: 'stoneGuard', name: 'The Stone guard', kind: 'combat', slot: 'heart', pool: 'storm', status: 'built', text: ['A block costs half the stamina.', 'A block costs nothing.', 'A heavy blow on your shield no longer breaks the guard.'], n: { stK: [0.5, 0, 0], noBreak: [0, 0, 1] } },
+  { id: 'riposte', name: 'The Riposte', kind: 'combat', slot: 'guardBlow', pool: 'storm', status: 'built', text: ['The guard-blow in the moment after a parry is an instant strike that cannot be blocked.', 'It does half again.', 'And staggers.'], n: { need: [2, 2, 2], window: [0.6, 0.6, 0.8], dmg: [1, 1.5, 1.5], stag: [0, 0, 1] }, wants: { art: ['riposte: a short flicking blow from the guard, one-handed and with the shield'], sfx: ['riposte'] } },
+  { id: 'warCry', name: 'The War-cry', kind: 'raiding', slot: 'guardBlow', pool: 'storm', status: 'built', text: ['A shout: every foe within hearing hesitates a second, every man of yours holds his line.', 'Two seconds, and the frightened run.', 'Your men’s next blows are heavy.'], n: { need: [4, 4, 3], hesitate: [1, 2, 2], run: [0, 1, 1], heavy: [0, 0, 1] }, wants: { art: ['war_cry: the hero throwing his head back, the weapon raised'], sfx: ['war_cry (the hero’s shout, three variations)'] } },
   // movement: the dash's other shapes, and the feet
-  { id: 'blinkStep', name: 'The Blink-step', kind: 'movement', slot: 'dash', pool: 'storm', status: 'data', text: ['A step through the man before you: you stand behind him.', 'He is open for a breath when you come out.', 'The step goes through two.'], n: { cd: [0.5, 0.5, 0.4], open: [0, 0.6, 0.6], through: [1, 1, 2] }, wants: { art: ['blink: the hero fading out and in, a smear of him between'], sfx: ['blink_step'] } },
-  { id: 'longLeap', name: 'The Long leap', kind: 'movement', slot: 'dash', pool: 'storm', status: 'data', text: ['A leap: over a fence, a stream, a fallen man.', 'Over a stake wall.', 'You land swinging: the first blow on landing is heavy.'], n: { len: [2.2, 2.6, 2.6], over: [1, 2, 2], heavy: [0, 0, 1] }, wants: { art: ['leap: a running jump, twelve frames, the cloak streaming'], sfx: ['leap_land'] } },
-  { id: 'ghostStep', name: 'The Ghost-step', kind: 'movement', slot: 'dash', pool: 'storm', status: 'data', text: ['The dash leaves a shade where you stood; the men strike at it.', 'The shade lasts two seconds.', 'A man who strikes the shade is open.'], n: { shadeT: [1, 2, 2], open: [0, 0, 1] }, wants: { art: ['a ghost copy of the hero, blue-grey, fading'] } },
-  { id: 'windFoot', name: 'The Wind-foot', kind: 'movement', slot: 'foot', pool: 'storm', status: 'data', text: ['You run a tenth faster.', 'A fifth, and the sprint costs a third less.', 'And you turn on the spot.'], n: { speed: [1.1, 1.2, 1.2], sprintK: [1, 0.67, 0.67], turn: [0, 0, 1] } },
-  { id: 'sureFoot', name: 'The Sure-foot', kind: 'movement', slot: 'foot', pool: 'world', status: 'data', source: 'the first winter', text: ['Snow, sand and the shallows slow you no more.', 'The guard walk is as fast as a walk.', 'You cannot be knocked down.'], n: { noSlow: [1, 1, 1], guardWalk: [0, 1, 1], noDown: [0, 0, 1] } },
-  { id: 'hunterStride', name: 'The Hunter’s stride', kind: 'movement', slot: 'foot', pool: 'world', status: 'data', source: 'the first deer', text: ['Walking toward a beast does not spook it until you are half as near.', 'Running does not either.', 'A beast you reach unseen is yours: the first blow kills.'], n: { nearK: [0.5, 0.5, 0.5], run: [0, 1, 1], kill: [0, 0, 1] } },
+  { id: 'blinkStep', name: 'The Blink-step', kind: 'movement', slot: 'dash', pool: 'storm', status: 'built', text: ['A step through the man before you: you stand behind him.', 'He is open for a breath when you come out.', 'The step goes through two.'], n: { cd: [0.5, 0.5, 0.4], open: [0, 0.6, 0.6], through: [1, 1, 2] }, wants: { art: ['blink: the hero fading out and in, a smear of him between'], sfx: ['blink_step'] } },
+  { id: 'longLeap', name: 'The Long leap', kind: 'movement', slot: 'dash', pool: 'storm', status: 'built', text: ['A leap: over a fence, a stream, a fallen man.', 'Over a stake wall.', 'You land swinging: the first blow on landing is heavy.'], n: { len: [2.2, 2.6, 2.6], over: [1, 2, 2], heavy: [0, 0, 1] }, wants: { art: ['leap: a running jump, twelve frames, the cloak streaming'], sfx: ['leap_land'] } },
+  { id: 'ghostStep', name: 'The Ghost-step', kind: 'movement', slot: 'dash', pool: 'storm', status: 'built', text: ['The dash leaves a shade where you stood; the men strike at it.', 'The shade lasts two seconds.', 'A man who strikes the shade is open.'], n: { shadeT: [1, 2, 2], open: [0, 0, 1] }, wants: { art: ['a ghost copy of the hero, blue-grey, fading'] } },
+  { id: 'windFoot', name: 'The Wind-foot', kind: 'movement', slot: 'foot', pool: 'storm', status: 'built', text: ['You run a tenth faster.', 'A fifth, and the sprint costs a third less.', 'And you turn on the spot.'], n: { speed: [1.1, 1.2, 1.2], sprintK: [1, 0.67, 0.67], turn: [0, 0, 1] } },
+  { id: 'sureFoot', name: 'The Sure-foot', kind: 'movement', slot: 'foot', pool: 'world', status: 'built', partial: 'nothing slows the walk today, so tier I has nothing to undo; II and III work', source: 'the first winter', text: ['Snow, sand and the shallows slow you no more.', 'The guard walk is as fast as a walk.', 'You cannot be knocked down.'], n: { noSlow: [1, 1, 1], guardWalk: [0, 1, 1], noDown: [0, 0, 1] } },
+  { id: 'hunterStride', name: 'The Hunter’s stride', kind: 'movement', slot: 'foot', pool: 'world', status: 'built', partial: 'the notice distance is the beasts’ own 130, halved; the deer’s longer sight is not touched', source: 'the first deer', text: ['Walking toward a beast does not spook it until you are half as near.', 'Running does not either.', 'A beast you reach unseen is yours: the first blow kills.'], n: { nearK: [0.5, 0.5, 0.5], run: [0, 1, 1], kill: [0, 0, 1] } },
   // attack: the swing made into something else (the swing slot)
-  { id: 'lunge', name: 'The Lunge', kind: 'attack', slot: 'swing', pool: 'storm', status: 'data', text: ['The swing is a lunge: a stride forward and a strike, a stride further than the reach.', 'Two strides.', 'A lunge that lands knocks the man back.'], n: { need: [0, 0, 0], stride: [1, 2, 2], kb: [0, 0, 80] }, wants: { art: ['lunge: a long step into a one-handed strike, with and without the shield'], sfx: ['lunge'] } },
-  { id: 'whirl', name: 'The Whirl', kind: 'attack', slot: 'swing', pool: 'storm', status: 'data', text: ['With two hands the swing is a turn: every man round you is hit.', 'Twice round.', 'The whirl cannot be parried.'], n: { need: [2, 2, 2], turns: [1, 2, 2], noParry: [0, 0, 1] }, wants: { art: ['whirl: a full turn with the Dane axe or the spear, sixteen frames'], sfx: ['whirl'] } },
-  { id: 'overhead', name: 'The Overhead', kind: 'attack', slot: 'swing', pool: 'storm', status: 'data', text: ['A held swing comes down from above: it breaks a guard and staggers.', 'It does double.', 'It knocks the man down.'], n: { need: [0, 0, 0], hold: [0.5, 0.5, 0.4], dmg: [1, 2, 2], down: [0, 0, 1] }, wants: { art: ['overhead: the weapon raised in both hands and brought down, with the axe, the sword and the club'], sfx: ['overhead'] } },
-  { id: 'sweep', name: 'The Sweep', kind: 'attack', slot: 'swing', pool: 'storm', status: 'data', text: ['The spear sweeps low: every man in its arc staggers.', 'The sweep trips: they fall.', 'The sweep reaches further.'], n: { need: [0, 0, 0], arc: [2.4, 2.4, 2.8], trip: [0, 1, 1], reach: [0, 0, 16] }, wants: { art: ['sweep: a low wide spear swing, twelve frames'], sfx: ['sweep'] } },
-  { id: 'feint', name: 'The Feint', kind: 'attack', slot: 'swing', pool: 'storm', status: 'data', text: ['The first swing after a pause is a feint: the man guards against nothing and is open.', 'The feint costs no stamina.', 'The blow after a feint is heavy.'], n: { need: [0, 0, 0], openT: [0.8, 0.8, 1], free: [0, 1, 1], heavy: [0, 0, 1] }, wants: { art: ['feint: a half swing checked and drawn back, eight frames'] } },
+  { id: 'lunge', name: 'The Lunge', kind: 'attack', slot: 'swing', pool: 'storm', status: 'built', text: ['The swing is a lunge: a stride forward and a strike, a stride further than the reach.', 'Two strides.', 'A lunge that lands knocks the man back.'], n: { need: [0, 0, 0], stride: [1, 2, 2], kb: [0, 0, 80] }, wants: { art: ['lunge: a long step into a one-handed strike, with and without the shield'], sfx: ['lunge'] } },
+  { id: 'whirl', name: 'The Whirl', kind: 'attack', slot: 'swing', pool: 'storm', status: 'built', text: ['With two hands the swing is a turn: every man round you is hit.', 'Twice round.', 'The whirl cannot be parried.'], n: { need: [2, 2, 2], turns: [1, 2, 2], noParry: [0, 0, 1] }, wants: { art: ['whirl: a full turn with the Dane axe or the spear, sixteen frames'], sfx: ['whirl'] } },
+  { id: 'overhead', name: 'The Overhead', kind: 'attack', slot: 'swing', pool: 'storm', status: 'built', text: ['A held swing comes down from above: it breaks a guard and staggers.', 'It does double.', 'It knocks the man down.'], n: { need: [0, 0, 0], hold: [0.5, 0.5, 0.4], dmg: [1, 2, 2], down: [0, 0, 1] }, wants: { art: ['overhead: the weapon raised in both hands and brought down, with the axe, the sword and the club'], sfx: ['overhead'] } },
+  { id: 'sweep', name: 'The Sweep', kind: 'attack', slot: 'swing', pool: 'storm', status: 'built', text: ['The spear sweeps low: every man in its arc staggers.', 'The sweep trips: they fall.', 'The sweep reaches further.'], n: { need: [0, 0, 0], arc: [2.4, 2.4, 2.8], trip: [0, 1, 1], reach: [0, 0, 16] }, wants: { art: ['sweep: a low wide spear swing, twelve frames'], sfx: ['sweep'] } },
+  { id: 'feint', name: 'The Feint', kind: 'attack', slot: 'swing', pool: 'storm', status: 'built', text: ['The first swing after a pause is a feint: the man guards against nothing and is open.', 'The feint costs no stamina.', 'The blow after a feint is heavy.'], n: { need: [0, 0, 0], openT: [0.8, 0.8, 1], free: [0, 1, 1], heavy: [0, 0, 1] }, wants: { art: ['feint: a half swing checked and drawn back, eight frames'] } },
   // bow: the shot (active) and the archer's passives
-  { id: 'twinShot', name: 'The Twin shot', kind: 'bow', slot: 'shot', pool: 'storm', status: 'data', text: ['A full draw looses two arrows at once.', 'Three, fanned.', 'Each does the whole.'], n: { need: [3, 3, 3], arrows: [2, 3, 3], each: [0.7, 0.6, 1] }, wants: { art: ['bow_shoot_twin: two arrows nocked'], sfx: ['twin_shot'] } },
-  { id: 'pinningShot', name: 'The Pinning shot', kind: 'bow', slot: 'shot', pool: 'storm', status: 'data', text: ['A full draw pins the man where he stands for two seconds.', 'Three.', 'A pinned man cannot raise his guard.'], n: { need: [3, 3, 3], pinT: [2, 3, 3], noGuard: [0, 0, 1] }, wants: { sfx: ['pin_shot'] } },
-  { id: 'fireArrow', name: 'The Fire-arrow', kind: 'bow', slot: 'shot', pool: 'storm', status: 'data', text: ['With a torch lit, a full draw looses a burning arrow: it lights thatch and burns a man for five seconds.', 'It needs no torch.', 'The fire spreads from the man to the next.'], n: { need: [4, 4, 4], burnT: [5, 5, 5], torch: [1, 0, 0], spread: [0, 0, 1] }, lays: 'burning', wants: { art: ['a burning arrow in flight and stuck'], sfx: ['fire_arrow'] } },
-  { id: 'hawkEye', name: 'The Hawk’s eye', kind: 'bow', slot: 'eye', pool: 'storm', status: 'data', text: ['The bow aims a third further.', 'A hit on a man who has not seen you does double.', 'The arrow finds the eye: one hit in five is a finishing blow.'], n: { range: [1.33, 1.33, 1.33], unseen: [1, 2, 2], finish: [0, 0, 0.2] } },
-  { id: 'bleedingPoint', name: 'The Bleeding point', kind: 'bow', slot: 'hand', pool: 'world', status: 'data', source: 'the first deer shot', text: ['A shot beast bleeds out in half the time.', 'A shot man bleeds too.', 'A bleeding beast leaves a trail you see from further.'], n: { bleedK: [0.5, 0.5, 0.5], men: [0, 1, 1], trail: [1, 1, 2] }, lays: 'bleeding' },
-  { id: 'quickDraw', name: 'The Quick draw', kind: 'bow', slot: 'hand', pool: 'storm', status: 'data', text: ['The bow draws full in a second, not a second and a half.', 'In three quarters.', 'The snap shot does the full draw’s damage.'], n: { full: [1, 0.75, 0.75], snapK: [0.4, 0.4, 1] } },
-  { id: 'stillHand', name: 'The Still hand', kind: 'bow', slot: 'heart', pool: 'storm', status: 'data', text: ['Standing still two seconds, your next arrow does half again.', 'Double.', 'And cannot be stopped by a shield.'], n: { stillT: [2, 2, 2], dmg: [1.5, 2, 2], noShield: [0, 0, 1] } },
+  { id: 'twinShot', name: 'The Twin shot', kind: 'bow', slot: 'shot', pool: 'storm', status: 'built', text: ['A full draw looses two arrows at once.', 'Three, fanned.', 'Each does the whole.'], n: { need: [3, 3, 3], arrows: [2, 3, 3], each: [0.7, 0.6, 1] }, wants: { art: ['bow_shoot_twin: two arrows nocked'], sfx: ['twin_shot'] } },
+  { id: 'pinningShot', name: 'The Pinning shot', kind: 'bow', slot: 'shot', pool: 'storm', status: 'built', text: ['A full draw pins the man where he stands for two seconds.', 'Three.', 'A pinned man cannot raise his guard.'], n: { need: [3, 3, 3], pinT: [2, 3, 3], noGuard: [0, 0, 1] }, wants: { sfx: ['pin_shot'] } },
+  { id: 'fireArrow', name: 'The Fire-arrow', kind: 'bow', slot: 'shot', pool: 'storm', status: 'built', text: ['With a torch lit, a full draw looses a burning arrow: it lights thatch and burns a man for five seconds.', 'It needs no torch.', 'The fire spreads from the man to the next.'], n: { need: [4, 4, 4], burnT: [5, 5, 5], torch: [1, 0, 0], spread: [0, 0, 1] }, lays: 'burning', wants: { art: ['a burning arrow in flight and stuck'], sfx: ['fire_arrow'] } },
+  { id: 'hawkEye', name: 'The Hawk’s eye', kind: 'bow', slot: 'eye', pool: 'storm', status: 'built', text: ['The bow aims a third further.', 'A hit on a man who has not seen you does double.', 'The arrow finds the eye: one hit in five is a finishing blow.'], n: { range: [1.33, 1.33, 1.33], unseen: [1, 2, 2], finish: [0, 0, 0.2] } },
+  { id: 'bleedingPoint', name: 'The Bleeding point', kind: 'bow', slot: 'hand', pool: 'world', status: 'built', source: 'the first deer shot', text: ['A shot beast bleeds out in half the time.', 'A shot man bleeds too.', 'A bleeding beast leaves a trail you see from further.'], n: { bleedK: [0.5, 0.5, 0.5], men: [0, 1, 1], trail: [1, 1, 2] }, lays: 'bleeding' },
+  { id: 'quickDraw', name: 'The Quick draw', kind: 'bow', slot: 'hand', pool: 'storm', status: 'built', text: ['The bow draws full in a second, not a second and a half.', 'In three quarters.', 'The snap shot does the full draw’s damage.'], n: { full: [1, 0.75, 0.75], snapK: [0.4, 0.4, 1] } },
+  { id: 'stillHand', name: 'The Still hand', kind: 'bow', slot: 'heart', pool: 'storm', status: 'built', text: ['Standing still two seconds, your next arrow does half again.', 'Double.', 'And cannot be stopped by a shield.'], n: { stillT: [2, 2, 2], dmg: [1.5, 2, 2], noShield: [0, 0, 1] } },
   // gathering: the tool and the finder's eye
-  { id: 'stoneBiter', name: 'The Stone-biter', kind: 'gathering', slot: 'swing', pool: 'storm', status: 'data', text: ['One pick blow in three cracks the rock whole.', 'One in two.', 'A cracked rock gives a piece of ore now and then.'], n: { need: [0, 0, 0], chance: [0.34, 0.5, 0.5], ore: [0, 0, 0.15] }, wants: { sfx: ['rock_split'] } },
-  { id: 'greenThumb', name: 'The Green thumb', kind: 'gathering', slot: 'eye', pool: 'world', status: 'data', source: 'the first berries', text: ['A picked bush grows its berries again in half the time.', 'And gives half again more.', 'Herbs grow where you have walked.'], n: { regrowK: [0.5, 0.5, 0.5], yield: [1, 1.5, 1.5], herbs: [0, 0, 1] } },
-  { id: 'keenNose', name: 'The Keen nose', kind: 'gathering', slot: 'eye', pool: 'storm', status: 'data', text: ['Mushrooms and herbs within a stone’s throw show on the chart.', 'Ore too.', 'And what lies buried: the hidden cellar, the midden’s cache.'], n: { reach: [200, 260, 260], ore: [0, 1, 1], hidden: [0, 0, 1] } },
-  { id: 'strongBack', name: 'The Strong back', kind: 'gathering', slot: 'heart', pool: 'world', status: 'data', source: 'the first chest carried', text: ['A heavy thing on your back slows you less.', 'Stacks hold thirty, not twenty-five.', 'A heavy thing slows you not at all.'], n: { carryK: [0.85, 0.85, 1], stack: [25, 30, 30] } },
-  { id: 'quickHands', name: 'The Quick hands', kind: 'gathering', slot: 'hand', pool: 'storm', status: 'data', text: ['A tool swings a fifth faster.', 'Every log comes with a strip of fibre.', 'A tool’s blow bites a beast as a weapon’s.'], n: { pace: [1.2, 1.2, 1.2], fibre: [0, 1, 1], toolDmg: [0.8, 0.8, 1] } },
-  { id: 'woodwright', name: 'The Woodwright', kind: 'gathering', slot: 'hand', pool: 'storm', status: 'data', text: ['A trunk gives a fifth log.', 'A felled tree drops its wood with no chopping of the trunk.', 'Building pieces cost a quarter less wood.'], n: { logs: [5, 5, 5], noTrunk: [0, 1, 1], costK: [1, 1, 0.75] } },
+  { id: 'stoneBiter', name: 'The Stone-biter', kind: 'gathering', slot: 'swing', pool: 'storm', status: 'built', text: ['One pick blow in three cracks the rock whole.', 'One in two.', 'A cracked rock gives a piece of ore now and then.'], n: { need: [0, 0, 0], chance: [0.34, 0.5, 0.5], ore: [0, 0, 0.15] }, wants: { sfx: ['rock_split'] } },
+  { id: 'greenThumb', name: 'The Green thumb', kind: 'gathering', slot: 'eye', pool: 'world', status: 'built', partial: 'III, herbs where you walked: no herb system yet', source: 'the first berries', text: ['A picked bush grows its berries again in half the time.', 'And gives half again more.', 'Herbs grow where you have walked.'], n: { regrowK: [0.5, 0.5, 0.5], yield: [1, 1.5, 1.5], herbs: [0, 0, 1] } },
+  { id: 'keenNose', name: 'The Keen nose', kind: 'gathering', slot: 'eye', pool: 'storm', status: 'built', partial: 'III, the hidden things: not yet', text: ['Mushrooms and herbs within a stone’s throw show on the chart.', 'Ore too.', 'And what lies buried: the hidden cellar, the midden’s cache.'], n: { reach: [200, 260, 260], ore: [0, 1, 1], hidden: [0, 0, 1] } },
+  { id: 'strongBack', name: 'The Strong back', kind: 'gathering', slot: 'heart', pool: 'world', status: 'built', source: 'the first chest carried', text: ['A heavy thing on your back slows you less.', 'Stacks hold thirty, not twenty-five.', 'A heavy thing slows you not at all.'], n: { carryK: [0.85, 0.85, 1], stack: [25, 30, 30] } },
+  { id: 'quickHands', name: 'The Quick hands', kind: 'gathering', slot: 'hand', pool: 'storm', status: 'built', text: ['A tool swings a fifth faster.', 'Every log comes with a strip of fibre.', 'A tool’s blow bites a beast as a weapon’s.'], n: { pace: [1.2, 1.2, 1.2], fibre: [0, 1, 1], toolDmg: [0.8, 0.8, 1] } },
+  { id: 'woodwright', name: 'The Woodwright', kind: 'gathering', slot: 'hand', pool: 'storm', status: 'built', text: ['A trunk gives a fifth log.', 'A felled tree drops its wood with no chopping of the trunk.', 'Building pieces cost a quarter less wood.'], n: { logs: [5, 5, 5], noTrunk: [0, 1, 1], costK: [1, 1, 0.75] } },
   // sailing and exploring: the helm
-  { id: 'followingWind', name: 'The Following wind', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'data', text: ['The sail gives half again more.', 'A wind abeam fills it as a wind behind.', 'No wind is against you.'], n: { sailK: [1.5, 1.5, 1.5], abeam: [0, 1, 1], never: [0, 0, 1] } },
-  { id: 'longOar', name: 'The Long oar', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'data', text: ['The oars pull a fifth faster.', 'The crew boards and lands in half the time.', 'Your ship turns on the spot.'], n: { oarK: [1.2, 1.2, 1.2], boardK: [1, 0.5, 0.5], turn: [0, 0, 1] } },
-  { id: 'farSight', name: 'The Far sight', kind: 'sailing', slot: 'helm', pool: 'world', status: 'data', source: 'the lookout climbed', text: ['An island shows on the chart from twice as far.', 'A village on it, and its kind.', 'And whether it has been raided before.'], n: { chartK: [2, 2, 2], villages: [0, 1, 1], history: [0, 0, 1] } },
-  { id: 'sealSkin', name: 'The Seal-skin', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'data', text: ['You swim twice as far.', 'And at your walking pace.', 'The cold water does nothing to you.'], n: { swimK: [2, 2, 2], speed: [0.5, 1, 1], cold: [0, 0, 1] } },
-  { id: 'starRoad', name: 'The Star-road', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'data', text: ['At night your ship holds a course to the mark you set on the chart by itself.', 'By day too.', 'And sails on while you sleep aboard.'], n: { night: [1, 1, 1], day: [0, 1, 1], sleep: [0, 0, 1] } },
-  { id: 'wreckersEye', name: 'The Wrecker’s eye', kind: 'sailing', slot: 'eye', pool: 'world', status: 'data', source: 'the wreck pried', text: ['A wreck or a drift shows on the chart within reach.', 'A wreck gives twice the planks.', 'You see what lies under the shallows: the drowned chest.'], n: { reach: [300, 300, 400], planks: [1, 2, 2], under: [0, 0, 1] } },
+  { id: 'followingWind', name: 'The Following wind', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'built', text: ['The sail gives half again more.', 'A wind abeam fills it as a wind behind.', 'No wind is against you.'], n: { sailK: [1.5, 1.5, 1.5], abeam: [0, 1, 1], never: [0, 0, 1] } },
+  { id: 'longOar', name: 'The Long oar', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'built', text: ['The oars pull a fifth faster.', 'The crew boards and lands in half the time.', 'Your ship turns on the spot.'], n: { oarK: [1.2, 1.2, 1.2], boardK: [1, 0.5, 0.5], turn: [0, 0, 1] } },
+  { id: 'farSight', name: 'The Far sight', kind: 'sailing', slot: 'helm', pool: 'world', status: 'built', source: 'the lookout climbed', text: ['An island shows on the chart from twice as far.', 'A village on it, and its kind.', 'And whether it has been raided before.'], n: { chartK: [2, 2, 2], villages: [0, 1, 1], history: [0, 0, 1] } },
+  { id: 'sealSkin', name: 'The Seal-skin', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'built', text: ['You swim twice as far.', 'And at your walking pace.', 'The cold water does nothing to you.'], n: { swimK: [2, 2, 2], speed: [0.5, 1, 1], cold: [0, 0, 1] } },
+  { id: 'starRoad', name: 'The Star-road', kind: 'sailing', slot: 'helm', pool: 'storm', status: 'built', partial: 'III, sailing on while you sleep: not yet; the mark is the right button on the map', text: ['At night your ship holds a course to the mark you set on the chart by itself.', 'By day too.', 'And sails on while you sleep aboard.'], n: { night: [1, 1, 1], day: [0, 1, 1], sleep: [0, 0, 1] } },
+  { id: 'wreckersEye', name: 'The Wrecker’s eye', kind: 'sailing', slot: 'eye', pool: 'world', status: 'built', partial: 'III, the drowned chest: no such thing yet', source: 'the wreck pried', text: ['A wreck or a drift shows on the chart within reach.', 'A wreck gives twice the planks.', 'You see what lies under the shallows: the drowned chest.'], n: { reach: [300, 300, 400], planks: [1, 2, 2], under: [0, 0, 1] } },
   // raiding: the quiet way, the loud way and the carry
-  { id: 'quietBlade', name: 'The Quiet blade', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'data', text: ['A blow from behind kills from a stride further, and no man cries out.', 'His fellow within reach does not wake.', 'A sleeper never wakes.'], n: { reach: [1, 1, 1], noCry: [1, 1, 1], fellow: [0, 1, 1], sleeper: [0, 0, 1] } },
-  { id: 'lockBreaker', name: 'The Lock-breaker', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'data', text: ['A door or a lock gives in half the blows.', 'And is heard half as far.', 'A chest opens to the knife, with no blow at all.'], n: { blowsK: [0.5, 0.5, 0.5], noiseK: [1, 0.5, 0.5], knife: [0, 0, 1] } },
-  { id: 'ravenCall', name: 'The Raven’s call', kind: 'raiding', slot: 'eye', pool: 'storm', status: 'data', text: ['The men of a place within a stone’s throw show on the chart, walls or no walls.', 'And which way they look.', 'And the sleepers from the watch.'], n: { reach: [200, 260, 260], facing: [0, 1, 1], sleep: [0, 0, 1] } },
-  { id: 'heavyBack', name: 'The Heavy back', kind: 'raiding', slot: 'heart', pool: 'storm', status: 'data', text: ['You carry a chest at walking pace.', 'Your men carry faster too.', 'A carrier holds on however hurt.'], n: { carryK: [1, 1, 1], menK: [1, 1.3, 1.3], hold: [0, 0, 1] } },
-  { id: 'torchHand', name: 'The Torch-hand', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'data', text: ['Fire catches at a touch and spreads faster.', 'Fire does you no harm.', 'A burning man runs from you, not at you.'], n: { catch: [1, 1, 1], spreadK: [1.5, 1.5, 1.5], immune: [0, 1, 1], fear: [0, 0, 1] } },
-  { id: 'shieldWall', name: 'The Shield-wall', kind: 'raiding', slot: 'heart', pool: 'world', status: 'data', source: 'the first line held', text: ['A man of yours beside you blocks as well as you.', 'Two.', 'A held line of yours cannot be broken.'], n: { men: [1, 2, 2], unbroken: [0, 0, 1] } },
+  { id: 'quietBlade', name: 'The Quiet blade', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'built', partial: 'III, the sleeper: not yet (II already keeps the fellow asleep)', text: ['A blow from behind kills from a stride further, and no man cries out.', 'His fellow within reach does not wake.', 'A sleeper never wakes.'], n: { reach: [1, 1, 1], noCry: [1, 1, 1], fellow: [0, 1, 1], sleeper: [0, 0, 1] } },
+  { id: 'lockBreaker', name: 'The Lock-breaker', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'built', text: ['A door or a lock gives in half the blows.', 'And is heard half as far.', 'A chest opens to the knife, with no blow at all.'], n: { blowsK: [0.5, 0.5, 0.5], noiseK: [1, 0.5, 0.5], knife: [0, 0, 1] } },
+  { id: 'ravenCall', name: 'The Raven’s call', kind: 'raiding', slot: 'eye', pool: 'storm', status: 'built', text: ['The men of a place within a stone’s throw show on the chart, walls or no walls.', 'And which way they look.', 'And the sleepers from the watch.'], n: { reach: [200, 260, 260], facing: [0, 1, 1], sleep: [0, 0, 1] } },
+  { id: 'heavyBack', name: 'The Heavy back', kind: 'raiding', slot: 'heart', pool: 'storm', status: 'built', partial: 'II, the men carrying faster: not yet', text: ['You carry a chest at walking pace.', 'Your men carry faster too.', 'A carrier holds on however hurt.'], n: { carryK: [1, 1, 1], menK: [1, 1.3, 1.3], hold: [0, 0, 1] } },
+  { id: 'torchHand', name: 'The Torch-hand', kind: 'raiding', slot: 'hand', pool: 'storm', status: 'built', partial: 'II, no harm from fire: fire does the hero no harm today anyway', text: ['Fire catches at a touch and spreads faster.', 'Fire does you no harm.', 'A burning man runs from you, not at you.'], n: { catch: [1, 1, 1], spreadK: [1.5, 1.5, 1.5], immune: [0, 1, 1], fear: [0, 0, 1] } },
+  { id: 'shieldWall', name: 'The Shield-wall', kind: 'raiding', slot: 'heart', pool: 'world', status: 'built', source: 'the first line held', text: ['A man of yours beside you blocks as well as you.', 'Two.', 'A held line of yours cannot be broken.'], n: { men: [1, 2, 2], unbroken: [0, 0, 1] } },
   // cooking and home: the hearth
-  { id: 'hearthsGift', name: 'The Hearth’s gift', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'data', text: ['A dish lasts half again longer.', 'Twice as long.', 'And heals a little every second while it lasts.'], n: { lastK: [1.5, 2, 2], heal: [0, 0, 0.1] } },
-  { id: 'secondPortion', name: 'The Second portion', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'data', text: ['One cooking in three gives two.', 'One in two.', 'Every cooking.'], n: { chance: [0.34, 0.5, 1] } },
-  { id: 'smokeAndSalt', name: 'Smoke and salt', kind: 'cooking', slot: 'hearth', pool: 'world', status: 'data', source: 'the first fish', text: ['Meat and fish cook in half the time.', 'Raw meat gives two cuts, not one.', 'A dish of fish and meat together is a feast: every buff at once.'], n: { cookK: [0.5, 0.5, 0.5], cuts: [1, 2, 2], feast: [0, 0, 1] } },
-  { id: 'warmBelly', name: 'The Warm belly', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'data', text: ['A hot dish heals twice over the minute after.', 'The rested time at home lasts half again.', 'A fire of yours heals you from twice as far.'], n: { healK: [2, 2, 2], restK: [1, 1.5, 1.5], fireK: [1, 1, 2] } },
+  { id: 'hearthsGift', name: 'The Hearth’s gift', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'built', text: ['A dish lasts half again longer.', 'Twice as long.', 'And heals a little every second while it lasts.'], n: { lastK: [1.5, 2, 2], heal: [0, 0, 0.1] } },
+  { id: 'secondPortion', name: 'The Second portion', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'built', text: ['One cooking in three gives two.', 'One in two.', 'Every cooking.'], n: { chance: [0.34, 0.5, 1] } },
+  { id: 'smokeAndSalt', name: 'Smoke and salt', kind: 'cooking', slot: 'hearth', pool: 'world', status: 'built', partial: 'II, two cuts of meat, and III, the feast: not yet', source: 'the first fish', text: ['Meat and fish cook in half the time.', 'Raw meat gives two cuts, not one.', 'A dish of fish and meat together is a feast: every buff at once.'], n: { cookK: [0.5, 0.5, 0.5], cuts: [1, 2, 2], feast: [0, 0, 1] } },
+  { id: 'warmBelly', name: 'The Warm belly', kind: 'cooking', slot: 'hearth', pool: 'storm', status: 'built', text: ['A hot dish heals twice over the minute after.', 'The rested time at home lasts half again.', 'A fire of yours heals you from twice as far.'], n: { healK: [2, 2, 2], restK: [1, 1.5, 1.5], fireK: [1, 1, 2] } },
   // pets: a chapter to come (Robin, 2026-10-23: runes augment the pets); data only
-  { id: 'packBond', name: 'The Pack-bond', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', text: ['Your beast fights half again as hard beside you.', 'And takes half as much.', 'A foe it bites is open to you.'], n: { dmg: [1.5, 1.5, 1.5], taken: [1, 0.5, 0.5], open: [0, 0, 1] } },
-  { id: 'sharedBlood', name: 'The Shared blood', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', text: ['What heals you heals your beast.', 'What feeds you feeds it.', 'Its wounds close while you sleep.'], n: { heal: [1, 1, 1], food: [0, 1, 1], sleep: [0, 0, 1] } },
-  { id: 'trackersNose', name: 'The Tracker’s nose', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', text: ['Your dog finds game: the nearest beast shows on the chart.', 'And what lies buried.', 'It brings what it finds.'], n: { game: [1, 1, 1], buried: [0, 1, 1], fetch: [0, 0, 1] } },
-  { id: 'loyalHeart', name: 'The Loyal heart', kind: 'pet', slot: 'pet', pool: 'world', status: 'data', source: 'the pet’s first fight', text: ['A beast of yours that would die goes down instead, once a day.', 'It rises when the fight is over.', 'It rises at once, and bites.'], n: { times: [1, 1, 1], rise: [0, 1, 2] } },
+  { id: 'packBond', name: 'The Pack-bond', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', partial: 'the pet chapter: no pet exists yet', text: ['Your beast fights half again as hard beside you.', 'And takes half as much.', 'A foe it bites is open to you.'], n: { dmg: [1.5, 1.5, 1.5], taken: [1, 0.5, 0.5], open: [0, 0, 1] } },
+  { id: 'sharedBlood', name: 'The Shared blood', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', partial: 'the pet chapter: no pet exists yet', text: ['What heals you heals your beast.', 'What feeds you feeds it.', 'Its wounds close while you sleep.'], n: { heal: [1, 1, 1], food: [0, 1, 1], sleep: [0, 0, 1] } },
+  { id: 'trackersNose', name: 'The Tracker’s nose', kind: 'pet', slot: 'pet', pool: 'storm', status: 'data', partial: 'the pet chapter: no pet exists yet', text: ['Your dog finds game: the nearest beast shows on the chart.', 'And what lies buried.', 'It brings what it finds.'], n: { game: [1, 1, 1], buried: [0, 1, 1], fetch: [0, 0, 1] } },
+  { id: 'loyalHeart', name: 'The Loyal heart', kind: 'pet', slot: 'pet', pool: 'world', status: 'data', partial: 'the pet chapter: no pet exists yet', source: 'the pet’s first fight', text: ['A beast of yours that would die goes down instead, once a day.', 'It rises when the fight is over.', 'It rises at once, and bites.'], n: { times: [1, 1, 1], rise: [0, 1, 2] } },
   // the legendary pool: a jarl’s or a boss’s blood (none sacrificed yet; Robin, 2026-10-23)
-  { id: 'fenrirsJaw', name: 'Fenrir’s jaw', kind: 'combat', slot: 'hand', pool: 'legend', status: 'data', text: ['Every third blow that lands is a finishing blow.', 'Every second.', 'A finishing blow on a beast makes it yours.'], n: { every: [3, 2, 2], tame: [0, 0, 1] } },
-  { id: 'allfathersEye', name: 'The All-father’s eye', kind: 'raiding', slot: 'eye', pool: 'legend', status: 'data', text: ['You see every man and beast within sight, walls or no walls, by day and by night.', 'And what each carries.', 'And what each fears.'], n: { all: [1, 1, 1], carry: [0, 1, 1], fear: [0, 0, 1] } },
-  { id: 'midgardsWall', name: 'Midgard’s wall', kind: 'combat', slot: 'heart', pool: 'legend', status: 'data', text: ['Your guard stops everything, from every side.', 'A blow it stops is given back to the man.', 'Arrows too.'], n: { all: [1, 1, 1], back: [0, 1, 1], arrows: [0, 0, 1] } }
+  { id: 'fenrirsJaw', name: 'Fenrir’s jaw', kind: 'combat', slot: 'hand', pool: 'legend', status: 'built', partial: 'III makes a beast yours in name: no pet system yet', text: ['Every third blow that lands is a finishing blow.', 'Every second.', 'A finishing blow on a beast makes it yours.'], n: { every: [3, 2, 2], tame: [0, 0, 1] } },
+  { id: 'allfathersEye', name: 'The All-father’s eye', kind: 'raiding', slot: 'eye', pool: 'legend', status: 'built', partial: 'II and III, what each carries and fears: not yet', text: ['You see every man and beast within sight, walls or no walls, by day and by night.', 'And what each carries.', 'And what each fears.'], n: { all: [1, 1, 1], carry: [0, 1, 1], fear: [0, 0, 1] } },
+  { id: 'midgardsWall', name: 'Midgard’s wall', kind: 'combat', slot: 'heart', pool: 'legend', status: 'built', partial: 'III, arrows: the shield stops them from the front only', text: ['Your guard stops everything, from every side.', 'A blow it stops is given back to the man.', 'Arrows too.'], n: { all: [1, 1, 1], back: [0, 1, 1], arrows: [0, 0, 1] } }
 ];
 var KIND_OF = { bash: 'combat', charge: 'combat', dash: 'movement', roll: 'movement', thorsFell: 'gathering', thorsWrath: 'combat', bloodlust: 'combat', rushStep: 'movement', catFoot: 'raiding', stormsEye: 'combat', keenEye: 'raiding', hammer: 'combat', thickHide: 'combat' };
 var BY = {}; LIST.forEach(function (r) { if (!r.kind) r.kind = KIND_OF[r.id] || 'combat'; if (!r.status) r.status = 'built'; BY[r.id] = r; });
@@ -9314,7 +9314,8 @@ var T = 32, TS = 24, K = 0.75;
   /* What a ship holds (mine): heavy things aboard (chests, sacks, the church's silver) by its size, twice with a Cargo hold; the sea
      chest's places, twice with Cargo. fitOf(v): its fitting's numbers, or none. */
   var HOLD = { rowboat: 1, karve4: 2, karve8: 3, karve: 4, longship16: 4, longship20: 5, longship: 6 }, NOFIT = {};
-  function fitOf(v) { return (v && FITTINGS[v.fit]) || NOFIT; }
+  var EXTRA = { sailK: 1, oarK: 1, turnK: 1, abeam: 0, never: 0 };   /* what the runes add to every ship of the hero's (the Following wind, the Long oar), set by the page each frame; Yard.extra */
+  function fitOf(v) { var f = (v && FITTINGS[v.fit]) || NOFIT; if (EXTRA.sailK === 1 && EXTRA.oarK === 1) return f; var o = {}; for (var k in f) o[k] = f[k]; o.sailK = (f.sailK || 1) * EXTRA.sailK; o.oarK = (f.oarK || 1) * EXTRA.oarK; return o; }
   function holdOf(v) { return (HOLD[v.kind] || 2) * (fitOf(v).heavyK || 1); }
   function chestK(v) { return fitOf(v).chestK || 1; }
   function heroSeat(v) {                   // where the hero is along the keel (the bow at +): alone on a rowing hull on the aft-most thwart at the oars; alone on a rigged hull at the steering oar; with any man aboard in the bow, looking ahead (Robin, 2026-10-21)
@@ -9625,17 +9626,17 @@ var T = 32, TS = 24, K = 0.75;
     v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   /* (the true fill: the speed's buff, and whether the oars rest) */
     v.sailSet = (v.sailSet || 0) + ((v.sail && (iy < 0 || (!H.steer && (ix || iy)) || Math.abs(v.speed) > 20) ? 1 : 0) - (v.sailSet || 0)) * Math.min(1, dt * 1.5);   /* (Robin, 2026-10-21: the sail furling whenever the wind was not behind read as random; now it is SET while she is driven and furled at rest, its belly by the wind) */   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
-    H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn, glide: H.glide, grip: H.grip };
+    H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn * EXTRA.turnK, glide: H.glide, grip: H.grip };
     if (!H.steer) {
       if (ix || iy) {
-        var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * dt;
+        var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * EXTRA.turnK * dt;
         var nh = Math.abs(diff) <= stepA ? target : v.h + (diff > 0 ? stepA : -stepA);
         if (stuck || free(v.x, v.y, nh)) v.h = nh;
         want = H.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
       }
     } else {
       want = iy < 0 ? (v.beached ? 0 : H.top) : (iy > 0 ? -H.top * 0.4 : 0);
-      var wayK = Math.max(0.28, Math.min(1, Math.abs(v.speed) / (H.top * 0.35))), nh2 = v.h + ix * H.turn * dt * wayK * (v.speed < -2 ? -1 : 1);   // (a little turn with no way on: the oars turn her)
+      var wayK = Math.max(0.28, Math.min(1, Math.abs(v.speed) / (H.top * 0.35))), nh2 = v.h + ix * H.turn * EXTRA.turnK * dt * wayK * (v.speed < -2 ? -1 : 1);   // (a little turn with no way on: the oars turn her)
       if (!v.beached) { if (stuck || free(v.x, v.y, nh2)) v.h = nh2; else if (ix && nudged(v, free, nh2)) v.h = nh2; }
       else if (ix && (free(v.x, v.y, nh2) || (beach && beach(v.x, v.y, nh2)))) v.h = nh2;   // beached, she pivots slowly on her bow where the sand lets her (never caught with sand at both ends)
     }
@@ -9963,7 +9964,7 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
 
-return { setModel: setModel, artOf: artOf, bigModel: bigModel, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, PARTS: ALL_PARTS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { setModel: setModel, artOf: artOf, bigModel: bigModel, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, HANDLING: HANDLING, WIND: WIND, sail: sail, extra: EXTRA, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, PARTS: ALL_PARTS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partOf: partOf, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
@@ -12004,7 +12005,7 @@ function tick(G, o, dt, ctx) {
     if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
-    else if (o.runeLogs && ev.log) { for (var li = 0; li < G.logsPerTrunk; li++) ev.log(o.name, o.x + dir * len * (0.3 + 0.6 * li / Math.max(1, G.logsPerTrunk - 1)), o.y + 2, Math.max(1, Math.round(wood / G.logsPerTrunk)), dir); }   /* Thor's fell at tier III: the logs come off by themselves (Runes2) */
+    else if ((o.runeLogs || (ev.fellRuneLogs && ev.fellRuneLogs(o))) && ev.log) { for (var li = 0; li < G.logsPerTrunk; li++) ev.log(o.name, o.x + dir * len * (0.3 + 0.6 * li / Math.max(1, G.logsPerTrunk - 1)), o.y + 2, Math.max(1, Math.round(wood / G.logsPerTrunk)), dir); }   /* Thor's fell at tier III: the logs come off by themselves (Runes2) */
     else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, bake: s ? s.bake : 1, s: o.s, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
     if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
@@ -13632,7 +13633,7 @@ function shadeTick(dt) {                   // the Ghost-step's shade: the men wi
 function markTick(e, dt) {                 // the marks that hurt: bleeding (the Serpent's tongue, the Bleeding point) and burning (the Fire-arrow)
   if (!e.marks || e.dead) return;
   if (e.marks.bleeding > 0 && e.type === 'soldier') { e.hp -= (e.bleedDmg || 3) * dt; e.showBar = 1; if (Math.random() < dt * 6 && api.onBlood) api.onBlood(e.x, e.y, 1, 0); if (e.out && e.state === 'flee' && runeHas('serpentTongue') && runeN('serpentTongue', 'fall') && !e.fellBleeding) { e.fellBleeding = true; knockDown(e, e.face, 0.5); } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
-  if (e.marks.burning > 0 && e.type === 'soldier') { e.hp -= (e.burnDmg || 1) * dt; e.showBar = 1; if (Math.random() < dt * 8) spark(e.x + (Math.random() - 0.5) * 10, e.y - 10 - Math.random() * 16, 2, '#ff9a40', 60); if (e.burnSpread && Math.random() < dt * 0.8) for (var j = 0; j < W.enemies.length; j++) { var o = W.enemies[j]; if (o !== e && o.type === 'soldier' && !o.dead && !marked(o, 'burning') && Math.hypot(o.x - e.x, o.y - e.y) < 30) { markOn(o, 'burning', 4); o.burnDmg = e.burnDmg; } } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
+  if (e.marks.burning > 0 && e.type === 'soldier') { e.hp -= (e.burnDmg || 1) * dt; e.showBar = 1; if (Math.random() < dt * 8) spark(e.x + (Math.random() - 0.5) * 10, e.y - 10 - Math.random() * 16, 2, '#ff9a40', 60); if (runeHas('torchHand') && runeN('torchHand', 'fear') && !e.out && e.type === 'soldier') breakMan(e, 'flee'); if (e.burnSpread && Math.random() < dt * 0.8) for (var j = 0; j < W.enemies.length; j++) { var o = W.enemies[j]; if (o !== e && o.type === 'soldier' && !o.dead && !marked(o, 'burning') && Math.hypot(o.x - e.x, o.y - e.y) < 30) { markOn(o, 'burning', 4); o.burnDmg = e.burnDmg; } } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
 }
 function rushHits(p) {                     // during a rush or a dash: the men the hero runs into
   var ch = p.charge, i, ang = ch ? ch.ang : Math.atan2(p.roll.dy, p.roll.dx);
@@ -13719,7 +13720,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
-    blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy');   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
+    blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy'); if (e.side === 1 && runeHas('shieldWall')) { if (e.inLine && runeN('shieldWall', 'unbroken')) broke = false; if (Math.hypot(e.x - P.x, e.y - P.y) < 48) dmg *= 0.5; }   /* the Shield-wall: a man of yours beside you stops more; a held line of yours cannot be broken (III) */   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
     dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1); if (e.inLine) dmg *= MEN.wallK;   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; if (!src && hitFlags.wkind === 'axe' && runeHas('axeBreaker')) { stag = Math.max(stag, 42); e.guardCd *= runeN('axeBreaker', 'downK') || 1; e.axeOpen = runeN('axeBreaker', 'open') || 1; } }   /* the Axe-breaker: a broken guard staggers, stays down longer, opens him */ else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
@@ -13753,7 +13754,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
   else if (man && src.type === 'soldier' && !src.dead) { e.hitBy = src; e.hitByT = W.t; }   // (2026-10-14: a man remembers who struck him last, and turns to him: see pickTarget)   // (the man the quiet blow falls on is not one who heard it)
-  if (e.errand) { var er0 = e.errand; if (er0.hold && e.hp > e.maxHp * MEN.dropAt) { /* a carrier holds on until badly hurt (raid step 3, 2026-10-20; decided 2026-10-13) */ } else { e.errand = null; if (er0.drop) er0.drop(e); } }   // struck on an errand: that is the end of it (he drops what he carries, and fights), unless he was told to hold on
+  if (e.errand) { var er0 = e.errand; if (er0.hold && e.hp > e.maxHp * (e.side === 1 && runeHas('heavyBack') && runeN('heavyBack', 'hold') ? 0 : MEN.dropAt)) { /* a carrier holds on until badly hurt (raid step 3, 2026-10-20; decided 2026-10-13) */ } else { e.errand = null; if (er0.drop) er0.drop(e); } }   // struck on an errand: that is the end of it (he drops what he carries, and fights), unless he was told to hold on
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
@@ -13827,7 +13828,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet * (runeHas('quietBlade') ? (runeN('quietBlade', 'fellow') ? 0 : 0.5) : 1) : MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -14072,12 +14073,13 @@ function updatePlayer(dt) {
         for (i = 0; i < W.enemies.length; i++) {              // and a tool bites a beast or a man a little (2026-10-13, Robin): TOOL_DMG of a blow of the sword's weight, a flinch and no more
           var te = W.enemies[i]; if (te.dead || te.side === 1 || te.down || a.hit.indexOf(te) >= 0) continue;
           var tx2 = te.x - p.x, ty2 = te.y - p.y, td = Math.hypot(tx2, ty2);
-          if (td <= sd.reach + te.r + 2 && Math.abs(wrap(Math.atan2(ty2, tx2) - a.dir)) <= half + 0.12 && !wallBetween(p.x, p.y, te.x, te.y)) { a.hit.push(te); damageEnemy(te, (ti ? Items.stats(ti).dmg : 0.5) * TOOL_DMG * dmgMul('sword'), Math.atan2(ty2, tx2), 40, 6, 'melee'); }
+          if (td <= sd.reach + te.r + 2 && Math.abs(wrap(Math.atan2(ty2, tx2) - a.dir)) <= half + 0.12 && !wallBetween(p.x, p.y, te.x, te.y)) { a.hit.push(te); damageEnemy(te, (ti ? Items.stats(ti).dmg : 0.5) * (runeHas('quickHands') ? Math.max(TOOL_DMG, runeN('quickHands', 'toolDmg')) : TOOL_DMG) * dmgMul('sword'), Math.atan2(ty2, tx2), 40, 6, 'melee'); }   /* (the Quick hands III: a tool bites as a weapon) */
         }
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
         if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), wk = bareHanded() ? null : meleeProfile().kind, rbn = swingReachBonus(wk), halfR = swingRune() === 'sweep' && wk === 'spear' ? Math.max(half, (runeN('sweep', 'arc') || 2.4) / 2) : half;
+        if (e.type === 'soldier' && e.awake === false && runeHas('quietBlade')) rbn += 24 * (runeN('quietBlade', 'reach') || 1);   /* the Quiet blade: the blow from behind from a stride further */
         if (d <= sd.reach + rbn + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= halfR + 0.12) && !wallBetween(p.x, p.y, e.x, e.y)) {
           a.hit.push(e);
           if (a.feint) { if (e.type === 'soldier' && !e.dead) { e.guard = 0; e.guardAge = 0; e.guardCd = runeN('feint', 'openT') || 0.8; e.exposedT = Math.max(e.exposedT || 0, runeN('feint', 'openT') || 0.8); num(e.x, headY(e), 'FEINTED', '#ffe27a'); logEv({ k: 'feint', e: e }); if (runeN('feint', 'heavy')) p.feintHeavy = 1; } continue; }   /* the Feint lands no blow: it opens him */
@@ -14167,7 +14169,8 @@ function updatePlayer(dt) {
   var lvx = 0, lvy = 0;
   if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), gA = gapAhead(a.dir), lf = clamp((gA - 3) / 14, 0, 1) * (gA < sd2.reach + 60 ? 1 : 0.15); var lgK = swingRune() === 'lunge' ? 1 + 0.6 * (runeN('lunge', 'stride') || 1) : 1; lvx = Math.cos(a.dir) * sd2.lunge * lf * lgK; lvy = Math.sin(a.dir) * sd2.lunge * lf * lgK; }   /* (the step into a blow is taken toward a foe in front, within the reach and 60 units; at nothing, a small step: 2026-10-15, with Robin's long lunge a blow at the air slid him 35 units, which read as gliding) */
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
-  if (p.leap && p.roll.t > 0) { p.x += (p.vx + p.kx) * dt; p.y += (p.vy + p.ky) * dt; } else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);   /* the Long leap: over what stands in the way (the pillars); the page's walk rule still holds at the landing */
+  if (p.leap && p.roll.t > 0) { var lnx = p.x + (p.vx + p.kx) * dt, lny = p.y + (p.vy + p.ky) * dt, lrs = Math.hypot(p.vx, p.vy), lex = p.x + p.roll.dx * lrs * p.roll.t * 0.7, ley = p.y + p.roll.dy * lrs * p.roll.t * 0.7, canW = !api.scene || !api.scene.walk, okNow = canW || api.scene.walk(lnx, lny, p), okEnd = canW || api.scene.walk(lex, ley, p); if (okNow || okEnd) { p.x = lnx; p.y = lny; } else { p.roll.t = 0; p.vx = p.vy = 0; } }   /* the Long leap: over what stands in the way, a stream or a fence, as long as he can land beyond it; else it stops at the edge */
+  else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
   shadeTick(dt);
   updateAnim(dt, p.roll.t > 0);
   if (S.juice && p.moving && p.roll.t <= 0) { W.dustT -= dt; if (W.dustT <= 0) { W.dustT = p.sprinting ? 0.07 : 0.14; dust(p.x, p.y, p.sprinting ? 2 : 1); } }
@@ -14190,7 +14193,7 @@ function beastAI(e, dt, d, ang) {
   var near = kind === 'arc' ? e.r + (A.reach || 20) * 0.8 : (A.near || 56), ring = A.ring || Math.min(52, near);
   e.cd -= dt;
   switch (e.state) {
-    case 'idle': if ((d < 130 || e.heard > 0) && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'idle': if ((d < 130 * (e.shy && runeHas('hunterStride') && (!P.sprinting || runeN('hunterStride', 'run')) ? runeN('hunterStride', 'nearK') || 0.5 : 1) || e.heard > 0) && !P.dead) { e.state = 'chase'; e.t = 0; } break;   /* the Hunter's stride: a shy beast notices you from half as near */
     case 'chase':
       e.face = A.turn ? turnToward(e.face, ang, A.turn * dt) : ang;
       var fa = e.face, aligned = Math.abs(wrap(ang - e.face)) < 0.5;
@@ -15015,7 +15018,7 @@ function updateProjs(dt) {
         if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; break; } } }   // (an arrow, too)
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y); }
+    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang); }
     else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }
@@ -16392,7 +16395,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
   function buildCost(cost) { if (!false) return cost; var o = {}, k; for (k in cost) o[k] = (k === 'wood' || k === 'stone') ? Math.max(1, cost[k] - 1) : cost[k]; return o; }   // the builder's hand
-  function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
+  function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { var ck = k === 'wood' && (sign || -1) < 0 && runeHas('woodwright') && runeN('woodwright', 'costK') < 1 ? Math.max(1, Math.round(cost[k] * runeN('woodwright', 'costK'))) : cost[k]; if (ck !== cost[k]) { takeItem(k, ck); continue; } if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
   function pieceFor(id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (PIECES[i].m == null || PIECES[i].m === m)) return PIECES[i]; return null; }
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
@@ -16730,11 +16733,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
      SWIM.spent of his walk, and the word says so once. He cannot swim with a heavy thing on his back. Drawn to the chest in the
      water with a ring of ripples round him. No fight from the water. The numbers are mine. */
   var SWIM = { speed: 0.5, st: 7, spent: 0.3 }, swim = { on: false, spent: false, said: false, ripT: 0 };
+  function swimSt() { return SWIM.st / (runeHas('sealSkin') ? runeN('sealSkin', 'swimK') || 1 : 1); }   /* the Seal-skin: twice as far */
+  function swimSpeed() { return runeHas('sealSkin') ? Math.max(SWIM.speed, runeN('sealSkin', 'speed') || SWIM.speed) : SWIM.speed; }
   function swimAt(x, y) { return !inCave && !(raft && raft.aboard) && w.isWater(x, y) && !w.isWade(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }
   function canSwimTo(x, y) { var P = hero(); if (carrying && carrying.heavy) return false; if (!swim.spent) return true; return w.elevAt(x, y) >= w.elevAt(P.x, P.y) - 0.02; }   /* (spent: only toward the shore) */
   function swimTick(dt) {
     var P = hero(), on = swimAt(P.x, P.y); swim.on = on; if (!on) { swim.spent = false; swim.said = false; return; }
-    P.st = Math.max(0, P.st - SWIM.st * dt); P.stDelay = Math.max(P.stDelay || 0, 1); if (P.guard) P.guard = false;
+    P.st = Math.max(0, P.st - swimSt() * dt); P.stDelay = Math.max(P.stDelay || 0, 1); if (P.guard) P.guard = false;
     if (P.st <= 0 && !swim.spent) { swim.spent = true; if (!swim.said) { swim.said = true; toast('You can swim no further: back to the shore'); } }
     swim.ripT += dt;
   }
@@ -16779,7 +16784,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ runeLearn('keenEye', 1, 'the first night slept'); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ runeLearn('keenEye', 1, 'the first night slept'); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
@@ -17252,7 +17257,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var r = e.dish || e.r, kind = e.dish ? 'cook' : (r.at === 'furnace' ? 'smelt' : 'craft'); if (kind === 'craft') return craft(r, n);
     if (craftJob) return false; n = n || 1; var st = kind === 'cook' ? hearthAt(hero()) : furnaceAt(hero()); if (!st) return false;
     var need = {}, k; for (k in r.needs) need[k] = r.needs[k] * n; if (!canAfford(need)) return false; pay(need);
-    var one = (kind === 'cook' ? COOK_T : (r.dur || 8) * 0.5) * (false ? 0.5 : 1);   /* (a bar took r.dur, 8 s: halved with the crafting) */
+    var one = (kind === 'cook' ? COOK_T * (runeHas('smokeAndSalt') ? runeN('smokeAndSalt', 'cookK') || 1 : 1) : (r.dur || 8) * 0.5);   /* (a bar took r.dur, 8 s: halved with the crafting) */
     craftJob = { r: r, n: n, t: 0, dur: n > 1 ? one * n * CRAFT_BATCH : one, need: need, hp: hero().hp, kind: kind }; sfx('pick'); return true;
   }
   // A station keeps what was made in it (it.out, up to eight stacks) until you take it from its board; the glint shows it
@@ -18047,7 +18052,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
     if (raftWaitTick(dt)) { ix = 0; iy = 0; }   /* the men are coming aboard: she waits (docs/ships-plan.md step 4) */
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
-    Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, Yard.rigged(raft.kind) ? wind : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
+    var sailIn = { ix: ix, iy: iy }; if (Yard.rigged(raft.kind) && runeHas('starRoad') && !ix && !iy && chartMark && (runeN('starRoad', 'day') || light() < 0.5) && !raft.beached) { var mdx = chartMark.x - raft.x, mdy = chartMark.y - raft.y, mdd = Math.hypot(mdx, mdy); if (mdd > 60) { var want = Math.atan2(mdy, mdx), dh = Math.atan2(Math.sin(want - raft.h), Math.cos(want - raft.h)); sailIn = { ix: Math.abs(dh) > 0.08 ? (dh > 0 ? 1 : -1) : 0, iy: -1 }; } else chartMark = null; }   /* the Star-road: the ship holds a course to the chart's mark by itself (by night at tier I, by day too at II) */
+    var windR = wind; if (Yard.rigged(raft.kind) && wind && (Yard.extra.abeam || Yard.extra.never)) { windR = { s: wind.s, a: wind.a }; var rel = Math.atan2(Math.sin(wind.a - raft.h), Math.cos(wind.a - raft.h)); if (Yard.extra.never || Math.abs(rel) < 1.9) windR.a = raft.h; }   /* the Following wind II and III: a wind abeam fills the sail as one behind; no wind is against you */
+    Yard.sail(raft, sailIn, dt, raftHull, H, Yard.rigged(raft.kind) ? windR : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
     seaSounds(raft, dt);
     if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */
       var hw = w.homeWater, hx = hw.cx * T, hy = hw.cy * T, dh = Math.hypot(raft.x - hx, raft.y - hy) || 1, past = dh - (hw.r + w.WD.edge) * T;
@@ -18111,12 +18118,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!raft || !raft.aboard) return false;
     if (!stillComing()) { raft.waitT = 0; raft.waitSaid = false; return false; }
     raft.waitT = (raft.waitT || 0) + dt;
-    if (raft.waitT > BOARD.wait * (Yard.fitOf(raft).boardK || 1)) { boardingDone(); return false; }   /* (a Raider's men are aboard quicker) */
+    if (raft.waitT > BOARD.wait * (Yard.fitOf(raft).boardK || 1) * (runeHas('longOar') ? runeN('longOar', 'boardK') : 1)) { boardingDone(); return false; }   /* (a Raider's men are aboard quicker) */
     if (!raft.waitSaid) { raft.waitSaid = true; toast('The men are coming aboard'); }   /* LORE? */
     return true;
   }
   function landingTick(dt) {               // the men file off the ship one at a time onto their spots
-    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file * (Yard.fitOf(raft).boardK || 1);
+    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file * (Yard.fitOf(raft).boardK || 1) * (runeHas('longOar') ? runeN('longOar', 'boardK') : 1);
     var m = L.list.shift(); if (!m) { raft.landing = null; return; } var sp = L.spots[L.k++] || L.spots[L.spots.length - 1] || { x: L.at.x, y: L.at.y };
     if (m.state !== undefined) { manLands(m, sp); return; }   /* (a man of the engine) */
     if (!m.aboard) return; m.aboard = false; m.sitting = false; m.freed = false; m.place = null; m.leanX = m.leanY = 0; m.x = L.at.x; m.y = L.at.y;
@@ -18388,10 +18395,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
      varde) stands on the southernmost stand of the highest ground you can walk to, a cliff under it. E beside it looks out: the
      view pulls back to twice as far and turns south over the land below, and every place within LOOK_R of it is marked on the
      chart. A step, or E again, ends it. The waterfall is marked when you come within sight of it, as the cave is. */
-  var looking = null, lookK = 0, LOOK_R = 3000, fallSnd = null;
+  var looking = null, lookK = 0, LOOK_R = 3000, fallSnd = null, chartMark = null;   /* chartMark: the point the player marked on the map with the right button (the Star-road sails to it) */
   function lookoutNear(P) { var best = null; if (!w.mt || inCave || (raft && raft.aboard)) return null; w.mt.lookouts.forEach(function (lo) { if (Math.hypot(lo.x - P.x, lo.y - P.y) < 48 && w.levelAt(P.x, P.y) === lo.lvl) best = lo; }); return best; }
   function lookReveal(lo) {
-    var names = [], near = function (x, y) { return Math.hypot(x - lo.x, y - lo.y) < LOOK_R; };
+    var names = [], near = function (x, y) { return Math.hypot(x - lo.x, y - lo.y) < LOOK_R * (runeHas('farSight') ? runeN('farSight', 'chartK') || 1 : 1); };
     if (caveMouth && !seen.cave && near(caveMouth.x, caveMouth.y)) { seen.cave = 1; names.push('A cave'); }
     caves.forEach(function (cv) { if (cv.kind !== 'troll' && cv.kind !== 'cellar' && !placeSeen(cv.kind) && near(cv.mouth.x, cv.mouth.y)) { placeMark(cv.kind); names.push(CAVE_NAME[cv.kind][1]); } });
     w.mt.shelters.forEach(function (sh, si) { if (!placeSeen('sh' + si) && near(sh.x, sh.y)) { placeMark('sh' + si); names.push('A rock shelter'); } });
@@ -18873,7 +18880,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     yieldDrop('fiber', o.x, o.y + 10, BUSH_FIBER); chip(o.x, o.y, 6, '#8a9a4a', 7, 60); sfx('pick');
     removeProp(o); decals.push({ k: 'grass', x: o.x, y: o.y, name: o.name, s: o.s, v: o.v, day: day.n });
   }
-  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
+  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, Math.round(BERRIES * (runeHas('greenThumb') ? runeN('greenThumb', 'yield') || 1 : 1))); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360 * (runeHas('greenThumb') ? runeN('greenThumb', 'regrowK') || 1 : 1); sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
   /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
      A point of interest found by exploring: four huts round a green with a well, a woodpile, a haystack and a fence,
@@ -19250,6 +19257,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   var mapOpen = false;
   var mapZ = 1, mapC = null, MAPV = null, mapDrag = null;
+  function mapToWorld(ms) { var V = MAPV; if (!V || !ms) return null; return { x: ((ms.x - V.mx) / V.kz + V.sx0) * V.step * T, y: ((ms.y - V.my) / V.kz + V.sy0) * V.step * T }; }   /* the map's point under the mouse, in world units */
   function mapIn() { var V = MAPV; return !!(V && mouseS && mouseS.x >= V.mx && mouseS.x <= V.mx + V.mw && mouseS.y >= V.my && mouseS.y <= V.my + V.mh); }
   function mapDragTo() {                   // the zoomed map follows the mouse held on it (Robin, 2026-10-22: "dragged by mouse1 when zoomed in")
     var V = MAPV, g = mapDrag; if (!V || !g || !mouseS || mapZ <= 1) return;
@@ -19909,7 +19917,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var C = [];
     function add(o, say, act, bias) { if (o && (say || act)) C.push({ say: say || null, act: act || null, sc: facingScore(P, o.x, o.y) + (bias || 0) }); }
     var fa = fireAtHand(P); if (fa) add(fa, fa.what === 'roof' ? 'Set the roof alight' : 'Set it alight', function () { lighting = { fa: fa, t: 0, x: P.x, y: P.y }; }, 5);
-    var hv = heavyNear(P); if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
+    var hv = heavyNear(P); if (hv && hv.locked && runeHas('lockBreaker') && runeN('lockBreaker', 'knife') && handItem() && handItem().kind === 'knife') add(hv, 'Open the lock with the knife', function () { hv.locked = false; sfx('tele'); toast('The lock gives to the knife'); save(); });   /* the Lock-breaker III */
+    else if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
     var dn = downNear(P, 36); if (dn) add(dn, 'Lift ' + (dn.name || 'him'), function () { liftMan(dn); });      // one of yours who is down: carried, he lives
     var sg = signNear(P); if (sg) add(sg, 'Write', function () { signWrite(sg); });
     var ly = taking ? null : lyingNear(P); if (ly) add(ly, 'Take the ' + ly.item.name.toLowerCase(), function () { startTake({ drop: ly }); });
@@ -19940,7 +19949,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; menu = null; invOpen = true; bookOpen = false; clothOpen = false; });
     var cl = clampNear(P), clp = cl && clampPrompt(cl); if (clp) add(cl, clp, function () { clampUse(cl); });
     var wr = weirNear(P); if (wr) add(wr, wr.name === 'netTangle' ? 'Take the net' : 'Take down the net', function () { weirTake(wr); });   /* (it lies washed up since 2026-10-22) */
-    var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
+    var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3 * (runeHas('wreckersEye') ? runeN('wreckersEye', 'planks') || 1 : 1)); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
     var fr = ringNear(P); if (fr) add(fr, 'Take the charcoal', function () { ringTake(fr); });
     var lo = !build && lookoutNear(P); if (lo) add(lo, 'Look out', function () { lookOut(lo); });
     var rsn = stoneNear(P); if (rsn && !(seen.stones && seen.stones[propKey(rsn)])) add(rsn, 'Read the stone', function () { readStone(rsn); });   // a stone read once is not offered again
@@ -20012,7 +20021,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P.dead || P.hp < j.hp - 0.5) { craftStop(true); toast('The work is broken off'); return; }   // struck while at it: the work stops, the materials come back
     j.hp = Math.max(j.hp, P.hp); j.t += dt; if (j.t < j.dur) return;
     craftJob = null;
-    if (j.kind === 'cook') { stationPut(null, { kind: j.r.id, n: j.n }); deed('meals'); toast('Cooked ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.id] || j.r.id).toLowerCase()); sfx('craft'); save(); return; }
+    if (j.kind === 'cook') { var portions = j.n; if (runeHas('secondPortion') && Math.random() < runeN('secondPortion', 'chance')) { portions += j.n; toast('A second portion'); } stationPut(null, { kind: j.r.id, n: portions }); deed('meals'); toast('Cooked ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.id] || j.r.id).toLowerCase()); sfx('craft'); save(); return; }
     if (j.kind === 'smelt') { stationPut(null, { kind: j.r.out.stack[0], n: (j.r.out.stack[1] || 1) * j.n }); toast('Smelted ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.out.stack[0]] || j.r.out.stack[0]).toLowerCase()); sfx('craft'); save(); return; }
     for (var i = 0; i < j.n; i++) craftGive(j.r, null, true);
     toast('Made ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + recipeName(j.r).toLowerCase());
@@ -20030,8 +20039,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function eat(kind, free) {
     var f = FOOD[kind], P = hero(); if (!f || (!free && !(inv[kind] > 0)) || P.dead) return;
     if (!free) takeItem(kind, 1);
-    if (f.time) fed = { kind: kind, left: f.time * (1 + 0.5 * 0), regen: f.regen, bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };
-    if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (!f.time && false ? 2 : 1));
+    if (f.time) fed = { kind: kind, left: f.time * (runeHas('hearthsGift') ? runeN('hearthsGift', 'lastK') || 1 : 1), regen: f.regen + (runeHas('hearthsGift') ? runeN('hearthsGift', 'heal') || 0 : 0), bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };   /* the Hearth's gift: a dish lasts longer, heals a little every second at III */
+    if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (f.time && runeHas('warmBelly') ? runeN('warmBelly', 'healK') || 1 : 1));   /* the Warm belly: a hot dish heals twice */
     toast('Ate ' + NAMES[kind].toLowerCase()); save();
   }
   function feedTick(dt) {
@@ -20957,6 +20966,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.harvest = {
     list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
+      if (o.kind === 'stone' && right && runeHas('stoneBiter') && Math.random() < runeN('stoneBiter', 'chance')) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
       if (o.gate) { gateBlow(o, power, tool); return { dealt: power }; }   /* (a catacomb's iron gate) */
@@ -20978,13 +20988,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
       return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };   // the engine shows the number: gold for the sweet spot, large for a clean hit
     }
   };
-  Combat.api.gatherPace = function () { return GT.pace; };
+  Combat.api.gatherPace = function () { return GT.pace * (runeHas('quickHands') ? runeN('quickHands', 'pace') || 1 : 1); };   /* the Quick hands: a tool swings faster */
   // what gathering does to the world: chips, drops, stumps, trunks, the chain, the fall on the hero, bees
   var gatherEv = {
+    fellRuneLogs: function (o) { return runeHas('woodwright') && runeN('woodwright', 'noTrunk') ? true : false; },   /* the Woodwright II: a felled tree drops its logs with no chopping */
     log: function (tree, x, y, n, dir) { if (!World.IMAGES[tree + '_log']) { gatherEv.drop('wood', x, y, n); return; } var nn = Math.max(1, Math.round(n * yieldK())); drops.push({ kind: 'log', tree: tree, n: nn, x: x, y: y, z: 10, vx: dir * (40 + Math.random() * 30), vy: (Math.random() - 0.5) * 24, vz: 70 + Math.random() * 40, t: 0, spin: (Math.random() - 0.5) * 0.5 }); if (Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); },   /* a log rolls out of the trunk as the studio's log picture (2026-10-20) and gives its wood when walked over */
-    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
+    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < (runeHas('quickHands') && runeN('quickHands', 'fibre') ? 1 : 0.3)) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
     decal: function (d) { d.day = day.n; decals.push(d); },
-    spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; trunks.push(o); },
+    spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; if (runeHas('woodwright')) o.logs = Math.max(o.logs, runeN('woodwright', 'logs') || o.logs); trunks.push(o); },   /* the Woodwright: a fifth log */
     fell: function (q) { if (busy.indexOf(q) < 0) busy.push(q); },
     fellRune: function (o) { if (Runes2.bound(R2, 'swing') !== 'thorsFell' || Math.random() >= Runes2.num(R2, 'thorsFell', 'chance')) return null; var g = Runes2.use(R2, 'thorsFell'); if (g) Combat.api.onRuneGrow('thorsFell', g); sfx('lightning_small'); note('Thor\u2019s fell'); return { fells: Runes2.num(R2, 'thorsFell', 'fells'), safe: Runes2.num(R2, 'thorsFell', 'safe'), logs: Runes2.num(R2, 'thorsFell', 'logs') }; },   /* Thor's fell, the swing's rune (Runes2): the felled tree fells the next ones, the trunk never flies at you, the logs come off by themselves, by its tier */
     hurt: function (dmg, fx, fy, dir) { var P = hero(); if (P.dead || ADMIN.immortal) return; P.hp -= dmg; P.flash = 1; P.hurtT = 0.3; P.kx = (P.kx || 0) + dir * 90; P.anim.sq = 1; sfx('hurt'); Combat.api.num(P.x, P.y - 30, '-' + dmg, '#ff8a7a'); if (P.hp <= 0) { P.hp = 0; } },
@@ -21036,7 +21047,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function deed(kind, n) { }   /* (the old runes' deeds: counted no more since the rework of 2026-10-23; the calls stay as marks of what the hero does) */
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
-    return { dmg: ADMIN.oneshot ? 1000 : 1, speed: (carrying ? 0.7 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : SWIM.speed) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
+    var carryK = carrying ? (runeHas('heavyBack') ? runeN('heavyBack', 'carryK') : runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
+    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: runeHas('windFoot') ? runeN('windFoot', 'sprintK') : 1, speed: carryK * (runeHas('windFoot') ? runeN('windFoot', 'speed') : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
       stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: 0, charge: 0, roll: 0, heavyblow: 0 };   /* (the runes' own switches live in the engine now, Runes2: these are the page's buffs) */
   };
   Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
@@ -21154,7 +21166,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
     riteSky.rings.forEach(function (r) { r.t += dt; }); riteSky.rings = riteSky.rings.filter(function (r) { return r.t < 1.1; });
   }
   var flashT = 0, wasReady = {}, sceneBoarWait = null;
-  function runeReadyTick() { if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
+  function runeTick() {                     // what the page reads from the runes each frame (Runes2): the stack's size (the Strong back), the sea's numbers (the Following wind, the Long oar)
+    STACK = runeHas('strongBack') ? runeN('strongBack', 'stack') || 25 : 25;
+    var X = Yard.extra; X.sailK = runeHas('followingWind') ? runeN('followingWind', 'sailK') : 1; X.oarK = runeHas('longOar') ? runeN('longOar', 'oarK') : 1; X.turnK = runeHas('longOar') && runeN('longOar', 'turn') ? 2.2 : 1; X.abeam = runeHas('followingWind') ? runeN('followingWind', 'abeam') : 0; X.never = runeHas('followingWind') ? runeN('followingWind', 'never') : 0;
+  }
+  Combat.api.torchLit = function () { return !!torchOn; };
+  Combat.api.onFireArrow = function (x, y, ang) { var fa = fireAtHand({ x: x, y: y, face: ang || 0, mode: 'fight' }, true); if (fa) lightFire(fa); };   /* the Fire-arrow: where it lands by a wall or under a roof of a place not yours, it lights it */
+  function runeReadyTick() { runeTick(); if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
   function riteTick2(dt) {
     if (!ceremony) { riteSky.motes.length = 0; riteSky.rings.length = 0; riteSky.glow = 0; riteKnife = false; riteSky.camK = Math.max(0, riteSky.camK - dt / 1.6); riteSky.dark = Math.max(0, riteSky.dark - dt / 2); riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); if (riteSky.camK <= 0) riteSky.at = null; return; } var C = ceremony; C.t += dt;
     riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); riteSky.at = C.it; riteSky.camK = Math.min(1, riteSky.camK + dt / 1.6); motesTick(dt, C);
@@ -21861,10 +21879,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   var CHIPC = { logs: '#a9855c', planks: '#b08e62', wattle: '#c9b488', blocks: '#8f9199', turf: '#6b5a3a', frame: '#d8cdb4', ashlar: '#bdb8ae', door: '#8a6a4a', archDoor: '#8a6a4a', window: '#8a6a4a', gate: '#8a6a4a', fence: '#c9b488', rail: '#a9855c', palisade: '#a9855c', drystone: '#8f9199', townwall: '#bdb8ae' };
   function wallBlow(o, power, right, tool) {
-    var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5), tool); wallHitT = clock; wallLast = o;
+    var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5) / (runeHas('lockBreaker') ? runeN('lockBreaker', 'blowsK') || 1 : 1), tool); wallHitT = clock; wallLast = o;
     if (!r) return { dealt: 0 };
     chip(o.x, o.y, 14, CHIPC[r.mat] || '#8a6a4a', r.none ? 2 : (right ? 5 : 3), 70);
-    Combat.noise(o.x, o.y, r.noise, true);
+    Combat.noise(o.x, o.y, r.noise * (runeHas('lockBreaker') ? runeN('lockBreaker', 'noiseK') || 1 : 1), true);
     if (r.gave) wallGave(o.L, o.tx, o.ty, e, false); else if ((e.st || 0) !== was) delete edgeCache[o.L + o.k];
     return { dealt: Math.round(r.dealt * 10) / 10 };
   }
@@ -21917,8 +21935,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* Fire. A torch burning in the hand and E at a wall that is somebody else's: the wall if it burns, else the eaves of the
      roof over it. It takes a moment of standing there. From then on Ruin.fireTick runs it: along the walls, up into the
      roof, down from a roof into its walls, and as sparks downwind onto other roofs. */
-  function fireAtHand(P) {
-    if (!torchOn || !RUIN.on || !RUIN.fire.on || P.mode === 'build' || lighting) return null;
+  function fireAtHand(P, force) {
+    if (!force && (!torchOn || !RUIN.on || !RUIN.fire.on || P.mode === 'build' || lighting)) return null; if (force && (!RUIN.on || !RUIN.fire.on)) return null;
     var q = edgeFaced(P, 42, function (e) { return !e.breach; }); if (!q || !theirs(q.x, q.y)) return null;
     if (Ruin.burnsWall(RUIN, q.e) && !Ruin.onFire(B, q.L, q.k)) return { x: q.x, y: q.y, q: q, what: 'wall' };
     var rs = edgeRooms(q.L, q.tx, q.ty).filter(function (r) { return Ruin.burnsRoof(RUIN, B, r, BCFG.roof) && !roofBurning(r); });
@@ -21927,8 +21945,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function lightingTick(dt) {
     if (!lighting) return; var P = hero();
     if (P.dead || !torchOn || Math.hypot(P.x - lighting.x, P.y - lighting.y) > 10) { lighting = null; return; }
-    lighting.t += dt; if (lighting.t < RUIN.fire.catchT) return;
-    var fa = lighting.fa, q = fa.q, ok; lighting = null;
+    lighting.t += dt * (runeHas('torchHand') ? 3 : 1); if (lighting.t < RUIN.fire.catchT) return;
+    var fa = lighting.fa; lighting = null; lightFire(fa);
+  }
+  function lightFire(fa) {                   // the torch, or a burning arrow (the Fire-arrow): the wall or the roof catches, and the place sees it
+    var q = fa.q, ok, P = hero();
     if (fa.what === 'roof') { var a = q.L === 'H' ? [q.tx, roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.ty : q.ty - 1] : [roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.tx : q.tx - 1, q.ty]; ok = Math.random() < Ruin.roofSpec(RUIN, B, fa.room, BCFG.roof).catch && Ruin.ignite(RUIN, B, 'R', null, fa.room, a, BCFG.roof); }
     else ok = Ruin.ignite(RUIN, B, q.L, q.k);
     if (ok) { fireLit(q.x, q.y, true); edgeRooms(q.L, q.tx, q.ty).forEach(folkFlush); if (seenAt(P.x, P.y, 190)) { Combat.noise(P.x, P.y, 300); if (villageAt(P.x, P.y) >= 0) raidStir(villageAt(P.x, P.y), P.x, P.y); } } else note('It will not catch');   // (lit where a man or a villager of the place could see it done: the cry goes up, and it is for you they come)
@@ -21962,7 +21983,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (B.ruin) for (k in B.ruin) if (B.ruin[k].hot > 0) B.ruin[k].hot = Math.max(0, B.ruin[k].hot - (any ? 0 : dt));   // (Ruin.fireTick cools them while anything burns)
     if (!any) { if (BURN.length) BURN = []; heatAcc = 0; return; }
     if (!roomInfo || bDirty) return;
-    var ev = Ruin.fireTick(RUIN, B, dt, { rooms: roomInfo.rooms, at: roomInfo.at, wind: wind, rand: Math.random, roofDefault: BCFG.roof });
+    var ev = Ruin.fireTick(RUIN, B, dt * (runeHas('torchHand') ? runeN('torchHand', 'spreadK') || 1 : 1), { rooms: roomInfo.rooms, at: roomInfo.at, wind: wind, rand: Math.random, roofDefault: BCFG.roof });
     ev.lit.forEach(function (q) { var at = q[0] === 'R' ? Ruin.centre(q[1]) : (function () { var p = q[1].split(','), m = edgeMidOf(q[0], +p[0], +p[1]); return [m.x, m.y]; })(); fireLit(at[0], at[1], false); if (q[0] === 'R') folkFlush(q[1]); else { var lp = q[1].split(','); edgeRooms(q[0], +lp[0], +lp[1]).forEach(folkFlush); } });
     ev.gave.forEach(function (g) { var p = g.k.split(','); wallGave(g.L, +p[0], +p[1], g.e, true); });
     ev.fell.forEach(function (r) { roofDown(r, 'burnt'); });
@@ -22423,6 +22444,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var step = Math.max(1, Math.ceil(GW / CHART_PX)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
       var sx0 = Math.max(0, Math.min(cw - sw, hpx / T / step - sw / 2)), sy0 = Math.max(0, Math.min(ch - sh, hpy / T / step - sh / 2)), zx = mw / sw, zy = mh / sh;
       function mp(wx, wy) { return { x: mx + (wx / T / step - sx0) * zx, y: my + (wy / T / step - sy0) * zy }; }
+      var chartDot = function (x, y, col, r) { var q = mp(x, y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = col; c.beginPath(); c.arc(q.x, q.y, r || 1.1, 0, 7); c.fill(); };
+      if (runeHas('keenNose')) { var kn = runeN('keenNose', 'reach') || 200, KN = { mushrooms: 1, mushroom: 1, wildHerbs: 1, herbs: 1, berryBush: 1 }, KNO = { copperVein: 1, oreRock: 1, bogIron: 1, vein: 1 }; w.around(P.x, P.y, function (o) { if (Math.hypot(o.x - P.x, o.y - P.y) > kn) return; if (KN[o.name] || (runeN('keenNose', 'ore') && (KNO[o.name] || o.ore || o.vein))) chartDot(o.x, o.y, KN[o.name] ? '#f0d060' : '#d48a3a'); }); }   /* the Keen nose: what grows within reach on the chart, the ore at II */
+      if (runeHas('ravenCall') || runeHas('allfathersEye')) { var rc = runeHas('allfathersEye') ? 400 : runeN('ravenCall', 'reach') || 200; Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || en.side === 1 || (en.type !== 'soldier' && !runeHas('allfathersEye')) || Math.hypot(en.x - P.x, en.y - P.y) > rc) return; chartDot(en.x, en.y, en.asleep ? '#9fa8c8' : '#ff8a6a', 1.2); if (runeHas('ravenCall') && runeN('ravenCall', 'facing') && en.type === 'soldier') { var q2 = mp(en.x, en.y); c.strokeStyle = '#ff8a6a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(q2.x, q2.y); c.lineTo(q2.x + Math.cos(en.face) * 3, q2.y + Math.sin(en.face) * 3); c.stroke(); } }); }   /* the Raven's call: the men of a place within a stone's throw, walls or no walls, which way they look at II; the All-father's eye: everyone */
+      if (runeHas('wreckersEye')) { var wr = runeN('wreckersEye', 'reach') || 300; w.around(P.x, P.y, function (o) { if (/wreck|drift|boat/i.test(o.name || '') && Math.hypot(o.x - P.x, o.y - P.y) < wr) chartDot(o.x, o.y, '#c9b27a', 1.3); }); }   /* the Wrecker's eye */
+      if (chartMark) chartDot(chartMark.x, chartMark.y, '#ffffff', 1.6);
       if (runeHas('keenEye') && runeN('keenEye', 'chart')) Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || Math.hypot(en.x - P.x, en.y - P.y) > 300) return; var q = mp(en.x, en.y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(q.x, q.y, 1.1, 0, 7); c.fill(); });
       c.fillStyle = UI_INK; c.beginPath(); c.arc(MAPR.x, MAPR.y, MR + 1, 0, 7); c.fill();
       c.save(); c.beginPath(); c.arc(MAPR.x, MAPR.y, MR, 0, 7); c.clip(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; if (!inCave) { c.drawImage(miniSoft(sx0, sy0, sw, sh), mx, my, mw, mh); var shd = himg('map_shade'); if (shd) c.drawImage(shd, MAPR.x - MAPR.rim, MAPR.y - MAPR.rim, MAPR.rim * 2, MAPR.rim * 2); }
@@ -22634,6 +22660,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       return;
     }
     if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !altarOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
+    if (mapOpen && e.button === 2 && !inCave && mapIn() && mapToWorld) { var cmk = mapToWorld(mouseS); if (cmk) { chartMark = chartMark && Math.hypot(chartMark.x - cmk.x, chartMark.y - cmk.y) < 60 ? null : cmk; toast(chartMark ? 'A mark on the chart' : 'The mark is gone'); } return; }   /* the right button marks the chart (the Star-road's course), again on it takes the mark away */
     if (mapOpen) { if (e.button === 0 && !inCave && mapIn()) { var V0 = MAPV, vw0 = V0.iw / mapZ, vh0 = V0.ih / mapZ; mapDrag = { x: mouseS.x, y: mouseS.y, cx: Math.max(vw0 / 2, Math.min(V0.iw - vw0 / 2, V0.sx0 + vw0 / 2)), cy: Math.max(vh0 / 2, Math.min(V0.ih - vh0 / 2, V0.sy0 + vh0 / 2)) }; return; } mapOpen = false; mapDrag = null; return; }   /* (on the map: held, and dragged when zoomed in) */
     if (e.button === 0 && e.shiftKey && !invOpen && !menu && !store) { var hb = hudBarAt(); if (hb >= 0 && slotGet(hb)) { barDrag = { i: hb }; return; } }   /* (the toolbar, dragged with Shift) */
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
@@ -23704,7 +23731,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
+    if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
     tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;

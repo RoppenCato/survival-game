@@ -87,7 +87,7 @@ __RUNES__
     els.grid.innerHTML = '';
     shown.forEach(function (r) { var d = document.createElement('div'); d.className = 'card' + (sel === r.id ? ' sel' : ''); var sl = Runes2.SLOT[r.slot] || { name: r.slot };
       d.innerHTML = '<canvas></canvas><span class="tag ' + (r.isNew ? 'new' : r.edited ? 'edited' : r.status) + '">' + (r.isNew ? 'new' : r.edited ? 'edited' : r.status) + '</span><div class="nm"></div><div class="meta"></div><div class="tx"></div>' + (wantsOf(r) ? '<div class="wants"></div>' : '');
-      d.querySelector('.nm').textContent = r.name; d.querySelector('.meta').textContent = r.kind + ' · ' + sl.name + (sl.active ? ' (active)' : '') + ' · ' + r.pool + (r.source ? ' · from ' + r.source : ''); d.querySelector('.tx').textContent = (r.text && r.text[0]) || ''; if (wantsOf(r)) d.querySelector('.wants').textContent = 'wants ' + wantsOf(r);
+      d.querySelector('.nm').textContent = r.name; d.querySelector('.meta').textContent = r.kind + ' · ' + sl.name + (sl.active ? ' (active)' : '') + ' · ' + r.pool + (r.source ? ' · from ' + r.source : ''); d.querySelector('.tx').textContent = ((r.text && r.text[0]) || '') + (r.partial ? '  (not all of it yet: ' + r.partial + ')' : ''); if (wantsOf(r)) d.querySelector('.wants').textContent = 'wants ' + wantsOf(r);
       glyphOn(d.querySelector('canvas'), r.id); d.addEventListener('click', function () { sel = r.id; render(); editor(r); }); els.grid.appendChild(d); });
   }
   function field(label, html) { return '<label>' + label + '</label>' + html; }

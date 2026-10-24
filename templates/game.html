@@ -725,7 +725,7 @@ __COMBAT__
   function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
   function buildCost(cost) { if (!false) return cost; var o = {}, k; for (k in cost) o[k] = (k === 'wood' || k === 'stone') ? Math.max(1, cost[k] - 1) : cost[k]; return o; }   // the builder's hand
-  function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
+  function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { var ck = k === 'wood' && (sign || -1) < 0 && runeHas('woodwright') && runeN('woodwright', 'costK') < 1 ? Math.max(1, Math.round(cost[k] * runeN('woodwright', 'costK'))) : cost[k]; if (ck !== cost[k]) { takeItem(k, ck); continue; } if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
   function pieceFor(id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (PIECES[i].m == null || PIECES[i].m === m)) return PIECES[i]; return null; }
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
@@ -1063,11 +1063,13 @@ __COMBAT__
      SWIM.spent of his walk, and the word says so once. He cannot swim with a heavy thing on his back. Drawn to the chest in the
      water with a ring of ripples round him. No fight from the water. The numbers are mine. */
   var SWIM = { speed: 0.5, st: 7, spent: 0.3 }, swim = { on: false, spent: false, said: false, ripT: 0 };
+  function swimSt() { return SWIM.st / (runeHas('sealSkin') ? runeN('sealSkin', 'swimK') || 1 : 1); }   /* the Seal-skin: twice as far */
+  function swimSpeed() { return runeHas('sealSkin') ? Math.max(SWIM.speed, runeN('sealSkin', 'speed') || SWIM.speed) : SWIM.speed; }
   function swimAt(x, y) { return !inCave && !(raft && raft.aboard) && w.isWater(x, y) && !w.isWade(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }
   function canSwimTo(x, y) { var P = hero(); if (carrying && carrying.heavy) return false; if (!swim.spent) return true; return w.elevAt(x, y) >= w.elevAt(P.x, P.y) - 0.02; }   /* (spent: only toward the shore) */
   function swimTick(dt) {
     var P = hero(), on = swimAt(P.x, P.y); swim.on = on; if (!on) { swim.spent = false; swim.said = false; return; }
-    P.st = Math.max(0, P.st - SWIM.st * dt); P.stDelay = Math.max(P.stDelay || 0, 1); if (P.guard) P.guard = false;
+    P.st = Math.max(0, P.st - swimSt() * dt); P.stDelay = Math.max(P.stDelay || 0, 1); if (P.guard) P.guard = false;
     if (P.st <= 0 && !swim.spent) { swim.spent = true; if (!swim.said) { swim.said = true; toast('You can swim no further: back to the shore'); } }
     swim.ripT += dt;
   }
@@ -1112,7 +1114,7 @@ __COMBAT__
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ runeLearn('keenEye', 1, 'the first night slept'); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ runeLearn('keenEye', 1, 'the first night slept'); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
@@ -1585,7 +1587,7 @@ __COMBAT__
     var r = e.dish || e.r, kind = e.dish ? 'cook' : (r.at === 'furnace' ? 'smelt' : 'craft'); if (kind === 'craft') return craft(r, n);
     if (craftJob) return false; n = n || 1; var st = kind === 'cook' ? hearthAt(hero()) : furnaceAt(hero()); if (!st) return false;
     var need = {}, k; for (k in r.needs) need[k] = r.needs[k] * n; if (!canAfford(need)) return false; pay(need);
-    var one = (kind === 'cook' ? COOK_T : (r.dur || 8) * 0.5) * (false ? 0.5 : 1);   /* (a bar took r.dur, 8 s: halved with the crafting) */
+    var one = (kind === 'cook' ? COOK_T * (runeHas('smokeAndSalt') ? runeN('smokeAndSalt', 'cookK') || 1 : 1) : (r.dur || 8) * 0.5);   /* (a bar took r.dur, 8 s: halved with the crafting) */
     craftJob = { r: r, n: n, t: 0, dur: n > 1 ? one * n * CRAFT_BATCH : one, need: need, hp: hero().hp, kind: kind }; sfx('pick'); return true;
   }
   // A station keeps what was made in it (it.out, up to eight stacks) until you take it from its board; the glint shows it
@@ -2380,7 +2382,9 @@ __COMBAT__
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
     if (raftWaitTick(dt)) { ix = 0; iy = 0; }   /* the men are coming aboard: she waits (docs/ships-plan.md step 4) */
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
-    Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, Yard.rigged(raft.kind) ? wind : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
+    var sailIn = { ix: ix, iy: iy }; if (Yard.rigged(raft.kind) && runeHas('starRoad') && !ix && !iy && chartMark && (runeN('starRoad', 'day') || light() < 0.5) && !raft.beached) { var mdx = chartMark.x - raft.x, mdy = chartMark.y - raft.y, mdd = Math.hypot(mdx, mdy); if (mdd > 60) { var want = Math.atan2(mdy, mdx), dh = Math.atan2(Math.sin(want - raft.h), Math.cos(want - raft.h)); sailIn = { ix: Math.abs(dh) > 0.08 ? (dh > 0 ? 1 : -1) : 0, iy: -1 }; } else chartMark = null; }   /* the Star-road: the ship holds a course to the chart's mark by itself (by night at tier I, by day too at II) */
+    var windR = wind; if (Yard.rigged(raft.kind) && wind && (Yard.extra.abeam || Yard.extra.never)) { windR = { s: wind.s, a: wind.a }; var rel = Math.atan2(Math.sin(wind.a - raft.h), Math.cos(wind.a - raft.h)); if (Yard.extra.never || Math.abs(rel) < 1.9) windR.a = raft.h; }   /* the Following wind II and III: a wind abeam fills the sail as one behind; no wind is against you */
+    Yard.sail(raft, sailIn, dt, raftHull, H, Yard.rigged(raft.kind) ? windR : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
     seaSounds(raft, dt);
     if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */
       var hw = w.homeWater, hx = hw.cx * T, hy = hw.cy * T, dh = Math.hypot(raft.x - hx, raft.y - hy) || 1, past = dh - (hw.r + w.WD.edge) * T;
@@ -2444,12 +2448,12 @@ __COMBAT__
     if (!raft || !raft.aboard) return false;
     if (!stillComing()) { raft.waitT = 0; raft.waitSaid = false; return false; }
     raft.waitT = (raft.waitT || 0) + dt;
-    if (raft.waitT > BOARD.wait * (Yard.fitOf(raft).boardK || 1)) { boardingDone(); return false; }   /* (a Raider's men are aboard quicker) */
+    if (raft.waitT > BOARD.wait * (Yard.fitOf(raft).boardK || 1) * (runeHas('longOar') ? runeN('longOar', 'boardK') : 1)) { boardingDone(); return false; }   /* (a Raider's men are aboard quicker) */
     if (!raft.waitSaid) { raft.waitSaid = true; toast('The men are coming aboard'); }   /* LORE? */
     return true;
   }
   function landingTick(dt) {               // the men file off the ship one at a time onto their spots
-    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file * (Yard.fitOf(raft).boardK || 1);
+    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file * (Yard.fitOf(raft).boardK || 1) * (runeHas('longOar') ? runeN('longOar', 'boardK') : 1);
     var m = L.list.shift(); if (!m) { raft.landing = null; return; } var sp = L.spots[L.k++] || L.spots[L.spots.length - 1] || { x: L.at.x, y: L.at.y };
     if (m.state !== undefined) { manLands(m, sp); return; }   /* (a man of the engine) */
     if (!m.aboard) return; m.aboard = false; m.sitting = false; m.freed = false; m.place = null; m.leanX = m.leanY = 0; m.x = L.at.x; m.y = L.at.y;
@@ -2721,10 +2725,10 @@ __COMBAT__
      varde) stands on the southernmost stand of the highest ground you can walk to, a cliff under it. E beside it looks out: the
      view pulls back to twice as far and turns south over the land below, and every place within LOOK_R of it is marked on the
      chart. A step, or E again, ends it. The waterfall is marked when you come within sight of it, as the cave is. */
-  var looking = null, lookK = 0, LOOK_R = 3000, fallSnd = null;
+  var looking = null, lookK = 0, LOOK_R = 3000, fallSnd = null, chartMark = null;   /* chartMark: the point the player marked on the map with the right button (the Star-road sails to it) */
   function lookoutNear(P) { var best = null; if (!w.mt || inCave || (raft && raft.aboard)) return null; w.mt.lookouts.forEach(function (lo) { if (Math.hypot(lo.x - P.x, lo.y - P.y) < 48 && w.levelAt(P.x, P.y) === lo.lvl) best = lo; }); return best; }
   function lookReveal(lo) {
-    var names = [], near = function (x, y) { return Math.hypot(x - lo.x, y - lo.y) < LOOK_R; };
+    var names = [], near = function (x, y) { return Math.hypot(x - lo.x, y - lo.y) < LOOK_R * (runeHas('farSight') ? runeN('farSight', 'chartK') || 1 : 1); };
     if (caveMouth && !seen.cave && near(caveMouth.x, caveMouth.y)) { seen.cave = 1; names.push('A cave'); }
     caves.forEach(function (cv) { if (cv.kind !== 'troll' && cv.kind !== 'cellar' && !placeSeen(cv.kind) && near(cv.mouth.x, cv.mouth.y)) { placeMark(cv.kind); names.push(CAVE_NAME[cv.kind][1]); } });
     w.mt.shelters.forEach(function (sh, si) { if (!placeSeen('sh' + si) && near(sh.x, sh.y)) { placeMark('sh' + si); names.push('A rock shelter'); } });
@@ -3206,7 +3210,7 @@ __COMBAT__
     yieldDrop('fiber', o.x, o.y + 10, BUSH_FIBER); chip(o.x, o.y, 6, '#8a9a4a', 7, 60); sfx('pick');
     removeProp(o); decals.push({ k: 'grass', x: o.x, y: o.y, name: o.name, s: o.s, v: o.v, day: day.n });
   }
-  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
+  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, Math.round(BERRIES * (runeHas('greenThumb') ? runeN('greenThumb', 'yield') || 1 : 1))); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360 * (runeHas('greenThumb') ? runeN('greenThumb', 'regrowK') || 1 : 1); sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
   /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
      A point of interest found by exploring: four huts round a green with a well, a woodpile, a haystack and a fence,
@@ -3583,6 +3587,7 @@ __COMBAT__
   }
   var mapOpen = false;
   var mapZ = 1, mapC = null, MAPV = null, mapDrag = null;
+  function mapToWorld(ms) { var V = MAPV; if (!V || !ms) return null; return { x: ((ms.x - V.mx) / V.kz + V.sx0) * V.step * T, y: ((ms.y - V.my) / V.kz + V.sy0) * V.step * T }; }   /* the map's point under the mouse, in world units */
   function mapIn() { var V = MAPV; return !!(V && mouseS && mouseS.x >= V.mx && mouseS.x <= V.mx + V.mw && mouseS.y >= V.my && mouseS.y <= V.my + V.mh); }
   function mapDragTo() {                   // the zoomed map follows the mouse held on it (Robin, 2026-10-22: "dragged by mouse1 when zoomed in")
     var V = MAPV, g = mapDrag; if (!V || !g || !mouseS || mapZ <= 1) return;
@@ -4242,7 +4247,8 @@ __COMBAT__
     var C = [];
     function add(o, say, act, bias) { if (o && (say || act)) C.push({ say: say || null, act: act || null, sc: facingScore(P, o.x, o.y) + (bias || 0) }); }
     var fa = fireAtHand(P); if (fa) add(fa, fa.what === 'roof' ? 'Set the roof alight' : 'Set it alight', function () { lighting = { fa: fa, t: 0, x: P.x, y: P.y }; }, 5);
-    var hv = heavyNear(P); if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
+    var hv = heavyNear(P); if (hv && hv.locked && runeHas('lockBreaker') && runeN('lockBreaker', 'knife') && handItem() && handItem().kind === 'knife') add(hv, 'Open the lock with the knife', function () { hv.locked = false; sfx('tele'); toast('The lock gives to the knife'); save(); });   /* the Lock-breaker III */
+    else if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
     var dn = downNear(P, 36); if (dn) add(dn, 'Lift ' + (dn.name || 'him'), function () { liftMan(dn); });      // one of yours who is down: carried, he lives
     var sg = signNear(P); if (sg) add(sg, 'Write', function () { signWrite(sg); });
     var ly = taking ? null : lyingNear(P); if (ly) add(ly, 'Take the ' + ly.item.name.toLowerCase(), function () { startTake({ drop: ly }); });
@@ -4273,7 +4279,7 @@ __COMBAT__
     else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; menu = null; invOpen = true; bookOpen = false; clothOpen = false; });
     var cl = clampNear(P), clp = cl && clampPrompt(cl); if (clp) add(cl, clp, function () { clampUse(cl); });
     var wr = weirNear(P); if (wr) add(wr, wr.name === 'netTangle' ? 'Take the net' : 'Take down the net', function () { weirTake(wr); });   /* (it lies washed up since 2026-10-22) */
-    var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
+    var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3 * (runeHas('wreckersEye') ? runeN('wreckersEye', 'planks') || 1 : 1)); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
     var fr = ringNear(P); if (fr) add(fr, 'Take the charcoal', function () { ringTake(fr); });
     var lo = !build && lookoutNear(P); if (lo) add(lo, 'Look out', function () { lookOut(lo); });
     var rsn = stoneNear(P); if (rsn && !(seen.stones && seen.stones[propKey(rsn)])) add(rsn, 'Read the stone', function () { readStone(rsn); });   // a stone read once is not offered again
@@ -4345,7 +4351,7 @@ __COMBAT__
     if (P.dead || P.hp < j.hp - 0.5) { craftStop(true); toast('The work is broken off'); return; }   // struck while at it: the work stops, the materials come back
     j.hp = Math.max(j.hp, P.hp); j.t += dt; if (j.t < j.dur) return;
     craftJob = null;
-    if (j.kind === 'cook') { stationPut(null, { kind: j.r.id, n: j.n }); deed('meals'); toast('Cooked ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.id] || j.r.id).toLowerCase()); sfx('craft'); save(); return; }
+    if (j.kind === 'cook') { var portions = j.n; if (runeHas('secondPortion') && Math.random() < runeN('secondPortion', 'chance')) { portions += j.n; toast('A second portion'); } stationPut(null, { kind: j.r.id, n: portions }); deed('meals'); toast('Cooked ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.id] || j.r.id).toLowerCase()); sfx('craft'); save(); return; }
     if (j.kind === 'smelt') { stationPut(null, { kind: j.r.out.stack[0], n: (j.r.out.stack[1] || 1) * j.n }); toast('Smelted ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + (NAMES[j.r.out.stack[0]] || j.r.out.stack[0]).toLowerCase()); sfx('craft'); save(); return; }
     for (var i = 0; i < j.n; i++) craftGive(j.r, null, true);
     toast('Made ' + (j.n > 1 ? j.n + ' \u00d7 ' : '') + recipeName(j.r).toLowerCase());
@@ -4363,8 +4369,8 @@ __COMBAT__
   function eat(kind, free) {
     var f = FOOD[kind], P = hero(); if (!f || (!free && !(inv[kind] > 0)) || P.dead) return;
     if (!free) takeItem(kind, 1);
-    if (f.time) fed = { kind: kind, left: f.time * (1 + 0.5 * 0), regen: f.regen, bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };
-    if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (!f.time && false ? 2 : 1));
+    if (f.time) fed = { kind: kind, left: f.time * (runeHas('hearthsGift') ? runeN('hearthsGift', 'lastK') || 1 : 1), regen: f.regen + (runeHas('hearthsGift') ? runeN('hearthsGift', 'heal') || 0 : 0), bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };   /* the Hearth's gift: a dish lasts longer, heals a little every second at III */
+    if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (f.time && runeHas('warmBelly') ? runeN('warmBelly', 'healK') || 1 : 1));   /* the Warm belly: a hot dish heals twice */
     toast('Ate ' + NAMES[kind].toLowerCase()); save();
   }
   function feedTick(dt) {
@@ -5290,6 +5296,7 @@ __COMBAT__
   Combat.api.harvest = {
     list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
+      if (o.kind === 'stone' && right && runeHas('stoneBiter') && Math.random() < runeN('stoneBiter', 'chance')) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
       if (o.gate) { gateBlow(o, power, tool); return { dealt: power }; }   /* (a catacomb's iron gate) */
@@ -5311,13 +5318,14 @@ __COMBAT__
       return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };   // the engine shows the number: gold for the sweet spot, large for a clean hit
     }
   };
-  Combat.api.gatherPace = function () { return GT.pace; };
+  Combat.api.gatherPace = function () { return GT.pace * (runeHas('quickHands') ? runeN('quickHands', 'pace') || 1 : 1); };   /* the Quick hands: a tool swings faster */
   // what gathering does to the world: chips, drops, stumps, trunks, the chain, the fall on the hero, bees
   var gatherEv = {
+    fellRuneLogs: function (o) { return runeHas('woodwright') && runeN('woodwright', 'noTrunk') ? true : false; },   /* the Woodwright II: a felled tree drops its logs with no chopping */
     log: function (tree, x, y, n, dir) { if (!World.IMAGES[tree + '_log']) { gatherEv.drop('wood', x, y, n); return; } var nn = Math.max(1, Math.round(n * yieldK())); drops.push({ kind: 'log', tree: tree, n: nn, x: x, y: y, z: 10, vx: dir * (40 + Math.random() * 30), vy: (Math.random() - 0.5) * 24, vz: 70 + Math.random() * 40, t: 0, spin: (Math.random() - 0.5) * 0.5 }); if (Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); },   /* a log rolls out of the trunk as the studio's log picture (2026-10-20) and gives its wood when walked over */
-    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
+    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < (runeHas('quickHands') && runeN('quickHands', 'fibre') ? 1 : 0.3)) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
     decal: function (d) { d.day = day.n; decals.push(d); },
-    spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; trunks.push(o); },
+    spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; if (runeHas('woodwright')) o.logs = Math.max(o.logs, runeN('woodwright', 'logs') || o.logs); trunks.push(o); },   /* the Woodwright: a fifth log */
     fell: function (q) { if (busy.indexOf(q) < 0) busy.push(q); },
     fellRune: function (o) { if (Runes2.bound(R2, 'swing') !== 'thorsFell' || Math.random() >= Runes2.num(R2, 'thorsFell', 'chance')) return null; var g = Runes2.use(R2, 'thorsFell'); if (g) Combat.api.onRuneGrow('thorsFell', g); sfx('lightning_small'); note('Thor\u2019s fell'); return { fells: Runes2.num(R2, 'thorsFell', 'fells'), safe: Runes2.num(R2, 'thorsFell', 'safe'), logs: Runes2.num(R2, 'thorsFell', 'logs') }; },   /* Thor's fell, the swing's rune (Runes2): the felled tree fells the next ones, the trunk never flies at you, the logs come off by themselves, by its tier */
     hurt: function (dmg, fx, fy, dir) { var P = hero(); if (P.dead || ADMIN.immortal) return; P.hp -= dmg; P.flash = 1; P.hurtT = 0.3; P.kx = (P.kx || 0) + dir * 90; P.anim.sq = 1; sfx('hurt'); Combat.api.num(P.x, P.y - 30, '-' + dmg, '#ff8a7a'); if (P.hp <= 0) { P.hp = 0; } },
@@ -5369,7 +5377,8 @@ __COMBAT__
   function deed(kind, n) { }   /* (the old runes' deeds: counted no more since the rework of 2026-10-23; the calls stay as marks of what the hero does) */
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
-    return { dmg: ADMIN.oneshot ? 1000 : 1, speed: (carrying ? 0.7 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : SWIM.speed) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
+    var carryK = carrying ? (runeHas('heavyBack') ? runeN('heavyBack', 'carryK') : runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
+    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: runeHas('windFoot') ? runeN('windFoot', 'sprintK') : 1, speed: carryK * (runeHas('windFoot') ? runeN('windFoot', 'speed') : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
       stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: 0, charge: 0, roll: 0, heavyblow: 0 };   /* (the runes' own switches live in the engine now, Runes2: these are the page's buffs) */
   };
   Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
@@ -5487,7 +5496,13 @@ __COMBAT__
     riteSky.rings.forEach(function (r) { r.t += dt; }); riteSky.rings = riteSky.rings.filter(function (r) { return r.t < 1.1; });
   }
   var flashT = 0, wasReady = {}, sceneBoarWait = null;
-  function runeReadyTick() { if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
+  function runeTick() {                     // what the page reads from the runes each frame (Runes2): the stack's size (the Strong back), the sea's numbers (the Following wind, the Long oar)
+    STACK = runeHas('strongBack') ? runeN('strongBack', 'stack') || 25 : 25;
+    var X = Yard.extra; X.sailK = runeHas('followingWind') ? runeN('followingWind', 'sailK') : 1; X.oarK = runeHas('longOar') ? runeN('longOar', 'oarK') : 1; X.turnK = runeHas('longOar') && runeN('longOar', 'turn') ? 2.2 : 1; X.abeam = runeHas('followingWind') ? runeN('followingWind', 'abeam') : 0; X.never = runeHas('followingWind') ? runeN('followingWind', 'never') : 0;
+  }
+  Combat.api.torchLit = function () { return !!torchOn; };
+  Combat.api.onFireArrow = function (x, y, ang) { var fa = fireAtHand({ x: x, y: y, face: ang || 0, mode: 'fight' }, true); if (fa) lightFire(fa); };   /* the Fire-arrow: where it lands by a wall or under a roof of a place not yours, it lights it */
+  function runeReadyTick() { runeTick(); if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
   function riteTick2(dt) {
     if (!ceremony) { riteSky.motes.length = 0; riteSky.rings.length = 0; riteSky.glow = 0; riteKnife = false; riteSky.camK = Math.max(0, riteSky.camK - dt / 1.6); riteSky.dark = Math.max(0, riteSky.dark - dt / 2); riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); if (riteSky.camK <= 0) riteSky.at = null; return; } var C = ceremony; C.t += dt;
     riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); riteSky.at = C.it; riteSky.camK = Math.min(1, riteSky.camK + dt / 1.6); motesTick(dt, C);
@@ -6194,10 +6209,10 @@ __COMBAT__
   }
   var CHIPC = { logs: '#a9855c', planks: '#b08e62', wattle: '#c9b488', blocks: '#8f9199', turf: '#6b5a3a', frame: '#d8cdb4', ashlar: '#bdb8ae', door: '#8a6a4a', archDoor: '#8a6a4a', window: '#8a6a4a', gate: '#8a6a4a', fence: '#c9b488', rail: '#a9855c', palisade: '#a9855c', drystone: '#8f9199', townwall: '#bdb8ae' };
   function wallBlow(o, power, right, tool) {
-    var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5), tool); wallHitT = clock; wallLast = o;
+    var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5) / (runeHas('lockBreaker') ? runeN('lockBreaker', 'blowsK') || 1 : 1), tool); wallHitT = clock; wallLast = o;
     if (!r) return { dealt: 0 };
     chip(o.x, o.y, 14, CHIPC[r.mat] || '#8a6a4a', r.none ? 2 : (right ? 5 : 3), 70);
-    Combat.noise(o.x, o.y, r.noise, true);
+    Combat.noise(o.x, o.y, r.noise * (runeHas('lockBreaker') ? runeN('lockBreaker', 'noiseK') || 1 : 1), true);
     if (r.gave) wallGave(o.L, o.tx, o.ty, e, false); else if ((e.st || 0) !== was) delete edgeCache[o.L + o.k];
     return { dealt: Math.round(r.dealt * 10) / 10 };
   }
@@ -6250,8 +6265,8 @@ __COMBAT__
   /* Fire. A torch burning in the hand and E at a wall that is somebody else's: the wall if it burns, else the eaves of the
      roof over it. It takes a moment of standing there. From then on Ruin.fireTick runs it: along the walls, up into the
      roof, down from a roof into its walls, and as sparks downwind onto other roofs. */
-  function fireAtHand(P) {
-    if (!torchOn || !RUIN.on || !RUIN.fire.on || P.mode === 'build' || lighting) return null;
+  function fireAtHand(P, force) {
+    if (!force && (!torchOn || !RUIN.on || !RUIN.fire.on || P.mode === 'build' || lighting)) return null; if (force && (!RUIN.on || !RUIN.fire.on)) return null;
     var q = edgeFaced(P, 42, function (e) { return !e.breach; }); if (!q || !theirs(q.x, q.y)) return null;
     if (Ruin.burnsWall(RUIN, q.e) && !Ruin.onFire(B, q.L, q.k)) return { x: q.x, y: q.y, q: q, what: 'wall' };
     var rs = edgeRooms(q.L, q.tx, q.ty).filter(function (r) { return Ruin.burnsRoof(RUIN, B, r, BCFG.roof) && !roofBurning(r); });
@@ -6260,8 +6275,11 @@ __COMBAT__
   function lightingTick(dt) {
     if (!lighting) return; var P = hero();
     if (P.dead || !torchOn || Math.hypot(P.x - lighting.x, P.y - lighting.y) > 10) { lighting = null; return; }
-    lighting.t += dt; if (lighting.t < RUIN.fire.catchT) return;
-    var fa = lighting.fa, q = fa.q, ok; lighting = null;
+    lighting.t += dt * (runeHas('torchHand') ? 3 : 1); if (lighting.t < RUIN.fire.catchT) return;
+    var fa = lighting.fa; lighting = null; lightFire(fa);
+  }
+  function lightFire(fa) {                   // the torch, or a burning arrow (the Fire-arrow): the wall or the roof catches, and the place sees it
+    var q = fa.q, ok, P = hero();
     if (fa.what === 'roof') { var a = q.L === 'H' ? [q.tx, roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.ty : q.ty - 1] : [roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.tx : q.tx - 1, q.ty]; ok = Math.random() < Ruin.roofSpec(RUIN, B, fa.room, BCFG.roof).catch && Ruin.ignite(RUIN, B, 'R', null, fa.room, a, BCFG.roof); }
     else ok = Ruin.ignite(RUIN, B, q.L, q.k);
     if (ok) { fireLit(q.x, q.y, true); edgeRooms(q.L, q.tx, q.ty).forEach(folkFlush); if (seenAt(P.x, P.y, 190)) { Combat.noise(P.x, P.y, 300); if (villageAt(P.x, P.y) >= 0) raidStir(villageAt(P.x, P.y), P.x, P.y); } } else note('It will not catch');   // (lit where a man or a villager of the place could see it done: the cry goes up, and it is for you they come)
@@ -6295,7 +6313,7 @@ __COMBAT__
     if (B.ruin) for (k in B.ruin) if (B.ruin[k].hot > 0) B.ruin[k].hot = Math.max(0, B.ruin[k].hot - (any ? 0 : dt));   // (Ruin.fireTick cools them while anything burns)
     if (!any) { if (BURN.length) BURN = []; heatAcc = 0; return; }
     if (!roomInfo || bDirty) return;
-    var ev = Ruin.fireTick(RUIN, B, dt, { rooms: roomInfo.rooms, at: roomInfo.at, wind: wind, rand: Math.random, roofDefault: BCFG.roof });
+    var ev = Ruin.fireTick(RUIN, B, dt * (runeHas('torchHand') ? runeN('torchHand', 'spreadK') || 1 : 1), { rooms: roomInfo.rooms, at: roomInfo.at, wind: wind, rand: Math.random, roofDefault: BCFG.roof });
     ev.lit.forEach(function (q) { var at = q[0] === 'R' ? Ruin.centre(q[1]) : (function () { var p = q[1].split(','), m = edgeMidOf(q[0], +p[0], +p[1]); return [m.x, m.y]; })(); fireLit(at[0], at[1], false); if (q[0] === 'R') folkFlush(q[1]); else { var lp = q[1].split(','); edgeRooms(q[0], +lp[0], +lp[1]).forEach(folkFlush); } });
     ev.gave.forEach(function (g) { var p = g.k.split(','); wallGave(g.L, +p[0], +p[1], g.e, true); });
     ev.fell.forEach(function (r) { roofDown(r, 'burnt'); });
@@ -6756,6 +6774,11 @@ __COMBAT__
       var step = Math.max(1, Math.ceil(GW / CHART_PX)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
       var sx0 = Math.max(0, Math.min(cw - sw, hpx / T / step - sw / 2)), sy0 = Math.max(0, Math.min(ch - sh, hpy / T / step - sh / 2)), zx = mw / sw, zy = mh / sh;
       function mp(wx, wy) { return { x: mx + (wx / T / step - sx0) * zx, y: my + (wy / T / step - sy0) * zy }; }
+      var chartDot = function (x, y, col, r) { var q = mp(x, y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = col; c.beginPath(); c.arc(q.x, q.y, r || 1.1, 0, 7); c.fill(); };
+      if (runeHas('keenNose')) { var kn = runeN('keenNose', 'reach') || 200, KN = { mushrooms: 1, mushroom: 1, wildHerbs: 1, herbs: 1, berryBush: 1 }, KNO = { copperVein: 1, oreRock: 1, bogIron: 1, vein: 1 }; w.around(P.x, P.y, function (o) { if (Math.hypot(o.x - P.x, o.y - P.y) > kn) return; if (KN[o.name] || (runeN('keenNose', 'ore') && (KNO[o.name] || o.ore || o.vein))) chartDot(o.x, o.y, KN[o.name] ? '#f0d060' : '#d48a3a'); }); }   /* the Keen nose: what grows within reach on the chart, the ore at II */
+      if (runeHas('ravenCall') || runeHas('allfathersEye')) { var rc = runeHas('allfathersEye') ? 400 : runeN('ravenCall', 'reach') || 200; Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || en.side === 1 || (en.type !== 'soldier' && !runeHas('allfathersEye')) || Math.hypot(en.x - P.x, en.y - P.y) > rc) return; chartDot(en.x, en.y, en.asleep ? '#9fa8c8' : '#ff8a6a', 1.2); if (runeHas('ravenCall') && runeN('ravenCall', 'facing') && en.type === 'soldier') { var q2 = mp(en.x, en.y); c.strokeStyle = '#ff8a6a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(q2.x, q2.y); c.lineTo(q2.x + Math.cos(en.face) * 3, q2.y + Math.sin(en.face) * 3); c.stroke(); } }); }   /* the Raven's call: the men of a place within a stone's throw, walls or no walls, which way they look at II; the All-father's eye: everyone */
+      if (runeHas('wreckersEye')) { var wr = runeN('wreckersEye', 'reach') || 300; w.around(P.x, P.y, function (o) { if (/wreck|drift|boat/i.test(o.name || '') && Math.hypot(o.x - P.x, o.y - P.y) < wr) chartDot(o.x, o.y, '#c9b27a', 1.3); }); }   /* the Wrecker's eye */
+      if (chartMark) chartDot(chartMark.x, chartMark.y, '#ffffff', 1.6);
       if (runeHas('keenEye') && runeN('keenEye', 'chart')) Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || Math.hypot(en.x - P.x, en.y - P.y) > 300) return; var q = mp(en.x, en.y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(q.x, q.y, 1.1, 0, 7); c.fill(); });
       c.fillStyle = UI_INK; c.beginPath(); c.arc(MAPR.x, MAPR.y, MR + 1, 0, 7); c.fill();
       c.save(); c.beginPath(); c.arc(MAPR.x, MAPR.y, MR, 0, 7); c.clip(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; if (!inCave) { c.drawImage(miniSoft(sx0, sy0, sw, sh), mx, my, mw, mh); var shd = himg('map_shade'); if (shd) c.drawImage(shd, MAPR.x - MAPR.rim, MAPR.y - MAPR.rim, MAPR.rim * 2, MAPR.rim * 2); }
@@ -6967,6 +6990,7 @@ __COMBAT__
       return;
     }
     if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !altarOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
+    if (mapOpen && e.button === 2 && !inCave && mapIn() && mapToWorld) { var cmk = mapToWorld(mouseS); if (cmk) { chartMark = chartMark && Math.hypot(chartMark.x - cmk.x, chartMark.y - cmk.y) < 60 ? null : cmk; toast(chartMark ? 'A mark on the chart' : 'The mark is gone'); } return; }   /* the right button marks the chart (the Star-road's course), again on it takes the mark away */
     if (mapOpen) { if (e.button === 0 && !inCave && mapIn()) { var V0 = MAPV, vw0 = V0.iw / mapZ, vh0 = V0.ih / mapZ; mapDrag = { x: mouseS.x, y: mouseS.y, cx: Math.max(vw0 / 2, Math.min(V0.iw - vw0 / 2, V0.sx0 + vw0 / 2)), cy: Math.max(vh0 / 2, Math.min(V0.ih - vh0 / 2, V0.sy0 + vh0 / 2)) }; return; } mapOpen = false; mapDrag = null; return; }   /* (on the map: held, and dragged when zoomed in) */
     if (e.button === 0 && e.shiftKey && !invOpen && !menu && !store) { var hb = hudBarAt(); if (hb >= 0 && slotGet(hb)) { barDrag = { i: hb }; return; } }   /* (the toolbar, dragged with Shift) */
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
@@ -8037,7 +8061,7 @@ __COMBAT__
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
+    if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
     tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;

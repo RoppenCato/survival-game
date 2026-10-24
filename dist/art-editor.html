@@ -6506,7 +6506,7 @@ function shadeTick(dt) {                   // the Ghost-step's shade: the men wi
 function markTick(e, dt) {                 // the marks that hurt: bleeding (the Serpent's tongue, the Bleeding point) and burning (the Fire-arrow)
   if (!e.marks || e.dead) return;
   if (e.marks.bleeding > 0 && e.type === 'soldier') { e.hp -= (e.bleedDmg || 3) * dt; e.showBar = 1; if (Math.random() < dt * 6 && api.onBlood) api.onBlood(e.x, e.y, 1, 0); if (e.out && e.state === 'flee' && runeHas('serpentTongue') && runeN('serpentTongue', 'fall') && !e.fellBleeding) { e.fellBleeding = true; knockDown(e, e.face, 0.5); } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
-  if (e.marks.burning > 0 && e.type === 'soldier') { e.hp -= (e.burnDmg || 1) * dt; e.showBar = 1; if (Math.random() < dt * 8) spark(e.x + (Math.random() - 0.5) * 10, e.y - 10 - Math.random() * 16, 2, '#ff9a40', 60); if (e.burnSpread && Math.random() < dt * 0.8) for (var j = 0; j < W.enemies.length; j++) { var o = W.enemies[j]; if (o !== e && o.type === 'soldier' && !o.dead && !marked(o, 'burning') && Math.hypot(o.x - e.x, o.y - e.y) < 30) { markOn(o, 'burning', 4); o.burnDmg = e.burnDmg; } } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
+  if (e.marks.burning > 0 && e.type === 'soldier') { e.hp -= (e.burnDmg || 1) * dt; e.showBar = 1; if (Math.random() < dt * 8) spark(e.x + (Math.random() - 0.5) * 10, e.y - 10 - Math.random() * 16, 2, '#ff9a40', 60); if (runeHas('torchHand') && runeN('torchHand', 'fear') && !e.out && e.type === 'soldier') breakMan(e, 'flee'); if (e.burnSpread && Math.random() < dt * 0.8) for (var j = 0; j < W.enemies.length; j++) { var o = W.enemies[j]; if (o !== e && o.type === 'soldier' && !o.dead && !marked(o, 'burning') && Math.hypot(o.x - e.x, o.y - e.y) < 30) { markOn(o, 'burning', 4); o.burnDmg = e.burnDmg; } } if (e.hp <= 0) { e.hp = 0; killEnemy(e, null); } }
 }
 function rushHits(p) {                     // during a rush or a dash: the men the hero runs into
   var ch = p.charge, i, ang = ch ? ch.ang : Math.atan2(p.roll.dy, p.roll.dx);
@@ -6593,7 +6593,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
-    blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy');   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
+    blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy'); if (e.side === 1 && runeHas('shieldWall')) { if (e.inLine && runeN('shieldWall', 'unbroken')) broke = false; if (Math.hypot(e.x - P.x, e.y - P.y) < 48) dmg *= 0.5; }   /* the Shield-wall: a man of yours beside you stops more; a held line of yours cannot be broken (III) */   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
     dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1); if (e.inLine) dmg *= MEN.wallK;   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; if (!src && hitFlags.wkind === 'axe' && runeHas('axeBreaker')) { stag = Math.max(stag, 42); e.guardCd *= runeN('axeBreaker', 'downK') || 1; e.axeOpen = runeN('axeBreaker', 'open') || 1; } }   /* the Axe-breaker: a broken guard staggers, stays down longer, opens him */ else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
@@ -6627,7 +6627,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
   else if (man && src.type === 'soldier' && !src.dead) { e.hitBy = src; e.hitByT = W.t; }   // (2026-10-14: a man remembers who struck him last, and turns to him: see pickTarget)   // (the man the quiet blow falls on is not one who heard it)
-  if (e.errand) { var er0 = e.errand; if (er0.hold && e.hp > e.maxHp * MEN.dropAt) { /* a carrier holds on until badly hurt (raid step 3, 2026-10-20; decided 2026-10-13) */ } else { e.errand = null; if (er0.drop) er0.drop(e); } }   // struck on an errand: that is the end of it (he drops what he carries, and fights), unless he was told to hold on
+  if (e.errand) { var er0 = e.errand; if (er0.hold && e.hp > e.maxHp * (e.side === 1 && runeHas('heavyBack') && runeN('heavyBack', 'hold') ? 0 : MEN.dropAt)) { /* a carrier holds on until badly hurt (raid step 3, 2026-10-20; decided 2026-10-13) */ } else { e.errand = null; if (er0.drop) er0.drop(e); } }   // struck on an errand: that is the end of it (he drops what he carries, and fights), unless he was told to hold on
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
@@ -6701,7 +6701,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet * (runeHas('quietBlade') ? (runeN('quietBlade', 'fellow') ? 0 : 0.5) : 1) : MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -6946,12 +6946,13 @@ function updatePlayer(dt) {
         for (i = 0; i < W.enemies.length; i++) {              // and a tool bites a beast or a man a little (2026-10-13, Robin): TOOL_DMG of a blow of the sword's weight, a flinch and no more
           var te = W.enemies[i]; if (te.dead || te.side === 1 || te.down || a.hit.indexOf(te) >= 0) continue;
           var tx2 = te.x - p.x, ty2 = te.y - p.y, td = Math.hypot(tx2, ty2);
-          if (td <= sd.reach + te.r + 2 && Math.abs(wrap(Math.atan2(ty2, tx2) - a.dir)) <= half + 0.12 && !wallBetween(p.x, p.y, te.x, te.y)) { a.hit.push(te); damageEnemy(te, (ti ? Items.stats(ti).dmg : 0.5) * TOOL_DMG * dmgMul('sword'), Math.atan2(ty2, tx2), 40, 6, 'melee'); }
+          if (td <= sd.reach + te.r + 2 && Math.abs(wrap(Math.atan2(ty2, tx2) - a.dir)) <= half + 0.12 && !wallBetween(p.x, p.y, te.x, te.y)) { a.hit.push(te); damageEnemy(te, (ti ? Items.stats(ti).dmg : 0.5) * (runeHas('quickHands') ? Math.max(TOOL_DMG, runeN('quickHands', 'toolDmg')) : TOOL_DMG) * dmgMul('sword'), Math.atan2(ty2, tx2), 40, 6, 'melee'); }   /* (the Quick hands III: a tool bites as a weapon) */
         }
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
         if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy), wk = bareHanded() ? null : meleeProfile().kind, rbn = swingReachBonus(wk), halfR = swingRune() === 'sweep' && wk === 'spear' ? Math.max(half, (runeN('sweep', 'arc') || 2.4) / 2) : half;
+        if (e.type === 'soldier' && e.awake === false && runeHas('quietBlade')) rbn += 24 * (runeN('quietBlade', 'reach') || 1);   /* the Quiet blade: the blow from behind from a stride further */
         if (d <= sd.reach + rbn + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= halfR + 0.12) && !wallBetween(p.x, p.y, e.x, e.y)) {
           a.hit.push(e);
           if (a.feint) { if (e.type === 'soldier' && !e.dead) { e.guard = 0; e.guardAge = 0; e.guardCd = runeN('feint', 'openT') || 0.8; e.exposedT = Math.max(e.exposedT || 0, runeN('feint', 'openT') || 0.8); num(e.x, headY(e), 'FEINTED', '#ffe27a'); logEv({ k: 'feint', e: e }); if (runeN('feint', 'heavy')) p.feintHeavy = 1; } continue; }   /* the Feint lands no blow: it opens him */
@@ -7041,7 +7042,8 @@ function updatePlayer(dt) {
   var lvx = 0, lvy = 0;
   if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), gA = gapAhead(a.dir), lf = clamp((gA - 3) / 14, 0, 1) * (gA < sd2.reach + 60 ? 1 : 0.15); var lgK = swingRune() === 'lunge' ? 1 + 0.6 * (runeN('lunge', 'stride') || 1) : 1; lvx = Math.cos(a.dir) * sd2.lunge * lf * lgK; lvy = Math.sin(a.dir) * sd2.lunge * lf * lgK; }   /* (the step into a blow is taken toward a foe in front, within the reach and 60 units; at nothing, a small step: 2026-10-15, with Robin's long lunge a blow at the air slid him 35 units, which read as gliding) */
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
-  if (p.leap && p.roll.t > 0) { p.x += (p.vx + p.kx) * dt; p.y += (p.vy + p.ky) * dt; } else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);   /* the Long leap: over what stands in the way (the pillars); the page's walk rule still holds at the landing */
+  if (p.leap && p.roll.t > 0) { var lnx = p.x + (p.vx + p.kx) * dt, lny = p.y + (p.vy + p.ky) * dt, lrs = Math.hypot(p.vx, p.vy), lex = p.x + p.roll.dx * lrs * p.roll.t * 0.7, ley = p.y + p.roll.dy * lrs * p.roll.t * 0.7, canW = !api.scene || !api.scene.walk, okNow = canW || api.scene.walk(lnx, lny, p), okEnd = canW || api.scene.walk(lex, ley, p); if (okNow || okEnd) { p.x = lnx; p.y = lny; } else { p.roll.t = 0; p.vx = p.vy = 0; } }   /* the Long leap: over what stands in the way, a stream or a fence, as long as he can land beyond it; else it stops at the edge */
+  else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
   shadeTick(dt);
   updateAnim(dt, p.roll.t > 0);
   if (S.juice && p.moving && p.roll.t <= 0) { W.dustT -= dt; if (W.dustT <= 0) { W.dustT = p.sprinting ? 0.07 : 0.14; dust(p.x, p.y, p.sprinting ? 2 : 1); } }
@@ -7064,7 +7066,7 @@ function beastAI(e, dt, d, ang) {
   var near = kind === 'arc' ? e.r + (A.reach || 20) * 0.8 : (A.near || 56), ring = A.ring || Math.min(52, near);
   e.cd -= dt;
   switch (e.state) {
-    case 'idle': if ((d < 130 || e.heard > 0) && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'idle': if ((d < 130 * (e.shy && runeHas('hunterStride') && (!P.sprinting || runeN('hunterStride', 'run')) ? runeN('hunterStride', 'nearK') || 0.5 : 1) || e.heard > 0) && !P.dead) { e.state = 'chase'; e.t = 0; } break;   /* the Hunter's stride: a shy beast notices you from half as near */
     case 'chase':
       e.face = A.turn ? turnToward(e.face, ang, A.turn * dt) : ang;
       var fa = e.face, aligned = Math.abs(wrap(ang - e.face)) < 0.5;
@@ -7889,7 +7891,7 @@ function updateProjs(dt) {
         if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; break; } } }   // (an arrow, too)
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y); }
+    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang); }
     else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }

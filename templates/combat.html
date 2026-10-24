@@ -151,6 +151,11 @@ details.panel[open]>summary{margin-bottom:8px}
         <div class="group" id="beasts"></div>
       </details>
 
+      <details class="panel" data-k="runes" open>
+        <summary>Runes</summary>
+        <p class="note">The rune in each slot, at a tier; the blood rings start full and fill on landed blows as in the game. What is set here is the arena's own (combatarena.runes); the game keeps its library.</p>
+        <div id="runes"></div>
+      </details>
       <details class="panel" id="tuning" data-k="tuning">
         <summary>Tuning</summary>
         <p class="desc" style="margin-top:0">The numbers that decide how a fight feels, live: what you move here is what the next blow does. A number you have moved is green. <b>Use in the game</b> hands them to the game (it reads them when it loads); <b>Take back</b> brings back what the game has now.</p>
@@ -206,6 +211,7 @@ details.panel[open]>summary{margin-bottom:8px}
 </main>
 <script>
 __ART__
+__RUNES__
 __ITEMS__
 __COMBAT__
 __SPRITES_JS__
@@ -484,6 +490,28 @@ __SFX__
     var el = document.getElementById('sfxpicks'); if (!el) return; el.value = 'sfxpick2 ' + JSON.stringify(SFX_PICK);
     var cb = document.getElementById('sfxcopy'); if (cb && !cb.__on) { cb.__on = true; cb.addEventListener('click', function () { el.select(); try { navigator.clipboard.writeText(el.value); cb.textContent = 'Copied'; setTimeout(function () { cb.textContent = 'Copy'; }, 1500); } catch (eC) { document.execCommand('copy'); } }); }
   }
+  var ARUNES = {}; try { ARUNES = JSON.parse(localStorage.getItem('combatarena.runes') || '{}') || {}; } catch (eR) {}
+  function runesApply() {                    // the arena's rune state from its picks: every rune known at its slot's tier, the picked one bound, the rings full
+    var st = Runes2.fresh(); Runes2.SLOTS.forEach(function (sl) { var pk = ARUNES[sl.id]; if (!pk || !pk.id || !Runes2.BY[pk.id]) return; Runes2.learn(st, pk.id, pk.tier || 1); Runes2.bind(st, sl.id, pk.id); });
+    if (!st.bound.guardBlow) { Runes2.learn(st, 'bash', 1); Runes2.bind(st, 'guardBlow', 'bash'); } if (!st.bound.dash) { Runes2.learn(st, 'dash', 1); Runes2.bind(st, 'dash', 'dash'); }
+    Runes2.readyAll(st); Combat.api.runeState = st;
+  }
+  function runesPanel() {                    // a select a slot (none, or every rune that fits it), a tier beside it; the game's starting runes stand where nothing is picked
+    var host = document.getElementById('runes'); if (!host) return; host.innerHTML = '';
+    Runes2.SLOTS.forEach(function (sl) {
+      var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('span'); lab.textContent = sl.name + (sl.active ? ' (' + sl.input + ')' : ''); row.appendChild(lab);
+      var sel = document.createElement('select'); sel.setAttribute('aria-label', sl.name); var o0 = document.createElement('option'); o0.value = ''; o0.textContent = sl.active && (sl.id === 'guardBlow' || sl.id === 'dash') ? 'the start’s' : 'none'; sel.appendChild(o0);
+      Runes2.LIST.filter(function (r) { return r.slot === sl.id; }).forEach(function (r) { var o = document.createElement('option'); o.value = r.id; o.textContent = r.name + (r.status === 'data' ? ' (not built)' : ''); sel.appendChild(o); });
+      var tier = document.createElement('select'); tier.setAttribute('aria-label', sl.name + ' tier'); ['I', 'II', 'III'].forEach(function (t, i) { var o = document.createElement('option'); o.value = i + 1; o.textContent = 'tier ' + t; tier.appendChild(o); });
+      var cur = ARUNES[sl.id] || {}; sel.value = cur.id || ''; tier.value = cur.tier || 1;
+      var change = function () { ARUNES[sl.id] = { id: sel.value, tier: +tier.value }; try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} runesApply(); };
+      sel.addEventListener('change', change); tier.addEventListener('change', change);
+      var tw = document.createElement('span'); tw.appendChild(sel); tw.appendChild(tier); row.appendChild(tw); host.appendChild(row);
+    });
+    var b = document.createElement('button'); b.className = 'small'; b.textContent = 'Every blood ring full'; b.addEventListener('click', function () { if (Combat.api.runeState) Runes2.readyAll(Combat.api.runeState); b.blur(); }); host.appendChild(b);
+    var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'Back to the start’s'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
+    runesApply();
+  }
   function sfxList() {
     var host = document.getElementById('sfxlist'); if (!host) return; host.innerHTML = '';
     var n = 0, tot = 0;
@@ -513,7 +541,7 @@ __SFX__
     pickText();
     document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound. What you choose in a drop-down is what the arena and the game play.';
   }
-  sfxList();
+  sfxList(); runesPanel();
 
   act('heal', function () { var P = Combat.dbg().P; P.hp = P.maxHp; P.st = 100; });
   var clockBtns = document.querySelectorAll('#clock button');
