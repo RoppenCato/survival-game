@@ -5077,7 +5077,9 @@ function make(kit, opts) {
   function onPlank(wx, wy) { return code(Math.floor(wx / T), Math.floor(wy / T)) === 4; }
   w.eTile = eTile; w.elevAt = elevAt; w.code = code; w.onPlank = onPlank; w.beachAt = beachAt;
   w.isLand = function (wx, wy) { return onPlank(wx, wy) || (elevAt(wx, wy) > 0.05 && !(mtn && (cellAt(wx, wy) & M_BLOCK))); };   // not a cliff face, its rim or a peak
-  w.isWade = function (wx, wy) { return elevAt(wx, wy) > -1.1 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // the turquoise shallows: you can walk through them
+  function wadeDepth(wx, wy) { return -1.1 - 1.1 * (0.5 + 0.5 * Math.sin(wx * 0.011 + 1.3) * Math.sin(wy * 0.009 + 0.4)); }   /* how deep the shallows go here: -1.1 to -2.2, varying along the coast, so the wade is wider in places (Robin, 2026-10-24: "varying areas ... a little more shallow in places along the beach") */
+  w.wadeDepth = wadeDepth;
+  w.isWade = function (wx, wy) { return elevAt(wx, wy) > wadeDepth(wx, wy) && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // the turquoise shallows: you wade through them, the deep water beyond is swum
   w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // not where a sea cliff's foot stands in it
 
   /* baking */
@@ -5410,7 +5412,7 @@ function make(kit, opts) {
         var qe = lev ? (py + PADR) * LW + px + MG : 0, Lp = lev ? lev[qe] : 0;
         var r, g, b, a = 255;
         if (e < 0 && !Lp) {                                 // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
-          var t = Math.min(1, -e / 3.4); t = t * t * (3 - 2 * t);
+          var wdp = wadeDepth(wx * 0.5, wy * 0.5), t = e > wdp ? Math.min(0.3, -e / 3.4 * 0.55) : Math.max(0.6, Math.min(1, -e / 3.4)); t = t * t * (3 - 2 * t);   /* the shallows a lighter band to their wading depth, the deep blue from a step beyond it (Robin, 2026-10-24: wade in the light blue, swim in the dark) */
           r = P.sh[0] + (P.dp[0] - P.sh[0]) * t; g = P.sh[1] + (P.dp[1] - P.sh[1]) * t; b = P.sh[2] + (P.dp[2] - P.sh[2]) * t;
           var st = Math.max(0, 1 + e / 0.95) * 0.62;
           r += (P.wet[0] - r) * st; g += (P.wet[1] - g) * st; b += (P.wet[2] - b) * st;
