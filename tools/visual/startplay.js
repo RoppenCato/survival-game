@@ -13,7 +13,7 @@
 // drawn (a felled tree only becomes a trunk in a drawn frame). The script walks by the keys and swings by the keys; where it
 // jumps the hero to a place (ST.brokk, ST.bench) or adds to the bag (ST.raft), the line says so.
 window.ST = (function () {
-  function D() { return Combat.api.debug(); } function P() { return Combat.dbg().P; } function T() { return 32; }
+  function D() { var d = Combat.api.debug(); if (!d.__st) { var e0 = d.eWhat, d0 = d.eDo; d.eDo = function () { var say = e0(); return say ? { say: say, act: function () { d0(); } } : null; }; d.__st = 1; } return d; }   /* (2026-10-24: the debug's eDo acts at once and returns the text now; the script wants the old { say, act }, so it is shimmed here) */ function P() { return Combat.dbg().P; } function T() { return 32; }
   var ST = { frames: 0 };
   function fast(n) { for (var i = 0; i < (n || 1); i++) { D().tick(1 / 60); ST.frames++; } }
   function draw(n) { for (var i = 0; i < (n || 1); i++) { if (!H2.step(1)) throw new Error('the game loop is dead: reload the page'); ST.frames++; } }
@@ -30,7 +30,7 @@ window.ST = (function () {
     clear(); return f;
   }
   function pick(radius) { var n = 0, g = 0; draw(60); for (;;) { var p = P(), ds = D().drops.filter(function (q) { return Math.hypot(q.x - p.x, q.y - p.y) < radius; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); if (!ds.length || g++ > 50) break; var b4 = D().drops.length; walkTo(ds[0].x, ds[0].y, 8, 900); fast(20); if (D().drops.length < b4) n++; else if (g > 25) break; } return n; }
-  function pry() { var wk = nearest(function (o) { return o.name === 'wreckedBoat'; }), n = 0, i; if (!wk) return 0; walkTo(wk.x - 20, wk.y + 30, 10, 2000); for (i = 0; i < 6; i++) { var w = D().eDo(); if (!w || !w.act || !/plank/i.test(w.say)) break; w.act(); n++; fast(20); } return n; }   /* E at the wreck: a plank a press, four in all (12 wood) */
+  function pry() { var wk = nearest(function (o) { return o.name === 'wreckedBoat'; }), n = 0, i; if (!wk) return 0; walkTo(wk.x, wk.y - 45, 10, 2000); P().face = Math.PI / 2; fast(3); for (i = 0; i < 6; i++) { var w = D().eDo(); if (!w || !/plank/i.test(w.say)) break; w.act(); n++; fast(20); } return n; }   /* (2026-10-24: the debug's eDo acts and returns the prompt's text now; the wreck stands north of where he wakes) */   /* E at the wreck: a plank a press, four in all (12 wood) */
   function nearest(test) { var b = null, bd = 1e9, p = P(); D().world().eachProp(function (o) { if (!test(o) || o.dying != null) return; var d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; b = o; } }); return b; }
   function mode(m) { /* (one bar since 2026-10-14: the mode follows the thing in hand; nothing to press) */ }
   function takeKind(kind) { var sl = D().slots, i; for (i = 0; i < 6; i++) if (sl[i] && sl[i].kind === 'item' && sl[i].item.kind === kind) { take(i + 1); return true; } return false; }   // the bar slot that holds a kind of thing
@@ -71,7 +71,7 @@ window.ST = (function () {
   };
   ST.deer = function () {                                 // (the bow aims by the mouse; the script has none, so it lets the bow aim where the hero faces)
     mode('fight'); takeKind('bow'); var was = Combat.S.ranged; Combat.S.ranged = 'auto'; var d0 = beasts('deer')[0]; if (!d0) { Combat.S.ranged = was; return 'no deer'; } walkTo(d0.x, d0.y, 150, 3600);
-    var G = Combat.dbg(), shots = 0, pn = G.W.projs.length, f = 0; for (; f < 1500 && !d0.dead; f++) { if (G.W.projs.length > pn) shots += G.W.projs.length - pn; pn = G.W.projs.length;   /* (no quiver since 2026-10-13: the shots are counted as they fly) */ var p = P(), dx = d0.x - p.x, dy = d0.y - p.y, d = Math.hypot(dx, dy); key('KeyD', dx > 4); key('KeyA', dx < -4); key('KeyS', dy > 4); key('KeyW', dy < -4); key('KeyJ', d < 170 && (f % 40) < 3); fast(1); }
+    var G = Combat.dbg(), shots = 0, pn = G.W.projs.length, f = 0; for (; f < 1500 && !d0.dead; f++) { if (G.W.projs.length > pn) shots += G.W.projs.length - pn; pn = G.W.projs.length;   /* (no quiver since 2026-10-13: the shots are counted as they fly) */ var p = P(), dx = d0.x - p.x, dy = d0.y - p.y, d = Math.hypot(dx, dy); key('KeyD', dx > 4); key('KeyA', dx < -4); key('KeyS', dy > 4); key('KeyW', dy < -4); var ph = f % 120; key('KeyK', d < 200 && ph < 100); key('KeyJ', d < 200 && ph >= 96 && ph < 99); fast(1); }   /* (2026-10-24: the bow is drawn with K for about 1.5 s and let go with J since 2026-10-23) */
     clear(); draw(100); Combat.S.ranged = was; var shot = shots; pick(700); return 'a deer: ' + (d0.dead ? 'brought down' : 'got away') + ' with ' + shot + ' arrows loosed in ' + Math.round(f / 60) + ' s; ' + JSON.stringify(inv());
   };
   ST.home = function () {                                 // a hut of four by three where the hero stands, a fire, a bench, a bed and a rug in it
