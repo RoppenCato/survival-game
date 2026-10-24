@@ -69,11 +69,11 @@ sound and the day and night are perfected in this chapter**.
 | The island | 120 tiles, groves, wide warm beaches, critters by day; the trees the studio's pictures since 2026-10-20 (a pine three heroes tall) | Built |
 | The wreck and the start | The name asked over the dark, E pries planks, branches and stones, the key reminders, trail stones to the steading | Built |
 | The burnt steading | Thorgunna's, made over with the destruction states (2026-10-16: a burnt-out hall, charred posts, a cold hearth), the plank house to mend, the hut, the graves | Built (Robin has seen a picture, not played it) |
-| Arnor | His lines from the lore, building opened by his word, the home's lacks, the raft at comfort 4, the graves, the shore at the first raft | Built |
+| Arnor | His lines from the lore, building opened by his word, the home's lacks, the rowboat taught at comfort 4, the graves, the shore at the first boat | Built |
 | The first home | Mend the plank house, a roof, comfort, the bed under a roof, the first night slept opens building | Built |
 | The first night | Wolves each night, a fire keeps them off, the firelight, the night's sounds | Partly (the means are built; as a *moment* it is Robin's to judge) |
-| The raft and leaving | The shipwright's bench, the raft, Arnor at the shore, "You have left the island" | Built |
-| Beasts | Young boars, deer in herds (the blood trail), adders; the wolves at night | Built |
+| The boat and leaving | The shipyard (Colin, AD's naust), the rowboat built at its panel, Arnor at the shore and his farewell, "You have left the island" | Built (played through by script on 2026-10-24: the wreck to the big island with no error; the rowing about 104 s) |
+| Beasts | Young boars, deer in herds (the blood trail, slower and keeping to land since 2026-10-24); no adders on the starter island (Robin, 2026-10-22); the wolves at night | Built |
 | Finds | The fish weir, nests, fallen trees, herbs, mushrooms, crates and barrels kicked open with E | Built |
 | Numbers | How fast wood comes, what a first home costs, how many animals, that death costs nothing | Open (bot-measured, never felt by Robin) |
 | Words waiting for Robin (the Lore Director's `docs/questions.md`, at its top) | Arnor's hearth line for fires outside, his riposte line, his joining line, "Thorgunnastead" or "Thorgunnastad", the name dice (the home men's 24 names proposed) | Open: Robin picks, the words come in a handoff |
@@ -121,7 +121,7 @@ sound and the day and night are perfected in this chapter**.
 | E at a station shows only its own things; the queue, the Ready strip, Cancel | Built |
 | Recipes appear from their key ingredient; a gold dot on a thing never made | Built |
 | The Building board (B): tabs, opened by Arnor's word and the first night | Built (in the studio's clothes since 2026-10-20: flaps across the top, dark cells; the station tabs on the crafting board are flaps too) |
-| **"Crafting feels off against other survival games"** (Robin, 2026-10-14) | Open: what feels off (the board, the queue, the time a thing takes, things landing in the bag?) is unanswered |
+| **"Crafting feels off against other survival games"** (Robin, 2026-10-14) | Built: answered by Robin on 2026-10-21 and 2026-10-22, crafting as in Valheim (one at a time, the button its own Cancel, Craft x5 with Shift, into the bag, the times halved), cooking and smelting the same way; Robin to feel it |
 
 ### 4. The interface
 
@@ -143,6 +143,15 @@ sound and the day and night are perfected in this chapter**.
 | Gathering sounds (chop, crack, pull, kick), footsteps by ground, the fire's crackle, the night (crickets, owl, wolves) | Built (synthesized). Open: a reference Robin likes for each, then the studio matches it (the Sound Director's list: `C:\dev\SG\Sound Director\docs\chapter-1.md`); quickest is a row of free candidates in the arena's The sounds panel to pick from, as the swings were (mine to build) |
 | Music: the meadow by day and by night | Built (off until the Escape menu's bar is turned up). Open: the Sound Director's view is on at about a third of the bar (a new player never looks in the Escape menu); Robin decides |
 | Effects: sparks from the fires, smoke, chips, splinters, the shake | Built |
+
+### 2b. Systems added to chapter 1 since the table was made (2026-10-23 and 2026-10-24)
+
+| Thing | Status |
+| --- | --- |
+| The runes: the stone altar, the storm's offer, binding by blood, 45 runes after Robin's trial of 2026-10-24 (`docs/rune-trial-2026-10-24.md`) | Built (tried in the Combat Arena's Rune trial by Robin; the studios' art and sounds for the changed ones arriving) |
+| The year: seasons turned at a blót, the weather, the sun and the moon | Built (Robin's yes to the looks; not played through a year) |
+| Wading and swimming, the shore blended (2026-10-24) | Built (Robin to feel it) |
+| Sneaking on C, the trapper's bench and its traps, the Throwing axe (2026-10-24) | Built (the clips in; the trap pieces and the bench's picture to come) |
 
 ### 6. The day and night cycle
 
