@@ -21206,6 +21206,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function altarBox(it) { return [it.x - 26 * ALTAR_SCALE, it.y - 13 * ALTAR_SCALE, it.x + 26 * ALTAR_SCALE, it.y + 2 * ALTAR_SCALE]; }   /* the table's solid box (the hero walked through its ends: Robin, 2026-10-23) */
   function altarWork(it) { var im = World.IMAGES.runeAltar; return im && im.work ? im.work : WORK0; }
+  function altarStand(it) { var st = altarWork(it).stand || WORK0.stand; return { x: it.x + st.x * ALTAR_SCALE, y: it.y + st.y * ALTAR_SCALE / K }; }   /* where he stands to work the altar, north of the table (Colin, AD's place, scaled) */
   function stonePlaces(it, n) { var wk = altarWork(it), arc = (wk.stones && wk.stones[Math.max(1, Math.min(5, n))]) || WORK0.stones[Math.max(1, Math.min(5, n))]; return arc.map(function (q) { return { x: it.x + q[0] * ALTAR_SCALE, sy: it.y * K + q[1] * ALTAR_SCALE }; }); }
   function altarItems(items) {                 // what lies on and stands before every altar in view: the beast laid, the blood on the slab, the stones risen from the turf, the lightning, the broken stones, the stain
     var P = hero(); B.items.forEach(function (it) { if (!it.altar || !sameLvl(it) || Math.abs(it.x - cam.x) > 260 / cam.z + 80 || Math.abs(it.y * K - cam.y) > 170 / cam.z + 80) return;
@@ -22543,7 +22544,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (altarOpen) drawAltarBoard(c);
       drawRite(c); drawRuneMarks(c); drawRiteTip(c); drawFlash(c);
       drawBarDrag(c);   /* (the thing dragged off the toolbar with Shift, under the mouse) */
-      if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !altarOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
+      if (scenePanel() && !pauseOpen && !invOpen && !altarOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       else if (skyOpen) { rows = []; drawSky(c); }
       if (naming && !pauseOpen) drawNaming(c);
@@ -22640,7 +22641,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !altarOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { if (bookOpen) bookOpen = false; else lbOpen(); } return; }
-    if (e.code === 'KeyH') { e.preventDefault(); if (!e.repeat && !pauseOpen) skyOpen = !skyOpen; return; }   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
+    if (e.code === 'KeyH') { e.preventDefault(); if (!e.repeat && !pauseOpen) { if (scenePanel()) runePanel.folded = !runePanel.folded; else skyOpen = !skyOpen; } return; }   /* in a test scene H opens and shuts its board (Robin, 2026-10-24); the sky board is Admin's Season and Weather rows there */   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
     if (altarOpen && (e.code === 'KeyE' || e.code === 'Escape') && !e.repeat) { e.preventDefault(); altarOpen = false; return; }
     if (ceremony && ceremony.phase === 'choose' && /^Digit[123]$/.test(e.code) && !e.repeat) { e.preventDefault(); ritePick(+e.code.slice(5) - 1); return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || altarOpen || musterOpen || mapOpen || skyOpen) { skyOpen = false; altarOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
@@ -23565,13 +23566,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     ruinPanelSync = function () { rows.forEach(function (q) { var v = ruGet(q[0][0]); q[1].value = v; q[2].textContent = (+v).toString(); }); txt.value = JSON.stringify(ruinDiff()); };
     ruinPanelSync(); fitCanvas();
   }
-  var runePanel = { x: 6, y: 40, w: 92, rows: [], folded: false }, runeSite = null, noSave = false;
+  var runePanel = { x: 6, y: 40, w: 92, rows: [], folded: SCENE === 'runes' }, runeSite = null, noSave = false;   /* the Rune editor's board starts shut and opens on H (Robin, 2026-10-24) */
+  function scenePanel() { return SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin'; }
   function runesScene() {                    // the Rune Editor (game.html?scene=runes, made over 2026-10-23): the hero before a built altar on the starter island's meadow by the wreck, every rune in the library, the cudgel and a boar out cold, a season due; saves nothing
     var P = hero(); noSave = true; toCamp(); var ax = P.x - 150, ay = P.y - 30, tries = 0; while (tries++ < 40 && !(w.isLand(ax, ay) && !w.isWater(ax, ay) && w.flatAt && w.flatAt(ax, ay, 40))) { ax -= 24; }
     var near = []; w.eachProp(function (o) { if (Math.abs(o.x - ax) < 170 && Math.abs(o.y - ay) < 150) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
     function item(name, x, y, extra) { var it = { name: name, x: x, y: y, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 6 }).r }; for (var k in extra || {}) it[k] = extra[k]; B.items.push(it); return it; }
     runeSite = item('runeAltar', ax, ay, { altar: true }); item('campfire', ax + 84, ay - 10, { hearth: true, light: 1 }); bDirty = true;
-    P.x = ax; P.y = ay - 44; P.face = Math.PI / 2; P.lvl = 0; P.mode = 'fight';   /* (he works the altar from the north: Robin, 2026-10-23) */
+    var as0 = altarStand(runeSite); P.x = as0.x; P.y = as0.y; P.face = Math.PI / 2; P.lvl = 0; P.mode = 'fight';   /* (he works the altar from the north: Robin, 2026-10-23) */
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
@@ -23599,12 +23601,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (id === 'blood') { Runes2.readyAll(R2); }
     else if (id === 'unbuilt') { Runes2.OPTS.includeData = !Runes2.OPTS.includeData; }
     else if (id === 'trees') { Runes2.learn(R2, 'thorsFell', Math.max(1, Runes2.tierOf(R2, 'thorsFell'))); Runes2.bind(R2, 'swing', 'thorsFell'); var tx0 = P.x + 70, ty0 = P.y - 30, tk; for (tk = 0; tk < 4; tk++) (function (x, y) { var near = []; w.eachProp(function (o) { if (Math.hypot(o.x - x, o.y - y) < 30) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var tp = { name: 'pine', x: x, y: y, s: 0.58, r: 11, v: tk % 3, kind: 'tree', leanDir: 1 }; tp.max = tp.hp = World.HP.pine * (0.7 + 0.6 * tp.s); w.addProp(tp); })(tx0 + tk * 44, ty0); toast('Thor\u2019s fell on the swing: fell the first pine toward the others'); }
-    else if (id === 'altar') { if (runeSite) { P.x = runeSite.x; P.y = runeSite.y - 44; P.face = Math.PI / 2; P.lvl = 0; } }
+    else if (id === 'altar') { if (runeSite) { var as1 = altarStand(runeSite); P.x = as1.x; P.y = as1.y; P.face = Math.PI / 2; P.lvl = 0; } }
     else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
     else if (id === 'reset') { noSave = true; try { localStorage.removeItem(SAVE); } catch (e) {} location.reload(); return; }
     save();
   }
   function drawRunePanel(c) {
+    if (runePanel.folded) { runePanel.rows = []; c.save(); c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillText('H: the ' + (SCENE === 'battle' ? 'Battle test' : SCENE === 'ruin' ? 'Destruction editor' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor') + '’s board', 200.4, 6.4); c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('H: the ' + (SCENE === 'battle' ? 'Battle test' : SCENE === 'ruin' ? 'Destruction editor' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor') + '’s board', 200, 6); c.restore(); return; }   /* shut: a reminder at the top (Robin, 2026-10-24) */
     var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = rows.length > 21 ? 8 : 9, x0 = runePanel.x, y0 = rows.length > 21 ? 34 : runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
     c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
     c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'battle' ? 'Battle test' : SCENE === 'ruin' ? 'Destruction editor' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
