@@ -134,7 +134,7 @@ function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: i
 var critBonus = 0;
 
 function newWorld() {
-  W = { glints: [], ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
+  W = { glints: [], ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], stuck: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
     pillars: [{ x: 100, y: 90, r: 7 }, { x: 300, y: 90, r: 7 }, { x: 100, y: 243, r: 7 }, { x: 300, y: 243, r: 7 }] };
 }
 function newPlayer() {
@@ -1786,37 +1786,50 @@ function updateEnemies(dt) {
     if (dd < mn && dd > 0.01 && !wallBetween(A.x, A.y, B.x, B.y)) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }   // (not through a wall: a man hard against one side of it stopped a man walking along the other)
   }
 }
+var STUCK = { life: 3.2, fade: 0.6, dropT: 0.35, dropH: 10 };   /* an arrow stays where it struck for a few seconds (Robin, 2026-10-24: "stick to anything it hits ... unless its stone"): in a man or a beast it rides with him, in wood or earth it stands where it stopped, on stone it drops and lies; the numbers mine */
+function stickArrow(pr) {
+  if (pr.thing || pr.kind === 'stone' || pr.fire || pr.reflected || pr.owner === 'enemy') return; var on = pr.stuckOn || null, drop = !on && pr.hitSurf === 'stone';
+  if (!W.stuck) W.stuck = []; W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected });
+}
+function stuckTick(dt) { if (!W.stuck) return; for (var i = W.stuck.length - 1; i >= 0; i--) { var st = W.stuck[i]; st.t += dt; if (st.t > st.life || (st.on && st.on.away)) W.stuck.splice(i, 1); } }
+function drawStuck(c, st) {
+  var x = st.on ? st.on.x + st.ox : st.x, y = st.on ? st.on.y + st.oy : st.y, al = Math.min(1, (st.life - st.t) / STUCK.fade), ang = st.ang, dy = -10;
+  if (st.drop) { var dk = Math.min(1, st.t / STUCK.dropT); dy = -10 + STUCK.dropH * dk; ang = st.ang + (st.lie - st.ang * 0.9) * dk; }
+  else if (!st.on) { dy = -6; }
+  c.save(); c.globalAlpha = al; drawArrowAt(c, x, y * K + dy, ang, st.reflected); c.restore();
+}
 function updateProjs(dt) {
+  stuckTick(dt);
   for (var i = W.projs.length - 1; i >= 0; i--) {
     var pr = W.projs[i];
     pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
     var SB = api.scene && api.scene.bounds, hit = false;   // a page with a big world has its own edges
     var gone = pr.life <= 0 || (SB ? (pr.x < SB.x0 || pr.x > SB.x1 || pr.y < SB.y0 || pr.y > SB.y1) : (pr.x < 8 || pr.x > AW - 8 || pr.y < 30 || pr.y > AH - 6));
-    if (!gone && (pillarHit(pr.x, pr.y, pr.r) || wallBetween(pr.x - pr.vx * dt, pr.y - pr.vy * dt, pr.x, pr.y))) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
+    if (!gone && (pillarHit(pr.x, pr.y, pr.r) || wallBetween(pr.x - pr.vx * dt, pr.y - pr.vy * dt, pr.x, pr.y))) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); pr.hitSurf = api.arrowSurface ? api.arrowSurface(pr.x, pr.y) : 'wood'; }   /* (what it stopped on: the page says stone or wood, for the arrow that sticks or drops) */
     if (!gone) {
       if (pr.owner === 'man') {              // a bowman's arrow: the other side only (his own it passes), the hero's shield stops it
-        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); if (api.sfx) api.sfx('block', 0.6); } else if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }   /* (arrowStop: the page says something stops it first, a Raider's shields on the rail) */
+        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); if (api.sfx) api.sfx('block', 0.6); } else if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; pr.stuckOn = P; } }   /* (arrowStop: the page says something stops it first, a Raider's shields on the rail) */
         if (!gone) for (var jm = 0; jm < W.enemies.length; jm++) {
           var em = W.enemies[jm]; if (em.type !== 'soldier' || em.dead || em.down || em.out || (em.side || 0) === pr.side) continue;
-          if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen * MEN.hpK, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen * MEN.hpK, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; pr.stuckOn = em; break; }
         }
       } else if (pr.owner === 'enemy') {
         if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r && api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); }
         else if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
           var res = hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr);
           if (res === 'parry') { pr.owner = 'player'; pr.vx *= -1.4; pr.vy *= -1.4; pr.dmg = 3; pr.life = 3; pr.ang += Math.PI; pr.reflected = true; }
-          else if (res) gone = true;
+          else if (res) { gone = true; pr.stuckOn = P; }
         }
       } else {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
           if (e.dead || e.side === 1 || e.down) continue;
-          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { hitFlags.still = pr.still || 1; if (pr.noShield) hitFlags.guardBreak = true; damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); hitFlags.still = 1; hitFlags.guardBreak = false; if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, pr.pinT || 1.6); e.pkx = e.pky = 0; if (pr.pinNoGuard) { e.guard = 0; e.guardCd = pr.pinT || 1.6; } num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } if (pr.fire && !e.dead && e.type === 'soldier') { markOn(e, 'burning', runeN('fireArrow', 'burnT') || 5); e.burnDmg = 1.2 * dmgMul('bow'); e.burnSpread = runeN('fireArrow', 'spread'); } gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { pr.stuckOn = e; hitFlags.still = pr.still || 1; if (pr.noShield) hitFlags.guardBreak = true; damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); hitFlags.still = 1; hitFlags.guardBreak = false; if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, pr.pinT || 1.6); e.pkx = e.pky = 0; if (pr.pinNoGuard) { e.guard = 0; e.guardCd = pr.pinT || 1.6; } num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } if (pr.fire && !e.dead && e.type === 'soldier') { markOn(e, 'burning', runeN('fireArrow', 'burnT') || 5); e.burnDmg = 1.2 * dmgMul('bow'); e.burnSpread = runeN('fireArrow', 'spread'); } gone = true; hit = true; break; }
         }
-        if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; break; } } }   // (an arrow, too)
+        if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; pr.stuckOn = o3; break; } } }   // (an arrow, too)
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang, hit); }
+    if (gone) { stickArrow(pr); W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y, !!pr.fire); if (pr.fire && api.onFireArrow) api.onFireArrow(pr.x, pr.y, pr.ang, hit); }
     else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }
@@ -2328,6 +2341,14 @@ function drawBowDraw(c, p, lift) {         /* the draw's cue (Robin, 2026-10-24:
   c.beginPath(); c.moveTo(ax + Math.cos(ang) * t0, ay + Math.sin(ang) * K * t0); c.lineTo(ax + Math.cos(ang) * AIM_L, ay + Math.sin(ang) * K * AIM_L); c.stroke(); c.setLineDash([]);
   c.restore();
 }
+function drawArrowAt(c, x, y, ang, reflected) {   // an arrow: shaft, iron head, two feathers (the flying one and the stuck one)
+    var ca = Math.cos(ang), sa = Math.sin(ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = '#3a2a36'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();   /* (2026-10-14, Robin: a lot thinner; 2026-10-24, "about half as thick": the shaft 0.9 over 0.4, the head and the feathers halved with it) */
+  c.strokeStyle = reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+  c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(tx + ca * 3, ty + sa * 3); c.lineTo(tx + px * 0.7, ty + py * 0.7); c.lineTo(tx - px * 0.7, ty - py * 0.7); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = '#eef3fb'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 1.5, by - sa * 3 + py * 1.5); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 1.5, by - sa * 3 - py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 1.5, by - sa * 0.5 + py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 1.5, by - sa * 0.5 - py * 1.5); c.stroke();
+}
 function drawProj(c, pr) {
   if (pr.fire && api.drawFireArrow && api.drawFireArrow(c, pr)) return;   /* the burning arrow in flight: the page's picture (Colin, AD's, 2026-10-24) */
   var x = pr.x, y = pr.y * K - 10;
@@ -2340,13 +2361,7 @@ function drawProj(c, pr) {
     var ta = pr.kind === 'throwaxe' ? pr.ang + pr.spin : pr.ang, tca = Math.cos(ta), tsa = Math.sin(ta) * K, tl = Items.KINDS[pr.thing.kind].len * pr.thing.size;
     Items.draw(c, pr.thing, x - tca * tl * 0.5, y - tsa * tl * 0.5, tca, tsa, null);
   } else {
-    // an arrow: shaft, iron head, two feathers
-    var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = '#3a2a36'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();   /* (2026-10-14, Robin: a lot thinner; 2026-10-24, "about half as thick": the shaft 0.9 over 0.4, the head and the feathers halved with it) */
-    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(tx + ca * 3, ty + sa * 3); c.lineTo(tx + px * 0.7, ty + py * 0.7); c.lineTo(tx - px * 0.7, ty - py * 0.7); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 1.5, by - sa * 3 + py * 1.5); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 1.5, by - sa * 3 - py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 1.5, by - sa * 0.5 + py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 1.5, by - sa * 0.5 - py * 1.5); c.stroke();
+    drawArrowAt(c, x, y, pr.ang, pr.reflected);
   }
 }
 function drawPart(c, q) {
@@ -2525,6 +2540,7 @@ function render(c) {
   });
   W.enemies.forEach(function (e) { if (api.scene && api.scene.visible && !api.scene.visible(e.x, e.y, e.r)) return; items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });   // a page can say what is in view (2026-10-08: every beast in the world was drawn each frame)
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
+  (W.stuck || []).forEach(function (st) { var sy = st.on ? st.on.y + st.oy : st.y; items.push({ y: sy + (st.on ? 0.5 : -4), f: function () { drawStuck(c, st); } }); });   /* the stuck arrows, with whom they are in */
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
   if (!P.dead) { var hsy = api.scene && api.scene.heroSortY ? api.scene.heroSortY() : null; items.push({ y: hsy != null ? hsy : P.y, f: function () { drawHero(c); } }); }   /* heroSortY: a page sorts the hero elsewhere than at his feet (over the altar's slab as he lays and stabs, 2026-10-24) */
   if (sc) sc.items(items);
