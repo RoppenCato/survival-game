@@ -409,6 +409,7 @@ __COMBAT__
     var P = hero(), M = sprHero && sprHero.meta, out = ['body']; if (!M) return out;
     if (riteKnife) { if (M.layers.indexOf('knifeWood') >= 0) out.push('knifeWood'); if (M.layers.indexOf('knifeMetal') >= 0) out.push({ layer: 'knifeMetal', tint: Items.MATS.iron.face }); return out; }   /* the sacrifice's knife */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
+    if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
     var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
@@ -5410,7 +5411,7 @@ __COMBAT__
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
     var carryK = carrying ? (runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
-    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: 1, speed: carryK * (sugarT > 0 ? runeN('greenThumb', 'speed') || 1.1 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : wade.on && !ADMIN.fly ? SWIM.wade : 1), crit: 0, stealth: runeHas('catFoot') ? runeN('catFoot', 'hear') : 1, arrow: 1,
+    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: 1, speed: carryK * (sugarT > 0 ? runeN('greenThumb', 'speed') || 1.1 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : wade.on && !ADMIN.fly ? SWIM.wade : 1), crit: 0, stealth: 1, arrow: 1,
       stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: 0, charge: 0, roll: 0, heavyblow: 0 };   /* (the runes' own switches live in the engine now, Runes2: these are the page's buffs) */
   };
   Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
@@ -7117,6 +7118,7 @@ __COMBAT__
   cv.addEventListener('mouseleave', function () { mouseW = null; mouseS = null; });
   cv.addEventListener('wheel', function (e) {
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
+    if (Combat.wheel && Combat.wheel(d)) return;         // the Trapper's menu picks its trap
     if (menu && overMenu() && menuScroll(d)) return;      // the wheel scrolls a tall board
     if (mapOpen && !inCave) { mapWheel(d); return; }      // the wheel zooms the map
     if (pauseOpen && panelWheel(d)) return;               // and a tall board of the Escape menu (Admin)
@@ -7962,7 +7964,7 @@ __COMBAT__
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
+      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (the Throwing axe bound)' }, { id: 'blood', name: 'Every blood ring full' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {

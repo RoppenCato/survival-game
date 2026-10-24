@@ -11,9 +11,9 @@ ok(R.fits(st, 'guardBlow').map(r => r.id).join(',') === 'bash,charge', 'what fit
 ok(R.charge(st, 'guardBlow') === 0 && !R.ready(st, 'guardBlow'), 'a bound active starts empty');
 R.drawBlood(st); R.drawBlood(st); ok(Math.abs(R.charge(st, 'guardBlow') - 2 / 3) < 0.01, 'two blows landed: two thirds');
 R.drawBlood(st); ok(R.ready(st, 'guardBlow'), 'three: ready'); R.spend(st, 'guardBlow'); ok(!R.ready(st, 'guardBlow'), 'spent: empty again');
-ok(R.num(st, 'charge', 'down') === 1, 'the Charge at tier I knocks one man down');
+ok(R.num(st, 'charge', 'downT') === 3 && R.num(st, 'charge', 'len') === 3, 'the Charge at tier I: three strides, the man down three seconds');
 let grew = 0; for (let i = 0; i < 50; i++) { const g = R.use(st, 'charge'); if (g) grew = g; }
-ok(grew === 2 && R.tierOf(st, 'charge') === 2 && R.num(st, 'charge', 'down') === 2, 'fifty uses: tier II, two men down');
+ok(grew === 2 && R.tierOf(st, 'charge') === 2 && R.num(st, 'charge', 'len') === 4, 'fifty uses: tier II, four strides');
 const seeds = [0.1, 0.7, 0.3, 0.9, 0.5, 0.2, 0.8, 0.4, 0.6]; let k = 0; const rng = () => seeds[k++ % seeds.length];
 const o1 = R.offer(st, R.rankOf('boar'), rng); ok(o1.length === 2 && o1.every(p => p.tier === 1 && R.BY[p.id].pool === 'storm'), 'a boar’s blood (red, rank 2): two storm runes at tier I: ' + o1.map(p => p.id).join(', '));
 const oh = R.offer(st, R.rankOf('hen'), rng), om = R.offer(st, R.rankOf('man'), rng), ob = R.offer(st, R.rankOf('bear'), rng);

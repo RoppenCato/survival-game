@@ -447,6 +447,7 @@ __SFX__
     e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
   });
   window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); gDown = 0; });
+  cv.addEventListener('wheel', function (e) { if (Combat.wheel && Combat.wheel(e.deltaY > 0 ? 1 : -1)) e.preventDefault(); }, { passive: false });   /* the Trapper's menu picks its trap with the wheel */
   function pos(e) {
     var r = cv.getBoundingClientRect();
     Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250);
@@ -533,11 +534,11 @@ __SFX__
     longLeap: { how: 'Space: a crouch, a leap and a landing. In the Rune Editor, over the shore and a fence.', set: 'none' },
     slide: { how: 'Space: a long low slide, fast then slowing, under a swung blade. At tier II slide into a man: he trips.', set: 'man', tier: 2 },
     ghostStep: { how: 'Space away from the men: a pale blue shade stays where you stood and they strike at it; two blows and it goes.', set: 'men2' },
-    thorsFell: { how: 'In the Rune Editor: the row Four pines in a line, fell the first toward the others.', set: 'none', where: 'runes' },
+    thorsFell: { how: 'In the Rune Editor: the row Four pines in a line; with the axe in hand, K readies the throw and J lets it fly. It bites the tree and comes back.', set: 'none', where: 'runes' },
     thorsWrath: { how: 'With the club or the maul: one blow in ten calls lightning down on the man, who stands stunned a second.', set: 'man', wpn: 'club' },
     bloodlust: { how: 'Fell a man: a twentieth of your health back.', set: 'men2' },
     rushStep: { how: 'Strike a man, then Space through him within a breath: he is knocked down, whatever he was doing.', set: 'man' },
-    catFoot: { how: 'In the game, at a place with men: a man at his post hears you only from close by.', set: 'none', where: 'game' },
+    catFoot: { how: 'In the game, at a place with men: hold Ctrl to sneak (half pace without the rune, four fifths with it); a man at his post notices you only from close by.', set: 'none', where: 'game' },
     stormsEye: { how: 'With the club and Thor\u2019s wrath bound in the hand too: the lightning leaps to a second man.', set: 'men3', wpn: 'club' },
     keenEye: { how: 'In the game at night without a torch: you see twice as far.', set: 'none', where: 'game' },
     hammer: { how: 'With the club or the maul at a man holding his shield up: hold J a second and let go: the shield shatters and he stands stunned.', set: 'manHold', wpn: 'club' },
@@ -561,7 +562,7 @@ __SFX__
     sweep: { how: 'With the spear among men: hold J a second and let go: the ground sweep, every guard broken and every man staggered.', set: 'men3', wpn: 'spear' },
     feint: { how: 'Wait a second, then J: a feint; the man guards against nothing and is open.', set: 'man' },
     twinShot: { how: 'With the bow (F): K held to the full draw, J: two arrows.', set: 'man', ranged: true },
-    pinningShot: { how: 'With the bow (F): a full draw pins the man where he stands.', set: 'man', ranged: true },
+    pinningShot: { how: 'With the bow (F) and no draw on: hold the left button, the wheel picks the trap, let go to throw it where the mouse is. It arms in three seconds; a man who steps on it is bound to the spot (the Poison trap at tier II).', set: 'man', ranged: true },
     fireArrow: { how: 'With the bow (F): a full draw looses a burning arrow; one man in four catches, burns and is slowed.', set: 'man', ranged: true },
     hawkEye: { how: 'With the bow (F): the arrow flies a third further.', set: 'bowman', ranged: true },
     bleedingPoint: { how: 'Bleed a man (the Serpent\u2019s tongue, Weak spot master), then shoot him: a quarter more and he bleeds further.', set: 'man', ranged: true },

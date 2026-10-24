@@ -706,7 +706,9 @@ function make(kit, opts) {
   w.grid = grid; w.landChunk = landChunk;
   w.home = { x: (x - 3 + 0.5) * T, y: (hy + 0.5) * T }; w.dockEnd = { x: x + 1, y: hy };
   w.stats = { landTiles: landTiles, skerries: skerries, trees: 0, rocks: 0 };
-  var PAL = { sand: [246, 210, 132], wet: [216, 166, 94], sh: hslRgb(170 + o.hue, 0.6, 0.62), dp: hslRgb(202 + o.hue, 0.7, 0.4) };
+  var PAL = { sand: [246, 210, 132], wet: [216, 166, 94], sh: hslRgb(170 + o.hue, 0.6, 0.62), dp: hslRgb(202 + o.hue, 0.7, 0.4),
+    sh0: hslRgb(136 + o.hue, 0.37, 0.8), teal: hslRgb(185 + o.hue, 0.42, 0.49), deep2: hslRgb(207 + o.hue, 0.61, 0.36),
+    film: [236, 242, 226], wets: [202, 170, 118] };   /* the shore blended (Colin, AD's recipe, out/shore/RECIPE.md, on Robin's word of 2026-10-24, "This needs to blend a lot better"): clear water over sand, teal at the wading line, a deeper blue far out; the swash's film; the wet sand */
 
   /* reading the ground */
   function eTile(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? -10 : E[ty * GW + tx] / 100; }
@@ -1054,19 +1056,25 @@ function make(kit, opts) {
         var qe = lev ? (py + PADR) * LW + px + MG : 0, Lp = lev ? lev[qe] : 0;
         var r, g, b, a = 255;
         if (e < 0 && !Lp) {                                 // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
-          var wdp = wadeDepth(wx * 0.5, wy * 0.5), t = e > wdp ? Math.min(0.3, -e / 3.4 * 0.55) : Math.max(0.6, Math.min(1, -e / 3.4)); t = t * t * (3 - 2 * t);   /* the shallows a lighter band to their wading depth, the deep blue from a step beyond it (Robin, 2026-10-24: wade in the light blue, swim in the dark) */
-          r = P.sh[0] + (P.dp[0] - P.sh[0]) * t; g = P.sh[1] + (P.dp[1] - P.sh[1]) * t; b = P.sh[2] + (P.dp[2] - P.sh[2]) * t;
-          var st = Math.max(0, 1 + e / 0.95) * 0.62;
-          r += (P.wet[0] - r) * st; g += (P.wet[1] - g) * st; b += (P.wet[2] - b) * st;
-          var dz = Math.max(0, 1 + e / 2.2); dz = dz * dz * (3 - 2 * dz) * 0.42; r += (120 - r) * dz; g += (205 - g) * dz; b += (195 - b) * dz;   // the depth's colour (the Art Director's living sea, 2026-10-21): green-blue by the shore, gone a few tiles out
-          var tx2 = (n2v - 0.5) * 12; r += tx2; g += tx2; b += tx2;
-          if (e > -0.14) { var fo = (1 + e / 0.14) * 0.85; r += (255 - r) * fo; g += (255 - g) * fo; b += (252 - b) * fo; }   // the white lip at the waterline
+          /* the shore blended (Colin, AD's recipe, 2026-10-24): the shallows graded from clear water over sand through turquoise to teal at the wading line, a soft ragged drop on wadeDepth that wanders along the coast with a shade where the shelf falls, the deep darkening far out, and a thin swash film in place of the white lip; the wade rule (isWade, wadeDepth) is untouched: the light water is waded, the dark swum */
+          var wdp = wadeDepth(wx * 0.5, wy * 0.5), f = Math.min(1, e / wdp), big = nsm(wx, wy, 55.6);   /* (Colin, AD's mock gives nsm a frequency, the game's a scale: his 0.018, 0.03, 0.08, 0.04 and 0.09 are 55.6, 33.3, 12.5, 25 and 11.1 here) */
+          var a1 = sstep(0.0, 0.55, f), a2 = sstep(0.45, 1.0, f);                                    // the shallows: palest at the edge, turquoise, teal at the wading line
+          r = P.sh0[0] + (P.sh[0] - P.sh0[0]) * a1; g = P.sh0[1] + (P.sh[1] - P.sh0[1]) * a1; b = P.sh0[2] + (P.sh[2] - P.sh0[2]) * a1;
+          r += (P.teal[0] - r) * a2; g += (P.teal[1] - g) * a2; b += (P.teal[2] - b) * a2;
+          var bars = (big - 0.5) * 26 * (1 - f) + Math.sin((wx * 0.3 + wy * 0.82) * 0.33 + n1v * 5) * 3.5 * (1 - f); r += bars; g += bars; b += bars * 0.6;   // sand bars and ripples through the water
+          var edge = (nsm(wx + 40, wy, 33.3) - 0.5) * 0.9 + (n2v - 0.5) * 0.25, gd = sstep(wdp + 0.15 + edge, wdp - 0.5 + edge, e);   // the drop: soft, and wandering along the coast
+          var far = sstep(wdp - 1.0, wdp - 8, e) * 0.85, dr = P.dp[0] + (P.deep2[0] - P.dp[0]) * far, dg = P.dp[1] + (P.deep2[1] - P.dp[1]) * far, db = P.dp[2] + (P.deep2[2] - P.dp[2]) * far;
+          var shelf = Math.exp(-Math.pow((e - (wdp - 0.55 + edge)) / 0.45, 2)) * 0.12; dr *= 1 - shelf; dg *= 1 - shelf; db *= 1 - shelf;   // a shade where the shelf falls away
+          r += (dr - r) * gd; g += (dg - g) * gd; b += (db - b) * gd;
+          var tx2 = (n2v - 0.5) * 8; r += tx2; g += tx2; b += tx2;
+          var film = sstep(-0.42, 0.0, e) * sstep(0.25, 0.55, n2v * 0.6 + nsm(wx, wy, 12.5) * 0.4 + (e + 0.42) * 0.9) * 0.55;   // the swash: a thin lighter film, ragged at its top; no white line
+          r += (P.film[0] - r) * film; g += (P.film[1] - g) * film; b += (P.film[2] - b) * film;
         } else {
           var bw = BW[q] * w00 + BW[q + 1] * w10 + BW[q + n1] * w01 + BW[q + n1 + 1] * w11, eg = e + (n2v - 0.5) * 0.7;
           if (eg < bw && !Lp) {                             // beach: wet and dark by the water, pale and dry higher up, soft dunes (never on the fells: a sea cliff's top is turf)
-            var dry = Math.min(1, e / 0.75); dry = dry * dry * (3 - 2 * dry);
-            var dune = (n1v - 0.5) * 22 + Math.sin((wx * 0.33 + wy * 0.95) * 0.2 + n1v * 6) * 5;
-            r = P.wet[0] + (P.sand[0] - P.wet[0]) * dry + dune; g = P.wet[1] + (P.sand[1] - P.wet[1]) * dry + dune; b = P.wet[2] + (P.sand[2] - P.wet[2]) * dry + dune * 0.8;
+            var reach = 0.42 + (nsm(wx, wy, 25) - 0.5) * 0.35, dry = sstep(0.0, reach + 0.6, e);   // the wet sand a broader, softer, cooler band with a ragged top (Colin, AD's recipe, 2026-10-24)
+            var dune = (n1v - 0.5) * 18 + Math.sin((wx * 0.33 + wy * 0.95) * 0.2 + n1v * 6) * 4;
+            r = P.wets[0] + (P.sand[0] - P.wets[0]) * dry + dune; g = P.wets[1] + (P.sand[1] - P.wets[1]) * dry + dune; b = P.wets[2] + (P.sand[2] - P.wets[2]) * dry + dune * 0.8;
             a = Math.min(1, (bw - eg) / 0.32) * 255;        // the grass comes in raggedly at the top of the beach
           } else {                                          // grass: darker by the beach and in soft patches, never in squares
             var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Lp ? 0 : Math.max(0, 1 - (eg - bw) / 0.4);
@@ -1509,7 +1517,7 @@ function make(kit, opts) {
       if (any) for (var wv = 0; wv < 2; wv++) {
         var pr = (clock * 0.3 + wv * 0.5) % 1, lv = -1.25 + pr * 1.15, al2 = Math.pow(Math.sin(pr * Math.PI), 0.8) * (0.25 + 0.6 * pr) * foam;
         if (al2 < 0.03) continue;
-        c.strokeStyle = 'rgba(255,255,255,' + Math.min(0.9, al2).toFixed(3) + ')'; c.lineWidth = 1 + pr * 1.5; c.lineCap = 'round'; c.beginPath();
+        var brk = 0.32 + pr * 0.3, BK = [[], [], []], bk;   /* the foam as lace, not stripes (Colin, AD's recipe, 2026-10-24): each segment of the contour kept or dropped by a slow noise that moves with the wave, in three bands of alpha, thinner, breaking up more as it spends itself on the beach */
         for (yy = 0; yy < lh - 1; yy++) for (xx = 0; xx < lw - 1; xx++) {
           var q0 = yy * lw + xx, a0 = F[q0] - lv, b0 = F[q0 + 1] - lv, d0 = F[q0 + lw] - lv, c0 = F[q0 + lw + 1] - lv;
           if ((a0 > 0) === (b0 > 0) && (a0 > 0) === (c0 > 0) && (a0 > 0) === (d0 > 0)) continue;
@@ -1519,10 +1527,11 @@ function make(kit, opts) {
           if ((d0 > 0) !== (c0 > 0)) pts.push(X + d0 / (d0 - c0) * T, Y + TS);
           if ((a0 > 0) !== (d0 > 0)) pts.push(X, Y + a0 / (a0 - d0) * TS);
           if (mtn && ((cellAt(pts[0], pts[1] / K) | cellAt(pts[2], pts[3] / K)) & M_BLOCK)) continue;   // not over a sea cliff's foot
-          c.moveTo(pts[0], pts[1]); c.lineTo(pts[2], pts[3]);
-          if (pts.length === 8) { c.moveTo(pts[4], pts[5]); c.lineTo(pts[6], pts[7]); }
+          var mx = (pts[0] + pts[2]) / 2, my = (pts[1] + pts[3]) / 2, nn = nsm(mx * 0.7 + wv * 37, my * 0.7 + Math.floor(clock * 0.3 + wv * 0.5) * 11, 11.1);
+          if (nn < brk) continue; BK[nn > brk + 0.25 ? 2 : nn > brk + 0.12 ? 1 : 0].push(pts);
         }
-        c.stroke();
+        for (bk = 0; bk < 3; bk++) { if (!BK[bk].length) continue; c.strokeStyle = 'rgba(250,252,248,' + (Math.min(0.75, al2) * [0.35, 0.6, 0.9][bk]).toFixed(3) + ')'; c.lineWidth = 0.8 + pr * 0.9; c.lineCap = 'round'; c.beginPath();
+          BK[bk].forEach(function (p) { c.moveTo(p[0], p[1]); c.lineTo(p[2], p[3]); if (p.length === 8) { c.moveTo(p[4], p[5]); c.lineTo(p[6], p[7]); } }); c.stroke(); }
       }
     }
   };

@@ -13,7 +13,7 @@ function setup(o) {
   const it = Items.make(o.kind || 'sword', 'iron'); Combat.api.items = { held: () => it, tool: () => null, weapon: () => it };
   Combat.api.shield = () => !!o.shield; D.S.shield = !!o.shield; Combat.api.mods = null; Combat.api.scene = null; D.S.crit = 0; Combat.api.onLog = ev => { EV.push(ev.k); };
   const st = Runes2.start(); Combat.api.runeState = st; (o.runes || []).forEach(r => { Runes2.learn(st, r.id || r, r.tier || 1); if (Runes2.BY[r.id || r].slot && Runes2.SLOT[Runes2.BY[r.id || r].slot].active) Runes2.bind(st, Runes2.BY[r.id || r].slot, r.id || r); else Runes2.bind(st, Runes2.BY[r.id || r].slot, r.id || r); }); Runes2.readyAll(st);
-  const men = []; for (let i = 0; i < (o.men == null ? 1 : o.men); i++) { const e = Combat.soldier({ side: 0, wpn: { kind: o.manWpn || 'axe', mat: 'iron' }, shield: o.manShield !== false, armor: 0.2, x: 236 + i * 26, y: 250 + (i ? (i % 2 ? 10 : -10) : 0), hp: 30, strength: 4, wits: o.wits == null ? 4 : o.wits, nerve: o.nerve == null ? 1 : o.nerve }); e.face = Math.PI; D.W.enemies.push(e); men.push(e); }
+  const men = []; for (let i = 0; i < (o.men == null ? 1 : o.men); i++) { const e = Combat.soldier({ side: 0, wpn: { kind: o.manWpn || 'axe', mat: 'iron' }, shield: o.manShield !== false, armor: 0.2, x: 236 + i * 26, y: 250 + (i ? (i % 2 ? 10 : -10) : 0), hp: 30, strength: 4, wits: o.wits == null ? 4 : o.wits, nerve: o.nerve == null ? 1 : o.nerve }); e.face = Math.PI; men.push(e); }   /* (Combat.soldier puts him in W.enemies itself: pushed here too he was updated twice a frame, every timer on him running double, found with the Trapper's test, 2026-10-24) */
   P.face = 0; P.inAng = 0; Combat.mouse(400, 250); for (let i = 0; i < 10; i++) { men.forEach(e => { e.state = 'circle'; e.sw = null; }); Combat.update(DT); }
   return { D, P, e: men[0], men, st };
 }
@@ -74,8 +74,8 @@ s = setup({ runes: ['lunge'] }); s.e.x = s.P.x + 80; s.e.shield = false; s.e.gua
 
 
 // the Overhead: a held swing breaks a guard and staggers
-s = setup({ kind: 'axe', runes: ['overhead'] }); s.e.guard = 1; s.e.guardAge = 1; Combat.key('KeyJ', true); for (let i = 0; i < 50; i++) { hold(s.men); s.e.guard = 1; Combat.update(DT); } Combat.key('KeyJ', false); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); }
-ok(s.e.state === 'stagger' || s.e.guard === 0, 'the Overhead: the held blow breaks the guard and staggers (' + s.e.state + ')');
+s = setup({ kind: 'axe', runes: ['overhead'] }); s.e.guard = 1; s.e.guardAge = 1; Combat.key('KeyJ', true); for (let i = 0; i < 110; i++) { hold(s.men); s.e.guard = 1; Combat.update(DT); }   /* (the press is a blow first, the charge begins after it and fills over 0.7 s: held 110 frames it is full; 50 gave a charge of 0.05 and the check passed only on the harness's doubled guard decay, found 2026-10-24) */ Combat.key('KeyJ', false); let ovh = ''; for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); if (s.e.state === 'stagger' || s.e.guard === 0) ovh = ovh || (s.e.state + (s.e.guard === 0 ? ', guard broken' : '')); }
+ok(!!ovh, 'the Overhead: the held blow breaks the guard and staggers (' + (ovh || s.e.state) + ')');
 
 // the Sweep: the spear's sweep staggers every man in its arc
 s = setup({ kind: 'spear', runes: ['sweep'], men: 2, wits: 0 }); s.men[1].x = s.P.x + 20; s.men[1].y = s.P.y + 30; s.men.forEach(e => { e.shield = false; e.guard = 0; }); const stg = [false, false]; Combat.key('KeyJ', true); for (let i = 0; i < 100; i++) { hold(s.men); Combat.update(DT); } Combat.key('KeyJ', false); for (let i = 0; i < 40; i++) { hold(s.men); Combat.update(DT); s.men.forEach((e, k) => { if (e.state === 'stagger') stg[k] = true; }); }   /* (the Sweep is the held spear blow since Robin's trial: J held, then let go) */ ok(stg[0] && stg[1], 'the Sweep: both men in the arc stagger (' + stg.join(', ') + ')');
@@ -84,8 +84,15 @@ s = setup({ kind: 'spear', runes: ['sweep'], men: 2, wits: 0 }); s.men[1].x = s.
 // the bow: the Twin shot looses two arrows at a full draw with the ring full
 function bowShot(s, drawFrames) { if (s.e) { Combat.mouse(s.e.x, s.e.y * 0.75); s.e.freezeT = 99; } Combat.key('KeyK', true); for (let i = 0; i < drawFrames; i++) Combat.update(DT); if (s.e) s.e.freezeT = 0; Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); Combat.key('KeyK', false); }
 s = setup({ kind: 'bow', weapon: 'ranged', runes: ['twinShot'], men: 0 }); bowShot(s, 95); ok(s.D.W.projs.length === 2, 'the Twin shot: two arrows at once (' + s.D.W.projs.length + ')');
-// the Pinning shot pins the man for its time
-s = setup({ kind: 'bow', weapon: 'ranged', runes: ['pinningShot'] }); s.e.x = s.P.x + 120; s.e.shield = false; s.e.guard = 0; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } ok(s.e.freezeT > 1, 'the Pinning shot: the man is pinned (' + s.e.freezeT.toFixed(2) + ' s left)');
+// the Trapper (Robin's trial of 2026-10-24): the left button held with no draw on aims a trap at the mouse; let go, it flies there, arms in three seconds and binds the man who steps on it
+function throwTrapAt(s, x, y, wheel) { Combat.mouse(x, y * 0.75); Combat.button(0, true); for (let i = 0; i < 12; i++) { hold(s.men); Combat.update(DT); } for (let k = 0; k < (wheel || 0); k++) Combat.wheel(1); Combat.button(0, false); for (let i = 0; i < 40; i++) { hold(s.men); Combat.update(DT); } }
+s = setup({ kind: 'bow', weapon: 'ranged', runes: ['pinningShot'] }); s.e.x = s.P.x + 200; s.e.y = s.P.y; s.e.freezeT = 99; throwTrapAt(s, s.P.x + 100, s.P.y); let trap = s.D.W.traps[0];
+ok(trap && Math.abs(trap.x - (s.P.x + 100)) < 3 && trap.state === 'arming' && trap.kind === 'tripper', 'the Trapper: a trap lies where the mouse was, arming (' + (trap ? trap.state + ' at ' + trap.x.toFixed(0) : 'none') + ')');
+for (let i = 0; i < 200 && trap.state !== 'armed'; i++) { hold(s.men); Combat.update(DT); } ok(trap.state === 'armed' && trap.t >= 0 && s.D.W.t > 2.5, 'the trap is armed after three seconds (' + trap.state + ')');
+s.e.freezeT = 0; s.e.x = trap.x + 2; s.e.y = trap.y; for (let i = 0; i < 20; i++) Combat.update(DT); ok(trap.state === 'sprung' && s.e.boundT > 3, 'the man who steps on it is bound (' + (s.e.boundT || 0).toFixed(2) + ' s)');
+{ const bx = s.e.x, by = s.e.y; for (let i = 0; i < 60; i++) { s.e.state = 'chase'; Combat.update(DT); } ok(Math.hypot(s.e.x - bx, s.e.y - by) < 1 && s.e.boundT > 1.5, 'bound, he stays on the spot a second later (moved ' + Math.hypot(s.e.x - bx, s.e.y - by).toFixed(2) + ')'); for (let i = 0; i < 200; i++) Combat.update(DT); ok(!(s.e.boundT > 0), 'and is free after four seconds'); }
+s = setup({ kind: 'bow', weapon: 'ranged', runes: [{ id: 'pinningShot', tier: 2 }] }); s.e.x = s.P.x + 200; s.e.freezeT = 99; s.e.hp = 400; s.e.maxHp = 400; throwTrapAt(s, s.P.x + 100, s.P.y, 1); trap = s.D.W.traps[0]; ok(trap && trap.kind === 'poison', 'at tier II the wheel picks the Poison trap (' + (trap && trap.kind) + ')');
+for (let i = 0; i < 200 && trap.state !== 'armed'; i++) Combat.update(DT); s.e.freezeT = 0; s.e.x = trap.x; s.e.y = trap.y; for (let i = 0; i < 10; i++) Combat.update(DT); const hpP = s.e.hp; for (let i = 0; i < 180; i++) { hold(s.men); Combat.update(DT); } ok(s.e.marks && s.e.marks.poison > 0 && s.e.hp < hpP - 1, 'the Poison trap poisons him: ' + (hpP - s.e.hp).toFixed(1) + ' lost in three seconds');
 // the Fire-arrow at tier II needs no torch and burns the man
 Runes2.BY.fireArrow.n.catchK = [1, 1, 1]; s = setup({ kind: 'bow', weapon: 'ranged', runes: [{ id: 'fireArrow', tier: 2 }] }); s.e.x = s.P.x + 120;   /* (one in four catches since Robin's trial: sure here) */ s.e.shield = false; s.e.guard = 0; bowShot(s, 95); for (let i = 0; i < 30; i++) { hold(s.men); Combat.update(DT); } ok(!!(s.e.marks && s.e.marks.burning > 0), 'the Fire-arrow II: the man burns');
 // the Quick draw: the bow fills in a second
@@ -98,3 +105,22 @@ ok(!!(s.e.marks && s.e.marks.bleeding > 0) || dS > dN, 'Weak spot master: the ar
 
 
 console.log(bad ? '  ' + bad + ' !! lines' : '  every rune answered');
+
+// the Throwing axe (Robin's trial of 2026-10-24): the axe in hand, K readies the throw and J lets it fly; it bites a tree as two blows would and comes back to the hand; a man takes half a tool's bite
+{ s = setup({ kind: 'axe', runes: ['thorsFell'], men: 0 }); const P = s.P, axe = Items.make('axe', 'copper'); P.mode = 'gather'; P.tool = 0; Combat.api.items = { held: () => axe, tool: () => axe, weapon: () => null };
+  const tree = { x: P.x + 90, y: P.y, r: 10, kind: 'tree' }; let hits = []; Combat.api.harvest = { list: () => [tree], hit: (o, pw, right, tool) => { hits.push({ pw: pw, right: right, tool: tool }); return {}; } };
+  Combat.mouse(tree.x, tree.y * 0.75); Combat.key('KeyK', true); for (let i = 0; i < 6; i++) Combat.update(DT); ok(P.axeAim === true && !P.guard, 'K with the axe readies the throw, no guard (' + P.axeAim + ')');
+  Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); Combat.key('KeyK', false); ok(!!s.D.W.axe && Combat.axeOut(), 'J lets it fly'); let backAt = -1; for (let i = 0; i < 120; i++) { Combat.update(DT); if (!s.D.W.axe && backAt < 0) backAt = i; }
+  const pw1 = Items.stats(axe).power; ok(hits.length === 1 && hits[0].right && hits[0].tool === 'axe' && Math.abs(hits[0].pw - pw1 * 2) < 0.01, 'it bites the tree once as two blows would (' + (hits[0] ? hits[0].pw.toFixed(2) + ' against a blow of ' + pw1.toFixed(2) : 'no hit') + ')');
+  ok(backAt > 0 && backAt < 60, 'and is back in the hand within a second (' + (backAt / 60).toFixed(2) + ' s), the cooldown ' + (P.axeCd || 0).toFixed(2));
+  Combat.api.harvest = { list: () => [], hit: () => ({}) }; s = setup({ kind: 'axe', runes: ['thorsFell'] }); s.P.mode = 'gather'; s.P.tool = 0; Combat.api.items = { held: () => axe, tool: () => axe, weapon: () => null }; s.e.x = s.P.x + 80; s.e.shield = false; s.e.guard = 0; s.e.freezeT = 99; const hpA = s.e.hp;
+  Combat.mouse(s.e.x, s.e.y * 0.75); Combat.key('KeyK', true); for (let i = 0; i < 6; i++) Combat.update(DT); Combat.key('KeyJ', true); Combat.update(DT); Combat.key('KeyJ', false); Combat.key('KeyK', false); for (let i = 0; i < 40; i++) Combat.update(DT);
+  ok(s.e.hp < hpA && hpA - s.e.hp < 4, 'a man takes a poor blow from it (' + (hpA - s.e.hp).toFixed(2) + ')'); Combat.api.harvest = null; }
+
+// sneaking (Robin, 2026-10-24): Ctrl held is a sneak at half pace, seen from half as far; a tap still cycles the target; Cat's tread four fifths and a third
+{ s = setup({ men: 1 }); const P = s.P; s.e.x = P.x + 300; s.e.freezeT = 99; Combat.key('KeyD', true); for (let i = 0; i < 40; i++) Combat.update(DT); const v0 = Math.hypot(P.vx, P.vy);
+  Combat.key('ControlLeft', true); for (let i = 0; i < 40; i++) Combat.update(DT); const v1 = Math.hypot(P.vx, P.vy); ok(P.sneak && Math.abs(v1 / v0 - Combat.SNEAK.speed) < 0.06, 'Ctrl held: a sneak at ' + (v1 / v0).toFixed(2) + ' of the walk (' + v0.toFixed(0) + ' to ' + v1.toFixed(0) + ')');
+  Combat.key('ControlLeft', false); Combat.update(DT); ok(!P.sneak && !s.D.W.lock, 'let go, the sneak ends and no target was taken'); Combat.key('ControlLeft', true); for (let i = 0; i < 3; i++) Combat.update(DT); Combat.key('ControlLeft', false); Combat.update(DT); ok(!!s.D.W.lock, 'a tap cycles the target as before'); Combat.key('KeyD', false);
+  s = setup({ men: 1, runes: ['catFoot'] }); s.e.x = s.P.x + 300; s.e.freezeT = 99; Combat.key('KeyD', true); for (let i = 0; i < 40; i++) Combat.update(DT); const c0 = Math.hypot(s.P.vx, s.P.vy); Combat.key('ControlLeft', true); for (let i = 0; i < 40; i++) Combat.update(DT); const c1 = Math.hypot(s.P.vx, s.P.vy); Combat.key('ControlLeft', false); Combat.key('KeyD', false);
+  ok(Math.abs(c1 / c0 - 0.8) < 0.06, 'with the Cat\'s tread the sneak is ' + (c1 / c0).toFixed(2) + ' of the walk'); }
+console.log(bad ? ('!! ' + bad + ' checks failed') : 'all checks hold');

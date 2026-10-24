@@ -111,6 +111,7 @@
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: A[bkW].stride > 0 ? strideFrame(A[bkW], dd, sc) : loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
     }
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
+    if (an && an.sneak) { var snc = an.amt > 0.35 ? 'sneak_walk' : 'sneak'; if (A[snc]) return { a: snc, f: gait(A[snc], dd, t, sc) }; }   /* sneaking (Colin, AD's clips when they come; without them the walk, crouched by the drawing) */
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.jog ? 'jog' : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle'))))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
     if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
     if (nm2 === 'idle') { var li = loopAt(A.idle, t); return { a: 'idle', f: li.f, f2: li.f2, w: li.w }; }
@@ -189,7 +190,7 @@
     var A = M.anims[pk.a], d = dirOf(M, face), F0 = A.frame || M.frame, AN = A.anchor || M.anchor, fw = F0.w, fh = F0.h,   /* (a clip may have a frame and an anchor of its own: the death, which no other clip's frame holds) */
         s = (opts.scale || 1) * (M.scale || 1) / PX, layers = opts.layers || ['body'];
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
-    c.save(); c.translate(x, y); if (dashing) c.scale(dashing === 2 ? 1.3 : 1.1, dashing === 2 ? 0.7 : 0.92);
+    c.save(); c.translate(x, y); if (dashing) c.scale(dashing === 2 ? 1.3 : dashing === 3 ? 1.03 : 1.1, dashing === 2 ? 0.7 : dashing === 3 ? 0.9 : 0.92);   /* (3: sneaking, a little crouched) */
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     var lit = opts.lit || null, mixW = pk.w > 0.03 && pk.w < 0.97 && opts.blend !== false && blends(pk.a, A) && !A.rects;
     if (pk.w >= 0.97) pk = { a: pk.a, f: pk.f2 };                                                   // all but the next frame already
