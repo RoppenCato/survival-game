@@ -471,10 +471,10 @@ __COMBAT__
      decoded off the frame); one with none within reach for SHEET_HOLD seconds is unloaded. While a beast's sheets are on
      their way it stands as a soft shadow (the Art Director: not the old drawn figure, a second style). The hero's kit warms
      the clips of what he holds as his look changes, so the first swing with a new weapon shows it. */
-  var SHEET_NEAR = 900, SHEET_HOLD = 60, sheetNear = {}, sheetT = 0, heroLookWarmed = '';
+  var SHEET_NEAR = 900, SHEET_HOLD = 60, sheetNear = {}, sheetT = 0, heroLookWarmed = '', heroSwingWarmed = null;
   function sheetTick(dt) {
     sheetT += dt; if (sheetT < 0.25) return; sheetT = 0;
-    if (sprHero && sprHero.kit) { var lk = heroLook(Math.PI / 2); if (lk && lk.id !== heroLookWarmed) { heroLookWarmed = lk.id; Sprites.peopleWarm(sprHero, lk, ['idle', 'jog', 'walk', 'run', 'attack1', 'attack2', 'thrust', 'chop', 'mine', 'hit', 'block', 'block_walk', 'block_wpn', 'block_wpn_walk']); } }
+    if (sprHero && sprHero.kit) { var lk = heroLook(Math.PI / 2); if (lk && lk.id !== heroLookWarmed) { heroLookWarmed = lk.id; heroSwingWarmed = null; Sprites.peopleWarm(sprHero, lk, ['idle', 'jog', 'walk', 'run', 'attack1', 'attack2', 'thrust', 'chop', 'mine', 'hit', 'block', 'block_walk', 'block_wpn', 'block_wpn_walk']); } var swrW = lk && R2 && Runes2.bound(R2, 'swing'); if ((swrW === 'lunge' || swrW === 'overhead') && heroSwingWarmed !== swrW && sprHero.meta.anims[swrW]) { heroSwingWarmed = swrW; Sprites.peopleWarm(sprHero, lk, [swrW]); } }   /* the swing rune's own clip warmed once it is bound (Colin, AD's lunge and overhead, 2026-10-24) */
     var P = hero(), W = Combat.dbg().W, near = {}, bk;
     (W.enemies || []).forEach(function (e) { if (e.dead || !e.kind || !BEASTS[e.kind]) return; if (Math.hypot(e.x - P.x, e.y - P.y) < SHEET_NEAR) near[e.kind] = 1; });
     for (bk in BEASTS) { if (near[bk]) { sheetNear[bk] = clock; Sprites.warm(BEASTS[bk]); } else if (Sprites.loaded(BEASTS[bk]) && (sheetNear[bk] == null || clock - sheetNear[bk] > SHEET_HOLD)) { Sprites.unload(BEASTS[bk]); delete sheetNear[bk]; } }

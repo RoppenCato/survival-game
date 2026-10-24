@@ -654,7 +654,7 @@ function startAttack() {
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st) * stK() * (a.feint && runeN('feint', 'free') ? 0 : 1); p.stDelay = 0.5; }
   if (p.mode === 'fight' && swingRune() === 'whirl' && !bareHanded() && (meleeProfile().kind === 'greataxe' || meleeProfile().kind === 'spear')) { a.spin = true; a.whirl = runeN('whirl', 'turns') || 1; sfx('whirl', 0, p); }   /* the Whirl: a two-handed swing goes full round */
-  if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind; if (swr0 === 'lunge') sfx('lunge', 0, p); else if (swr0 === 'sweep' && wk0 === 'spear') sfx('sweep', 0, p); else if (swr0 === 'overhead' && a.chg > 0.6) sfx('overhead', 0, p); }   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
+  a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && !a.finisher) { var swr0 = swingRune(), wk0 = meleeProfile().kind; if (swr0 === 'lunge') { sfx('lunge', 0, p); if (wk0 !== 'greataxe') a.clipRune = 'lunge'; } else if (swr0 === 'sweep' && wk0 === 'spear') sfx('sweep', 0, p); }   /* a.clipRune: Colin, AD's lunge and overhead clips, one-handed, picked by Sprites.pick (2026-10-24); the Overhead's is set in releaseCharge, the held blow's own path */   /* the swing runes' own sounds (Derek, SD's, 2026-10-24) */
   if (p.feintHeavy) { a.combo = chainLen() - 1; p.feintHeavy = 0; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
   swingSound(a);
@@ -671,6 +671,7 @@ function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
   a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
+  a.clipRune = null; if (p.mode === 'fight' && !bareHanded() && swingRune() === 'overhead' && c > 0.6) { sfx('overhead', 0, p); if (meleeProfile().kind !== 'greataxe') a.clipRune = 'overhead'; }   /* the Overhead: a held blow brought down (Colin, AD's clip and Derek, SD's sound, 2026-10-24) */
   swingSound(a);
 }
 function stepData(a) {
