@@ -308,7 +308,7 @@ __SFX__
     document.getElementById('meleedesc').textContent = Items.KINDS[arm.melee].desc; document.getElementById('rangeddesc').textContent = Items.KINDS[arm.ranged].desc; document.getElementById('geardesc').textContent = gear.text;
   }
   armRows();
-  var codes = { Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var codes = { Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyC: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {}, gDown = 0;
 
   /* sound */
@@ -538,7 +538,7 @@ __SFX__
     thorsWrath: { how: 'With the club or the maul: one blow in ten calls lightning down on the man, who stands stunned a second.', set: 'man', wpn: 'club' },
     bloodlust: { how: 'Fell a man: a twentieth of your health back.', set: 'men2' },
     rushStep: { how: 'Strike a man, then Space through him within a breath: he is knocked down, whatever he was doing.', set: 'man' },
-    catFoot: { how: 'In the game, at a place with men: hold Ctrl to sneak (half pace without the rune, four fifths with it); a man at his post notices you only from close by.', set: 'none', where: 'game' },
+    catFoot: { how: 'In the game, at a place with men: C turns the sneak on and off (half pace without the rune, four fifths with it); a man at his post notices you only from close by.', set: 'none', where: 'game' },
     stormsEye: { how: 'With the club and Thor\u2019s wrath bound in the hand too: the lightning leaps to a second man.', set: 'men3', wpn: 'club' },
     keenEye: { how: 'In the game at night without a torch: you see twice as far.', set: 'none', where: 'game' },
     hammer: { how: 'With the club or the maul at a man holding his shield up: hold J a second and let go: the shield shatters and he stands stunned.', set: 'manHold', wpn: 'club' },
@@ -562,7 +562,7 @@ __SFX__
     sweep: { how: 'With the spear among men: hold J a second and let go: the ground sweep, every guard broken and every man staggered.', set: 'men3', wpn: 'spear' },
     feint: { how: 'Wait a second, then J: a feint; the man guards against nothing and is open.', set: 'man' },
     twinShot: { how: 'With the bow (F): K held to the full draw, J: two arrows.', set: 'man', ranged: true },
-    pinningShot: { how: 'With the bow (F) and no draw on: hold the left button, the wheel picks the trap, let go to throw it where the mouse is. It arms in three seconds; a man who steps on it is bound to the spot (the Poison trap at tier II).', set: 'man', ranged: true },
+    pinningShot: { how: 'With the bow (F) and no draw on: hold the left button, the wheel picks the trap, let go to throw it where the mouse is. It arms in three seconds; a man who steps on it is bound to the spot, or poisoned. One out at a time; the arena throws them freely.', set: 'man', ranged: true },
     fireArrow: { how: 'With the bow (F): a full draw looses a burning arrow; one man in four catches, burns and is slowed.', set: 'man', ranged: true },
     hawkEye: { how: 'With the bow (F): the arrow flies a third further.', set: 'bowman', ranged: true },
     bleedingPoint: { how: 'Bleed a man (the Serpent\u2019s tongue, Weak spot master), then shoot him: a quarter more and he bleeds further.', set: 'man', ranged: true },

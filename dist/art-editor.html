@@ -6235,15 +6235,16 @@ function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROF
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
 var BOW = { full: 1.5, dmgMin: 0.4, speedMin: 0.8 }; api.bowSpec = BOW;
-var SNEAK = { tap: 0.22, speed: 0.5, hear: 0.5 }; api.sneakSpec = SNEAK;   /* sneaking (Robin, 2026-10-24: "when we introduce sneaking (on ctrl i think) we probably put standard on 50%"): Ctrl held past tap seconds is a sneak at speed of the walk, seen and heard from hear of the distance; a tap still cycles the target; Cat's tread changes both numbers; mine */
-var TRAP = { range: 230, r: 14, fly: 0.5, life: 120, max: 6, st: 8, cd: 1.2 }; api.trapSpec = TRAP;   /* the Trapper's traps (Robin's trial of 2026-10-24): thrown up to range, sprung by a foe within r, in the air fly seconds, gone unsprung after life, at most max out, st stamina a throw and cd between throws; mine */
+var SNEAK = { speed: 0.5, hear: 0.5 }; api.sneakSpec = SNEAK;   /* sneaking (Robin, 2026-10-24: "when we introduce sneaking (on ctrl i think) we probably put standard on 50%", then, asked, "Sneak toggles on C"): C turns it on and off, a sneak at speed of the walk, seen and heard from hear of the distance; a sprint, a dash or a fall ends it; Ctrl targets as before; the Cat's Hush changes both numbers */
+var TRAP = { range: 230, r: 14, fly: 0.5, life: 120, max: 1, st: 8, cd: 1.2 }; api.trapSpec = TRAP;   /* the Trapper's traps (Robin's trial of 2026-10-24): thrown up to range, sprung by a foe within r, in the air fly seconds, gone unsprung after life, st stamina a throw and cd between throws (mine); one out at a time, a new throw losing the old (Robin, asked the same day); each from the bag where the page keeps them (api.trapHave, api.trapUse: made at the trapper's bench), free where it keeps none (the arena) */
 var TRAP_KINDS = [{ id: 'tripper', name: 'Tripper' }, { id: 'poison', name: 'Poison' }];
 var THROW = { speed: 440, back: 560, st: 6, catchR: 16 }; api.throwSpec = THROW;   /* the Throwing axe (the same trial): out at speed, back at back, caught within catchR of the hand; mine */
 function runeUse(id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return; var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }   /* a use that costs no blood (the traps, the throw) */
 function sneakK() { if (!P || !P.sneak) return 1; var h = runeHas('catFoot') ? runeN('catFoot', 'hear') : null; return h != null ? h : SNEAK.hear; }   /* how far he is noticed from while sneaking */
 function stealthK() { return (api.mods && api.mods().stealth ? api.mods().stealth : 1) * sneakK(); }
 function sneakSpeed() { var v = runeHas('catFoot') ? runeN('catFoot', 'sneakSpeed') : null; return v != null ? v : SNEAK.speed; }
-function trapKinds() { var n = runeN('pinningShot', 'kinds') || 1; return TRAP_KINDS.slice(0, Math.max(1, n)); }
+function trapKinds() { var n = runeN('pinningShot', 'kinds') || 2; return TRAP_KINDS.slice(0, Math.max(1, n)); }
+function trapHave(kind) { return api.trapHave ? (api.trapHave(kind) || 0) : 99; }   /* how many of a trap the bag holds; the arena keeps none and throws freely */
 function axeInHand() { return P.mode === 'gather' && TOOLS[P.tool] && TOOLS[P.tool].id === 'axe' && (!api.items || !!itemOf('tool', P.tool)); }
 function axeThrowOn() { return rune('swing') === 'thorsFell' && axeInHand(); }   /* the Throwing axe bound and the axe in hand: K aims the throw in place of the tool's guard */
 function wheel(d) { if (P && P.trapAim) { var n = trapKinds().length; P.trapAim.sel = ((P.trapAim.sel + d) % n + n) % n; return true; } return false; }   /* the page's wheel: it picks the trap while the menu is open */
@@ -6563,7 +6564,7 @@ function springTrap(tr, e) {
   else { var bt = runeN('pinningShot', 'bindT') || 4; e.boundT = Math.max(e.boundT || 0, bt); e.bx = e.x; e.by = e.y; e.kx = e.ky = 0; e.pkx = e.pky = 0; e.awake = true; e.showBar = Math.max(e.showBar || 0, bt); num(e.x, headY(e), 'BOUND', '#9fd8ff'); sfx('trap_snap', 0.9, e); }   /* the Tripper: held to the spot (the loop snaps him back; he may still swing at what is in reach) */
 }
 function throwTrap(x, y, kind) {
-  var p = P; if (!W.traps) W.traps = []; while (W.traps.length >= TRAP.max) W.traps.shift();
+  var p = P; if (trapHave(kind) <= 0) { num(p.x, p.y * K - 46, 'NO TRAP', '#e0a080'); return; } if (api.trapUse) api.trapUse(kind); if (!W.traps) W.traps = []; while (W.traps.length >= TRAP.max) W.traps.shift();   /* (one out at a time: a new throw loses the old) */
   p.st = Math.max(0, p.st - TRAP.st); p.stDelay = Math.max(p.stDelay || 0, 0.4); p.trapCd = TRAP.cd; p.fireT = 0.2; var fa = Math.atan2(y - p.y, x - p.x); p.face = fa; p.faceVis = fa;
   W.traps.push({ kind: kind, state: 'fly', t: 0, x0: p.x + Math.cos(fa) * 8, y0: p.y + Math.sin(fa) * 8, x1: x, y1: y, x: p.x, y: p.y, z: 0, arm: runeN('pinningShot', 'arm') || 3 }); runeUse('pinningShot'); sfx('trap_throw', 0.6, p);
 }
@@ -6595,9 +6596,9 @@ function drawTrap(c, tr) {                 /* drawn in code until Colin, AD's pi
 function drawTrapAim(c, p) {               /* the Trapper's menu at the mouse while the button is held: the spot ringed, the traps listed, the chosen one in gold (the wheel picks) */
   var ta = p.trapAim; if (!ta) return; var kinds = trapKinds(), x = ta.x, y = ta.y * K, i;
   c.save(); c.strokeStyle = ta.far ? 'rgba(255,120,90,0.7)' : 'rgba(255,255,255,0.6)'; c.lineWidth = 1; c.setLineDash([2, 3]); c.beginPath(); c.ellipse(x, y, TRAP.r, TRAP.r * K, 0, 0, 6.283); c.stroke(); c.setLineDash([]);
-  var w = 54, h = 14 * kinds.length + 6, bx = x + 16, by = y - h / 2; c.fillStyle = 'rgba(20,16,14,0.78)'; c.strokeStyle = 'rgba(234,208,138,0.5)'; c.beginPath(); c.rect(bx, by, w, h); c.fill(); c.stroke();
+  var w = 62, h = 14 * kinds.length + 6, bx = x + 16, by = y - h / 2; c.fillStyle = 'rgba(20,16,14,0.78)'; c.strokeStyle = 'rgba(234,208,138,0.5)'; c.beginPath(); c.rect(bx, by, w, h); c.fill(); c.stroke();
   c.font = 'bold 7px system-ui, sans-serif'; c.textBaseline = 'middle'; c.textAlign = 'left';
-  for (i = 0; i < kinds.length; i++) { var sel = i === Math.min(kinds.length - 1, ta.sel); c.fillStyle = sel ? '#ead08a' : 'rgba(255,255,255,0.55)'; c.fillText((sel ? '\u25b8 ' : '  ') + kinds[i].name, bx + 5, by + 3 + 14 * i + 7); }
+  for (i = 0; i < kinds.length; i++) { var sel = i === Math.min(kinds.length - 1, ta.sel), hv = trapHave(kinds[i].id), cnt = api.trapHave ? ' ' + hv : ''; c.fillStyle = hv <= 0 ? 'rgba(255,255,255,0.3)' : sel ? '#ead08a' : 'rgba(255,255,255,0.6)'; c.fillText((sel ? '\u25b8 ' : '  ') + kinds[i].name + cnt, bx + 5, by + 3 + 14 * i + 7); }   /* (with how many the bag holds; none faint) */
   c.restore();
 }
 function drawAxeAim(c, p) {                /* the Throwing axe readied (K held): a few dots the way it will fly, as the bow's */
@@ -6981,8 +6982,9 @@ function updatePlayer(dt) {
     else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
   }
   for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (api.barSelect && (p.mode === 'fight' || p.mode === 'gather')) { api.barSelect(i - 1); continue; } if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
-  var ctrlDown = IN.keys.ControlLeft || IN.keys.ControlRight; if (ctrlDown) p.ctrlT = (p.ctrlT || 0) + dt; else { if ((IN.released.ControlLeft || IN.released.ControlRight) && (p.ctrlT || 0) < SNEAK.tap) cycleLock(); p.ctrlT = 0; }   /* Ctrl: a tap cycles the target, held it is a sneak (Robin, 2026-10-24) */
-  p.sneak = !!(ctrlDown && (p.ctrlT || 0) >= SNEAK.tap && p.roll.t <= 0 && !p.dead);
+  if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
+  if (IN.pressed.KeyC && !p.dead) p.sneak = !p.sneak;   /* C: the sneak on and off (Robin, 2026-10-24) */
+  if (p.dead || p.roll.t > 0 || p.hurtT > 0.2) p.sneak = false;
 
   var held = (IN.lmb || IN.keys.KeyJ) && p.mode === 'fight' && !bow;
   p.holdT = held ? p.holdT + dt : 0;
