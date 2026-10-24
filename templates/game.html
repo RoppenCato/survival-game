@@ -250,7 +250,7 @@ __COMBAT__
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  var DEFAULT_PICK = { shield_break: 'a', axe_throw: 'a', axe_catch: 'a', trap_throw: 'a', trap_land: 'a', trap_arm: 'a', trap_snap: 'a', trap_poison: 'a', shadowstep: 'a', shoot: 'b', rain_light: 'a', rain: 'a', rain_heavy: 'v', rain_water: 'a', thunder: 'a', step_snow: 'b', step_mud: 'a', step_wetsand: 'v', splash: 'a', talk_open: 'f', talk_next: 'e', book_open: 'b', book_close: 'c', book_page: 'b', raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w', oar: 'a', oars: 'v', sail_fill: 'a', sail_flap: 'b', creak: 'b', keel_sand: 'v', keel_off: 'v', cudgel_thud: 'v', altar_lay: 'a', storm_rise: 'v', rune_carve: 'v', lightning_strike: 'v', stone_break: 'a', blood_drip: 'v', rune_wake: 'v', rune_ready: 'a', lightning_small: 'a', sacrifice_stab: 'v', storm_gather: 'v', war_cry: 'a', berserk_roar: 'v', last_stand: 'v', riposte: 'a', guard_break: 'v', blink_step: 'a', leap_land: 'a', lunge: 'v', whirl: 'v', overhead: 'a', sweep: 'v', twin_shot: 'v', pin_shot: 'v', fire_arrow: 'v', rock_split: 'v', slide: 'v' };   /* the runes' ten: Robin's picks of 2026-10-23 through Derek, SD: altar_lay A, lightning_small A, rune_ready A (the plain recordings); the other seven v, his layered one, until Robin picks */   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
+  var DEFAULT_PICK = { fish_cast: 'a', fish_plop: 'a', fish_bite: 'a', fish_reel: 'a', fish_splash: 'a', fish_snap: 'a', fish_land: 'a', shield_break: 'a', axe_throw: 'a', axe_catch: 'a', trap_throw: 'a', trap_land: 'a', trap_arm: 'a', trap_snap: 'a', trap_poison: 'a', shadowstep: 'a', shoot: 'b', rain_light: 'a', rain: 'a', rain_heavy: 'v', rain_water: 'a', thunder: 'a', step_snow: 'b', step_mud: 'a', step_wetsand: 'v', splash: 'a', talk_open: 'f', talk_next: 'e', book_open: 'b', book_close: 'c', book_page: 'b', raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w', oar: 'a', oars: 'v', sail_fill: 'a', sail_flap: 'b', creak: 'b', keel_sand: 'v', keel_off: 'v', cudgel_thud: 'v', altar_lay: 'a', storm_rise: 'v', rune_carve: 'v', lightning_strike: 'v', stone_break: 'a', blood_drip: 'v', rune_wake: 'v', rune_ready: 'a', lightning_small: 'a', sacrifice_stab: 'v', storm_gather: 'v', war_cry: 'a', berserk_roar: 'v', last_stand: 'v', riposte: 'a', guard_break: 'v', blink_step: 'a', leap_land: 'a', lunge: 'v', whirl: 'v', overhead: 'a', sweep: 'v', twin_shot: 'v', pin_shot: 'v', fire_arrow: 'v', rock_split: 'v', slide: 'v' };   /* the runes' ten: Robin's picks of 2026-10-23 through Derek, SD: altar_lay A, lightning_small A, rune_ready A (the plain recordings); the other seven v, his layered one, until Robin picks */   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
   function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; if (k && k !== 'orig' && Sfx.has(n + '_' + k)) return n + '_' + k; k = DEFAULT_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }   /* (a pick of a sound no longer in the bundle falls back to Robin's) */
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -2632,28 +2632,34 @@ __COMBAT__
     var P = hero(), sp = castSpot(P), rod = handItem(); if (!sp) return;
     var depth = -w.elevAt(sp.x, sp.y), low = w.biomeAt(Math.floor(sp.x / T), Math.floor(sp.y / T)) > 128, fresh = inlandWater(sp.x, sp.y);
     fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, patience: rod && rod.mat === 'iron' ? 0.8 : 1.15 }); fishing.until += FISH_POSE.cast; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: FISH_POSE.cast - FISH_POSE.loose };
-    P.vx = P.vy = 0; P.face = Math.atan2(sp.cy, sp.cx); P.fishPose = 'cast'; P.fishT = FISH_POSE.cast; sfx('swing', 0.5);
+    P.vx = P.vy = 0; P.face = Math.atan2(sp.cy, sp.cx); P.fishPose = 'cast'; P.fishT = FISH_POSE.cast; fishSnd('fish_cast', 'swing', 0.5);
   }
   function fishPress() {
     if (!fishing) return; var ev = Fishing.press(fishing);
-    if (ev === 'scared') { note('Too soon: it darted off'); sfx('clink'); }
-    else if (ev === 'hooked') { sfx('craft'); fishFloat.splash = 0.8; }
+    if (ev === 'scared') { note('Too soon: it darted off'); fishSnd('fish_splash', 'clink'); }
+    else if (ev === 'hooked') { fishSnd('fish_splash', 'craft'); fishFloat.splash = 0.8; }
   }
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
-  function fishEnd() { fishing = null; fishFloat = null; var P = hero(); P.fishPose = null; P.fishT = 0; }
+  function fishEnd() { fishing = null; fishFloat = null; var P = hero(); P.fishPose = null; P.fishT = 0; fishReelLoop(false); }
+  function fishSnd(n, fb, v) { if (Sfx.has(pickOf(n))) sfx(n, v); else if (fb) sfx(fb, v); }   /* Derek, SD's fishing sounds by name (briefed 2026-10-24), the borrowed sound until they are in the bundle */
+  var REELH = null;
+  function fishReelLoop(on) {             /* fish_reel, his seamless loop, while E draws the line in */
+    if (on && !REELH) { var nm = pickOf('fish_reel'); if (S_sound() && ac() && AC.state === 'running' && Sfx.has(nm)) REELH = Sfx.loop(AC, weatherSfxDest(), nm, { v: 1, ramp: 0.15 }); }
+    else if (!on && REELH) { Sfx.cut(AC, REELH, 0.2); REELH = null; }
+  }
   function fishTick(dt) {
     if (!fishing) return; var P = hero(), K2 = Combat.dbg().IN.keys;
     if (P.dead || sleep || K2.KeyW || K2.KeyA || K2.KeyS || K2.KeyD || P.mode !== 'gather' || !rodInHand()) { fishEnd(); return; }   // walking off, or the rod put away, ends the round
     P.vx = P.vy = 0; if (fishFloat.splash > 0) fishFloat.splash -= dt;
     if (P.fishT > 0) { P.fishT -= dt; if (P.fishT <= 0) P.fishT = 0; }   /* the cast plays, then the pose follows the round */
-    if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.splash = 0.5; sfx('pick'); }   /* the float leaves the rod at the cast's loose and lands with a splash */
+    if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.splash = 0.5; fishSnd('fish_plop', 'pick'); }   /* the float leaves the rod at the cast's loose and lands with a splash */
     if (P.fishT <= 0) P.fishPose = fishing.phase === 'fight' ? 'fight' : 'wait';
-    var ev = Fishing.tick(fishing, dt, eHeld);
+    var ev = Fishing.tick(fishing, dt, eHeld); fishReelLoop(!!fishing && fishing.phase === 'fight' && eHeld && !(fishing.run > 0));
     if (ev === 'nibble') { fishFloat.splash = 0.25; }
-    else if (ev === 'bite') { sfx('clink'); fishFloat.splash = 0.6; }
+    else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.6; }
     else if (ev === 'missed') { note('It let go'); }
-    else if (ev === 'run') { sfx('pick'); fishFloat.splash = 0.5; }
-    else if (ev === 'lost') { note('The line snapped'); sfx('fall'); fishEnd(); }
+    else if (ev === 'run') { fishSnd('fish_splash', 'pick'); fishFloat.splash = 0.5; }
+    else if (ev === 'lost') { note('The line snapped'); fishSnd('fish_snap', 'fall'); fishEnd(); }
     else if (ev === 'landed') { fishLand(); }
     if (fishing && fishing.phase === 'fight') { var u = Math.max(0.18, fishing.dist / (60 + fishing.fish.size * 60)); fishFloat.x = P.x + fishFloat.cx * fishFloat.d0 * u; fishFloat.y = P.y + fishFloat.cy * fishFloat.d0 * u; }   // the float comes in with the fish
   }
@@ -2661,7 +2667,7 @@ __COMBAT__
     var f = fishing.fish, P = hero();
     if (f.id === 'chest') { var n = 4 + Math.floor(Math.random() * 9); addItem('silver', n); if (Math.random() < 0.35) { var kinds = ['sword', 'axe', 'seax', 'knife'], th = Items.make(kinds[Math.floor(Math.random() * kinds.length)], Math.random() < 0.5 ? 'iron' : 'copper'); if (!addThing(th)) dropThing(th, P.x, P.y + 10); toast('A sunken chest: ' + n + ' silver and ' + Items.name(th).toLowerCase()); } else toast('A sunken chest: ' + n + ' silver'); }
     else { if (addItem(f.id, 1) > 0) drop(f.id, fishFloat.x, fishFloat.y, 1); toast(f.name + ', ' + f.kg + ' kg'); var lg = fishLog[f.id] || (fishLog[f.id] = { n: 0, best: 0 }); lg.n++; if (f.kg > lg.best) lg.best = f.kg; }
-    deed('fish'); sfx('craft'); fishEnd(); P.fishPose = 'land'; P.fishT = FISH_POSE.land; P.fishLift = f.id; save();
+    deed('fish'); fishSnd('fish_land', 'craft'); fishEnd(); P.fishPose = 'land'; P.fishT = FISH_POSE.land; P.fishLift = f.id; save();
   }
   function fishPoseTick(dt) { var P = hero(); if (!fishing && P.fishPose === 'land') { P.fishT -= dt; if (P.fishT <= 0 || !rodInHand()) { P.fishPose = null; P.fishT = 0; P.fishLift = null; } } }   /* the catch lifted a moment after the round ends */
   function drawFishing(c) {                // the line from the rod's tip to the float, the float, the fish's shadow and splashes
