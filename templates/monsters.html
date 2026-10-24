@@ -112,7 +112,10 @@ __MONSTERS_JS__
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var kit = StyleLab.kit, K = 0.75, T = kit.TW; kit.setup(kit.STYLE);
   var w = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); w.meadowLook = World.GRASS_INK; w.plant(); w.camp(); w.sortBuckets();
-  var WX = w.WX, WY = w.WY, fx = Math.min(WX - 500, w.home.x + 1100), fy = Math.max(300, Math.min(WY - 300, w.home.y));
+  var WX = w.WX, WY = w.WY, fx, fy;
+  (function () {                             /* the field on open sea: east of the island, the first place where a disc of 420 units is all water (the first try sat the ship on the meadow) */
+    var cy = w.home.y, x, ok, a, best = null; for (x = w.home.x + 300; x < WX - 450; x += 40) { ok = true; for (a = 0; a < 6.283 && ok; a += 0.5236) if (!w.isWater(x + Math.cos(a) * 420, cy + Math.sin(a) * 420)) ok = false; if (ok && w.isWater(x, cy)) { best = x; break; } }
+    fx = best != null ? best + 200 : Math.min(WX - 500, w.home.x + 1400); fy = Math.max(300, Math.min(WY - 300, cy)); })();
   var MON = __MONSTERS__ || {}, IMG = {}, mk = function (wd, hd) { var c2 = document.createElement('canvas'); c2.width = wd; c2.height = hd; return c2; };
   function imgOf(name) { if (IMG[name]) return IMG[name]; var J = MON[name]; if (!J) return null; var im = new Image(); im.src = J.src; return (IMG[name] = { img: im, J: J }); }
   /* the field */
@@ -132,7 +135,7 @@ __MONSTERS_JS__
   /* the ship */
   var ship = document.getElementById('ship'), ZOOM = { rowboat: 0.65, karve8: 0.55, longship: 0.45 }, v = null;
   function partsOf(kind) { var KJ = Yard.KJ, HD = Yard.HULLS[kind], parts = [], i; if (!HD) return parts; if (HD.mast) { for (i = HD.mast - 1; i >= 2 && parts.length < Math.floor((HD.thwarts ? HD.thwarts[1] : 6) / 2); i--) parts.push({ id: 'thwart', i: i, j: KJ }); for (i = HD.mast + 1; i <= HD.n - 1 && parts.length < (HD.thwarts ? HD.thwarts[1] : 6); i++) parts.push({ id: 'thwart', i: i, j: KJ }); parts.push({ id: 'mast', i: HD.mast, j: KJ }, { id: 'sail', i: HD.mast, j: KJ }, { id: 'rudder', i: HD.rudder, j: KJ }, { id: 'dragon', i: HD.n, j: KJ }, { id: 'shields', i: 4, j: KJ }); } else parts.push({ id: 'thwart', i: 2, j: KJ }); return parts; }
-  function makeShip() { var kind = ship.value; v = { kind: kind, parts: partsOf(kind), x: fx - spec.spacing * Monsters.M * spec.spread * 2.2, y: fy + 40, h: 0, vx: 0, vy: 0, speed: 0, crew: kind === 'longship' ? 26 : kind === 'karve8' ? 8 : 0, sailFill: 0, aboard: true, rowing: true }; try { Yard.fit(v); } catch (e2) {} }
+  function makeShip() { var kind = ship.value; var sx = fx - spec.spacing * Monsters.M * spec.spread * 2.2; while (sx < fx - 120 && !free(sx, fy + 40)) sx += 40; v = { kind: kind, parts: partsOf(kind), x: sx, y: fy + 40, h: 0, vx: 0, vy: 0, speed: 0, crew: kind === 'longship' ? 26 : kind === 'karve8' ? 8 : 0, sailFill: 0, aboard: true, rowing: true }; try { Yard.fit(v); } catch (e2) {} }
   makeShip(); ship.addEventListener('change', function () { makeShip(); saveSpec(); });
   document.getElementById('resetShip').addEventListener('click', makeShip);
   document.getElementById('useGame').addEventListener('click', function () { try { localStorage.setItem('game.monsters', document.getElementById('settings').value); document.getElementById('useNote').textContent = 'Kept as game.monsters (the game does not read it yet).'; } catch (e3) {} });
