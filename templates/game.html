@@ -436,6 +436,7 @@ __COMBAT__
     var hd = equip.head && (HERO_HEADS[equip.head.mat] || HERO_HEADS.leather);
     L.push({ l: 'beardA', t: HERO_LOOK.hair }); L.push({ l: hd && hd[0] !== 'hoodC' ? 'hairHatA' : 'hairA', t: HERO_LOOK.hair });
     if (hd) L.push(hd[1] ? { l: hd[0], t: hd[1] } : { l: hd[0] });
+    if (berserkNow()) L.push({ l: 'berserk' });   /* Berserk: Colin, AD's face layer over the hair, the beard and the headgear, the eyes glowing through a helm's holes (2026-10-24) */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (riteKnife) { it = null; away = true; if (has('knifeWood')) L.push({ l: 'knifeWood', hand: 1 }); if (has('knifeMetal')) L.push({ l: 'knifeMetal', t: bladeTint('iron'), metal: 1, hand: 1 }); }
     if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
@@ -5496,7 +5497,10 @@ __COMBAT__
     riteSky.rings.forEach(function (r) { r.t += dt; }); riteSky.rings = riteSky.rings.filter(function (r) { return r.t < 1.1; });
   }
   var flashT = 0, wasReady = {}, sceneBoarWait = null;
-  function runeTick() {                     // what the page reads from the runes each frame (Runes2): the stack's size (the Strong back), the sea's numbers (the Following wind, the Long oar)
+  var wasBerserk = false;
+  function berserkNow() { var P = hero(); return runeHas('berserk') && !P.dead && P.hp < P.maxHp * (runeN('berserk', 'at') || 0.5); }
+  function runeTick() {
+    var bz = berserkNow(); if (bz && !wasBerserk) { sfx('berserk_roar'); note('Berserk'); } wasBerserk = bz;   /* the roar as Berserk wakes */                     // what the page reads from the runes each frame (Runes2): the stack's size (the Strong back), the sea's numbers (the Following wind, the Long oar)
     STACK = runeHas('strongBack') ? runeN('strongBack', 'stack') || 25 : 25;
     var X = Yard.extra; X.sailK = runeHas('followingWind') ? runeN('followingWind', 'sailK') : 1; X.oarK = runeHas('longOar') ? runeN('longOar', 'oarK') : 1; X.turnK = runeHas('longOar') && runeN('longOar', 'turn') ? 2.2 : 1; X.abeam = runeHas('followingWind') ? runeN('followingWind', 'abeam') : 0; X.never = runeHas('followingWind') ? runeN('followingWind', 'never') : 0;
   }
