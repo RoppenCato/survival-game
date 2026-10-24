@@ -122,6 +122,7 @@ details.panel[open]>summary{margin-bottom:8px}
           <select id="mwpn" aria-label="The man's weapon"></select>
           <select id="mgear" aria-label="What the man wears"></select>
           <select id="mwits" aria-label="The man's wits"></select>
+          <select id="mblock" aria-label="When the man blocks"></select>
           <button id="addman">Add one</button>
         </div>
         <div class="group" style="margin-top:8px">
@@ -4304,12 +4305,12 @@ function soldierAI(e, dt) {
       if (e.bow && !e.close) { archerStep(e, dt, T, d, ang); break; }
       var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
       e.face = turnToward(e.face, fa2, MEN.turn * dt);
-      if (e.guard > 0) { if (th || e.inLine || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (!e.inLine && e.guardAge > MEN.guardMax) lowerGuard(e, true); }
+      if (e.guard > 0) { if (th || e.inLine || (e.holdGuard && d <= keep + 60) || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (!e.inLine && !(e.holdGuard && d <= keep + 60) && e.guardAge > MEN.guardMax) lowerGuard(e, true); }   /* (holdGuard: a man told to hold his shield up while you are near, the arena's trial of the bash, 2026-10-24) */
       else if (th && th !== P && th.sw && (th.sw.guardBreak || th.sw.stag >= 40) && e.hopCd <= 0 && !e.inLine && dodges(e, th)) {       // a blow that would break his guard: a man who sees it in time steps out of it (not every time: by his wits), and comes back in while the other recovers
         e.seeT += dt; if (e.seeT >= e.react) { e.state = 'back'; e.t = 0; e.dur = 0.3; e.hop = true; e.seeT = 0; e.hopCd = 2.4; e.cd = Math.min(e.cd, 0.15); break; }
       }
       else if (e.shield && e.guardCd <= 0 && th) { e.seeT += dt; if (e.seeT >= e.react) raiseGuard(e); }                 // a blow he sees coming, if he is quick enough
-      else if (e.shield && e.guardCd <= 0 && (e.inLine || (e.wary && d <= keep + 16)) && e.cd > 0.2) raiseGuard(e);     // a wary man: behind his shield while you are in reach and he is not striking; a man in a line: always
+      else if (e.shield && e.guardCd <= 0 && (e.inLine || (e.holdGuard && d <= keep + 60) || (e.wary && d <= keep + 16)) && e.cd > 0.2) raiseGuard(e);     // a wary man: behind his shield while you are in reach and he is not striking; a man in a line: always
       else e.seeT = Math.max(0, e.seeT - dt * 2);
       // his place: at his reach from the target, at his own angle round it when others are on it too
       var sa = slotAngle(e, T), waiting = e.cd > 0.5 || !slotFree(T, e), want = keep + (sa != null && waiting && strikersOn(T, e) >= MEN.slots ? 14 : 0), slow = e.guard > 0 ? 0.5 : 1;
@@ -6213,7 +6214,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
       sel.addEventListener('change', change); tier.addEventListener('change', change);
       var tw = document.createElement('span'); tw.appendChild(sel); tw.appendChild(tier); row.appendChild(tw); host.appendChild(row);
     });
-    var b = document.createElement('button'); b.className = 'small'; b.textContent = 'Every blood ring full'; b.addEventListener('click', function () { if (Combat.api.runeState) Runes2.readyAll(Combat.api.runeState); b.blur(); }); host.appendChild(b);
+    var fl = document.createElement('label'); var fc = document.createElement('input'); fc.type = 'checkbox'; fc.checked = ARUNES.full !== false; fc.addEventListener('change', function () { ARUNES.full = fc.checked; try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} if (!fc.checked && Combat.api.runeState) Runes2.readyAll(Combat.api.runeState); }); fl.appendChild(fc); fl.appendChild(document.createTextNode(' the blood rings stay full (off: they fill on blows landed, as in the game)')); host.appendChild(fl);
     var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'Back to the start’s'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
     runesApply();
   }
@@ -6258,15 +6259,15 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     [['A pair of wolves', ['wolf', 'wolf']], ['The night\u2019s pack (three wolves)', ['wolf', 'wolf', 'wolf']], ['Two boars', ['boar', 'boar']], ['Three young boars', ['boarYoung', 'boarYoung', 'boarYoung']], ['A boar and a wolf', ['boar', 'wolf']]].forEach(function (g) { var b2 = document.createElement('button'); b2.textContent = g[0]; b2.addEventListener('click', function () { g[1].forEach(function (kk) { want = kk; var e2 = Combat.spawn('beast'); if (holdAll) e2.hold = true; }); b2.blur(); }); host.appendChild(b2); }); })();   /* several at once (2026-10-15, for tuning fights against many) */
 
   /* the men */
-  var MWPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], MGEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm and a shield', armor: 0.45, shield: true, mail: true, helm: true }], MWITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }];
+  var MWPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], MGEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm and a shield', armor: 0.45, shield: true, mail: true, helm: true }], MWITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }], MBLOCK = [{ name: 'blocks as in the game' }, { name: 'blocks when you are close' }, { name: 'holds the shield up' }];   /* (Robin, 2026-10-24: "the men should block sometimes so i can try using it": a wary man keeps his shield up while you are in reach; holding it up, always, until a bash breaks it) */
   function fill(id, list, name) { var s = document.getElementById(id); s.innerHTML = ''; list.forEach(function (q, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = name(q); s.appendChild(o); }); return s; }
-  var mwpn = fill('mwpn', MWPN, function (k) { return Items.KINDS[k].name; }), mgear = fill('mgear', MGEAR, function (g) { return g.name; }), mwits = fill('mwits', MWITS, function (w) { return w.name; }), fwpn = fill('fwpn', MWPN, function (k) { return Items.KINDS[k].name; }), fgear = fill('fgear', MGEAR, function (g) { return g.name; });
-  mgear.value = '1'; mwits.value = '1'; fgear.value = '1';
+  var mwpn = fill('mwpn', MWPN, function (k) { return Items.KINDS[k].name; }), mgear = fill('mgear', MGEAR, function (g) { return g.name; }), mwits = fill('mwits', MWITS, function (w) { return w.name; }), mblock = fill('mblock', MBLOCK, function (b) { return b.name; }), fwpn = fill('fwpn', MWPN, function (k) { return Items.KINDS[k].name; }), fgear = fill('fgear', MGEAR, function (g) { return g.name; });
+  mgear.value = '1'; mwits.value = '1'; fgear.value = '1'; mblock.value = '1';
   function spawnMan(side, x, y, wpn, gear, wits) {
     var G = MGEAR[gear] || MGEAR[1], P = Combat.dbg().P;
     x = Math.max(20, Math.min(AWp() - 20, x)); y = Math.max(40, Math.min(AHp() - 20, y));
     var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, strength: 4, wits: wits != null ? wits : 4, aim: 4, loyal: false, nerve: 0.55, mail: G.mail && wpn !== 'bow', helm: G.helm });
-    e.face = Math.atan2(P.y - y, P.x - x); if (holdAll) e.hold = true; return e;
+    e.face = Math.atan2(P.y - y, P.x - x); if (holdAll) e.hold = true; if (side === 0) { var bk = +mblock.value; if (bk >= 1) e.wary = true; if (bk === 2) e.holdGuard = true; } return e;
   }
   function AWp() { return 400; } function AHp() { return 333; }
   var MIX = ['axe', 'spear', 'sword', 'club', 'seax'];
@@ -6421,6 +6422,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     var dt = Math.min(0.05, (now - last) / 1000) * clockK; last = now;
     var D = Combat.dbg(); if (immortal && !D.P.dead) { D.P.hp = D.P.maxHp; if (D.P.st < 30) D.P.st = 30; }
     if (holdAll) D.W.enemies.forEach(function (e) { e.hold = true; });
+    if (ARUNES.full !== false && Combat.api.runeState) Runes2.readyAll(Combat.api.runeState);   /* the blood rings kept full in the arena (Robin, 2026-10-24: an ability once was not enough to try it) */
     Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }

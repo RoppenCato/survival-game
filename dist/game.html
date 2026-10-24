@@ -14818,12 +14818,12 @@ function soldierAI(e, dt) {
       if (e.bow && !e.close) { archerStep(e, dt, T, d, ang); break; }
       var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
       e.face = turnToward(e.face, fa2, MEN.turn * dt);
-      if (e.guard > 0) { if (th || e.inLine || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (!e.inLine && e.guardAge > MEN.guardMax) lowerGuard(e, true); }
+      if (e.guard > 0) { if (th || e.inLine || (e.holdGuard && d <= keep + 60) || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (!e.inLine && !(e.holdGuard && d <= keep + 60) && e.guardAge > MEN.guardMax) lowerGuard(e, true); }   /* (holdGuard: a man told to hold his shield up while you are near, the arena's trial of the bash, 2026-10-24) */
       else if (th && th !== P && th.sw && (th.sw.guardBreak || th.sw.stag >= 40) && e.hopCd <= 0 && !e.inLine && dodges(e, th)) {       // a blow that would break his guard: a man who sees it in time steps out of it (not every time: by his wits), and comes back in while the other recovers
         e.seeT += dt; if (e.seeT >= e.react) { e.state = 'back'; e.t = 0; e.dur = 0.3; e.hop = true; e.seeT = 0; e.hopCd = 2.4; e.cd = Math.min(e.cd, 0.15); break; }
       }
       else if (e.shield && e.guardCd <= 0 && th) { e.seeT += dt; if (e.seeT >= e.react) raiseGuard(e); }                 // a blow he sees coming, if he is quick enough
-      else if (e.shield && e.guardCd <= 0 && (e.inLine || (e.wary && d <= keep + 16)) && e.cd > 0.2) raiseGuard(e);     // a wary man: behind his shield while you are in reach and he is not striking; a man in a line: always
+      else if (e.shield && e.guardCd <= 0 && (e.inLine || (e.holdGuard && d <= keep + 60) || (e.wary && d <= keep + 16)) && e.cd > 0.2) raiseGuard(e);     // a wary man: behind his shield while you are in reach and he is not striking; a man in a line: always
       else e.seeT = Math.max(0, e.seeT - dt * 2);
       // his place: at his reach from the target, at his own angle round it when others are on it too
       var sa = slotAngle(e, T), waiting = e.cd > 0.5 || !slotFree(T, e), want = keep + (sa != null && waiting && strikersOn(T, e) >= MEN.slots ? 14 : 0), slow = e.guard > 0 ? 0.5 : 1;
