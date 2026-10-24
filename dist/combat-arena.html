@@ -5501,11 +5501,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
     var A = H.meta.anims, t = now(), a = P.atk, dd = odo(P, P.x, P.y, nsOf(H.meta.elev)), sc = opts.scale || 1;
+    var twoH = !!(opts.layers && (holds(opts.layers, 'greataxeWood') || holds(opts.layers, 'maulWood'))); function h2(n) { return twoH && A[n + '_2h'] ? n + '_2h' : n; }   /* a two-handed weapon in hand (the Dane axe, the maul) takes a clip's _2h twin where the set has one (Colin, AD's two-handed set, asked 2026-10-24: idle, idle_look, walk, jog, run, attack1 the overhead smash, attack2 the side sweep, hit, block_wpn and its walk), else the one-handed clip */
     if (P.dead) { if (!A.death) return null; return { a: 'death', f: Math.min(A.death.frames - 1, Math.floor((t - H.deadT) * A.death.fps)) }; }
     if (a && a.ph !== 'none' && opts.stepData) {                     // the attack's phases drive the clip: windup, the blow, the recovery
       var sd = opts.stepData(), tot = sd.wu + sd.ac + sd.rec, el = a.ph === 'windup' ? a.t : a.ph === 'active' ? sd.wu + a.t : sd.wu + sd.ac + a.t, k = Math.max(0, Math.min(0.999, el / tot)), nm;
       if (P.mode === 'gather') { var tl = opts.tool ? opts.tool() : null; nm = tl === 'pick' ? 'mine' : 'chop'; }
-      else nm = (a.combo % 2) ? 'attack2' : 'attack1';
+      else nm = h2((a.combo % 2) ? 'attack2' : 'attack1');
       if (A[nm] && A.chop && opts.layers && !shows(A[nm], opts.layers) && shows(A.chop, opts.layers)) nm = 'chop';
       var onContact = function (nmC) { var AC = A[nmC], cn = AC.contact, n = AC.frames, ph0 = a.ph, u0 = ph0 === 'windup' ? a.t / Math.max(0.001, sd.wu) : ph0 === 'active' ? a.t / Math.max(0.001, sd.ac) : a.t / Math.max(0.001, sd.rec); u0 = Math.max(0, Math.min(0.999, u0)); return { a: nmC, f: ph0 === 'windup' ? Math.min(cn, Math.floor(u0 * cn)) : ph0 === 'active' ? cn : Math.min(n - 1, cn + 1 + Math.floor(u0 * (n - 1 - cn))) }; };   /* (2026-10-20: the kit's clips carry anims.<clip>.contact, the frame the blow lands on) */
       if (P.mode !== 'gather' && a.bash) { var bsn0 = (!opts.layers || holds(opts.layers, 'shieldRim')) ? 'bash' : 'bash_wpn'; if (A[bsn0] && A[bsn0].contact != null) return onContact(bsn0); }   /* a bash started as a blow (the page's trigger path): Colin, AD's clip on the blow's own phases, contact 3 (2026-10-24; the shove path plays it by P.bashT below) */
@@ -5521,8 +5522,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip && H.clip.name === 'bow_shoot' && Math.hypot(P.vx || 0, P.vy || 0) > 12) H.clip = null;   /* a shot on the move: the loose is let go as soon as he walks, so the walk shows (Robin, 2026-10-24: the body locked in a pose after shooting while walking) */
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
-    if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
-    var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
+    if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35, hn = h2('hit'); return { a: hn, f: frameAt(A[hn], Math.max(0, Math.min(0.999, hk * 0.6))) }; }
+    var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : h2('block_wpn'), bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
     if (P.slide && P.roll && P.roll.t > 0 && A.slide) return { a: 'slide', f: frameAt(A.slide, Math.min(0.999, 1 - P.roll.t / (P.roll.len || 1))) };   /* the Slide's clip, when it comes */
     if (A.leap) { var LP = (typeof Combat !== 'undefined' && Combat.LEAP) || { crouch: 0.14, land: 0.18 }; if (P.leap && P.leapCrouch > 0) return { a: 'leap', f: Math.min(2, Math.floor(3 * (1 - P.leapCrouch / LP.crouch))) }; if (P.leap && P.roll && P.roll.t > 0) return { a: 'leap', f: 3 + Math.min(4, Math.floor(5 * (1 - P.roll.t / (P.roll.len || 1)))) }; if (P.leapLand > 0) return { a: 'leap', f: 8 + Math.min(3, Math.floor(4 * (1 - P.leapLand / LP.land))) }; }   /* the Long leap (Colin, AD's clip, 2026-10-24): frames 0 to 2 the crouch, 3 to 7 the push-off and the flight, 8 to 11 the landing, each on its own phase of the engine's LEAP */
@@ -5538,8 +5539,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
     if (an && an.sneak) { var snc = an.amt > 0.35 ? 'sneak_walk' : 'sneak'; if (A[snc]) return { a: snc, f: gait(A[snc], dd, t, sc) }; }   /* sneaking (Colin, AD's clips when they come; without them the walk, crouched by the drawing) */
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.jog ? 'jog' : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle'))))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
-    if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
-    if (nm2 === 'idle') { var li = loopAt(A.idle, t); return { a: 'idle', f: li.f, f2: li.f2, w: li.w }; }
+    nm2 = h2(nm2); if (!A[nm2]) return null;                           // a sheet set with no such clip draws nothing (it threw)
+    if (nm2 === 'idle' || nm2 === 'idle_2h') { var li = loopAt(A[nm2], t); return { a: nm2, f: li.f, f2: li.f2, w: li.w }; }
     return { a: nm2, f: gait(A[nm2], dd, t, sc) };
   }
   // a sheet recoloured once per tint (the metal of a thing in the hand, by its material): the colour laid over the pixels at 0.6
