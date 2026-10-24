@@ -383,12 +383,16 @@ function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23:
     q.kx += Math.cos(ang) * CROWD.shoveD * 0.4 * k; q.ky += Math.sin(ang) * CROWD.shoveD * 0.4 * k; q.state = 'stagger'; q.t = 0; q.dur = CROWD.shoveT * 0.8; q.sw = null; q.swung = false; q.poiseT = 0.9; q.showBar = 2; }
   ring(best.x, best.y, 0, 30, 0.3, '255,255,255', false, 2.5); num(best.x, headY(best), 'BLOCK BROKEN', '#dfe8ff'); logEv({ k: 'shove', hit: true, e: best }); return true;
 }
-function crowdWarCry(p) {                 // the War-cry: every foe within hearing hesitates, the frightened run at tier II, your men's next blows are heavy at tier III
-  var n = 0, i, hes = runeN('warCry', 'hesitate') || 1; p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.bashT = CROWD.bashT;
+var CRY_T = 1.1, CRY_AT = 4 / 10.91;        /* Colin, AD's war_cry clip (2026-10-24): 12 frames at 10.91, the cry at frame 4 */
+function crowdWarCry(p) {                 // the War-cry: the clip plays (p.cryT); at its cry (warCryOut) every foe within hearing hesitates, the frightened run at tier II, your men's next blows are heavy at tier III
+  p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.bashT = 0; p.cryT = CRY_T; p.cryDue = true; p.freezeT = Math.max(p.freezeT || 0, CRY_T * 0.9); p.guard = false; return true;
+}
+function warCryOut(p) {
+  var n = 0, i, hes = runeN('warCry', 'hesitate') || 1;
   for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.dead || e.down || e.out) continue; var d = Math.hypot(e.x - p.x, e.y - p.y); if (d > 240) continue;
     if (e.side === 1) { if (runeN('warCry', 'heavy')) e.cryHeavy = 1; continue; }
     if (e.type === 'soldier') { e.freezeT = Math.max(e.freezeT || 0, hes); e.pkx = e.pky = 0; if (runeN('warCry', 'run') && (e.nerve || 0.55) < 0.6 && !e.loyal) breakMan(e, 'flee'); n++; } else if (e.type === 'beast') { e.state = 'flee'; e.t = 0; e.cd = hes; n++; } }
-  ring(p.x, p.y, 0, 240, 0.5, '255,220,150', false, 2.5); num(p.x, p.y - 32, 'WAR-CRY', '#ffd34d', true); sfx('war_cry'); logEv({ k: 'warcry', n: n }); return true;
+  ring(p.x, p.y, 0, 240, 0.5, '255,220,150', false, 2.5); num(p.x, p.y - 32, 'WAR-CRY', '#ffd34d', true); sfx('war_cry'); logEv({ k: 'warcry', n: n });
 }
 function crowdRiposte(p) {                 // the Riposte: in the moment after a parry the guard-blow is an instant strike that cannot be blocked
   if (!(p.riposteT > 0)) return false; p.riposteT = 0; p.guard = false; p.atkBuf = 0; startAttack(); P.atk.riposte = true; P.atk.ripRune = true; P.atk.combo = chainLen() - 1; sfx('riposte'); return true;
@@ -742,7 +746,7 @@ function updatePlayer(dt) {
     if (IN.lmb || IN.keys.KeyJ) { p.holdG = (p.holdG || 0) + dt; }
     else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
   }
-  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt);
+  p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt); if (p.cryT > 0) { p.cryT = Math.max(0, p.cryT - dt); if (p.cryDue && p.cryT <= CRY_T - CRY_AT) { p.cryDue = false; warCryOut(p); } }
   var gbRune = rune('guardBlow'), shoving = CROWD.shove > 0 && !!gbRune && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the guard-blow: the blow with the guard held, what the bound rune makes of it (the Bash, the Charge: CROWD, Runes2, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : gbRune === 'warCry' ? crowdWarCry(p) : gbRune === 'riposte' ? crowdRiposte(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
   if (!shoving && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes

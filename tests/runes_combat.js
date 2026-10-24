@@ -55,7 +55,7 @@ s = setup({ shield: true, runes: [{ id: 'stoneGuard', tier: 2 }] }); Combat.key(
 ok(s.P.st >= st0 - 0.5, 'the Stone guard II: the block cost no stamina (' + st0.toFixed(1) + ' to ' + s.P.st.toFixed(1) + ')');
 
 // the War-cry: the men within hearing freeze
-s = setup({ men: 3, runes: ['warCry'] }); guardBlow(s); ok(s.men.every(e => e.freezeT > 0 || e.state === 'flee'), 'the War-cry: every man within hearing hesitates (' + s.men.map(e => e.freezeT.toFixed(2)).join(', ') + ')');
+s = setup({ men: 3, runes: ['warCry'] }); guardBlow(s); for (let i = 0; i < 20; i++) { hold(s.men); Combat.update(DT); } ok(s.men.every(e => e.freezeT > 0 || e.state === 'flee'), 'the War-cry: every man within hearing hesitates (' + s.men.map(e => e.freezeT.toFixed(2)).join(', ') + ')');
 
 // the Blink-step: the dash goes through the man before you
 s = setup({ runes: ['blinkStep'] }); const ex = s.e.x; s.P.inAng = 0; Combat.key('Space', true); Combat.update(DT); Combat.key('Space', false); for (let i = 0; i < 5; i++) Combat.update(DT);
