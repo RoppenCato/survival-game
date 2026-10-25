@@ -232,6 +232,9 @@ var WorldMap = (function () {
         }
         D[p] = r; D[p + 1] = g; D[p + 2] = b; D[p + 3] = edge < 1 ? 0 : 255;
       }
+      if (T.li <= 2) { if (!T.mini) { T.mini = document.createElement('canvas'); T.mini.width = TILE; T.mini.height = TILE; T.mimg = T.mini.getContext('2d').createImageData(TILE, TILE); } var MD = T.mimg.data;   /* the minimap's copy, lifted for its small size (Colin, AD, 2026-10-25): no pixel read per frame */
+        for (var mi = 0; mi < D.length; mi += 4) { var lum = D[mi] * 0.3 + D[mi + 1] * 0.59 + D[mi + 2] * 0.11; for (var mk = 0; mk < 3; mk++) { var vv = lum + (D[mi + mk] - lum) * 1.05; vv = (vv - 200) * 1.3 + 200; MD[mi + mk] = vv < 0 ? 0 : vv > 255 ? 255 : vv; } MD[mi + 3] = D[mi + 3]; }
+        T.mini.getContext('2d').putImageData(T.mimg, 0, 0); }
       T.raw.getContext('2d').putImageData(T.img, 0, 0); var qc = T.cv.getContext('2d'); qc.clearRect(0, 0, TILE + 2, TILE + 2); qc.drawImage(T.raw, 1, 1);
       qc.drawImage(T.raw, 0, 0, 1, TILE, 0, 1, 1, TILE); qc.drawImage(T.raw, TILE - 1, 0, 1, TILE, TILE + 1, 1, 1, TILE); qc.drawImage(T.cv, 0, 1, TILE + 2, 1, 0, 0, TILE + 2, 1); qc.drawImage(T.cv, 0, TILE, TILE + 2, 1, 0, TILE + 1, TILE + 2, 1);   /* (each edge pixel copied outward, or the seams show) */
       T.painted = paintedKey;
@@ -280,7 +283,7 @@ var WorldMap = (function () {
         dirty = true;
         if (queue.length) { setTimeout(step, 0); return; }
         working = false;
-        if (TILES.size > 260) { var want = new Set(); for (var li = 0; li < LEVELS.length; li++) visibleTiles(li).forEach(function (tt) { want.add(tileKey(li, tt[0], tt[1])); }); TILES.forEach(function (T, k) { if (!want.has(k) && k.indexOf('0:') !== 0) TILES.delete(k); }); }
+        if (TILES.size > 260) { var want = new Set(); for (var li = 0; li < LEVELS.length; li++) visibleTiles(li).forEach(function (tt) { want.add(tileKey(li, tt[0], tt[1])); }); TILES.forEach(function (T, k) { if (!want.has(k) && k.indexOf('0:') !== 0 && !(T.miniT > Date.now() - 10000)) TILES.delete(k); }); }
       })();
     }
 
@@ -485,7 +488,7 @@ var WorldMap = (function () {
     }
     // ---- what the game tells the map
     function zoomAt(f, sx, sy) { if (!ready || BLOOM) return; var a = toW(sx, sy); z *= f; clampView(); var b = toW(sx, sy); cx += a[0] - b[0]; cy += a[1] - b[1]; clampView(); dirty = true; }
-    var drag = null;
+    var drag = null, miniCv = null, miniLast = 0;
     function click(sx, sy) {
       if (renaming) { renaming = null; dirty = true; return; }
       var k = palAt(sx, sy); if (k >= 0) { MARKER = MARKER === ICONS[k] ? null : ICONS[k]; dirty = true; return; }
@@ -528,6 +531,20 @@ var WorldMap = (function () {
       setGoal: function (g) { var k = g ? Math.round(g.x) + ',' + Math.round(g.y) : ''; if (k !== api._goal) { api._goal = k; GOAL = g; dirty = true; } },
       worldAt: function (sx, sy) { return sx < VP.x || sy < VP.y || sx > VP.x + VP.w || sy > VP.y + VP.h ? null : toW(sx, sy); }, inPanel: function (sx, sy) { return sx >= 42 && sy >= 21 && sx <= 1158 && sy <= 729 || palAt(sx, sy) >= 0; },
       features: function () { return FEATS; }, nameOf: function (id, d) { return nameOf(id, d); },
+      miniWindow: function (X0, Y0, W, H, open) {   /* the minimap's window (Colin, AD's restyle, 2026-10-25): the painted tiles covering a rectangle of tiles at half a pixel a tile, the old chart's resolution, into a small canvas; null until every covering tile has been painted once, and then a stale tile is drawn while it is painted again; at most one tile painted a call, and none more often than every 0.6 s while the big map is shut */
+        if (!ready) { prepare(); return null; } if (BLOOM) return miniCv || null;
+        var li = 1, ppt = LEVELS[li], cw = Math.max(1, Math.ceil(W * ppt)), chh = Math.max(1, Math.ceil(H * ppt)), now = Date.now(), missing = false, todo = null;
+        if (!miniCv) miniCv = document.createElement('canvas'); if (miniCv.width !== cw || miniCv.height !== chh) { miniCv.width = cw; miniCv.height = chh; }
+        var g = miniCv.getContext('2d'); g.fillStyle = S.paper; g.fillRect(0, 0, cw, chh); fogField(); if (!paintedKey) paintedKey = 'p' + (++gen);
+        for (var ty = Math.floor(Y0 * ppt / TILE); ty <= Math.floor((Y0 + H) * ppt / TILE); ty++) for (var tx = Math.floor(X0 * ppt / TILE); tx <= Math.floor((X0 + W) * ppt / TILE); tx++) {
+          var key = tileKey(li, tx, ty), T = TILES.get(key);
+          if (!T || T.painted !== paintedKey) { if (!todo) todo = [tx, ty, key]; }
+          if (!T || !T.mini) { missing = true; continue; }
+          T.miniT = now; g.drawImage(T.mini, tx * TILE - X0 * ppt, ty * TILE - Y0 * ppt);
+        }
+        if (todo && (open || now - miniLast > (missing ? 0 : 600))) { miniLast = now; var T2 = TILES.get(todo[2]); if (!T2) { T2 = buildTile(li, todo[0], todo[1]); TILES.set(todo[2], T2); } paintTile(T2); T2.miniT = now; dirty = true; }
+        return missing ? null : miniCv;
+      },
       blooming: function () { return !!BLOOM; }, touch: function () { dirty = true; }
     };
     return api;
