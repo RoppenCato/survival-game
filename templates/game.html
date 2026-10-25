@@ -5852,18 +5852,30 @@ __COMBAT__
   function bookOwn(tab) { return tab === 'runes' || OB_TABS.some(function (t) { return t[0] === tab; }); }
   function bookTabRects() {                  // the thumb tabs out of the page edges: the world's on the left, your own on the right, a picture and the word on each
     var H = 96, out = [];
-    lbTabsShown().forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: -1, x: -40, y: 70 + i * (H + 6), w: 46, h: H }); });
-    OB_TABS.forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: 1, x: 954, y: 70 + i * (H + 6), w: 46, h: H }); });
+    lbTabsShown().forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: -1, x: -30, y: 112 + i * 92, w: 74, h: 86 }); });
+    OB_TABS.forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: 1, x: 908, y: 112 + i * 92, w: 74, h: 86 }); });
     return out;
   }
-  function bookTabsDraw(c) {
-    bookTabRects().forEach(function (t) { var on = t.id === LB.tab, im = himg(on ? 'flap_left_on' : 'flap_left_off'), W = im ? im.naturalWidth : 30, I = 14, pic = himg('rscreen/tab_' + t.id);
-      c.save(); if (t.side > 0) { c.translate(960, 0); c.scale(-1, 1); } var tx = 6 - W, ty = t.y, mx = tx + (W - 4) / 2;   /* the right edge's tabs the left's mirrored, until Colin, AD's thumb tabs come */
-      if (im) { var ih = im.naturalHeight; c.drawImage(im, 0, 0, W, I, tx, ty, W, I); c.drawImage(im, 0, I, W, ih - 2 * I, tx, ty + I, W, t.h - 2 * I); c.drawImage(im, 0, ih - I, W, I, tx, ty + t.h - I, W, I); } else { c.fillStyle = on ? '#7a2a20' : t.side < 0 ? '#3e4652' : '#4a3324'; c.fillRect(tx, ty, W, t.h); }
-      c.restore(); var cx = t.side < 0 ? mx : 960 - mx;
-      if (pic) { c.globalAlpha = on ? 1 : 0.75; c.drawImage(pic, cx - 11, ty + 9, 22, 22); c.globalAlpha = 1; }
-      c.save(); c.translate(cx + (t.side < 0 ? 4.5 : -4.5), ty + 34 + (t.h - 34) / 2 - 4); c.rotate(t.side < 0 ? -Math.PI / 2 : Math.PI / 2); hText(c, t.name, 0, 0, hf('bold', 13), on ? HC.cream : '#cdb98f', 'center'); c.restore();
-      if (t.side < 0 && lbTabFresh(t.id)) { c.beginPath(); c.arc(tx + 4, ty + 6, 4.5, 0, 7); c.fillStyle = HC.rubric; c.fill(); } });
+  function bookTabsDraw(c) {                 // Colin, AD's thumb tabs: the chosen red, the world's blue-grey, your own brown; a picture and the word turned up under it
+    bookTabRects().forEach(function (t) { var on = t.id === LB.tab, sd = t.side < 0 ? 'l' : 'r', im = himg('book/thumb_' + (on ? 'on' : t.side < 0 ? 'world' : 'own') + '_' + sd), pic = himg('book/tab_' + t.id);
+      if (im) c.drawImage(im, t.x, t.y); else { c.fillStyle = on ? '#7a2a20' : t.side < 0 ? '#3e4652' : '#4a3324'; c.fillRect(t.x, t.y, t.w, t.h); }
+      var ox = t.side < 0 ? t.x + 19 : t.x + 74 - 19; if (pic) { c.globalAlpha = on ? 1 : 0.8; c.drawImage(pic, ox - 11, t.y + 8, 22, 22); c.globalAlpha = 1; }
+      c.save(); c.translate(ox + 4.5, t.y + 33 + (86 - 33) / 2); c.rotate(-Math.PI / 2); hText(c, t.name, 0, 0, hf('bold', 12), on ? HC.cream : '#e0cfa6', 'center'); c.restore();
+      if (t.side < 0 && lbTabFresh(t.id)) { c.beginPath(); c.arc(t.x + 8, t.y + 8, 4.5, 0, 7); c.fillStyle = HC.rubric; c.fill(); } });
+  }
+  function bookNine(c, im, x, y, w, h, I) { var W = im.naturalWidth, H = im.naturalHeight, sx = [0, I, W - I, W], dx = [x, x + I, x + w - I, x + w], sy = [0, I, H - I, H], dy = [y, y + I, y + h - I, y + h]; for (var j = 0; j < 3; j++) for (var i = 0; i < 3; i++) c.drawImage(im, sx[i], sy[j], sx[i + 1] - sx[i], sy[j + 1] - sy[j], dx[i], dy[j], dx[i + 1] - dx[i], dy[j + 1] - dy[j]); }
+  function bookFrame(c, tab) {               // the oak codex in Colin, AD's order: the spine, the covers, the brass, the clasp, the tabs, the page blocks, the pages, the fold, the headbands, the section's sketch
+    var lx = 40, rx = 476, py = 38, pw = 436, ph = 572, sp = himg('book/spine'), cl = himg('book/cover_l'), cr = himg('book/cover_r'), br = himg('book/brass_corner'), cs = himg('book/clasp');
+    if (!cl || !cr) { hBoard(c, 952, 644); } else { if (sp) bookNine(c, sp, 462, -8, 28, 660, 12); c.drawImage(cl, 0, 0, 476, 644); c.drawImage(cr, 476, 0, 476, 644); }
+    if (br) [[0, 0, 1, 1], [952, 0, -1, 1], [0, 644, 1, -1], [952, 644, -1, -1]].forEach(function (q) { c.save(); c.translate(q[0], q[1]); c.scale(q[2], q[3]); c.drawImage(br, 0, 0); c.restore(); });
+    if (cs) c.drawImage(cs, 930, 528);
+    bookTabsDraw(c);
+    var pl = himg('book/page_block_l'), pr = himg('book/page_block_r'); if (pl) bookNine(c, pl, lx - 9, py, pw + 9, ph + 7, 12); if (pr) bookNine(c, pr, rx, py, pw + 9, ph + 7, 12);
+    hVellum(c, lx, py, pw, ph); hVellum(c, rx, py, pw, ph); c.strokeStyle = 'rgba(60,40,24,0.5)'; c.lineWidth = 1; c.strokeRect(lx + 0.5, py + 0.5, pw * 2 - 1, ph - 1);
+    var gt = himg('book/gutter_tile'); if (gt) { c.save(); c.beginPath(); c.rect(rx - 46, py, 92, ph); c.clip(); for (var y = py; y < py + ph; y += gt.naturalHeight) c.drawImage(gt, rx - 46, y); c.restore(); }
+    else { var sg = c.createLinearGradient(rx - 20, 0, rx + 20, 0); sg.addColorStop(0, 'rgba(40,24,14,0)'); sg.addColorStop(0.5, 'rgba(40,24,14,0.35)'); sg.addColorStop(1, 'rgba(40,24,14,0)'); c.fillStyle = sg; c.fillRect(rx - 20, py, 40, ph); }
+    var hb = himg('book/headband'); if (hb) { c.drawImage(hb, rx - hb.naturalWidth / 2, py - 5); c.drawImage(hb, rx - hb.naturalWidth / 2, py + ph - 1); }
+    var sk = himg('book/sketch_' + tab); if (sk) c.drawImage(sk, lx + pw - 84, py + 14, 64, 64);
   }
   function bookDim(c) {                      // the world behind the book dimmed as it is round a house you stand in (Robin, 2026-10-25: "same effect as when entering a building"): the cool multiply and a little colour taken out, eased in
     var now = performance.now(); if (!bookT0 || now - bookT0 > 300) bookK = 0; bookK = Math.min(1, bookK + Math.max(0, now - (bookT0 || now)) / 450); bookT0 = now; var k = bookK * bookK * (3 - 2 * bookK);
@@ -5872,7 +5884,7 @@ __COMBAT__
   }
   function bookTurnDraw(c, rx, py, pw, ph) { if (!bookTurn) return; var k = (performance.now() - bookTurn) / 200; if (k >= 1) { bookTurn = 0; return; } var x = rx + pw * k, g = c.createLinearGradient(x - 60, 0, x + 20, 0); g.addColorStop(0, 'rgba(40,24,14,0)'); g.addColorStop(0.75, 'rgba(40,24,14,' + (0.28 * (1 - k)) + ')'); g.addColorStop(1, 'rgba(40,24,14,0)'); c.fillStyle = g; c.fillRect(rx - 480, py, 960, ph); }   /* the page turn: a shadow sweeping across in 0.2 s (Colin, AD) */
   function obRows() {                        // in the board's pixels: the left page's rows, the actives first
-    var out = [], y = 30 + 104; OB_SLOTS.forEach(function (sid, i) { if (i === 4) y += 34; out.push({ id: sid, x: 44, y: y, w: 400, h: 42 }); y += 44; }); return out;
+    var out = [], y = 38 + 100; OB_SLOTS.forEach(function (sid, i) { if (i === 4) y += 32; out.push({ id: sid, x: 54, y: y, w: 400, h: 42 }); y += 43; }); return out;
   }
   function obKeyLine(c, line, x, y) {        // a line with its [keys] drawn as key caps
     var parts = line.split(/\[([^\]]+)\]/), cx = x; parts.forEach(function (p, i) {
@@ -5886,11 +5898,9 @@ __COMBAT__
   function drawOwnBook(c) {
     bookDim(c);
     hPx(c, LBB.x, LBB.y, function () {
-      var bw = 960, bh = 640, lx = 30, rx = bw / 2 + 6, py = 30, pw = bw / 2 - 36, ph = bh - 60, i, rows = obRows();
-      bookTabsDraw(c);
-      hBoard(c, bw, bh); hVellum(c, lx, py, pw, ph, 'card_frame'); hVellum(c, rx, py, pw, ph, 'card_frame');
-      var sg = c.createLinearGradient(bw / 2 - 20, 0, bw / 2 + 20, 0); sg.addColorStop(0, 'rgba(40,24,14,0)'); sg.addColorStop(0.5, 'rgba(40,24,14,0.35)'); sg.addColorStop(1, 'rgba(40,24,14,0)'); c.fillStyle = sg; c.fillRect(bw / 2 - 20, py, 40, ph);
-      lbHeading(c, 'Runes', lx + 26, py + 46, false); var skr = himg('rscreen/sketch_runes') || himg('rscreen/tab_runes'); if (skr) { c.globalAlpha = himg('rscreen/sketch_runes') ? 1 : 0.35; c.drawImage(skr, lx + pw - 92, py + 18, 60, 60); c.globalAlpha = 1; }
+      var bw = 952, bh = 644, lx = 40, rx = 476, py = 38, pw = 436, ph = 572, i, rows = obRows();
+      bookFrame(c, 'runes');
+      lbHeading(c, 'Runes', lx + 26, py + 46, false);
       hText(c, 'Used when you will', lx + 26, py + 92, hf('italic', 14), HC.sepia); hText(c, 'Always with you', lx + 26, rows[4].y - 12, hf('italic', 14), HC.sepia);
       var hov = obRowAt();
       rows.forEach(function (rw) { var sl = Runes2.SLOT[rw.id] || {}, id = Runes2.bound(R2, rw.id), r = id && Runes2.BY[id], on = rw.id === OB.sel;
@@ -5995,7 +6005,7 @@ __COMBAT__
      book by the chart until it has been looked at, again when its later paragraph opens; nothing else says so. The picture is the
      portrait (people), the stone (the dead met by it: LB_PIC) or the beast's own sheet facing right (creatures). Being struck
      closes it; the world does not pause. */
-  var book = {}, bookOpen = false, LB = { tab: 'people', sel: null, fe: {} }, LB_SEE = 170, lbT = 0, LBB = { x: 40, y: 58 / 3, w: 320, h: 640 / 3 };
+  var book = {}, bookOpen = false, LB = { tab: 'people', sel: null, fe: {} }, LB_SEE = 170, lbT = 0, LBB = { x: 124 / 3, y: 58 / 3, w: 952 / 3, h: 644 / 3 };   /* the oak codex (Colin, AD's out/book_pieces): 952 by 644 board pixels; the pages 436 by 572 from (40, 38) and (476, 38) */
   var BEAST_LORE = { boar: 'beast.boar', deer: 'beast.deer', wolf: 'beast.wolf', snake: 'beast.adder', bear: 'beast.bear', moose: 'beast.moose', troll: 'being.bergtroll', unge: 'being.harungen' }, LORE_BEAST = {}, lbk;
   for (lbk in BEAST_LORE) LORE_BEAST[BEAST_LORE[lbk]] = lbk;
   var LB_PIC = { 'person.thorgunna': 'graveThorgunna' }, LB_TABS = [['people', 'People'], ['creatures', 'Creatures'], ['places', 'Places']];
@@ -6027,7 +6037,7 @@ __COMBAT__
   function lbTabsShown() { return LB_TABS.filter(function (t) { return lbPages(t[0]).length > 0; }); }   /* (a tab once it has a page) */
   function lbRects() {                      // in the board's pixels: the tabs, the medallions on the left page
     var tabs = lbTabsShown().map(function (t, i) { return { id: t[0], name: t[1], x: -18, y: 70 + i * 68, w: 20, h: 60 }; });
-    var meds = lbPages(LB.tab).map(function (id, i) { return { id: id, x: 30 + 90 + (i % 3) * 120, y: 30 + 130 + Math.floor(i / 3) * 140 }; });
+    var meds = lbPages(LB.tab).map(function (id, i) { return { id: id, x: 40 + 90 + (i % 3) * 120, y: 38 + 130 + Math.floor(i / 3) * 140 }; });
     return { tabs: tabs, meds: meds };
   }
   function lbBeast(c, bk, cx, foot, wMax, hMax) {   // a creature's own sheet, its idle facing right, fitted into a box
@@ -6053,11 +6063,8 @@ __COMBAT__
     if (id) lbView(id);
     bookDim(c);
     hPx(c, LBB.x, LBB.y, function () {
-      var bw = 960, bh = 640, lx = 30, rx = bw / 2 + 6, py = 30, pw = bw / 2 - 36, ph = bh - 60, i;
-      bookTabsDraw(c);
-      hBoard(c, bw, bh);
-      hVellum(c, lx, py, pw, ph, 'card_frame'); hVellum(c, rx, py, pw, ph, 'card_frame');
-      var sg = c.createLinearGradient(bw / 2 - 20, 0, bw / 2 + 20, 0); sg.addColorStop(0, 'rgba(40,24,14,0)'); sg.addColorStop(0.5, 'rgba(40,24,14,0.35)'); sg.addColorStop(1, 'rgba(40,24,14,0)'); c.fillStyle = sg; c.fillRect(bw / 2 - 20, py, 40, ph);   // the spine
+      var bw = 952, bh = 644, lx = 40, rx = 476, py = 38, pw = 436, ph = 572, i;
+      bookFrame(c, LB.tab);
       var tabName = (LB_TABS.filter(function (q) { return q[0] === LB.tab; })[0] || ['', ''])[1]; lbHeading(c, tabName, lx + 26, py + 46, false);
       R.meds.forEach(function (m) {         // the left page: what you have met, as round medallions
         var on = m.id === id, ring = himg(on ? 'slot_round_chosen' : 'slot_round'), rs = (on ? 56 : 48) * 1.6, me = LOREBOOK[m.id] || {};
@@ -6085,9 +6092,9 @@ __COMBAT__
   function bookClick() {
     if (!mouseS) return; var R = lbRects(), u = function (v, o) { return (v - o) * 3; }, mx = u(mouseS.x, LBB.x), my = u(mouseS.y, LBB.y), i;
     var BT2 = bookTabRects(); for (i = 0; i < BT2.length; i++) { var t = BT2[i]; if (mx >= t.x && mx <= t.x + t.w && my >= t.y && my <= t.y + t.h) { if (LB.tab !== t.id) { LB.tab = t.id; if (!bookOwn(t.id)) LB.sel = lbPages(t.id)[0] || null; bookTurn = performance.now(); } return; } }
-    if (bookOwn(LB.tab)) { if (mx < -40 || mx > 1000 || my < 0 || my > 640) bookOpen = false; else obClick(); return; }
+    if (bookOwn(LB.tab)) { if (mx < -30 || mx > 982 || my < 0 || my > 644) bookOpen = false; else obClick(); return; }
     for (i = 0; i < R.meds.length; i++) { var m = R.meds[i]; if (Math.hypot(mx - m.x, my - m.y) < 40) { LB.sel = m.id; return; } }
-    if (mx < -40 || mx > 1000 || my < 0 || my > 640) bookOpen = false;
+    if (mx < -30 || mx > 982 || my < 0 || my > 644) bookOpen = false;
   }
   function wrapLines(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (wd) { var t = cur ? cur + ' ' + wd : wd; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = wd; } else cur = t; }); if (cur) lines.push(cur); return lines; }
   function leather(c, x, y, w, h) {           // a leather cover: an even hide with grain, darker toward the edges, a stitched edge and brass rivets

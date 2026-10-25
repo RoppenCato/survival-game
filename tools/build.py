@@ -156,6 +156,10 @@ def hud_art():
     if os.path.isdir(pl):
         for fn in sorted(os.listdir(pl)):
             if fn.endswith('.png'): out['places/' + fn[:-4]] = '../assets/hud/places/' + fn + '?v=' + hashlib.md5(open(os.path.join(pl, fn), 'rb').read()).hexdigest()[:8]
+    bkd = os.path.join(d, 'book')   # the oak codex's pieces (Colin, AD, 2026-10-25, Robin's pick A): book/<name>
+    if os.path.isdir(bkd):
+        for fn in sorted(os.listdir(bkd)):
+            if fn.endswith('.png'): out['book/' + fn[:-4]] = '../assets/hud/book/' + fn + '?v=' + hashlib.md5(open(os.path.join(bkd, fn), 'rb').read()).hexdigest()[:8]
     rsd = os.path.join(d, 'rscreen')   # the rune screen's pieces (Colin, AD, 2026-10-25): rscreen/<name>
     if os.path.isdir(rsd):
         for fn in sorted(os.listdir(rsd)):
