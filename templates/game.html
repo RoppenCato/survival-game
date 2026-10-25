@@ -7155,6 +7155,7 @@ __COMBAT__
       c.save(); c.beginPath(); c.arc(MAPR.x, MAPR.y, MR, 0, 7); c.clip(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; if (!inCave) { c.drawImage(miniSoft(sx0, sy0, sw, sh), mx, my, mw, mh); var shd = himg('map_shade'); if (shd) c.drawImage(shd, MAPR.x - MAPR.rim, MAPR.y - MAPR.rim, MAPR.rim * 2, MAPR.rim * 2); }
       function mark(wx, wy, kind) {
         var q = mp(wx, wy); if (q.x < mx - 4 || q.x > mx + mw + 4 || q.y < my - 4 || q.y > my + mh + 4) return;
+        if (kind === 'boat') { var qh0 = mp(hpx, hpy); if (Math.hypot(q.x - qh0.x, q.y - qh0.y) < 4) return; }   /* the arrow already says where you are: the boat's mark under it read as one muddled shape (Colin, AD) */
         mmGlow(q.x, q.y); c.lineWidth = 1; c.strokeStyle = '#2a2016'; c.fillStyle = kind === 'village' ? '#e8dcb8' : kind === 'cave' ? '#6a6058' : kind === 'fall' ? '#7fb4c4' : kind === 'look' ? '#cfc6b0' : '#7a5434';   /* the big map's ink (Colin, AD, 2026-10-25) */
         c.beginPath();
         if (kind === 'village') { c.moveTo(q.x - 2.8, q.y + 2); c.lineTo(q.x - 2.8, q.y - 0.4); c.lineTo(q.x, q.y - 3.2); c.lineTo(q.x + 2.8, q.y - 0.4); c.lineTo(q.x + 2.8, q.y + 2); c.closePath(); }
