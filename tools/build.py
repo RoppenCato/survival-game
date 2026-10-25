@@ -156,6 +156,10 @@ def hud_art():
     if os.path.isdir(pl):
         for fn in sorted(os.listdir(pl)):
             if fn.endswith('.png'): out['places/' + fn[:-4]] = '../assets/hud/places/' + fn + '?v=' + hashlib.md5(open(os.path.join(pl, fn), 'rb').read()).hexdigest()[:8]
+    rsd = os.path.join(d, 'rscreen')   # the rune screen's pieces (Colin, AD, 2026-10-25): rscreen/<name>
+    if os.path.isdir(rsd):
+        for fn in sorted(os.listdir(rsd)):
+            if fn.endswith('.png'): out['rscreen/' + fn[:-4]] = '../assets/hud/rscreen/' + fn + '?v=' + hashlib.md5(open(os.path.join(rsd, fn), 'rb').read()).hexdigest()[:8]
     rd = os.path.join(d, 'runes')   # the runes' marks and slot icons (Colin, AD, 2026-10-23)
     if os.path.isdir(rd):
         for fn in sorted(os.listdir(rd)):
