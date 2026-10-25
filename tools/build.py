@@ -56,9 +56,11 @@ def lore_lines():
         if e.get('list') and e.get('status') == 'canon' and not e.get('lines'): out[e['id']] = { 'list': e['list'] }   # a pool of names (names.ships.<model>, handoff 9, 2026-10-23)
         if e.get('lines') and e.get('status') in ('canon', 'in-game'):
             o = out[e['id']] = { 'mode': e.get('mode', 'variants'), 'lines': e['lines'] }
-            for k in ('tier', 'heard', 'when'):
+            for k in ('tier', 'heard', 'when', 'kind', 'speaker', 'chapter', 'place', 'time', 'season', 'with'):   # (the dialogue register's staging fields, handoff 15, 2026-10-25)
                 if e.get(k): o[k] = e[k]
             if e.get('about'): o['about'] = [x.strip() for x in e['about'].split(',') if x.strip()] if isinstance(e['about'], str) else e['about']
+    if L.get('dialogue'): out['$dialogue'] = L['dialogue']   # the spoken entries in story order (the register, handoff 15)
+    if L.get('places'): out['$places'] = L['places']
     return json.dumps(out, ensure_ascii=False)
 SRC['__LORE__'] = lore_lines()
 def fire_art():

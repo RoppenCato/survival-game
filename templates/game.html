@@ -937,6 +937,7 @@ __COMBAT__
     var was = year.season; if (!YEAR.names[name] || name === was) return false;
     year.season = name; year.day = 0; year.said = false; if (was === 'winter') year.winters++;
     if (w && w.setSeason) w.setSeason(name); seasonGrassCache = null;
+    if (SCENE === 'dialogue') return true;   /* (the Dialogue scene sets the season quietly) */
     var op = yearLines('line.year.opens', name); bigStep(YEAR.names[name], op.length ? op[0] : YEAR.line[name]); save(); return true;
   }
   function blot(it) {                         // the rite at your fire, once the season is due: a dish or meat given if you have one (never required), and the year turns
@@ -2018,7 +2019,7 @@ __COMBAT__
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
   var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
-  var SAVE = SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : 'game.save'))), gone = {}, saveT = 0;
+  var SAVE = SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : 'game.save'))), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
@@ -4353,7 +4354,7 @@ __COMBAT__
   var notes = [];
   function note(txt) { for (var i = 0; i < notes.length; i++) if (notes[i].txt === txt && clock - notes[i].born < 2.4) { notes[i].born = clock - 0.4; return; } notes.push({ txt: txt, born: clock }); if (notes.length > 6) notes.shift(); }
   function lootNote(kind, n) { for (var i = 0; i < notes.length; i++) if (notes[i].loot === kind && clock - notes[i].born < 2.8) { notes[i].n += n; notes[i].born = clock - 0.5; return; } notes.push({ loot: kind, n: n, born: clock }); if (notes.length > 6) notes.shift(); }
-  function toast(txt) { note(txt); if (typeof PERF !== 'undefined') perfLine('t ' + clock.toFixed(1) + ' event: ' + txt); }
+  function toast(txt) { if (SCENE === 'dialogue') return; note(txt); if (typeof PERF !== 'undefined') perfLine('t ' + clock.toFixed(1) + ' event: ' + txt); }
   var promptBox = null;                     // where this frame's E prompt is, so the notes start beside it and not across it
   function drawNotes(c, top) {              // top: a board lies over the hero; the notes are stacked above its top edge, centred
     var P = hero(), sx = (P.x - cam.x) * cam.z + 200 + 15, sy = (P.y * K - cam.y) * cam.z + 125 - 24, k = 0, i;
@@ -5009,7 +5010,7 @@ __COMBAT__
   function hasItem(kind) { return slots.some(function (s) { return s && s.kind === 'item' && s.item.kind === kind; }); }
   function hasTool() { return !!(hasItem('axe') || hasItem('knife') || hasItem('pick')); }
   function drawHint(c) {
-    if (pauseOpen || menu || clothOpen || bookOpen) return;
+    if (pauseOpen || menu || clothOpen || bookOpen || SCENE === 'dialogue') return;
     for (var i = 0; i < HINTS.length; i++) if (!HINTS[i].done()) {
       var t = typeof HINTS[i].text === 'function' ? HINTS[i].text() : HINTS[i].text; c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(t, 200, 12); c.fillStyle = '#f6e2b8'; c.fillText(t, 200, 12); return;
     }
@@ -5819,20 +5820,21 @@ __COMBAT__
      while the hero stands in a room, the finished frame is copied into a small layer, blurred, darkened and drained of some colour in one
      pass, the room's own shape (its floor and the face of its north wall, a storey up upstairs) is cut out of it with a soft edge, and the
      layer is laid over the frame, easing in and out over about half a second. INS holds the numbers (mine). */
-  var INS = { k: 0, t: 0, room: null, L: 0, on: true, res: 1, blur: 0.6, dark: 0.72, sat: 0.62, edge: 2.5, wall: 40, ease: 0.45, cv: null, mk: null };   /* (the gentle look of the two shown to Robin; the strong one was res 2, blur 0.9, dark 0.62, sat 0.5) */
+  var INS = { k: 0, t: 0, room: null, L: 0, on: true, dark: 0.62, sat: 0.2, wall: 40, ease: 0.45 };   /* dark: the cool multiply's strength outside, sat: the colour taken out there (Colin, AD's numbers, 2026-10-25; the blurred copy before it shimmered) */
   function insideNow() { var P = hero(); if (inCave || P.dead || (raft && raft.aboard) || !INS.on || P.mode === 'build') return null;   /* (not while building: the places' names and the ghost outside the room were dimmed with the world, 2026-10-25) */ var L = P.lvl || 0, R = L ? roomInfo1 : roomInfo; if (!R) return null; var ri = R.at(Math.floor(P.x / T), Math.floor(P.y / T)); if (ri < 0) return null; var r = R.rooms[ri]; if (!r || !r.tiles || !r.tiles.length || (!L && ruinAt(r.tiles[0][0], r.tiles[0][1]))) return null; return { r: r, L: L }; }
-  function insideDraw(c) {
+  function insideDraw(c) {                 /* Colin, AD's recipe (2026-10-25, out/inside_light; Robin: "The blurry thing outside buildings gets a bit glitchy. Maybe it should just go darker so theres a clear contrast"): no copy of the frame and no blur; the outside, clipped by one path of the screen with the room's tiles and its north wall's face as holes (evenodd, a hard edge at the screen's own resolution), takes a cool multiply and loses a little colour; the room takes a warm soft-light, and a hearth burning in it a warm glow; all eased by INS.k */
     var now = insideNow(), dt = Math.max(0, Math.min(0.1, clock - (INS.t || clock))); INS.t = clock; if (now) { INS.room = now.r; INS.L = now.L; }
     INS.k += ((now ? 1 : 0) - INS.k) * Math.min(1, dt / INS.ease * 3); if (INS.k < 0.01 || !INS.room) { if (!now) INS.room = null; return; }
-    var W0 = 400 / INS.res, H0 = 250 / INS.res, f = 1 / INS.res, z = cam.z, up = INS.L ? UP : 0, tiles = INS.room.tiles, keyOf = {}, i;
-    if (!INS.cv) { INS.cv = document.createElement('canvas'); INS.mk = document.createElement('canvas'); } if (INS.cv.width !== W0) { INS.cv.width = INS.mk.width = W0; INS.cv.height = INS.mk.height = H0; }
-    var g = INS.cv.getContext('2d'), m = INS.mk.getContext('2d'), src = c.canvas;
-    g.save(); g.globalCompositeOperation = 'copy'; g.filter = 'blur(' + INS.blur + 'px) saturate(' + INS.sat + ') brightness(' + INS.dark + ')'; g.drawImage(src, 0, 0, src.width, src.height, 0, 0, W0, H0); g.restore();
-    m.save(); m.setTransform(1, 0, 0, 1, 0, 0); m.clearRect(0, 0, W0, H0); m.filter = 'blur(' + (INS.edge * f) + 'px)'; m.fillStyle = '#fff'; m.setTransform(f * z, 0, 0, f * z, (200 - cam.x * z) * f, (125 - cam.y * z - up * z) * f);
+    var z = cam.z, up = INS.L ? UP : 0, tiles = INS.room.tiles, keyOf = {}, i, k = INS.k, ox = 200 - cam.x * z, oy = 125 - cam.y * z - up * z;
     for (i = 0; i < tiles.length; i++) keyOf[tiles[i][0] + ',' + tiles[i][1]] = 1;
-    m.beginPath(); for (i = 0; i < tiles.length; i++) { var tx = tiles[i][0], ty = tiles[i][1], top = keyOf[tx + ',' + (ty - 1)] ? 0 : INS.wall; m.rect(tx * T - 2, ty * TS - top - 2, T + 4, TS + top + 4); } m.fill(); m.restore();
-    g.save(); g.globalCompositeOperation = 'destination-out'; g.drawImage(INS.mk, 0, 0); g.restore();
-    c.save(); c.globalAlpha = INS.k; c.imageSmoothingEnabled = true; c.drawImage(INS.cv, 0, 0, W0, H0, 0, 0, 400, 250); c.restore();
+    function roomRects(path) { for (i = 0; i < tiles.length; i++) { var tx = tiles[i][0], ty = tiles[i][1], top = keyOf[tx + ',' + (ty - 1)] ? 0 : INS.wall; path.rect(ox + tx * T * z, oy + (ty * TS - top) * z, T * z, (TS + top) * z); } }
+    c.save(); c.beginPath(); c.rect(0, 0, 400, 250); roomRects(c); c.clip('evenodd');
+    c.globalCompositeOperation = 'multiply'; c.globalAlpha = INS.dark * k; c.fillStyle = 'rgb(150,160,190)'; c.fillRect(0, 0, 400, 250);
+    c.globalCompositeOperation = 'saturation'; c.globalAlpha = INS.sat * k; c.fillStyle = '#808080'; c.fillRect(0, 0, 400, 250); c.restore();
+    c.save(); c.beginPath(); roomRects(c); c.clip(); c.globalCompositeOperation = 'soft-light'; c.globalAlpha = k; c.fillStyle = 'rgba(255,196,130,0.22)'; c.fillRect(0, 0, 400, 250);
+    var R = INS.L ? roomInfo1 : roomInfo, ri = R ? R.rooms.indexOf(INS.room) : -1, hh = null; if (ri >= 0) B.items.forEach(function (it) { if (!hh && isHearth(it) && (it.lvl || 0) === (INS.L || 0) && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri) hh = it; });
+    if (hh) { var hx = ox + hh.x * z, hy = oy + (hh.y * K - 6) * z, rr = 190 / 3, gr = c.createRadialGradient(hx, hy, 0, hx, hy, rr); gr.addColorStop(0, 'rgba(255,170,90,0.22)'); gr.addColorStop(1, 'rgba(255,170,90,0)'); c.globalCompositeOperation = 'screen'; c.fillStyle = gr; c.fillRect(hx - rr, hy - rr, rr * 2, rr * 2); }
+    c.restore();
   }
   function riteSkyDraw(c) {                  // the rite's sky: the world darkening under the storm with a dark rim, and the far lightning's flicker (riteSky, from riteTick2)
     if (omenDark() > 0.005) { c.save(); c.globalCompositeOperation = 'multiply'; c.fillStyle = 'rgba(62,70,112,' + (omenDark() * 0.78).toFixed(3) + ')'; c.fillRect(0, 0, 400, 250);
@@ -6924,7 +6926,7 @@ __COMBAT__
     },
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z, P = hero(), i;
-      if (torchOn) items.push({ y: P.y + 1, f: function () { drawTorchHeld(ctx); } });
+      if (torchOn) items.push({ y: P.y + 1, f: function () { drawTorchHeld(ctx); } }); if (SCENE === 'dialogue') dlgItems(items);
       for (i = 0; i < fxs.length; i++) (function (q) { items.push({ y: q.y + 4, f: function () { drawFx(ctx, q); } }); })(fxs[i]);   /* the rune effects, over what stands at their foot */
       for (i = 0; i < fireArrows.length; i++) (function (fa) { if (Math.abs(fa.x - cam.x) < hw + 20 && Math.abs(fa.y * K - cam.y) < hh + 30) items.push({ y: fa.y + 2, f: function () { drawFireArrowStuck(ctx, fa); } }); })(fireArrows[i]);   /* the burning arrows stuck in walls and turf */
       if (sprHero && P.dead) items.push({ y: P.y, f: function () { Sprites.drawDead(ctx, sprHero, P.x, P.y * K - Combat.api.scene.heroLift(), P.faceVis, P.anim, P, { scale: Sprites.scaleOf(localStorage), shadow: false, stepData: Combat.api.stepData }); } });   // the fallen sprite hero (the engine draws no hero when dead)
@@ -7114,7 +7116,7 @@ __COMBAT__
       }
       if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
       stones().forEach(function (st) { if (Math.hypot(P.x - st.x, P.y - st.y) > 90 || inCave) return; var sx = (st.x - cam.x) * cam.z + 200, sy = (st.y * K - cam.y) * cam.z + 125 - 50 * cam.z, tt = (st.named || 'The stead') + ':  room for ' + roomFor(st) + ',  food for ' + foodDays(st) + (foodDays(st) === 1 ? ' day' : ' days'); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.2; c.strokeStyle = '#2e1a10'; c.strokeText(tt, sx, sy); c.fillStyle = '#f6e2b8'; c.fillText(tt, sx, sy); });
-      if (!inCave) folk.forEach(function (f) { if (!f.dead && !f.fallen && !f.hidden && Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); });
+      if (!inCave) folk.forEach(function (f) { if (!f.dead && !f.fallen && !f.hidden && Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); }); if (DLG.actor && DLG.actor.stage) bubble(c, DLG.actor);
       { var calm = !fighting(); Combat.dbg().W.enemies.forEach(function (e) { if (e.type === 'soldier' && !e.dead && !e.down && (e.sayT > 0 || (e.side === 1 && calm)) && Math.abs(e.x - cam.x) < 260 && Math.abs(e.y * K - cam.y) < 200) bubble(c, e); }); }   // what any man says; your own men by name when you are near and no fight is on (their cloaks tell them apart in one)
       c.restore();
     },
@@ -7379,7 +7381,7 @@ __COMBAT__
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
       fleet = (sv.fleet && sv.fleet.length ? sv.fleet : sv.raft && sv.raft.x != null ? [sv.raft] : []).map(shipOf); raft = fleet[sv.fleet ? sv.raftI : 0] || fleet[0] || null;   /* (the fleet, or an older save's one vessel: docs/ships-rework.md) */
       if (raft) { raftFit(); if (sv.seaBoat) raft.aboard = true; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } fleet.forEach(function (v) { if (v !== raft) v.aboard = false; }); }   // (saved inside the sea cave, come by boat: you wake in the boat at its mouth)
-    } else { startKit(); hand = 0; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); if (SCENE === 'ruin') ruinScene(); if (SCENE === 'models') msScene(); }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = 0; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); if (SCENE === 'ruin') ruinScene(); if (SCENE === 'models') msScene(); if (SCENE === 'dialogue') dlgScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); spawnGuards(); if (BT.on && BT.field) battleSet(BT.setup); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Tab: the bag and what you can make. B: build.'; save();
@@ -8161,6 +8163,143 @@ __COMBAT__
   }
   var runePanel = { x: 6, y: 40, w: 92, rows: [], folded: SCENE === 'runes' }, runeSite = null, noSave = false;   /* the Rune editor's board starts shut and opens on H (Robin, 2026-10-24) */
   function scenePanel() { return SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin'; }
+
+  /* ---------- the Dialogue scene (game.html?scene=dialogue; Robin, 2026-10-25, through Alistair, LD: "Since its dialog it needs to be
+     'a little immersive' tho so when i see the dialog i need to also see the character thats talking and the setting, so i got context";
+     and "Clive, GD builds the dialogue scene"): every line of the lore, a line at a time in story order, staged where it is said: the
+     speaker beside the hero in the place, at the hour and in the season of the register (Alistair, LD's `chapter`, `place`, `time`,
+     `season`, `with` on each entry; a guess by the entry's id until they are there), on the game's own speech board, or in the talk
+     window for a speaker with a portrait. A panel on the right marks it keep, change or cut with a note (kept in this browser,
+     `dialogue.verdicts`), steps on, and exports the verdicts as Alistair, LD's rows: `<entry id> #<n> | keep|change|cut | "<line>" | <note>`.
+     A line's leading tag, "(night) ..." or "(arnor) ...", is a situation or a speaker; it is shown stripped. Saves nothing else. */
+  var DLG_PLACES = (LORE && LORE['$places']) || ['wreck.beach', 'steading.yard', 'steading.well', 'steading.graves', 'steading.stone', 'home.yard', 'home.stone', 'home.edge', 'home.altar', 'shore.ship', 'sea.aboard', 'village.green', 'village.well', 'village.yard', 'village.ruin', 'cave.troll', 'town.gate', 'raid.village', 'raid.town', 'raid.yard', 'raid.hall', 'raid.gate', 'church.nave'];
+  var DLG_TIME = { dawn: 1700, day: 300, dusk: 1000, night: 1420 };
+  var DLG_SPEAKER_TAG = { villager: 1, hirdman: 1, fisherman: 1, smith: 1, priest: 1, thrall: 1, guard: 1, farmer: 1, weaver: 1, elder: 1, watch: 1, man: 1 };
+  var DLG_ROLE = { 'role.villager': 'villager', 'role.guard': 'man.gate', 'role.hirdman': 'hirdman', 'role.thrall': 'thrall' };
+  var DLG = { list: [], i: 0, v: {}, actor: null, key: '', el: null, site: null, filter: 'all' };
+  function dlgGuessPlace(id) {             /* until the register's place is on an entry */
+    if (/^line\.arnor\.graves/.test(id)) return 'steading.graves'; if (/^line\.arnor\.(shore|farewell)/.test(id)) return 'shore.ship'; if (/^line\.year\./.test(id)) return 'home.altar';
+    if (/^line\.(arnor|hogni|thorgunna)/.test(id)) return 'steading.yard'; if (/^line\.crew\./.test(id)) return 'shore.ship'; if (/^line\.(aslak|folk)/.test(id)) return 'village.green';
+    if (/^line\.(guard|gate)/.test(id)) return 'town.gate'; if (/^line\.priest/.test(id)) return 'church.nave'; if (/^line\.(raid|men)/.test(id)) return 'raid.yard'; if (/^line\.hird/.test(id)) return 'home.yard'; if (/^rumou?r/.test(id)) return 'village.green';
+    return 'steading.yard';
+  }
+  function dlgBuild() {                    /* every single line of every entry that a person says, in story order: chapter, then place in Alistair, LD's order, then the file's */
+    var L = [], ids = (LORE['$dialogue'] && LORE['$dialogue'].length) ? LORE['$dialogue'] : Object.keys(LORE).filter(function (k) { return k.charAt(0) !== '$'; }), fi = 0;   /* the register's story order when it is there (handoff 15) */
+    ids.forEach(function (id) { var e = LORE[id]; if (!e || !e.lines || !e.lines.length || !(e.speaker || /^line\./.test(id) || /^rumou?r/.test(e.kind || id))) return;   /* (a rumour has no speaker: a villager tells it) */ if (e.kind && !/line|rumou?r/.test(e.kind)) return;
+      e.lines.forEach(function (raw, n) { var m = /^\(([^)]+)\)\s*/.exec(raw), tag = m ? m[1] : '', text = m ? raw.slice(m[0].length) : raw;
+        L.push({ id: id, n: n + 1, text: text, tag: tag, speaker: e.speaker || (/^rumou?r/.test(e.kind || id) ? 'role.villager' : ''), chapter: e.chapter || '', place: e.place || dlgGuessPlace(id), placeGuessed: !e.place, time: /^(night|dawn|dusk|day)$/.test(tag) ? tag : (e.time || 'day'),   /* (a time tag wins: "(night) The gate is shut till morning.") */ season: e.season || '', with: e.with || '', mode: e.mode || '', fi: fi++ }); }); });
+    function ch(x) { var m = /(\d+)/.exec(x.chapter || ''); return m ? +m[1] : 99; } function pl(x) { var k = DLG_PLACES.indexOf(x.place); return k < 0 ? 99 : k; }
+    L.sort(function (a, b) { return ch(a) - ch(b) || pl(a) - pl(b) || a.fi - b.fi; });
+    DLG.list = L;
+  }
+  function dlgSpeaker(it) {                /* who says it: a tag that names a speaker, else the entry's speaker, mapped to the roles the scene can stand there */
+    var tg = (it.tag || '').toLowerCase(), sp = it.speaker || '';
+    if (tg && (LOREBOOK['person.' + tg] || DLG_SPEAKER_TAG[tg])) sp = LOREBOOK['person.' + tg] ? 'person.' + tg : 'role.' + tg;   /* a tag that names a person or a role is the speaker; any other is the situation (night, men, armed, peace) */
+    if (sp === 'role.any' || !sp) sp = /^line\.arnor/.test(it.id) ? 'person.arnor' : 'role.villager';
+    return DLG_ROLE[sp] || sp;
+  }
+  function dlgNameOf(sp) { var b = LOREBOOK[sp]; if (b && (b.title || b.name)) return b.title || b.name; var r = sp.replace(/^role\./, ''); return { villager: 'Villager', 'man.gate': 'Guard', hirdman: 'Hirdman', thrall: 'Thrall', priest: 'Priest', fisherman: 'Fisherman', smith: 'Smith' }[r] || (r.charAt(0).toUpperCase() + r.slice(1).replace(/\./g, ' ')); }
+  function dlgSpot(place) {                /* where a place is in this world: a point for the hero to stand at */
+    var P = hero(), vs = villages || [], k, i;
+    function vill(test) { for (i = 0; i < vs.length; i++) if (vs[i] && test(vs[i], i)) return i; return -1; }
+    function vcentre(vi) { var v = vs[vi]; return { x: (v.tx + v.w / 2) * T, y: (v.ty + v.h / 2 + 1) * T }; }
+    var g = village && village.graves, hub = npc && npc.hub;
+    function arch(v) { return v.arch || (v.V && v.V.arch); }
+    function node(vi, kind) { var V = vs[vi] && vs[vi].V, N = (V && V.nodes) || []; for (var q = 0; q < N.length; q++) if (N[q].kind === kind) return N[q]; return null; }
+    function at(vi, kind, dy) { var nd = node(vi, kind); if (nd) return { x: nd.x, y: nd.y + (dy || 0) }; return vcentre(vi); }
+    function walled() { var t = vill(function (v) { return arch(v) === 'town'; }); if (t < 0) t = vill(function (v) { return v.ring >= 1 && arch(v) === 'seat'; }); if (t < 0) t = vill(function (v) { return arch(v) === 'seat'; }); return t; }   /* (a town; this world may have none, then a walled seat) */
+    switch (place) {
+      case 'wreck.beach': return { x: home.x + 44, y: home.y + 10 };
+      case 'shore.ship': case 'sea.aboard': return { x: home.x + 44, y: home.y + 10, ship: true };
+      case 'steading.graves': if (g && g.stand) return { x: g.stand.x, y: g.stand.y + 30 }; break;
+      case 'steading.well': if (hub) { var wl = null; B.items.forEach(function (it) { if (/[wW]ell/.test(it.name || '') && Math.hypot(it.x - hub.x, it.y - hub.y) < 500) wl = it; }); if (wl) return { x: wl.x + 30, y: wl.y + 24 }; } break;
+      case 'home.altar': if (hub) return { x: hub.x + 60, y: hub.y + 140, altar: true }; break;
+      case 'village.green': case 'village.well': case 'village.yard': case 'village.ruin': return at(0, 'focus', 30);
+      case 'town.gate': case 'raid.gate': k = walled(); if (k >= 0) return at(k, 'gate', 50); break;
+      case 'raid.town': k = walled(); if (k >= 0) return at(k, 'focus', 30); break;
+      case 'raid.hall': k = vill(function (v) { return v.ring >= 1 && (arch(v) === 'seat' || arch(v) === 'village'); }); if (k >= 0) return at(k, 'prize', 40); break;
+      case 'raid.village': case 'raid.yard': k = vill(function (v) { return v.ring >= 1 && arch(v) === 'village'; }); if (k >= 0) return at(k, 'focus', 30); break;
+      case 'church.nave': k = vill(function (v) { return arch(v) === 'church'; }); if (k >= 0) return at(k, 'prize', 30); break;
+    }
+    if (hub) return { x: hub.x, y: hub.y + 60 };
+    return { x: P.x, y: P.y };
+  }
+  function dlgActor(sp, x, y) {            /* the speaker: Arnor himself, else a person made for the line, dressed for his role */
+    if (sp === 'person.arnor' && npc) { npc.route = null; npc.job = null; npc.seq = null; npc.goal = null; return npc; }
+    var base = (npc && npc.fig) ? npc.fig.spec : {}, h = 0, nm = dlgNameOf(sp), i; for (i = 0; i < sp.length; i++) h = (h * 31 + sp.charCodeAt(i)) >>> 0;
+    var spec = Object.assign({}, base, { hair: [1, 2, 6, 4, 7, 0][h % 6], beard: (h >> 3) % 3, col: Object.assign({}, base.col || {}, { hair: FOLK_HAIR[h % FOLK_HAIR.length], coat: FOLK_COAT[(h >> 2) % FOLK_COAT.length], pants: FOLK_PANTS[(h >> 4) % FOLK_PANTS.length] }) });
+    var a = { x: x, y: y, face: 0, say: '', sayT: 0, name: nm, fig: { spec: spec }, stage: true, ph: 0, vi: 0 }, role = sp.replace(/^role\./, '');
+    if (/^man|guard|watch/.test(role) || role === 'hirdman') a.look = Sprites.lookOf(spec, role === 'hirdman' ? { cloak: YOURS } : { mail: true, helm: true });
+    else if (ROLE_X[role]) a.role = role;
+    return a;
+  }
+  function dlgStage(i) {                   /* put line i on screen: the place, the hour, the season, the speaker beside the hero, the line on the board */
+    var it = DLG.list[i]; if (!it) return; DLG.i = i; try { localStorage.setItem('dialogue.i', String(i)); } catch (e) {}
+    var P = hero(), sp = dlgSpeaker(it), at = dlgSpot(it.place);
+    if (talkWin) talkClose(); goTo(at.x, at.y); P.face = -Math.PI / 2; P.mode = 'fight'; armsOut = false;
+    day.t = DLG_TIME[it.time] != null ? DLG_TIME[it.time] : 300; day.haste = 0;
+    if (it.season && year.season !== it.season && YEAR.names[it.season]) seasonTurn(it.season); else if (!it.season && year.season !== 'summer') seasonTurn('summer');
+    if (at.ship && !(fleet || []).length) { try { giveBoat(); } catch (e) {} }
+    if (at.altar && !DLG.site) { DLG.site = { name: 'runeAltar', x: at.x - 70, y: at.y - 50, r: 28, altar: true }; B.items.push(DLG.site); B.items.push({ name: 'campfire', x: at.x + 50, y: at.y - 40, r: 5, hearth: true, light: 1 }); bDirty = true; }
+    var ax = at.x + 30, ay = at.y + 6;   /* (beside him and a little in front, so what stands north of the spot does not hide the speaker) */ if (it.place === 'steading.graves' && village && village.graves) { ax = village.graves.x + 10; ay = village.graves.y + 20; }
+    if (DLG.actor && DLG.actor !== npc) DLG.actor = null;
+    var clr = []; w.eachProp(function (o) { if ((Math.hypot(o.x - ax, o.y - ay) < 60 || Math.hypot(o.x - at.x, o.y - at.y) < 45) && o.r) clr.push(o); }); clr.forEach(function (o) { w.removeProp(o); });   /* (the trees and bushes right round the two cleared, so nothing stands in front of the speaker; the scene saves nothing) */
+    var a = dlgActor(sp, ax, ay); a.x = ax; a.y = ay; a.face = Math.atan2(P.y - ay, P.x - ax); P.face = Math.atan2(ay - P.y, ax - P.x);
+    a.say = it.text; a.sayT = 999; a.sayDur = 999; DLG.actor = a;
+    var pid = speakerId ? speakerId(a) : null; if (pid && PORTRAITS[pid] && SHOW_TALK) { talkWin = { who: a, id: pid, line: it.text, more: function () {}, hp: P.hp }; portraitImg(pid); }
+    dlgPanel();
+  }
+  function dlgTick() {                     /* hold the stage: the speaker where he stands, his line up, the hero by him */
+    var a = DLG.actor; if (!a) return; if (a === npc) { npc.route = null; npc.job = null; npc.seq = null; }
+    var it = DLG.list[DLG.i]; if (it) { a.say = it.text; a.sayT = 999; } if (talkWin && talkWin.who === a && it) talkWin.line = it.text;
+    var P = hero(); if (Math.hypot(P.x - a.x, P.y - a.y) > HEAR - 10) { a.x = P.x + 30; a.y = P.y + 6; }
+  }
+  function dlgItems(items) { var a = DLG.actor; if (a && a.stage) items.push({ y: a.y, f: function () { drawPerson(ctx, a); } }); }
+  function dlgKey(it) { return it.id + '#' + it.n; }
+  function dlgMark(v) { var it = DLG.list[DLG.i]; if (!it) return; var k = dlgKey(it), o = DLG.v[k] || {}; o.v = o.v === v ? null : v; o.text = it.text; DLG.v[k] = o; dlgSaveV(); dlgPanel(); }
+  function dlgSaveV() { try { localStorage.setItem('dialogue.verdicts', JSON.stringify(DLG.v)); } catch (e) {} }
+  function dlgNext(d) { var n = DLG.list.length, i = DLG.i, k; for (k = 0; k < n; k++) { i = (i + d + n) % n; var it = DLG.list[i], o = DLG.v[dlgKey(it)]; if (DLG.filter === 'all' || (DLG.filter === 'open' && !(o && o.v)) || (o && o.v === DLG.filter)) break; } dlgStage(i); }
+  function dlgExport() {
+    var rows = ['# the Dialogue scene, ' + new Date().toISOString().slice(0, 10) + ': <entry id> #<n> | keep|change|cut | "<the line as shown>" | <note>'];
+    DLG.list.forEach(function (it) { var o = DLG.v[dlgKey(it)]; if (!o || (!o.v && !o.note)) return; rows.push(it.id + ' #' + it.n + ' | ' + (o.v || '') + ' | "' + it.text + '" | ' + (o.note || '').replace(/\n/g, ' ')); });
+    return rows.join('\n');
+  }
+  function dlgPanel() {                    /* the panel on the right: where we are, the line, keep / change / cut, a note, on and back, export */
+    var el = DLG.el; if (!el) {
+      el = DLG.el = document.createElement('div'); el.id = 'dlgPanel';
+      el.style.cssText = 'position:fixed;right:12px;top:12px;width:340px;max-height:calc(100vh - 24px);overflow:auto;background:rgba(32,24,18,0.94);color:#efe6d2;border:1px solid #8a6a3a;border-radius:8px;padding:12px 14px;font:14px/1.45 Alegreya,Georgia,serif;z-index:20;box-shadow:0 4px 18px rgba(0,0,0,0.45)';
+      document.body.appendChild(el);
+      el.addEventListener('mousedown', function (e) { e.stopPropagation(); }); el.addEventListener('mouseup', function (e) { e.stopPropagation(); });
+      el.addEventListener('keydown', function (e) { e.stopPropagation(); }); el.addEventListener('keyup', function (e) { e.stopPropagation(); });
+      el.addEventListener('click', function (e) { var b = e.target.closest('[data-a]'); if (!b) return; var a = b.getAttribute('data-a');
+        if (a === 'prev') dlgNext(-1); else if (a === 'next') dlgNext(1); else if (a === 'keep' || a === 'change' || a === 'cut') dlgMark(a);
+        else if (a === 'export') { var ta = el.querySelector('#dlgOut'); ta.style.display = 'block'; ta.value = dlgExport(); ta.select(); }
+        else if (a === 'jump') { var n = parseInt(el.querySelector('#dlgJump').value, 10); if (n >= 1 && n <= DLG.list.length) dlgStage(n - 1); } });
+      el.addEventListener('change', function (e) { if (e.target.id === 'dlgFilter') { DLG.filter = e.target.value; } });
+      el.addEventListener('input', function (e) { if (e.target.id === 'dlgNote') { var it = DLG.list[DLG.i], k = dlgKey(it), o = DLG.v[k] || {}; o.note = e.target.value; o.text = it.text; DLG.v[k] = o; dlgSaveV(); } });
+    }
+    var it = DLG.list[DLG.i]; if (!it) { el.innerHTML = 'No lines.'; return; }
+    var o = DLG.v[dlgKey(it)] || {}, done = 0; DLG.list.forEach(function (q) { var oo = DLG.v[dlgKey(q)]; if (oo && oo.v) done++; });
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function btn(a, label, on, col) { return '<button data-a="' + a + '" style="flex:1;padding:6px 0;border-radius:5px;border:1px solid ' + (on ? col : '#6a5236') + ';background:' + (on ? col : '#2a2018') + ';color:' + (on ? '#1a120c' : '#efe6d2') + ';font:600 14px Alegreya,Georgia,serif;cursor:pointer">' + label + '</button>'; }
+    var sp = dlgSpeaker(it), sett = [it.place + (it.placeGuessed ? ' (guessed)' : ''), it.time, it.season, it.with].filter(function (x) { return x; }).join(' · ');
+    el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#c9b48a"><span>Line ' + (DLG.i + 1) + ' of ' + DLG.list.length + ' · judged ' + done + '</span>'
+      + '<select id="dlgFilter" style="background:#2a2018;color:#efe6d2;border:1px solid #6a5236;border-radius:4px;font:13px Alegreya,Georgia,serif">' + [['all', 'All'], ['open', 'Not judged'], ['keep', 'Keep'], ['change', 'Change'], ['cut', 'Cut']].map(function (f) { return '<option value="' + f[0] + '"' + (DLG.filter === f[0] ? ' selected' : '') + '>' + f[1] + '</option>'; }).join('') + '</select></div>'
+      + '<div style="margin-top:6px;font-size:12px;color:#a8946c">' + esc(it.chapter || 'no chapter yet') + ' · ' + esc(it.id) + ' #' + it.n + (it.mode ? ' · ' + esc(it.mode) : '') + '</div>'
+      + '<div style="font-size:12px;color:#a8946c">' + esc(dlgNameOf(sp)) + ' · ' + esc(sett) + (it.tag ? ' · (' + esc(it.tag) + ')' : '') + '</div>'
+      + '<div style="margin:10px 0;font-size:18px;line-height:1.35;color:#fff4dc">“' + esc(it.text) + '”</div>'
+      + '<div style="display:flex;gap:6px">' + btn('keep', 'Keep', o.v === 'keep', '#9be58b') + btn('change', 'Change', o.v === 'change', '#ecc95e') + btn('cut', 'Cut', o.v === 'cut', '#e8806a') + '</div>'
+      + '<textarea id="dlgNote" placeholder="A note (what to change, why)" style="width:100%;box-sizing:border-box;margin-top:8px;height:64px;background:#1e1712;color:#efe6d2;border:1px solid #6a5236;border-radius:5px;padding:6px;font:14px Alegreya,Georgia,serif">' + esc(o.note || '') + '</textarea>'
+      + '<div style="display:flex;gap:6px;margin-top:8px">' + btn('prev', '← Back', false) + btn('next', 'On →', false) + '</div>'
+      + '<div style="display:flex;gap:6px;margin-top:8px;align-items:center"><input id="dlgJump" type="number" min="1" max="' + DLG.list.length + '" value="' + (DLG.i + 1) + '" style="width:70px;background:#1e1712;color:#efe6d2;border:1px solid #6a5236;border-radius:4px;padding:3px;font:13px Alegreya,Georgia,serif">' + btn('jump', 'Go to', false) + btn('export', 'Export', false) + '</div>'
+      + '<textarea id="dlgOut" readonly style="display:none;width:100%;box-sizing:border-box;margin-top:8px;height:140px;background:#1e1712;color:#efe6d2;border:1px solid #6a5236;border-radius:5px;padding:6px;font:12px ui-monospace,Consolas,monospace"></textarea>';
+  }
+  function dlgScene() {                    /* the scene's start: a fresh world that saves nothing, the hero's name, the first line staged */
+    noSave = true; seen.met = 1; seen.build = 1; seen.bar = 1; seen.pried = 1; caveFade = 0; heroName = heroName || 'Ulf'; naming = null;
+    try { DLG.v = JSON.parse(localStorage.getItem('dialogue.verdicts') || '{}') || {}; } catch (e) { DLG.v = {}; }
+    dlgBuild(); var i0 = 0; try { i0 = parseInt(localStorage.getItem('dialogue.i') || '0', 10) || 0; } catch (e) {} if (i0 >= DLG.list.length) i0 = 0;
+    setTimeout(function () { dlgStage(i0); }, 300);
+  }
   function runesScene() {                    // the Rune Editor (game.html?scene=runes, made over 2026-10-23): the hero before a built altar on the starter island's meadow by the wreck, every rune in the library, the cudgel and a boar out cold, a season due; saves nothing
     var P = hero(); noSave = true; toCamp(); var ax = P.x - 150, ay = P.y - 30, tries = 0; while (tries++ < 40 && !(w.isLand(ax, ay) && !w.isWater(ax, ay) && w.flatAt && w.flatAt(ax, ay, 40))) { ax -= 24; }
     var near = []; w.eachProp(function (o) { if (Math.abs(o.x - ax) < 170 && Math.abs(o.y - ay) < 150) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
@@ -8340,7 +8479,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hown ? sleepComfortAt(P.x, P.y) : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

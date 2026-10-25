@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-25T11:02:03.459Z",
+ "built": "2026-10-25T11:14:45.919Z",
  "entries": [
   {
    "id": "world.realm",
@@ -815,6 +815,9 @@
    "speaker": "person.arnor",
    "when": "brokkState meet: the first time E is pressed at the survivor",
    "mode": "sequence",
+   "chapter": "chapter.1",
+   "place": "steading.yard",
+   "time": "day",
    "lines": [
     "Out of the sea with nothing. And I thought I was the poor one here.",
     "Arnor. I was the smith, before Ormr Midgardbane.",
@@ -833,6 +836,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; the hero can build, and no sleeping place is marked yet",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "A smith marks the iron before he strikes. Mark your spot.",
     "Every hall here began with one post and a man saying \"here\".",
@@ -850,6 +856,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; a sleeping place is marked, with no bed in it",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "A post and a square of ground. Add a bed and it's a place.",
     "Straw and two flat stones. I've seen jarls sleep worse.",
@@ -867,6 +876,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; baseComfort().n is 0",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "Walls and a roof first. The nights here are not kind.",
     "Four walls and a roof. Everything else is only weather.",
@@ -884,6 +896,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; the home has a roof but no hearth",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "A fire by the door. A roof with no fire near it is a cave.",
     "Cold iron takes no shape. Cold men neither.",
@@ -901,6 +916,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; the home has a hearth but no workbench",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "A bench to work at. Hands alone make poor tools.",
     "At a bench I can make anything. Without one I'm a man with a hammer.",
@@ -918,6 +936,9 @@
    "speaker": "person.arnor",
    "when": "brokkState wait; the home lacks only a rug",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "Bare floor. A house isn't a home till it's warm underfoot.",
     "Bare boards. Thorgunna would have laughed you out of the hall.",
@@ -935,6 +956,10 @@
    "speaker": "person.arnor",
    "when": "brokkState teach: Comfort 4 reached",
    "mode": "sequence",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "That's a home. First one I've seen here in two winters.",
     "Planks and rope. A little boat will carry a man, if he rows.",
@@ -952,6 +977,9 @@
    "speaker": "person.arnor",
    "when": "brokkState taught",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "day",
    "lines": [
     "The shed by the water. Plank by plank, and mind the sea.",
     "Tell them on the big island you met Arnor. They'll know the rest.",
@@ -969,6 +997,9 @@
    "speaker": "person.arnor",
    "when": "new: the hero stands among the graves behind the hall for a few seconds, once",
    "mode": "sequence",
+   "chapter": "chapter.1",
+   "place": "steading.graves",
+   "time": "dusk",
    "lines": [
     "Thorgunna. She wouldn't pay.",
     "Her boys.",
@@ -989,6 +1020,9 @@
    "speaker": "person.arnor",
    "when": "new: the rowboat first launched from the starter island",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "shore.ship",
+   "time": "dawn",
    "lines": [
     "Go on. If you hear his story told, tell them how it ends here.",
     "East. Come back with somebody. This place could use a second voice.",
@@ -1006,6 +1040,9 @@
    "speaker": "person.arnor",
    "when": "the first claim stone raised on the starter island; Arnor joins",
    "mode": "sequence",
+   "chapter": "chapter.1",
+   "place": "steading.stone",
+   "time": "day",
    "lines": [
     "A stone stands again at Thorgunna's. Then I am yours, and this bench is mine."
    ],
@@ -1021,6 +1058,10 @@
    "speaker": "person.aslak",
    "when": "E at Old Aslak, before the ring is found; said in order over several talks",
    "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "My brother and I went into the troll's hill when we were young and stupid. I came out.",
     "Little ones in there, all hair and nose. They bonk the stone with bones. Leave them be.",
@@ -1039,6 +1080,10 @@
    "speaker": "person.aslak",
    "when": "new: the first talk with Aslak while the hero has the bronze ring",
    "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "That's his. … That's our father's ring.",
     "Keep it. He'd want it to see daylight.",
@@ -1056,6 +1101,9 @@
    "speaker": "role.villager",
    "when": "E at a villager at peace; one pair per villager",
    "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
    "lines": [
     "Ormr Midgardbane. Say it quietly. They say the sea listens to him.",
     "The storm that sank my cousin went round his ship like water round a stone.",
@@ -1077,6 +1125,9 @@
    "when": "E at a villager of the hamlet, at peace",
    "mode": "variants",
    "game": "FOLK_LINES (templates/game.html)",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
    "lines": [
     "Fair winds brought you, or foul?",
     "The well is sweet here. Drink if you like.",
@@ -1110,6 +1161,9 @@
    "when": "E at a villager of a generated village, by their calling",
    "mode": "variants",
    "game": "ROLES (src/village.js)",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
    "lines": [
     "(fisherman) Sit, sit. The sea has been feeding me for sixty years and it has not run dry yet.",
     "(priest) Peace be upon this house, stranger.",
@@ -1146,6 +1200,10 @@
    "when": "the place's unease level is low (a blade drawn, nothing taken)",
    "mode": "variants",
    "game": "WARY_LINES",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "with": "blade drawn",
    "lines": [
     "Keep that blade where it is.",
     "You frightened the children.",
@@ -1164,6 +1222,9 @@
    "when": "the place has been raided by the hero",
    "mode": "variants",
    "game": "RAIDED_LINES",
+   "chapter": "chapter.3",
+   "place": "village.green",
+   "time": "day",
    "lines": [
     "You again. Take what you want and go.",
     "We have nothing left. You saw to that.",
@@ -1182,6 +1243,9 @@
    "when": "a raid is on and the villager is hiding",
    "mode": "variants",
    "game": "COWER_LINES",
+   "chapter": "chapter.3",
+   "place": "raid.village",
+   "time": "day",
    "lines": [
     "Take it. Take all of it.",
     "Not the children.",
@@ -1202,6 +1266,9 @@
    "when": "the villager's house is burnt",
    "mode": "variants",
    "game": "HOMELESS_LINES",
+   "chapter": "chapter.3",
+   "place": "village.ruin",
+   "time": "day",
    "lines": [
     "It is gone. All of it.",
     "Where are we to sleep now?",
@@ -1220,6 +1287,9 @@
    "when": "someone in this place has been killed by the hero",
    "mode": "sequence",
    "game": "mournLines(vi)",
+   "chapter": "chapter.3",
+   "place": "village.green",
+   "time": "day",
    "lines": [
     "You killed {dead}.",
     "{dead} never lifted a hand to you.",
@@ -1236,12 +1306,18 @@
    "decided": "in the game (Game Developer)",
    "summary": "A walled town lets in only the unarmed and alone.",
    "speaker": "role.guard",
-   "when": "the hero comes to a walled town's gate armed or with men",
+   "when": "the hero comes to a walled town's gate; the tag says which: at night, with men behind him, armed, or at peace",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "town.gate",
+   "time": "day",
    "lines": [
-    "No blades inside the walls. Leave them at your ship."
+    "(night) The gate is shut till morning.",
+    "(men) You alone. Your men stay out there.",
+    "(armed) No blades inside the walls. Leave them at your ship.",
+    "(peace) Go on in."
    ],
-   "body": ""
+   "body": "Brought up to what the game says, for the register (Clive, GD's `docs/spoken-lines.md`, 2026-10-25). Was: \"No blades inside the walls. Leave them at your ship.\". When word of a raid has spread, the gate man says [[line.raid.gate.wary]] instead."
   },
   {
    "id": "line.guard.challenge",
@@ -1252,11 +1328,16 @@
    "summary": "A man of the place tells the hero to sheathe his weapon.",
    "speaker": "role.guard",
    "when": "a blade drawn in a place at peace; CHALLENGE_T",
-   "mode": "variants",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "with": "blade drawn",
    "lines": [
-    "Put up your blade."
+    "Put up your blade.",
+    "Keep it there."
    ],
-   "body": ""
+   "body": "Brought up to what the game says, for the register (Clive, GD's `docs/spoken-lines.md`, 2026-10-25). Was: \"Put up your blade.\" (variants)."
   },
   {
    "id": "line.raid.thrall.freed",
@@ -1268,6 +1349,9 @@
    "speaker": "role.thrall",
    "when": "a thrall of a raided place has just been cut loose and joins the hero",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
    "lines": [
     "I row, I dig, I fight. Yours."
    ],
@@ -1283,6 +1367,9 @@
    "speaker": "role.hirdman",
    "when": "a hirdman of the hero's, taken on an earlier raid, stands bound at that place; the hero comes near",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.hall",
+   "time": "day",
    "lines": [
     "They have had me at the quern. Cut me loose."
    ],
@@ -1298,6 +1385,9 @@
    "speaker": "role.hirdman",
    "when": "the bound hirdman has just been cut loose by the hero",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.hall",
+   "time": "day",
    "lines": [
     "I knew you would come."
    ],
@@ -1313,6 +1403,9 @@
    "speaker": "role.villager",
    "when": "a man of a raided place has yielded, and the hero lets him go",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
    "lines": [
     "I will not forget this."
    ],
@@ -1328,6 +1421,9 @@
    "speaker": "role.villager",
    "when": "a raider dropped a heavy chest in the open, and a man of the place picks it up",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
    "lines": [
     "Ours, that."
    ],
@@ -1343,6 +1439,9 @@
    "speaker": "role.villager",
    "when": "a man or woman of the place finds one of their own dead",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
    "lines": [
     "One of ours is dead! To arms!",
     "Murder! Murder!"
@@ -1359,10 +1458,16 @@
    "speaker": "role.villager",
    "when": "a villager sees the hero take from their chest or eat their feast",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "village.yard",
+   "time": "day",
    "lines": [
-    "Thief!"
+    "Thief! Thief!",
+    "Thief! Hold him!",
+    "Thief! The beasts!",
+    "Thief! My {beast}!"
    ],
-   "body": "In the old laws, the secret thief (*þjófnaðr*) was the worst of all: he could be hanged. Taking openly by daylight was robbery,\nand counted less shameful. The villager shouts \"Thief!\" anyway, because it is the worst word there is (the Lexicon of\nMedieval Nordic Law, *þjófnaðr*)."
+   "body": "In the old laws, the secret thief (*þjófnaðr*) was the worst of all: he could be hanged. Taking openly by daylight was robbery,\nand counted less shameful. The villager shouts \"Thief!\" anyway, because it is the worst word there is (the Lexicon of\nMedieval Nordic Law, *þjófnaðr*).\n\nBrought up to what the game says, for the register (Clive, GD's `docs/spoken-lines.md`, 2026-10-25). Was: \"Thief!\". {beast} is the beast of theirs that was killed."
   },
   {
    "id": "line.raid.gate.wary",
@@ -1374,10 +1479,13 @@
    "speaker": "role.guard",
    "when": "the hero comes to the gate of a place that has heard of a raid of his; {place} is the raided place",
    "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "town.gate",
+   "time": "day",
    "lines": [
-    "We know what you did at {place}."
+    "We heard what you did at {place}. Go on in, and keep your hands where I see them."
    ],
-   "body": "\"Pay, or burn\" are the words of [[family.ormsmenn|Ormr's men]]. A raider's name goes ahead of him, the way Ormr's did."
+   "body": "\"Pay, or burn\" are the words of [[family.ormsmenn|Ormr's men]]. A raider's name goes ahead of him, the way Ormr's did.\n\nBrought up to what the game says, for the register (Clive, GD's `docs/spoken-lines.md`, 2026-10-25). Was: \"We know what you did at {place}.\"."
   },
   {
    "id": "line.crew.oars",
@@ -1389,6 +1497,9 @@
    "speaker": "role.hirdman",
    "when": "the hero steps into a ship with his men aboard",
    "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "shore.ship",
+   "time": "day",
    "lines": [
     "To the oars."
    ],
@@ -1404,6 +1515,9 @@
    "speaker": "role.hirdman",
    "when": "the hird boards, and every seat on the ship is taken",
    "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "shore.ship",
+   "time": "day",
    "lines": [
     "No room for me aboard."
    ],
@@ -1447,6 +1561,9 @@
    "speaker": "role.hirdman",
    "when": "the ship runs up onto sand and stops (Clive, GD keys it)",
    "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "shore.ship",
+   "time": "day",
    "lines": [
     "Land. Ship the oars.",
     "Sand under the keel. Feet in the water, all of you.",
@@ -1481,6 +1598,11 @@
    "speaker": "role.any",
    "when": "the winter is due to turn into spring; the hero is at a fire with someone",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "dusk",
+   "season": "winter",
+   "with": "fire",
    "lines": [
     "(villager) The days are drawing out. Somebody ought to feed the dísir before the ice goes.",
     "(arnor) Ice is going. The dísir get fed before the boats go out.",
@@ -1498,6 +1620,11 @@
    "speaker": "role.any",
    "when": "the hero holds the blót at his fire that turns the year into spring",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "dusk",
+   "season": "winter",
+   "with": "storm",
    "lines": [
     "(villager) To the dísir, who watch over the women of this house. Keep us one more year.",
     "(arnor) Thorgunna's words for this were longer. The dísir will forgive me.",
@@ -1515,6 +1642,11 @@
    "speaker": "role.any",
    "when": "the spring is due to turn into summer; the hero is at a fire with someone",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "dusk",
+   "season": "spring",
+   "with": "fire",
    "lines": [
     "(villager) The cuckoo's been calling a week. High time for the summer feast.",
     "(hirdman) Flat sea, short nights. A man starts thinking about sails, and about the summer cup.",
@@ -1532,6 +1664,11 @@
    "speaker": "role.any",
    "when": "the hero holds the blót at his fire that turns the year into summer",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "dusk",
+   "season": "spring",
+   "with": "storm",
    "lines": [
     "(hirdman) To Odin, for victory. He gives it to whoever he likes, so drink deep.",
     "(villager) The summer cup. May every sail that comes this year be a friend's.",
@@ -1549,6 +1686,11 @@
    "speaker": "role.any",
    "when": "the summer is due to turn into autumn; the hero is at a fire with someone",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "dusk",
+   "season": "summer",
+   "with": "fire",
    "lines": [
     "(villager) The hay's in and the birches are turning. The autumn feast is owed.",
     "(hirdman) The barns want filling and the gods want thanking, and not in that order.",
@@ -1566,6 +1708,11 @@
    "speaker": "role.any",
    "when": "the hero holds the blót at his fire that turns the year into autumn",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "dusk",
+   "season": "summer",
+   "with": "storm",
    "lines": [
     "(villager) To Njörd and to Freyr: for a good year, and peace. That's all, and it's plenty.",
     "(hirdman) Blood on the posts, meat in the pot. Nobody goes hungry at the autumn feast.",
@@ -1583,6 +1730,11 @@
    "speaker": "role.any",
    "when": "the autumn is due to turn into winter; the hero is at a fire with someone",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.yard",
+   "time": "dusk",
+   "season": "autumn",
+   "with": "fire",
    "lines": [
     "(villager) The nights are as long as they'll get. Time for Yule, before the dark eats us.",
     "(hirdman) First ice on the water butt. Best hold Yule while there's ale left.",
@@ -1600,12 +1752,215 @@
    "speaker": "role.any",
    "when": "the hero holds the blót at his fire that turns the year into winter",
    "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "dusk",
+   "season": "autumn",
+   "with": "storm",
    "lines": [
     "(villager) Yule. The first cup to the dead of this house, the next to the sun coming back.",
     "(arnor) Odin's cup, Freyr's, and one for the dead. I'll drink the third twice.",
     "(hirdman) Lay your hand on the boar and swear something big. Yule is when oaths are made."
    ],
    "body": "Before the cut (2026-10-25): \"(villager) Yule. The first cup to the dead of this house, the next to the sun coming back.\" |\n\"(arnor) Three cups: Odin's, Freyr's, and one for those who aren't here. I'll drink the third twice.\" | \"(hirdman) Lay your hand\non the boar and swear something big. Yule is when oaths are made.\""
+  },
+  {
+   "id": "line.folk.fire",
+   "title": "A fire in the village",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `brigadeTick`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "Cried as the village runs for water.",
+   "speaker": "role.villager",
+   "when": "a house of the place is burning, and its folk run for the well",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "village.well",
+   "time": "night",
+   "with": "fire",
+   "lines": [
+    "Fire! To the well!",
+    "Water! Water!"
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.priest.keys",
+   "title": "The priest gives up his keys",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `takeKeys`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "The priest, cowering, as the hero takes his keys.",
+   "speaker": "role.villager",
+   "when": "the hero takes the priest's keys (E)",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "church.nave",
+   "time": "day",
+   "lines": [
+    "(priest) Take them. Take them and go."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.men.alarm",
+   "title": "The alarm",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `raidAlarm, the watch, bodiesFound`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "A man of the place raises the alarm. The tag says which: the watch at night, a raid seen, a dead man found.",
+   "speaker": "role.guard",
+   "when": "the alarm is raised in a place being raided",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.town",
+   "time": "night",
+   "lines": [
+    "To arms!",
+    "To arms! To arms!",
+    "Raiders! Raiders in the town!",
+    "(watch) Who goes there? To arms!",
+    "Raiders! To arms!",
+    "(body) A dead man! To arms!",
+    "(body) One of ours is dead! To arms!"
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.men.yield",
+   "title": "A man yields",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `the engine's yield`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "A man of the place, badly hurt and not loyal, gives up.",
+   "speaker": "role.guard",
+   "when": "a man of a raided place yields",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
+   "lines": [
+    "I yield."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.stone",
+   "title": "A hirdman made keeper of a stone",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `the claim, the muster`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "Said when a hirdman is made keeper of a claim stone.",
+   "speaker": "role.hirdman",
+   "when": "a hirdman is made keeper of a claim stone",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "home.stone",
+   "time": "day",
+   "lines": [
+    "I will keep this stone.",
+    "I will hold this stone."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.order",
+   "title": "A hirdman given an order",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `hirdTalk`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "His answer to an order (G). The tag says which order.",
+   "speaker": "role.hirdman",
+   "when": "the hero gives a hirdman an order (G)",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "home.yard",
+   "time": "day",
+   "lines": [
+    "(follow) Lead on.",
+    "(hungry) Lead on, then. Slowly. There is nothing in the stores.",
+    "(job) I can do that.",
+    "(stone) I will keep by the stone."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.bounds",
+   "title": "A hirdman at the edge of the land",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `the territory rule`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "Told to follow outside the hero's land: first the answer, then at the edge.",
+   "speaker": "role.hirdman",
+   "when": "a hirdman is told to follow outside the hero's land",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "home.edge",
+   "time": "day",
+   "lines": [
+    "Not out here. Call me at the stone.",
+    "This is where I stop."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.carry",
+   "title": "A hirdman told to carry",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `the carry errand`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "On a raid, ordered to carry (G). The tag says what.",
+   "speaker": "role.hirdman",
+   "when": "on a raid, a man of the hero's is ordered to carry (G)",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.yard",
+   "time": "day",
+   "lines": [
+    "(thing) I have it.",
+    "(man) I have him.",
+    "(full) No room aboard.",
+    "(done) Stowed."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.wall",
+   "title": "The hird holds",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `the hold order`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "Ordered to hold (G held): the line, or one man.",
+   "speaker": "role.hirdman",
+   "when": "the hero orders his men to hold (G held)",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.gate",
+   "time": "day",
+   "with": "men behind",
+   "lines": [
+    "(line) We hold.",
+    "(one) I hold."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.hird.ram",
+   "title": "The ram",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game (Clive, GD's words, in the code as `ramTick`; recorded 2026-10-25 for the register; Robin has not reviewed them)",
+   "summary": "The hird takes up the ram at a gate.",
+   "speaker": "role.hirdman",
+   "when": "the hird takes up the ram at a raided place's gate",
+   "mode": "variants",
+   "chapter": "chapter.3",
+   "place": "raid.gate",
+   "time": "day",
+   "lines": [
+    "Shoulders to it!"
+   ],
+   "body": ""
   },
   {
    "id": "rumour.kvennaey.lonely-brother",
@@ -1618,6 +1973,11 @@
    "heard": "villagers anywhere at home and in the west",
    "about": "place.kvennaey, family.skulds-daughters",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "My brother was a lonely man. He'd heard of an island out west with only women on it, and went to try his luck. Not a word since.",
     "My brother used to tell of a land in the west with no men in it. He was a lonely sort. One spring he went to see for himself."
@@ -1635,6 +1995,11 @@
    "heard": "fishermen and sailors of the west",
    "about": "place.kvennaey, being.noatun-drowned",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "There's a beach out west lined with wrecks. Good ships, some of them. Nobody goes to salvage them twice.",
     "Past the far skerries there's a shore where ships just sit and rot. Nobody claims them. Nobody dares."
@@ -1652,6 +2017,11 @@
    "heard": "fishermen of the west, and the old fisherman",
    "about": "being.noatun-drowned",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Don't pass the far skerry at dusk. The water stands up there, and it has faces.",
     "We turn for home before dark out west. Something stands in the water over there, and it watches the boats."
@@ -1669,6 +2039,11 @@
    "heard": "traders and villagers at the markets of the west, in spring",
    "about": "person.geirhild, family.skulds-daughters",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Every spring a ship with a braid on its prow puts in here. The women on it look at the men like horse-traders.",
     "If a woman off the braided ship asks your name, give it. They say it's an honour. They say a lot of things."
@@ -1687,6 +2062,11 @@
    "when": "after the hero has heard of the braided ship",
    "about": "place.kvennaey",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "The women's island takes guests in summer. Only in summer, and only the ones they ask. Anyone else feeds the sea.",
     "Go with their braid and in their season, or don't go. My cousin tried it in autumn."
@@ -1705,6 +2085,11 @@
    "when": "after the hero has been a guest on Kvennaey",
    "about": "family.skulds-daughters, person.yngvild",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "My grandfather lost a ship out west. Full of women, bound for the east. He swore to his death the women took it.",
     "Before you were born a thrall ship went missing past the skerries. Forty women in collars. Nobody found so much as a plank."
@@ -1723,6 +2108,11 @@
    "when": "after the hero's first guest season",
    "about": "family.skulds-daughters, being.noatun-drowned",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.4",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "You were there. Did you see a single boy? No. Don't ask why. Not out loud.",
     "The men they take in summer don't come home. Their ships are the ones on the beach."
@@ -1740,6 +2130,11 @@
    "heard": "sailors anywhere",
    "about": "person.ormr, legend.midgardsormen",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "I saw his sail go through a squall that put three ships on the rocks. Not a fold in it.",
     "The storm that sank my cousin went round his ship like water round a stone."
@@ -1757,6 +2152,11 @@
    "heard": "villagers of the big island",
    "about": "person.ormr, person.arnor",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Wherever he burns, he leaves one alive to tell it. On the little island it's a smith, they say. Ask him, if you can stand it."
    ],
@@ -1773,6 +2173,11 @@
    "heard": "villagers of the big island",
    "about": "person.aslak, place.troll-cave",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Old Aslak went into the troll's hill when he was young. He came out. His brother didn't. Bring ale if you ask him."
    ],
@@ -1789,6 +2194,11 @@
    "heard": "farmers at home",
    "about": "legend.gullinbursti, god.freyr",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Go to the oaks at midsummer dusk and look sideways, not straight. Don't tell anyone what you see."
    ],
@@ -1805,6 +2215,11 @@
    "heard": "anyone, anywhere",
    "about": "god.odin",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "If an old one-eyed man asks for your fire, give him the best seat. My grandfather didn't, once.",
     "Feed every stranger who comes at dusk. You never know who has been walking a long way."
@@ -1822,6 +2237,11 @@
    "heard": "skalds, old warriors, anyone in a hall at night",
    "about": "thing.odins-ring",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "There's a ring Odin forged with his own hands. Every rune there is, cut in it. Men have drowned looking.",
     "Every rune you cut into your ring, he cut first. Into his own. The skalds say it's still out there."
@@ -1839,6 +2259,11 @@
    "heard": "fishermen of the west, and the old fisherman",
    "about": "legend.midgardsormen",
    "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
    "lines": [
     "Out west the sea goes up and down with no wind on it. My father said it was something breathing."
    ],
@@ -1936,5 +2361,99 @@
    ],
    "body": "Iron-Beard was Jarl Eirík's at Svöldr, the Bison King Olaf the Saint's, and Ellidi Friðþjóf's, which understood speech. The\naurochs, the great wild ox, gave the old rune ᚢ its name."
   }
+ ],
+ "places": [
+  "wreck.beach",
+  "steading.yard",
+  "steading.well",
+  "steading.graves",
+  "steading.stone",
+  "home.yard",
+  "home.stone",
+  "home.edge",
+  "home.altar",
+  "shore.ship",
+  "sea.aboard",
+  "village.green",
+  "village.well",
+  "village.yard",
+  "village.ruin",
+  "cave.troll",
+  "town.gate",
+  "raid.village",
+  "raid.town",
+  "raid.yard",
+  "raid.hall",
+  "raid.gate",
+  "church.nave"
+ ],
+ "dialogue": [
+  "line.arnor.meet",
+  "line.arnor.graves",
+  "line.arnor.join",
+  "line.arnor.wait.no-zone",
+  "line.arnor.wait.no-bed",
+  "line.arnor.wait.no-walls",
+  "line.arnor.wait.no-hearth",
+  "line.arnor.wait.no-bench",
+  "line.arnor.wait.no-rug",
+  "line.arnor.teach",
+  "line.arnor.taught",
+  "line.year.due.spring",
+  "line.year.due.summer",
+  "line.year.due.autumn",
+  "line.year.due.winter",
+  "line.year.blot.spring",
+  "line.year.blot.summer",
+  "line.year.blot.autumn",
+  "line.year.blot.winter",
+  "line.arnor.shore",
+  "line.hird.order",
+  "line.hird.stone",
+  "line.hird.bounds",
+  "line.crew.oars",
+  "line.crew.noroom",
+  "line.crew.land",
+  "line.aslak.story",
+  "line.aslak.ring",
+  "line.folk.ormr",
+  "line.folk.greeting",
+  "line.folk.roles",
+  "line.folk.wary",
+  "line.guard.challenge",
+  "rumour.ormr.storm",
+  "rumour.ormr.the-one-left",
+  "rumour.troll-cave.old-man",
+  "rumour.golden-boar",
+  "rumour.wanderer",
+  "rumour.odins-ring",
+  "rumour.the-swell",
+  "line.folk.raided",
+  "line.folk.mourn",
+  "line.folk.fire",
+  "line.raid.theft",
+  "line.folk.homeless",
+  "line.guard.gate",
+  "line.raid.gate.wary",
+  "line.folk.cower",
+  "line.men.alarm",
+  "line.raid.thrall.freed",
+  "line.raid.yield.spared",
+  "line.raid.chest.takeback",
+  "line.raid.body.found",
+  "line.men.yield",
+  "line.hird.carry",
+  "line.raid.bound.plea",
+  "line.raid.bound.freed",
+  "line.hird.wall",
+  "line.hird.ram",
+  "line.priest.keys",
+  "rumour.kvennaey.lonely-brother",
+  "rumour.kvennaey.wrecks",
+  "rumour.kvennaey.standing-water",
+  "rumour.kvennaey.braid",
+  "rumour.kvennaey.summer",
+  "rumour.kvennaey.thrall-ship",
+  "rumour.kvennaey.no-boys"
  ]
 }
