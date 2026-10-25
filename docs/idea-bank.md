@@ -1032,6 +1032,17 @@ Sources: [enemy telegraph shape language](https://gamineai.com/blog/enemy-telegr
 
 ## Base building: making it fun in 2D (Robin and Claude, 2026-10-24; not decided except where marked)
 
+**Places (Robin, 2026-10-25; the sleeping place built, the rest waiting).** A part of the village is a *place*: you set down its post
+and drag out a square, free of walls, and what stands inside gives it a level that unlocks bonuses or new mechanics. A square, not a
+circle (Robin); not tied to the bed or any one object, which would limit where it goes (Robin); in and out of houses alike (Robin);
+and the first place marked could be how building is first taught, through Arnor's words. Kinds to come, from the list of a Viking
+village's areas: the hall, the kitchen and hearth, the storehouse (stabbur), the drying racks and smokehouse, the brewhouse, the
+kitchen garden, the byre, the sheepfold, the smithy, the weaving house, the woodworking yard, the tar kiln and charcoal pit, the
+tannery, the boathouse, the jetty, the treasure hall, the trophy wall, the holy grove (the rune altar), the burial ground, the thing
+place, the watchtower, the training ground, the armoury, the well, the midden, the bathhouse and the guest house. Open: whether a
+place's square grows with its level (my proposal) and how a second kind should read on the ground beside the first; the hird's own
+building (Robin: the hirdmen get one, not beds in the sleeping place).
+
 From the building review (`docs/building-review.md`, with the pictures in `docs/pictures/building/` and Colin, AD's view in
 `C:\dev\SG\Art Director\out\building_review\VIEW.md`) and the talk with Robin after it. **Decided and built:** the world outside dims
 and softens when you stand in a room (Robin's idea, the gentle look; `INS` in the game). **Liked by Robin, not built:** the cutaway

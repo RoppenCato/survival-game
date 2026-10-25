@@ -2764,6 +2764,7 @@ function button(b, down) {
   if (b === 2) { if (down && !IN.rmb) IN.pressed.rmb = true; IN.rmb = down; }
 }
 function mouse(x, y) { IN.mx = x; IN.my = y; }
+function handBusy() { return !!(api.handBusy && api.handBusy()); }   /* the page has the hand's buttons (a rod in hand: the right button charges the cast, the left casts, hooks and reels; Robin, 2026-10-25): no blow, no guard */
 
 // Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
 var TOOLS = [
@@ -3540,7 +3541,7 @@ function updatePlayer(dt) {
   p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt); if (p.cryT > 0) { p.cryT = Math.max(0, p.cryT - dt); if (p.cryDue && p.cryT <= CRY_T - CRY_AT) { p.cryDue = false; warCryOut(p); } }
   var gbRune = rune('guardBlow'), shoving = CROWD.shove > 0 && !!gbRune && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the guard-blow: the blow with the guard held, what the bound rune makes of it (the Bash, the Charge: CROWD, Runes2, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : gbRune === 'warCry' ? crowdWarCry(p) : gbRune === 'riposte' ? crowdRiposte(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
-  if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && !handBusy() && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -3559,7 +3560,7 @@ function updatePlayer(dt) {
 
   p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
   var bow = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && !(p.throwT > 0) && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && !(p.throwT > 0) && !handBusy() && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
   if (IN.pressed.Space) p.dashBuf = 0.18;
   // B enters and leaves build mode; Q swaps fight and gather (and leaves build mode for fight)
   if (IN.pressed.KeyB) { if (p.mode === 'build') p.mode = p.lastMode || 'fight'; else { p.lastMode = p.mode; p.mode = 'build'; } p.wreck = false; a.ph = 'none'; a.since = 9; a.tr = null; p.atkBuf = 0; p.holdT = 0; p.guard = false; W.lock = null; sfx('tele'); }
@@ -3578,7 +3579,7 @@ function updatePlayer(dt) {
   p.holdT = held ? p.holdT + dt : 0;
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
-  var want = (IN.rmb || IN.keys.KeyK) && !bow && !axeThrowOn() && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
+  var want = (IN.rmb || IN.keys.KeyK) && !bow && !axeThrowOn() && !handBusy() && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
   if (bow) { var drawing = (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && !p.trapAim; p.bowDraw = drawing ? Math.min(bowFull() * (1 + bowOver()), (p.bowDraw || 0) + dt) : 0; if (p.guard) p.guard = false; } else p.bowDraw = 0;
   if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
@@ -5528,8 +5529,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (A[nm] && A[nm].contact != null) return onContact(nm);
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
-    if (P.fishPose) { var FP = { cast: A.fish_cast ? 'fish_cast' : 'throw', wait: A.fish_wait ? 'fish_wait' : 'idle', fight: A.fish_reel ? 'fish_reel' : 'block_wpn', land: A.fish_land ? 'fish_land' : 'pickup' }[P.fishPose], CL = FP && A[FP];   /* fishing (2026-10-24): Colin, AD's fish_* clips when they come; until then the throw for the cast, the idle while waiting, the weapon held braced across with a fish on, the pick-up as the catch is lifted */
-      if (CL) { H.clip = null; if (P.fishPose === 'cast' || P.fishPose === 'land') { var FD = P.fishPose === 'cast' ? 0.6 : 0.7; return { a: FP, f: Math.min(CL.frames - 1, Math.floor(CL.frames * (1 - Math.max(0, P.fishT) / FD))) }; } if (FP === 'idle' || FP === 'fish_wait') { var lf = loopAt(CL, t); return { a: FP, f: lf.f, f2: lf.f2, w: lf.w }; } return { a: FP, f: P.fishPose === 'fight' && FP === 'block_wpn' ? Math.min(CL.frames - 1, Math.floor(CL.frames * 0.9)) : loopFrame(CL, t) }; } }
+    if (P.fishPose) { var FP = { charge: A.fish_cast ? 'fish_cast' : 'throw', cast: A.fish_cast ? 'fish_cast' : 'throw', wait: A.fish_wait ? 'fish_wait' : 'idle', fight: A.fish_reel ? 'fish_reel' : 'block_wpn', land: A.fish_land ? 'fish_land' : 'pickup' }[P.fishPose], CL = FP && A[FP];   /* fishing (2026-10-24): Colin, AD's fish_* clips when they come; until then the throw for the cast, the idle while waiting, the weapon held braced across with a fish on, the pick-up as the catch is lifted */
+      if (CL) { H.clip = null; if (P.fishPose === 'charge') return { a: FP, f: Math.min(3, Math.floor(4 * Math.min(0.999, P.fishK || 0))) }; if (P.fishPose === 'cast' || P.fishPose === 'land') { var FD = P.fishPose === 'cast' ? 0.6 : 0.7; return { a: FP, f: Math.min(CL.frames - 1, Math.floor(CL.frames * (1 - Math.max(0, P.fishT) / FD))) }; } if (FP === 'idle' || FP === 'fish_wait') { var lf = loopAt(CL, t); return { a: FP, f: lf.f, f2: lf.f2, w: lf.w }; } return { a: FP, f: P.fishPose === 'fight' && FP === 'block_wpn' ? Math.min(CL.frames - 1, Math.floor(CL.frames * 0.9)) : loopFrame(CL, t) }; } }
     if (P.throwT > 0 && A.throw) { H.clip = null; var TC = (typeof Combat !== 'undefined' && Combat.api && Combat.api.throwSpec) || { clip: 0.6 }; return { a: 'throw', f: Math.min(A.throw.frames - 1, Math.floor(A.throw.frames * (1 - P.throwT / TC.clip))) }; }   /* the throw (Colin, AD's clip, 2026-10-24): before any clip the page has played (the bow's loose); the axe or the trap goes at its contact, frame 5 */
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip && H.clip.name === 'bow_shoot' && Math.hypot(P.vx || 0, P.vy || 0) > 12) H.clip = null;   /* a shot on the move: the loose is let go as soon as he walks, so the walk shows (Robin, 2026-10-24: the body locked in a pose after shooting while walking) */

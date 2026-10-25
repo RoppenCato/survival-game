@@ -79,6 +79,7 @@ function button(b, down) {
   if (b === 2) { if (down && !IN.rmb) IN.pressed.rmb = true; IN.rmb = down; }
 }
 function mouse(x, y) { IN.mx = x; IN.my = y; }
+function handBusy() { return !!(api.handBusy && api.handBusy()); }   /* the page has the hand's buttons (a rod in hand: the right button charges the cast, the left casts, hooks and reels; Robin, 2026-10-25): no blow, no guard */
 
 // Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
 var TOOLS = [
@@ -855,7 +856,7 @@ function updatePlayer(dt) {
   p.shoveCd = Math.max(0, (p.shoveCd || 0) - dt); p.bashT = Math.max(0, (p.bashT || 0) - dt); if (p.cryT > 0) { p.cryT = Math.max(0, p.cryT - dt); if (p.cryDue && p.cryT <= CRY_T - CRY_AT) { p.cryDue = false; warCryOut(p); } }
   var gbRune = rune('guardBlow'), shoving = CROWD.shove > 0 && !!gbRune && (IN.pressed.lmb || IN.pressed.KeyJ) && p.guard && p.mode === 'fight' && !bowOut && p.roll.t <= 0 && p.hurtT <= 0 && p.freezeT <= 0;   /* the guard-blow: the blow with the guard held, what the bound rune makes of it (the Bash, the Charge: CROWD, Runes2, 2026-10-23) */
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : gbRune === 'warCry' ? crowdWarCry(p) : gbRune === 'riposte' ? crowdRiposte(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
-  if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && !handBusy() && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -874,7 +875,7 @@ function updatePlayer(dt) {
 
   p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
   var bow = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && !(p.throwT > 0) && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && !p.axeAim && !W.axe && !(p.throwT > 0) && !handBusy() && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
   if (IN.pressed.Space) p.dashBuf = 0.18;
   // B enters and leaves build mode; Q swaps fight and gather (and leaves build mode for fight)
   if (IN.pressed.KeyB) { if (p.mode === 'build') p.mode = p.lastMode || 'fight'; else { p.lastMode = p.mode; p.mode = 'build'; } p.wreck = false; a.ph = 'none'; a.since = 9; a.tr = null; p.atkBuf = 0; p.holdT = 0; p.guard = false; W.lock = null; sfx('tele'); }
@@ -893,7 +894,7 @@ function updatePlayer(dt) {
   p.holdT = held ? p.holdT + dt : 0;
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
-  var want = (IN.rmb || IN.keys.KeyK) && !bow && !axeThrowOn() && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
+  var want = (IN.rmb || IN.keys.KeyK) && !bow && !axeThrowOn() && !handBusy() && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16; no guard with the bow: the right button draws it, BOW) */
   if (bow) { var drawing = (IN.rmb || IN.keys.KeyK) && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && !p.trapAim; p.bowDraw = drawing ? Math.min(bowFull() * (1 + bowOver()), (p.bowDraw || 0) + dt) : 0; if (p.guard) p.guard = false; } else p.bowDraw = 0;
   if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
