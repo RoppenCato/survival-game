@@ -2151,9 +2151,6 @@ __COMBAT__
   var village = null, npc = null;
   var LOREBOOK = __LOREBOOK__ || {}, PORTRAITS = __PORTRAITS__ || {};   /* the lore's names and the Lore Book's words, never its bodies; the talk window's pictures by lore id (tools/build.py; docs/talk-and-lore-book.md) */
   var LORE = __LORE__ || {};               /* the Lore Director's lines (assets/lore/lore.json, inlined by tools/build.py; 2026-10-16): { id: { mode, lines } } */
-  /* LORE? Placeholders for Arnor while no sleeping place is marked, or one is marked with no bed (2026-10-25): asked of Alistair, LD */
-  if (!LORE['line.arnor.wait.no-zone']) LORE['line.arnor.wait.no-zone'] = { mode: 'variants', lines: ['Mark where you will sleep. A man needs one place that is his.', 'Pick your corner and put a post in it. Then build round it.'] };
-  if (!LORE['line.arnor.wait.no-bed']) LORE['line.arnor.wait.no-bed'] = { mode: 'variants', lines: ['You have marked your place. Now put a bed in it.', 'A sleeping place with no bed is only a square of ground.'] };
   function loreLines(id, fallback) { var e = LORE[id]; return e && e.lines && e.lines.length ? e.lines : (fallback || ['']); }
   /* Arnor, the village smith, the one Ormr Midgardbane left alive to tell it (the lore's person.arnor, Robin 2026-10-16; he was
      Arnor the dwarf until then). He tells the story once, names what your home still lacks, and when it is a home (Comfort 4)
@@ -2713,6 +2710,7 @@ __COMBAT__
     if (ev === 'scared') { note('Too soon: it darted off'); fishSnd('fish_splash', 'clink', 1, 2); }
     else if (ev === 'hooked') { fishSnd('fish_splash', 'craft', 1, 0); fishFloat.splash = 0.8; }
   }
+  function fishBubbles(n) { if (!fishFloat) return; if (!fishFloat.bub) fishFloat.bub = []; for (var i = 0; i < n; i++) fishFloat.bub.push({ dx: (Math.random() - 0.5) * 7, dy: 1 + Math.random() * 1.5, r: 0.6 + Math.random() * 0.7, t: -i * 0.06 }); }   /* bubbles that rise beside the float and pop */
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
   function fishBubble(P) {                 /* the prompt over him with a rod in hand: the mouse's button and the word (no E) */
     if (fishing) { if (fishing.phase === 'bite') return { say: 'Hook it', mouse: 'L' }; if (fishing.phase === 'fight') return { say: fishing.run > 0 ? 'Let it run' : 'Hold to reel', mouse: 'L' }; return null; }
@@ -2740,14 +2738,15 @@ __COMBAT__
     fishInput(dt);
     if (!fishing) return; var P = hero(), K2 = Combat.dbg().IN.keys;
     if (P.dead || sleep || K2.KeyW || K2.KeyA || K2.KeyS || K2.KeyD || P.mode !== 'gather' || !rodInHand()) { fishEnd(); return; }   // walking off, or the rod put away, ends the round
-    P.vx = P.vy = 0; if (fishFloat.splash > 0) fishFloat.splash -= dt;
+    P.vx = P.vy = 0; if (fishFloat.splash > 0) fishFloat.splash -= dt; if (fishFloat.bub) { for (var bi = fishFloat.bub.length - 1; bi >= 0; bi--) { fishFloat.bub[bi].t += dt; if (fishFloat.bub[bi].t > 0.55) fishFloat.bub.splice(bi, 1); } }
     if (P.fishT > 0) { P.fishT -= dt; if (P.fishT <= 0) P.fishT = 0; }   /* the cast plays, then the pose follows the round */
     if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.fly = fishFloat.flyLen || FISH_POSE.fly; fishFloat.from = rodTip ? { x: rodTip.x, y: rodTip.y } : null; }   /* the float leaves the rod at the cast's contact and flies out */
     if (fishFloat && fishFloat.fly > 0) { fishFloat.fly -= dt; if (fishFloat.fly <= 0) { fishFloat.fly = 0; fishFloat.splash = 0.5; fishSnd('fish_plop', 'pick'); } }   /* and lands with a splash */   /* the float leaves the rod at the cast's loose and lands with a splash */
     if (P.fishT <= 0) P.fishPose = fishing.phase === 'fight' ? 'fight' : 'wait';
     var ev = Fishing.tick(fishing, dt, reelHeld); fishReelLoop(!!fishing && fishing.phase === 'fight' && reelHeld && !(fishing.run > 0));
-    if (ev === 'nibble') { fishFloat.splash = 0.25; }
-    else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.6; }
+    if (ev === 'nibble') { fishFloat.splash = 0.2; }
+    else if (ev === 'tap') { fishFloat.splash = 0.3; fishBubbles(2 + Math.floor(Math.random() * 2)); fishSnd('fish_plop', 'pick', 0.35); }   /* a blub: a ripple, a few bubbles, a soft plop */
+    else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.7; fishBubbles(4); }
     else if (ev === 'missed') { note('It let go'); }
     else if (ev === 'run') { fishSnd('fish_splash', 'pick', 1, 1); fishFloat.splash = 0.5; }
     else if (ev === 'lost') { note('The line snapped'); fishSnd('fish_snap', 'fall'); fishEnd(); }
@@ -2762,7 +2761,7 @@ __COMBAT__
   }
   function fishPoseTick(dt) { var P = hero(); if (!fishing && P.fishPose === 'land') { P.fishT -= dt; if (P.fishT <= 0 || !rodInHand()) { P.fishPose = null; P.fishT = 0; P.fishLift = null; } } }   /* the catch lifted a moment after the round ends */
   function drawFishing(c) {                // the line from the rod's tip to the float, the float, the fish's shadow and splashes
-    if (!fishing || !fishFloat) return; var P = hero(), st = fishing, fx = fishFloat.x, fy = fishFloat.y * K + st.bob * 0.6, tipX = rodTip ? rodTip.x : P.x + Math.cos(P.face) * 22, tipY = rodTip ? rodTip.y : P.y * K - 34 - (hero().lvl ? UP : 0);
+    if (!fishing || !fishFloat) return; var P = hero(), st = fishing, fx = fishFloat.x, fy = fishFloat.y * K + (st.phase === 'fight' ? st.bob * 0.6 : st.bob), tipX = rodTip ? rodTip.x : P.x + Math.cos(P.face) * 22, tipY = rodTip ? rodTip.y : P.y * K - 34 - (hero().lvl ? UP : 0);
     var hookC = (function () { var r = handItem(); return r && r.mat === 'iron' ? '#5a5f66' : 'rgba(239,230,210,0.8)'; })();   /* the hook beside the float: iron on the iron-hooked rod, bone on the hazel (Colin, AD: the two rods look alike in the hand, the hook tells them apart) */
     function floatAt(x, y) { c.fillStyle = '#efe6cf'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(x, y, 2.2, 3.2, 0, 0, 7); c.fill(); c.stroke(); c.fillStyle = '#b83a2e'; c.beginPath(); c.ellipse(x, y - 1.4, 2.2, 1.8, 0, Math.PI, 0); c.fill(); }
     function hookAt(x, y) { c.strokeStyle = hookC; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.4); c.arc(x - 0.9, y + 2.4, 0.9, 0, Math.PI * 0.85); c.stroke(); }
@@ -2771,7 +2770,9 @@ __COMBAT__
     if (st.phase === 'fight') { var sh = Math.max(4, 5 + st.fish.size * 7), away = st.run > 0 ? 10 : 4; c.fillStyle = 'rgba(20,30,40,0.38)'; c.beginPath(); c.ellipse(fx + fishFloat.cx * away, fy + fishFloat.cy * away * K + 2, sh, sh * 0.42, Math.atan2(fishFloat.cy * K, fishFloat.cx), 0, 7); c.fill(); }   // the fish, a shadow under the surface
     c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && reelHeld ? 2 : 14), fx, fy); c.stroke();
     if (fishFloat.splash > 0) { var sp = fishFloat.splash; c.strokeStyle = 'rgba(235,250,255,' + (sp * 0.9).toFixed(2) + ')'; c.lineWidth = 1; c.beginPath(); c.ellipse(fx, fishFloat.y * K + 1, 6 + (0.8 - sp) * 14, (6 + (0.8 - sp) * 14) * 0.45, 0, 0, 7); c.stroke(); }
-    floatAt(fx, fy); if (st.phase !== 'fight') hookAt(fx + 3.2, fy + 1.5);   // the cork float, red on top, the hook beside it
+    var wl = fishFloat.y * K + 2.2;   /* the water line: the float is drawn sunk by its dip and cut there, so a tap dips it and a bite pulls it under to its red cap */
+    if (fishFloat.bub) fishFloat.bub.forEach(function (b) { if (b.t < 0) return; var u = b.t / 0.55; c.strokeStyle = 'rgba(239,230,210,' + (0.75 * (1 - u)).toFixed(2) + ')'; c.lineWidth = 0.5; c.beginPath(); c.arc(fx + b.dx, wl - 1 - b.dy * u * 3, b.r * (1 + u * 0.6), 0, 7); c.stroke(); });
+    c.save(); c.beginPath(); c.rect(fx - 8, wl - 40, 16, 40); c.clip(); floatAt(fx, fy); c.restore(); if (st.phase !== 'fight' && st.phase !== 'bite') hookAt(fx + 3.2, fishFloat.y * K + 1.5);   // the cork float, red on top, the hook beside it
     if (st.phase === 'fight') {            // the line's tension over the hero: a small bar that fills red, the fish's distance under it
       var bx = P.x + (fishFloat.cx > 0 ? -22 : 14), by = P.y * K - 40 - (hero().lvl ? UP : 0), t = st.tension, got = 1 - Math.min(1, st.dist / (60 + st.fish.size * 60));   /* upright beside him, clear of the prompt over his head (2026-10-24): the line's tension, and the fish drawn in */
       c.fillStyle = 'rgba(20,16,30,0.7)'; c.fillRect(bx - 1, by - 1, 5, 34); c.fillStyle = t > 0.75 ? '#e0483a' : t > 0.5 ? '#e8a040' : '#9be58b'; c.fillRect(bx, by + 32 * (1 - t), 3, 32 * t);

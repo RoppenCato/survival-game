@@ -56,9 +56,13 @@ var Fishing = (function () {
   }
   function tick(st, dt, held) {
     st.time += dt; st.t += dt;
-    if (st.phase === 'wait') { st.bob = Math.sin(st.time * 2.2) * 0.5; if (st.t >= st.until) { st.phase = 'nibble'; st.t = 0; st.until = 0.6 + st.R() * 0.7; return 'nibble'; } return null; }
-    if (st.phase === 'nibble') { st.bob = Math.sin(st.time * 14) * 1.6; if (st.t >= st.until) { st.phase = 'bite'; st.t = 0; st.until = 0.9 - st.fish.fight * 0.25; return 'bite'; } return null; }
-    if (st.phase === 'bite') { st.bob = 4 + Math.sin(st.time * 20) * 1.5; if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'missed'; } return null; }
+    if (st.phase === 'wait') { st.bob = Math.sin(st.time * 2.2) * 0.5; if (st.t >= st.until) { st.phase = 'nibble'; st.t = 0; st.until = 1.3 + st.R() * 1.2; st.tap = 0; st.tapIn = 0.05; return 'nibble'; } return null; }
+    if (st.phase === 'nibble') {          /* a fish at the bait (Robin, 2026-10-25: "a little blub blub when there's a fish to catch"): the float tapped down now and then, a quick dip that bobs back */
+      st.tap = Math.max(0, (st.tap || 0) - dt * 5.5); st.tapIn -= dt; var tapped = false; if (st.tapIn <= 0) { st.tap = 1; st.tapIn = 0.35 + st.R() * 0.45; tapped = true; }
+      st.bob = Math.sin(st.time * 3) * 0.4 + 2.6 * Math.sin(Math.min(1, 1 - st.tap) * Math.PI) * (st.tap > 0 ? 1 : 0);
+      if (st.t >= st.until) { st.phase = 'bite'; st.t = 0; st.until = 0.9 - st.fish.fight * 0.25; return 'bite'; } return tapped ? 'tap' : null;
+    }
+    if (st.phase === 'bite') { var sn = Math.min(1, st.t / 0.07); st.bob = 4.6 * (1 - (1 - sn) * (1 - sn)) + Math.sin(st.time * 22) * 0.6;   /* the bite snaps it down, under to its red cap (Robin: "make it snap down a little") */ if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 3 + st.R() * 6; st.fish = roll(st.R, st.depth, st.lowland, st.fresh); return 'missed'; } return null; }
     if (st.phase === 'fight') {
       var f = st.fish, ev = null;
       if (st.run > 0) { st.run -= dt; if (st.run <= 0) { st.run = 0; st.runIn = (1.2 + st.R() * 2.8) / Math.max(0.3, f.runs); } }

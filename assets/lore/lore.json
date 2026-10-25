@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-24T12:51:24.555Z",
+ "built": "2026-10-25T10:29:57.117Z",
  "entries": [
   {
    "id": "world.realm",
@@ -80,7 +80,7 @@
    "region": "home",
    "tags": "the starter island, the wreck, Arnor, the rowboat",
    "game": "game.html from the wreck",
-   "body": "**What it holds (the game's):** the wreck on the beach, the broken steading, the survivor, the first home (Comfort 4), the\nfirst night and its wolves, the rowboat (Robin, 2026-10-22: it replaces the raft). No ring. The rule: the unprepared are weak, the prepared are fine; night is dangerous\nand home with a fire is safe.\n\n**Robin's start (2026-10-16):** the hero wakes on the beach beside a broken boat, or drifts ashore, with nothing. Why he was\nat sea is never explained, and the player names him. Inland is a burnt village, and in it the survivor, **Arnor**, the\nsmith, scavenging and fixing what he can. Ormr Midgardbane's raiders always leave one alive to tell the story.\n\nPROPOSED: **The beats.**\n\n| Beat | Where it is found |\n| --- | --- |\n| **The wreck.** Nothing in your hands, and nothing to say who you are. | The game's start. |\n| **The smoke.** A thin column over the trees: Arnor's fire. | The game's `start-loop.md` idea. |\n| **The one who was left.** A man in the ruin, mending a door for a house with no roof. He looks at you a long time, and tells it. | Arnor's meet lines ([[line.arnor.meet]]). |\n| **The graves.** Arnor says who lies in each, and the crooked runes on Thorgunna's stone. | The graves behind the hall ([[line.arnor.graves]]). |\n| **The golden glint.** In an oak grove at midsummer dusk. Nobody explains it. | [[legend.gullinbursti]] |\n| **The first night.** Wolves; the fire keeps them off; Arnor says one line about the dark. | The game's first night. |\n| **The boat, and east.** \"Then east, past the big island. That is where his sails went.\" | Arnor's teach lines; the banner. |\n\n**The way on:** Ormr's name, the direction east, and Arnor at the shore as you go."
+   "body": "**What it holds (the game's):** the wreck on the beach, the broken steading, the survivor, the first home (Comfort 4), the\nfirst night and its wolves, the rowboat (Robin, 2026-10-22: it replaces the raft). No ring. The rule: the unprepared are weak, the prepared are fine; night is dangerous\nand home with a fire is safe.\n\nIN THE GAME: Robin, 2026-10-25: building starts with places. The hero sets down a post and drags out a square, and what stands\ninside gives the place its level. The first kind is the sleeping place, and its level replaces comfort. The hirdmen will get a\nbuilding of their own.\n\n**Robin's start (2026-10-16):** the hero wakes on the beach beside a broken boat, or drifts ashore, with nothing. Why he was\nat sea is never explained, and the player names him. Inland is a burnt village, and in it the survivor, **Arnor**, the\nsmith, scavenging and fixing what he can. Ormr Midgardbane's raiders always leave one alive to tell the story.\n\nPROPOSED: **The beats.**\n\n| Beat | Where it is found |\n| --- | --- |\n| **The wreck.** Nothing in your hands, and nothing to say who you are. | The game's start. |\n| **The smoke.** A thin column over the trees: Arnor's fire. | The game's `start-loop.md` idea. |\n| **The one who was left.** A man in the ruin, mending a door for a house with no roof. He looks at you a long time, and tells it. | Arnor's meet lines ([[line.arnor.meet]]). |\n| **The graves.** Arnor says who lies in each, and the crooked runes on Thorgunna's stone. | The graves behind the hall ([[line.arnor.graves]]). |\n| **The golden glint.** In an oak grove at midsummer dusk. Nobody explains it. | [[legend.gullinbursti]] |\n| **The first night.** Wolves; the fire keeps them off; Arnor says one line about the dark. | The game's first night. |\n| **The boat, and east.** \"Then east, past the big island. That is where his sails went.\" | Arnor's teach lines; the banner. |\n\n**The way on:** Ormr's name, the direction east, and Arnor at the shore as you go."
   },
   {
    "id": "chapter.2",
@@ -822,6 +822,40 @@
     "The plank house by the well still has its bones. Put walls on it before the dark, if you mean to stay."
    ],
    "body": "Arnor never asks who the hero is. He has noticed there is no ring, no kin and no answer, and he lets it be."
+  },
+  {
+   "id": "line.arnor.wait.no-zone",
+   "title": "Arnor, no sleeping place is marked",
+   "kind": "line",
+   "status": "canon",
+   "decided": "Robin, 2026-10-25: \"Yes, Arnor's sleeping-place lines go in as written, in place of the placeholders.\"",
+   "summary": "Building starts with places (Robin, 2026-10-25): the hero can build, but has not yet marked where he will sleep. Arnor nudges.",
+   "speaker": "person.arnor",
+   "when": "brokkState wait; the hero can build, and no sleeping place is marked yet",
+   "mode": "variants",
+   "lines": [
+    "A smith marks the iron before he strikes. Mark the spot you'll sleep on, then build round it.",
+    "Every hall on these islands began the same way: a man stood still, said \"here\", and drove a post in.",
+    "You can't build a house in general. Choose a corner of the world and put a post in it."
+   ],
+   "body": "Was, Clive, GD's placeholders: \"Mark where you will sleep. A man needs one place that is his.\" | \"Pick your corner and put a post in it. Then build round it.\""
+  },
+  {
+   "id": "line.arnor.wait.no-bed",
+   "title": "Arnor, the sleeping place has no bed",
+   "kind": "line",
+   "status": "canon",
+   "decided": "Robin, 2026-10-25: \"Yes, Arnor's sleeping-place lines go in as written, in place of the placeholders.\"",
+   "summary": "A sleeping place is marked, but there is no bed in it.",
+   "speaker": "person.arnor",
+   "when": "brokkState wait; a sleeping place is marked, with no bed in it",
+   "mode": "variants",
+   "lines": [
+    "That's a square of ground with a post in it. Put a bed in it and it's a place.",
+    "Thorgunna's first bed here was straw on flat stones. She slept like a jarl. Start with that.",
+    "I've slept on the forge floor two winters. Don't copy me. Put a bed in it."
+   ],
+   "body": "Was, Clive, GD's placeholders: \"You have marked your place. Now put a bed in it.\" | \"A sleeping place with no bed is only a square of ground.\""
   },
   {
    "id": "line.arnor.wait.no-walls",
