@@ -485,10 +485,10 @@ walls do not bound it (Robin: "it should be free"); two places of one kind may n
 workbench, a rug and up to two other pieces of furniture add 1 each (at most 7, the old scale, so the rested time, the heal, the
 comfort line and Arnor's teaching at 4 read it as before; `sleepComfortAt`, `baseComfort`); on your own ground **a bed answers only
 inside a sleeping place** ("Mark a sleeping place round it"; a village's beds as before); the first time a place counts its name
-shows once; in build mode the places show as soft squares with their level, **Z** hides and shows them, and **the chart's − pulls the
+shows once; in build mode the places show on the ground in **Colin, AD's recipe** (2026-10-25: each kind in its sign's colour lightened, `ZONE[kind].col`, a dark hair under every edge, an idle place only its corners and a faint fill, the one under the cursor its whole dashed edge and a stronger fill, the larger drawn first, its sign's badge `places/zoneSign_<kind>` before its name and level under the square), **Z** hides and shows them, and **the chart's − pulls the
 view further out while building** (`BZ_STEPS`, apart from the play zoom); an older save's rooms with a bed got a sleeping place over
 each once (`zonesTick`, `B.zonesV`); Arnor's wait has two placeholder lines for no place marked and a place with no bed (`LORE?`,
-asked of Alistair, LD); the post is the rail post's picture until Colin, AD's (`STAND_IN` `zonePost`). The other places (`docs/idea-bank.md`)
+asked of Alistair, LD); **the post is Colin, AD's** (`assets/props/places`, his `out/places` copied whole: a short gabled oak plank with curled shoulders set in stones, 0.85 m, a carved and painted sign a kind, `zonePost_<kind>`: the sleeping place's the moon in woad blue; the hall, hearth, storehouse, smithy, weaving, woodwork and grove signs and a blank `zonePost` wait for their places; the Building icon `pieces/zonePost`). The other places (`docs/idea-bank.md`)
 are not built. **A fire burns outdoors** (a campfire or a hearth cannot be built inside) and counts as the house's
 hearth within `FIRE_YARD` 100 units of it; a fireplace goes inside, but not on the starter island (Robin). **The fires are the
 Art Director's set pieces** (Robin, 2026-10-20: "use the fire models"; `assets/fires`, copied whole from its `out/fires/sheets`,

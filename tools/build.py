@@ -149,6 +149,10 @@ def hud_art():
     if os.path.isdir(sd):
         for fn in sorted(os.listdir(sd)):
             if fn.endswith('.png'): out['ship/' + fn[:-4]] = '../assets/hud/ship/' + fn + '?v=' + hashlib.md5(open(os.path.join(sd, fn), 'rb').read()).hexdigest()[:8]
+    pl = os.path.join(d, 'places')   # the places' sign badges (Colin, AD, 2026-10-25): places/zoneSign_<kind>
+    if os.path.isdir(pl):
+        for fn in sorted(os.listdir(pl)):
+            if fn.endswith('.png'): out['places/' + fn[:-4]] = '../assets/hud/places/' + fn + '?v=' + hashlib.md5(open(os.path.join(pl, fn), 'rb').read()).hexdigest()[:8]
     rd = os.path.join(d, 'runes')   # the runes' marks and slot icons (Colin, AD, 2026-10-23)
     if os.path.isdir(rd):
         for fn in sorted(os.listdir(rd)):
