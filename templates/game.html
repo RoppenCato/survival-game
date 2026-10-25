@@ -5794,7 +5794,7 @@ __COMBAT__
     var base = fa.kind === 'wall' ? 'fireArrowWall' : 'fireArrowGround', nm = base + (fa.t < FA.burn ? '_' + (Math.floor(clock * 12) % 6) : '_out'); if (!World.IMAGES[nm]) return; var sp = sprite(nm); if (!sp || !sp.cv || sp.w <= 1) return;
     c.save(); c.globalAlpha = Math.max(0, Math.min(1, (FA.life - fa.t) / FA.fade)); c.translate(fa.x, fa.y * K); if (fa.flip) c.scale(-1, 1); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore();
   }   /* the Fire-arrow: where it lands by a wall or under a roof of a place not yours, it lights it */
-  function runeReadyTick() { runeTick(); if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
+  function runeReadyTick() { runeTick(); if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } }
   function riteTick2(dt) {
     if (!ceremony) { riteSky.motes.length = 0; riteSky.rings.length = 0; riteSky.flow.length = 0; riteSky.learn = Math.max(0, riteSky.learn - dt * 0.5); riteSky.glow = 0; riteKnife = false; riteSky.camK = Math.max(0, riteSky.camK - dt / 1.6); riteSky.dark = Math.max(0, riteSky.dark - dt / 2); riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); if (riteSky.camK <= 0) riteSky.at = null; return; } var C = ceremony; C.t += dt;
     riteSky.flash = Math.max(0, riteSky.flash - dt * 2.5); riteSky.at = C.it; riteSky.camK = Math.min(1, riteSky.camK + dt / 1.6); motesTick(dt, C);
@@ -5844,12 +5844,65 @@ __COMBAT__
       else if (it.broken) (function (it) { var pl = stonePlaces(it, it.broken.ids.length + 1); items.push({ y: it.y + 30, f: function () { it.broken.t += 1 / 60; if (it.broken.t > 8) { it.broken = null; return; } it.broken.ids.forEach(function (id, k) { var kk = k >= (it.broken.pick || 0) ? k + 1 : k, q = pl[kk] || pl[0]; ctx.save(); ctx.globalAlpha = Math.min(1, (8 - it.broken.t) / 2); broken(q.x, q.sy, k); ctx.restore(); }); } }); })(it);   /* the broken stones lie a while and fade */
     });
   }
-  function drawRuneMarks(c) {                  // by the toolbar: a mark for each active slot with a rune, its red ring filling with the blows landed (the blood)
-    if (invOpen || menu || pauseOpen || naming || bookOpen) return; var sz = 11, gap = 2, x0 = Math.round((400 - (6 * sz + 5 * gap)) / 2), y0 = 250 - sz - 5, k = 0;
-    Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var id = Runes2.bound(R2, sl.id); if (!id) return; var cx = x0 + 6 * sz + 5 * gap + 9 + k * 15, cy = y0 + sz / 2, ch = Runes2.charge(R2, sl.id), icon = himg('runes/mark_' + id); k++;
-      c.save(); c.fillStyle = 'rgba(20,14,10,0.8)'; c.beginPath(); c.arc(cx, cy, 6.2, 0, 7); c.fill(); if (icon) { c.globalAlpha = ch >= 1 ? 1 : 0.55; c.drawImage(icon, cx - 4, cy - 4, 8, 8); c.globalAlpha = 1; } else Runes2.glyph(c, id, cx, cy, 7, ch >= 1 ? '#ead08a' : 'rgba(246,226,184,0.5)', 0.8);
-      if (Runes2.need(R2, sl.id)) { c.strokeStyle = 'rgba(184,53,44,0.35)'; c.lineWidth = 1.4; c.beginPath(); c.arc(cx, cy, 6.2, 0, 7); c.stroke(); } if (ch > 0 && Runes2.need(R2, sl.id)) { c.strokeStyle = ch >= 1 ? '#e04a3c' : '#b8352c'; c.beginPath(); c.arc(cx, cy, 6.2, -Math.PI / 2, -Math.PI / 2 + ch * 6.283); c.stroke(); } c.restore(); });
+  /* The rune screen on O (Robin, 2026-10-25: "some sort of rune interface you can also open when you are not at the altar. Where you can see the runes you have activated. It should also clearly explain what buttons you use, how the rune is used and how you do it"; and "we're gonna need some interface for that, and also later pets, hirdmen, base etc."): one board in the Lore Book's clothes with tabs down its left edge, each once it has something (Runes now; the hird, the pets and home later, mine). The left page: every slot and what is bound in it; the right page: the rune chosen, its tier, the keys drawn as key caps (Runes2.howOf), the weapon it wants, its stamina, what it does tier by tier and how near it is to growing. It only reads: runes are bound at the altar. */
+  var obOpen = false, OB = { tab: 'runes', sel: 'guardBlow' };
+  var OB_TABS = [['runes', 'Runes']];
+  var OB_SLOTS = ['guardBlow', 'dash', 'swing', 'shot', 'hand', 'foot', 'eye', 'heart', 'hearth', 'helm'];
+  function obOpenIt() { obOpen = true; bookOpen = false; invOpen = false; cookOpen = false; menu = null; mapOpen = false; altarOpen = false; musterOpen = false; clothOpen = false; uiSfx('book_open'); }
+  function obRows() {                        // in the board's pixels: the left page's rows, the actives first
+    var out = [], y = 30 + 104; OB_SLOTS.forEach(function (sid, i) { if (i === 4) y += 34; out.push({ id: sid, x: 44, y: y, w: 400, h: 42 }); y += 44; }); return out;
   }
+  function obKeyLine(c, line, x, y) {        // a line with its [keys] drawn as key caps
+    var parts = line.split(/\[([^\]]+)\]/), cx = x; parts.forEach(function (p, i) {
+      if (!p) return; if (i % 2 === 0) { c.font = hf('', 15); hText(c, p, cx, y, c.font, HC.ink); cx += c.measureText(p).width; return; }
+      c.font = hf('bold', 13); var w = Math.max(24, c.measureText(p).width + 14); cx += 3;
+      c.fillStyle = 'rgba(60,40,24,0.35)'; c.beginPath(); c.roundRect(cx, y - 17, w, 24, 5); c.fill();
+      c.fillStyle = '#efe3c4'; c.beginPath(); c.roundRect(cx, y - 19, w, 22, 5); c.fill(); c.strokeStyle = HC.sepia; c.lineWidth = 1.2; c.stroke();
+      hText(c, p, cx + w / 2, y - 3, c.font, HC.ink, 'center'); cx += w + 3; });
+  }
+  function drawOwnBook(c) {
+    c.save(); c.fillStyle = 'rgba(16,12,10,0.35)'; c.fillRect(0, 0, 400, 250); c.restore();
+    hPx(c, LBB.x, LBB.y, function () {
+      var bw = 960, bh = 640, lx = 30, rx = bw / 2 + 6, py = 30, pw = bw / 2 - 36, ph = bh - 60, i, rows = obRows();
+      OB_TABS.forEach(function (t, ti) { var tx = -18, ty = 70 + ti * 68, on = t[0] === OB.tab, im = himg(on ? 'tab_on' : 'tab_off'); if (im) c.drawImage(im, tx, ty, 20, 60); else { c.fillStyle = on ? '#7a2a20' : '#4a3324'; c.fillRect(tx, ty, 20, 60); } c.save(); c.translate(tx + 14, ty + 30); c.rotate(-Math.PI / 2); hText(c, t[1], 0, 0, hf('bold', 12), HC.cream, 'center'); c.restore(); });
+      hBoard(c, bw, bh); hVellum(c, lx, py, pw, ph, 'card_frame'); hVellum(c, rx, py, pw, ph, 'card_frame');
+      var sg = c.createLinearGradient(bw / 2 - 20, 0, bw / 2 + 20, 0); sg.addColorStop(0, 'rgba(40,24,14,0)'); sg.addColorStop(0.5, 'rgba(40,24,14,0.35)'); sg.addColorStop(1, 'rgba(40,24,14,0)'); c.fillStyle = sg; c.fillRect(bw / 2 - 20, py, 40, ph);
+      lbHeading(c, 'Runes', lx + 26, py + 46, false);
+      hText(c, 'Used when you will', lx + 26, py + 92, hf('italic', 14), HC.sepia); hText(c, 'Always with you', lx + 26, rows[4].y - 12, hf('italic', 14), HC.sepia);
+      var hov = obRowAt();
+      rows.forEach(function (rw) { var sl = Runes2.SLOT[rw.id] || {}, id = Runes2.bound(R2, rw.id), r = id && Runes2.BY[id], on = rw.id === OB.sel;
+        if (on || hov === rw.id) { c.fillStyle = on ? 'rgba(184,140,60,0.22)' : 'rgba(184,140,60,0.1)'; c.fillRect(rw.x - 8, rw.y, rw.w, rw.h); }
+        var ic = id && himg('runes/mark_' + id); c.fillStyle = 'rgba(40,26,16,0.85)'; c.beginPath(); c.arc(rw.x + 18, rw.y + 21, 18, 0, 7); c.fill(); if (ic) c.drawImage(ic, rw.x + 5, rw.y + 8, 26, 26); else { c.strokeStyle = 'rgba(234,208,138,0.35)'; c.lineWidth = 1; c.beginPath(); c.arc(rw.x + 18, rw.y + 21, 9, 0, 7); c.stroke(); }
+        hText(c, sl.name || rw.id, rw.x + 48, rw.y + 16, hf('italic', 13), HC.sepia);
+        hText(c, r ? r.name : 'nothing bound', rw.x + 48, rw.y + 35, r ? hf('bold', 16) : hf('italic', 15), r ? HC.ink : 'rgba(107,82,54,0.6)');
+        if (r) hText(c, ['', 'I', 'II', 'III'][Runes2.tierOf(R2, id)] || '', rw.x + rw.w - 20, rw.y + 30, hf('bold', 15), HC.rubric, 'right'); });
+      // the right page
+      var sid = OB.sel, sl = Runes2.SLOT[sid] || {}, id = Runes2.bound(R2, sid), r = id && Runes2.BY[id], x = rx + 30, cw = pw - 60, y;
+      if (!r) {
+        lbHeading(c, sl.name || sid, x, py + 70, true); hText(c, 'Nothing is bound here.', x, py + 104, hf('italic', 15), HC.sepia);
+        y = py + 150; hText(c, 'A rune here works through ' + (sl.input || 'this') + '.', x, y, hf('', 15), HC.ink); y += 36;
+        if (sl.active) { hText(c, 'How', x, y, hf('bold', 15), HC.rubric); y += 30; (Runes2.HOW.slot[sid] || []).forEach(function (ln) { obKeyLine(c, ln, x, y); y += 30; }); y += 10; }
+        var fit = Object.keys(R2.lib || {}).filter(function (k) { return Runes2.BY[k] && Runes2.BY[k].slot === sid; });
+        if (fit.length) { hText(c, 'Runes you know for it', x, y, hf('bold', 15), HC.rubric); y += 24; c.font = hf('', 15); wrapLines(c, fit.map(function (k) { return Runes2.BY[k].name; }).join(', '), cw).forEach(function (ln) { hText(c, ln, x, y, c.font, HC.ink); y += 21; }); }
+        hText(c, 'Runes are bound at the stone altar.', x, py + ph - 26, hf('italic', 14), HC.sepia); return;
+      }
+      var t = Runes2.tierOf(R2, id), ic = himg('runes/mark_' + id); c.fillStyle = 'rgba(40,26,16,0.9)'; c.beginPath(); c.arc(x + 34, py + 66, 34, 0, 7); c.fill(); if (ic) c.drawImage(ic, x + 8, py + 40, 52, 52);
+      lbHeading(c, r.name, x + 84, py + 66, true); hText(c, 'Tier ' + ['', 'I', 'II', 'III'][t] + ' of III  ·  ' + (sl.name || sid), x + 84, py + 92, hf('italic', 14), HC.sepia);
+      y = py + 142;
+      if (sl.active) {
+        hText(c, 'How', x, y, hf('bold', 15), HC.rubric); y += 30; Runes2.howOf(id).forEach(function (ln) { obKeyLine(c, ln, x, y); y += 30; });
+        var wp = Runes2.HOW.wpn[id]; if (wp) { hText(c, 'With ' + wp + ' in hand.', x, y, hf('italic', 15), HC.sepia); y += 26; }
+        var st0 = Runes2.cost(R2, sid); hText(c, st0 ? 'It costs ' + st0 + ' stamina.' : sid === 'dash' ? 'It costs what a dash costs.' : 'It costs nothing more than the blow.', x, y, hf('', 15), HC.ink); y += 34;
+      } else { var wp2 = Runes2.HOW.wpn[id]; hText(c, 'Always on: nothing to press.' + (wp2 ? ' It works with ' + wp2 + ' in hand.' : ''), x, y, hf('italic', 15), HC.sepia); y += 34; }
+      hText(c, 'What it does', x, y, hf('bold', 15), HC.rubric); y += 24;
+      (r.text || []).forEach(function (tx, k) { var now = k < t, line = (k ? (now ? '' : 'At tier ' + ['', 'I', 'II', 'III'][k + 1] + ': ') : '') + tx; c.font = now ? hf('', 15) : hf('italic', 14); wrapLines(c, line, cw).forEach(function (ln) { hText(c, ln, x, y, c.font, now ? HC.ink : 'rgba(107,82,54,0.7)'); y += now ? 21 : 19; }); y += 4; });
+      if (t < Runes2.TIERS) { var u = (R2.uses && R2.uses[id]) || 0, g0 = Runes2.GROW[t - 1] || 0, g1 = Runes2.GROW[t], k2 = Math.max(0, Math.min(1, (u - g0) / Math.max(1, g1 - g0))); y = Math.max(y + 8, py + ph - 84);
+        hText(c, 'It grows with use: ' + Math.min(u, g1) + ' of ' + g1 + ' to tier ' + ['', 'I', 'II', 'III'][t + 1] + '.', x, y, hf('', 14), HC.sepia); y += 10; c.fillStyle = 'rgba(60,40,24,0.25)'; c.fillRect(x, y, cw, 6); c.fillStyle = HC.rubric; c.fillRect(x, y, cw * k2, 6); }
+      hText(c, 'Runes are bound at the stone altar.', x, py + ph - 26, hf('italic', 14), HC.sepia);
+    });
+  }
+  function obRowAt() { if (!mouseS) return null; var mx = (mouseS.x - LBB.x) * 3, my = (mouseS.y - LBB.y) * 3, rs = obRows(); for (var i = 0; i < rs.length; i++) { var q = rs[i]; if (mx >= q.x - 8 && mx <= q.x - 8 + q.w && my >= q.y && my <= q.y + q.h) return q.id; } return null; }
+  function obClick() { if (!mouseS) return; var mx = (mouseS.x - LBB.x) * 3, my = (mouseS.y - LBB.y) * 3, r = obRowAt(); if (r) { OB.sel = r; uiSfx('book_page'); return; } if (mx < -20 || mx > 960 || my < 0 || my > 640) obOpen = false; }
   function stoneUnderMouse() {               // which of the storm's stones the mouse is over (the choice), -1 for none
     if (!ceremony || ceremony.phase !== 'choose' || !mouseW) return -1; var pl = stonePlaces(ceremony.it, ceremony.offer.length), my = mouseW.y * K, best = -1;
     pl.forEach(function (q, k) { if (Math.abs(mouseW.x - q.x) < 11 * STONE_SCALE && my < q.sy + 4 && my > q.sy - 26 * STONE_SCALE) best = k; }); return best;
@@ -7184,7 +7237,8 @@ __COMBAT__
       if (mapOpen) drawMap(c);
       if (bookOpen) drawBook(c);
       if (altarOpen) drawAltarBoard(c);
-      drawRite(c); if (!mapOpen) drawRuneMarks(c); drawRiteTip(c); drawFlash(c);
+      if (obOpen) drawOwnBook(c);
+      drawRite(c); drawRiteTip(c); drawFlash(c);
       drawBarDrag(c);   /* (the thing dragged off the toolbar with Shift, under the mouse) */
       if (scenePanel() && !pauseOpen && !invOpen && !altarOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
@@ -7285,11 +7339,12 @@ __COMBAT__
     if (e.code === 'KeyX') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) drawToggle(); return; }   // draw your weapon, or put it away
     if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !altarOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
+    if (e.code === 'KeyO') { e.preventDefault(); if (!e.repeat && !naming && SCENE !== 'models') { if (obOpen) { obOpen = false; uiSfx('book_close'); } else obOpenIt(); } return; }   /* O: the rune screen (Robin, 2026-10-25: "Own key. Use O.") */
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { if (bookOpen) bookOpen = false; else lbOpen(); } return; }
     if (e.code === 'KeyH') { e.preventDefault(); if (!e.repeat && !pauseOpen) { if (scenePanel()) runePanel.folded = !runePanel.folded; else skyOpen = !skyOpen; } return; }   /* in a test scene H opens and shuts its board (Robin, 2026-10-24); the sky board is Admin's Season and Weather rows there */   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
     if (altarOpen && (e.code === 'KeyE' || e.code === 'Escape') && !e.repeat) { e.preventDefault(); altarOpen = false; return; }
     if (ceremony && ceremony.phase === 'choose' && /^Digit[123]$/.test(e.code) && !e.repeat) { e.preventDefault(); ritePick(+e.code.slice(5) - 1); return; }
-    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || altarOpen || musterOpen || mapOpen || skyOpen) { skyOpen = false; altarOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
+    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || obOpen || clothOpen || altarOpen || musterOpen || mapOpen || skyOpen) { obOpen = false; skyOpen = false; altarOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }
     if (e.code === 'KeyB' && !seen.build && !SCENE && hero().mode !== 'build') { e.preventDefault(); return; }   /* (B always lets you out of build mode, even before Arnor's word) */   // (building comes with Arnor's word, 2026-10-14)
     if (!codes[e.code]) return;
@@ -7327,6 +7382,7 @@ __COMBAT__
     if (altarOpen) { altarClick(e.button); return; }
     if (ceremony && ceremony.phase === 'choose' && e.button === 0) { var ci = stoneUnderMouse(); if (ci >= 0) { ritePick(ci); return; } }
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
+    if (obOpen) { if (e.button === 0) obClick(); return; }
     var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (SHOW.book && e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
 
     if (slipsShown() && e.button === 0) { for (var sp = 0; sp < slipPins.length; sp++) if (hitS(slipPins[sp])) { pinToggle(slipPins[sp].id); return; } }   // a click on a slip's pin lets the recipe go
@@ -8371,7 +8427,7 @@ __COMBAT__
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (the Throwing axe bound)' }, { id: 'blood', name: 'Every blood ring full' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
+      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (the Throwing axe bound)' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {
@@ -8387,7 +8443,6 @@ __COMBAT__
     else if (id === 'boar' || id === 'deer' || id === 'bear') { var kb = placeAnimal(id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) Combat.api.knockOut(kb); }
     else if (id === 'boarWild') { var kw = placeAnimal('boar', 0, { x: P.x + 140, y: P.y + 20 }, false); if (kw) { kw.awake = true; kw.aggro = 60; } }
     else if (id === 'men') { [0, 1].forEach(function (k) { var m2 = spawnMan(0, P.x + 140 + k * 30, P.y + (k ? 30 : -20), k ? 'axe' : 'sword', 1, 4); m2.awake = true; m2.aggro = 60; m2.loyal = true; }); }   /* (the Battle test's men, in leather with shields, come at you at once) */
-    else if (id === 'blood') { Runes2.readyAll(R2); }
     else if (id === 'unbuilt') { Runes2.OPTS.includeData = !Runes2.OPTS.includeData; }
     else if (id === 'trees') { Runes2.learn(R2, 'thorsFell', Math.max(1, Runes2.tierOf(R2, 'thorsFell'))); Runes2.bind(R2, 'swing', 'thorsFell'); var tx0 = P.x + 70, ty0 = P.y - 30, tk; for (tk = 0; tk < 4; tk++) (function (x, y) { var near = []; w.eachProp(function (o) { if (Math.hypot(o.x - x, o.y - y) < 30) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var tp = { name: 'pine', x: x, y: y, s: 0.58, r: 11, v: tk % 3, kind: 'tree', leanDir: 1 }; tp.max = tp.hp = World.HP.pine * (0.7 + 0.6 * tp.s); w.addProp(tp); })(tx0 + tk * 44, ty0); toast('Thor\u2019s fell on the swing: fell the first pine toward the others'); }
     else if (id === 'altar') { if (runeSite) { var as1 = altarStand(runeSite); P.x = as1.x; P.y = as1.y; P.face = Math.PI / 2; P.lvl = 0; } }
@@ -8536,7 +8591,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hown ? sleepComfortAt(P.x, P.y) : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; if (obOpen && (hero().hurtT > 0 || hero().flash > 0.5)) obOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

@@ -8,9 +8,9 @@ ok(!R.bind(st, 'guardBlow', 'charge'), 'an unknown rune cannot be bound');
 ok(!R.bind(st, 'hand', 'bash'), 'a rune binds only to its own slot');
 R.learn(st, 'charge', 1); ok(R.bind(st, 'guardBlow', 'charge') && R.bound(st, 'guardBlow') === 'charge', 'the Charge learnt and bound in the Bash’s place');
 ok(R.fits(st, 'guardBlow').map(r => r.id).join(',') === 'bash,charge', 'what fits the guard-blow: ' + R.fits(st, 'guardBlow').map(r => r.id).join(','));
-ok(R.charge(st, 'guardBlow') === 0 && !R.ready(st, 'guardBlow'), 'a bound active starts empty');
-R.drawBlood(st); R.drawBlood(st); ok(Math.abs(R.charge(st, 'guardBlow') - 2 / 3) < 0.01, 'two blows landed: two thirds');
-R.drawBlood(st); ok(R.ready(st, 'guardBlow'), 'three: ready'); R.spend(st, 'guardBlow'); ok(!R.ready(st, 'guardBlow'), 'spent: empty again');
+ok(R.ready(st, 'guardBlow') && R.cost(st, 'guardBlow') === 30, 'a bound active is ready at once and costs stamina (the Charge 30): no blood ring (Robin, 2026-10-25: stamina only)');
+ok(R.howOf('bash').length > 0 && R.howOf('thorsFell')[0].indexOf('[K]') >= 0, 'the rune screen has the keys for each: ' + R.howOf('bash')[0]);
+ok(R.SLOT.dash.active && R.BY.dash.n.wrong, 'the dash slot is an active and the Dash rune has its new numbers (the slot had been written over, 2026-10-24)');
 ok(R.num(st, 'charge', 'downT') === 3 && R.num(st, 'charge', 'len') === 3, 'the Charge at tier I: three strides, the man down three seconds');
 let grew = 0; for (let i = 0; i < 50; i++) { const g = R.use(st, 'charge'); if (g) grew = g; }
 ok(grew === 2 && R.tierOf(st, 'charge') === 2 && R.num(st, 'charge', 'len') === 4, 'fifty uses: tier II, four strides');

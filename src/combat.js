@@ -22,7 +22,8 @@ function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k]
 /* The runes (src/runes2.js, Robin's rework of 2026-10-23): a page hands the engine its rune state (api.runeState: the library, what is
    bound where, the blood on each active); without one the engine keeps a starting state of its own (the Bash and the Dash), and
    without the module at all it plays as before. rune(slot): what is bound; runeHas(id): bound anywhere; runeN(id, key): the bound
-   tier's number; runeReady, runeSpend: the blood ring on an active (filled by the blows the hero lands, runeBlood); a spend counts a
+   tier's number; runeReady, runeSpend: an active costs stamina and nothing else (Robin, 2026-10-25: "stamina only"; Runes2.cost, the
+   guard-blow's own 14 included): ready with the stamina for it, and a spend takes what the move itself has not; a spend counts a
    use, and a use that raises the tier tells the page (api.onRuneGrow). Marks a foe carries (e.marks: struck, bleeding, afraid, chilled,
    burning) are how runes work together: one lays, another reads. */
 var R2DEF = null, KO_T = 60;
@@ -40,8 +41,8 @@ function berserkOn() { return runeHas('berserk') && P.hp < P.maxHp * runeN('bers
 function bowFull() { return BOW.full; }
 function bowSnap() { return BOW.dmgMin; }
 function bowOver() { return runeHas('quickDraw') ? (runeN('quickDraw', 'over') || 1) : 0; }   /* the Aimed shot (Robin, 2026-10-24): the draw goes on past full for as long again */
-function runeReady(slot) { var st = RS2(); return !st || typeof Runes2 === 'undefined' ? true : Runes2.ready(st, slot); }
-function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; Runes2.spend(st, slot); var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
+function runeReady(slot) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return true; return Runes2.ready(st, slot) && (!P || P.st >= (Runes2.cost(st, slot) || 0)); }
+function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; var own = slot === 'guardBlow' ? CROWD.shoveSt : 0, more = Math.max(0, (Runes2.cost(st, slot) || 0) - own); if (more && P) { P.st = Math.max(0, P.st - more); P.stDelay = Math.max(P.stDelay || 0, 0.6); } var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
 function runeBlood(n) { var st = RS2(); if (st && typeof Runes2 !== 'undefined') Runes2.drawBlood(st, n); }
 function markOn(e, mark, t) { if (!e) return; e.marks = e.marks || {}; e.marks[mark] = Math.max(e.marks[mark] || 0, t || 1); }
 function marked(e, mark) { return !!(e && e.marks && e.marks[mark] > 0); }

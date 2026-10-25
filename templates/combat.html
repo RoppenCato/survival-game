@@ -518,7 +518,6 @@ __SFX__
       sel.addEventListener('change', change); tier.addEventListener('change', change);
       var tw = document.createElement('span'); tw.appendChild(sel); tw.appendChild(tier); row.appendChild(tw); host.appendChild(row);
     });
-    var fl = document.createElement('label'); var fc = document.createElement('input'); fc.type = 'checkbox'; fc.checked = ARUNES.full === true; fc.addEventListener('change', function () { ARUNES.full = fc.checked; try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} if (!fc.checked && Combat.api.runeState) Runes2.readyAll(Combat.api.runeState); }); fl.appendChild(fc); fl.appendChild(document.createTextNode(' the blood rings stay full (off: they fill on blows landed, as in the game; the marks under the bars show them)')); host.appendChild(fl);
     var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'Back to the start’s'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
     runesApply();
   }
@@ -837,20 +836,11 @@ __SFX__
       d.addEventListener('toggle', function () { OPEN[k] = d.open; try { localStorage.setItem('combatarena.open', JSON.stringify(OPEN)); } catch (eO) {} }); })(ds[i]); })();
 
   var last = performance.now();
-  function drawRuneMarksA(c) {               /* the active runes' marks under the bars, as by the game's toolbar: a dark disc with the rune's glyph, its red ring filling with the blood of blows landed, bright when full (Robin, 2026-10-24, asked where the ring shows) */
-    var st = Combat.api.runeState; if (!st) return; var ps = Combat.api.pixelScale || 2, k = 0; c.save(); c.setTransform(ps, 0, 0, ps, 0, 0);
-    Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var id = Runes2.bound(st, sl.id); if (!id) return; var cx = 16 + k * 17, cy = 44, ch = Runes2.charge(st, sl.id); k++;
-      c.fillStyle = 'rgba(20,14,10,0.8)'; c.beginPath(); c.arc(cx, cy, 6.2, 0, 7); c.fill(); Runes2.glyph(c, id, cx, cy, 7, ch >= 1 ? '#ead08a' : 'rgba(246,226,184,0.5)', 0.8);
-      if (Runes2.need(st, sl.id)) { c.strokeStyle = 'rgba(184,53,44,0.35)'; c.lineWidth = 1.4; c.beginPath(); c.arc(cx, cy, 6.2, 0, 7); c.stroke(); if (ch > 0) { c.strokeStyle = ch >= 1 ? '#e04a3c' : '#b8352c'; c.beginPath(); c.arc(cx, cy, 6.2, -Math.PI / 2, -Math.PI / 2 + Math.min(1, ch) * 6.283); c.stroke(); } }
-      c.font = '600 4px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'center'; c.fillText(sl.input || sl.name, cx, cy + 11); });
-    c.restore();
-  }
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000) * clockK; last = now;
     var D = Combat.dbg(); if (immortal && !D.P.dead) { D.P.hp = D.P.maxHp; if (D.P.st < 30) D.P.st = 30; }
     if (holdAll) D.W.enemies.forEach(function (e) { e.hold = true; });
-    if (ARUNES.full === true && Combat.api.runeState) Runes2.readyAll(Combat.api.runeState);   /* the blood rings kept full only when the switch is on (Robin, 2026-10-24: "I like the idea that you need to hit an enemy 2-3 times to use an ability") */
-    Combat.update(dt); Combat.render(ctx); drawRuneMarksA(ctx);
+    Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

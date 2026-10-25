@@ -28,9 +28,9 @@ s = setup(true); r = press(s.P, s.e, false); console.log('  guard down: a low bl
 s = setup(false); r = press(s.P, s.e, true); console.log('  shoulder, no shield', JSON.stringify(r), (r.eState === 'stagger' && r.thrown > 0) ? 'ok' : '!! wrong');
 s = setup(true, true); r = press(s.P, s.e, true, true); console.log('  mouse: right held, left (Robin, 2026-10-23: "holding mouse2 and doing mouse1")', JSON.stringify(r), (r.eState === 'stagger' && r.spent === 14) ? 'ok' : '!! wrong');
 var CR = typeof Combat.api.crowd === 'function' ? Combat.api.crowd() : Combat.api.crowd; console.log('  the shield throw', CR.shoveD, 'the shoulder', CR.shoveD * CR.shoulderK);
-// the blood ring: empty, the bash does nothing; three blows landed and it is ready; the Charge bound instead: a rush that knocks the man down
-s = setup(true); Runes2.spend(s.st, 'guardBlow'); r = press(s.P, s.e, true); console.log('  ring empty: nothing', JSON.stringify(r), (r.spent === 0 && r.eState !== 'stagger') ? 'ok' : '!! wrong');
-Runes2.drawBlood(s.st); Runes2.drawBlood(s.st); Runes2.drawBlood(s.st); r = press(s.P, s.e, true); console.log('  three blows landed: ready', JSON.stringify(r), r.eState === 'stagger' ? 'ok' : '!! wrong');
+// stamina only (Robin, 2026-10-25): with too little stamina the guard-blow does nothing; with enough it comes at once; the Charge bound instead: a rush that knocks the man down
+s = setup(true); s.P.st = 10; r = press(s.P, s.e, true); console.log('  too little stamina: nothing', JSON.stringify(r), (r.spent <= 0 && r.eState !== 'stagger') ? 'ok' : '!! wrong');
+s = setup(true); r = press(s.P, s.e, true); console.log('  enough stamina: at once, no blows needed first', JSON.stringify(r), r.eState === 'stagger' ? 'ok' : '!! wrong');
 s = setup(true); Runes2.learn(s.st, 'charge', 1); Runes2.bind(s.st, 'guardBlow', 'charge'); Runes2.readyAll(s.st); s.e.guard = 0; s.e.x = s.P.x + 40; s.e.y = s.P.y; s.e.state = 'circle'; s.e.sw = null;
 Combat.button(0, true); for (let i = 0; i < 30; i++) { Combat.update(DT); if (i === 0) Combat.button(0, false); }
 console.log('  the Charge: the man in the way', JSON.stringify({ eState: s.e.state, dur: s.e.dur, uses: s.st.uses.charge || 0, heroMoved: Math.round(s.P.x - 200) }), (s.e.state === 'stagger' && s.e.dur >= 1.2 && (s.st.uses.charge || 0) === 1) ? 'ok' : '!! wrong');
