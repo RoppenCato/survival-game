@@ -7243,7 +7243,7 @@ __COMBAT__
     if (ceremony && ceremony.phase === 'choose' && /^Digit[123]$/.test(e.code) && !e.repeat) { e.preventDefault(); ritePick(+e.code.slice(5) - 1); return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || altarOpen || musterOpen || mapOpen || skyOpen) { skyOpen = false; altarOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }
-    if (e.code === 'KeyB' && !seen.build && !SCENE) { e.preventDefault(); return; }   // (building comes with Arnor's word, 2026-10-14)
+    if (e.code === 'KeyB' && !seen.build && !SCENE && hero().mode !== 'build') { e.preventDefault(); return; }   /* (B always lets you out of build mode, even before Arnor's word) */   // (building comes with Arnor's word, 2026-10-14)
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     if (e.code === 'KeyZ' && hero().mode === 'build') { zonesShow = !zonesShow; note(zonesShow ? 'Places shown' : 'Places hidden'); }   /* the places' squares on and off while building (Robin, 2026-10-25) */
@@ -7357,7 +7357,9 @@ __COMBAT__
     heroName = sv && sv.heroName ? sv.heroName : ''; pins = sv && sv.pins ? sv.pins.filter(function (id) { return !!recipeById(id); }).slice(0, 3) : []; craftN = sv && sv.craftN ? sv.craftN : {}; naming = !heroName && !SCENE && !BT.on ? { name: '' } : null;   /* the hero's name, asked once */
     ungeSense = Object.assign({ hits: 0, kills: 0, ore: 0, dead: 0, day: -1 }, sv && sv.unge ? sv.unge : {}); ungeSense.hits = 0; ungeInit = false; trollSeekT = 0;   /* the troll's young: how many are lost, and what the troll has sensed */
     buildWorld(); if (year.season !== 'summer') w.setSeason(year.season);
-    var P0 = hero(); if (P0 && P0.anim) { P0.anim.sit = 0; P0.anim.row = null; } sitting = null; talkWin = null; bookOpen = false;   /* (a restart at sea kept the hero seated at the oars as he walked: Robin, 2026-10-22) */
+    var P0 = hero(); if (P0 && P0.anim) { P0.anim.sit = 0; P0.anim.row = null; } sitting = null; talkWin = null; bookOpen = false;
+    if (P0) { P0.mode = 'fight'; P0.lastMode = 'fight'; P0.wreck = false; P0.lvl = 0; P0.sneak = false; P0.fishPose = null; P0.fishT = 0; P0.fishCharge = 0; P0.fishK = 0; P0.fishLift = null; P0.bowDraw = 0; P0.throwQ = null; P0.throwT = 0; if (!sv) { P0.dead = false; P0.hp = P0.maxHp; P0.st = 100; } }   /* a start (over) leaves nothing of the hero's moment behind: build mode with its key gone (Robin, 2026-10-25: "My character is stuck in build mode"), upstairs, a cast, a throw */
+    fishing = null; fishFloat = null; carrying = null; craftJob = null; zoneDrag = null; menu = null; invOpen = false; altarOpen = false; shipPanel = null; mapOpen = false;   /* (a restart at sea kept the hero seated at the oars as he walked: Robin, 2026-10-22) */
     for (k = 0; k < SLOTS; k++) slots[k] = null;
     recount();
     if (sv) {                                            // a saved game: the same island, with what was done to it
