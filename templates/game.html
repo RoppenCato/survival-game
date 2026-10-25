@@ -3867,7 +3867,7 @@ __COMBAT__
       if (arnorStep(dt)) return;
       var gv = village.graves, Lg = loreLines('line.arnor.graves'); npc.face = Math.atan2(gv.y - npc.y, gv.x - npc.x);
       if (d > HEAR) { if (npc.sayT > 0 && npc.seq.i >= 0) { npc.sayT = 0; npc.seq.i--; } return; }   /* (you walked off: he waits, and says the cut line again when you are back) */
-      if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = 6; } else { seen.graves = 1; runeLearn('catFoot', 1, 'the graves read'); npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
+      if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = Math.max(2.4, Math.min(6, 1.6 + Lg[npc.seq.i].length * 0.055)); }   /* (each line as long as it takes to read: handoff 14 cut them to one grave a line, 2026-10-25) */ else { seen.graves = 1; runeLearn('catFoot', 1, 'the graves read'); npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
       return;
     }
     if (npc.shore) { npc.job = null; if (d > 1600) arnorHome(); else if (d < 300) npc.face = Math.atan2(P.y - npc.y, P.x - npc.x); return; }
