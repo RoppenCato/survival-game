@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-25T11:14:45.919Z",
+ "built": "2026-10-25T14:56:40.837Z",
  "entries": [
   {
    "id": "world.realm",
@@ -24,6 +24,18 @@
    "region": "everywhere",
    "tags": "map, regions",
    "body": "**The compass means something; the details are generated** (Robin). North colder, south richer and settled (\"England in\nthe south\"), east rivers and trade, west open ocean and the unknown. Distance from home sets how hard a place is,\ndirection what kind. The map shows nothing until it is seen.\n\nThe lore keeps the same rule. Every family, every legend and every name pool has a home region: [[world.home]],\n[[world.north]], [[world.south]], [[world.east]], [[world.west]]. The generator places them by it.\n\nSAID: \"East is trade. West is nothing but sea.\" — a villager on the big island\nSAID: \"Colder north of here than you would think.\" — a villager on the big island"
+  },
+  {
+   "id": "world.ways",
+   "title": "The four ways",
+   "kind": "world",
+   "status": "canon",
+   "decided": "Robin, 2026-10-25: the map's generated names in modern Norwegian without ø or å (\"Modern, no ø or å\"); the starter island and the big island rolled like the rest; the waters are the four Ways; the claimed steading is Thorgunnastad",
+   "summary": "What folk at home call the four seas round them, after the sea-roads that lead there: the North Way, the South Way, the East Way and the West Way.",
+   "region": "everywhere",
+   "tags": "the compass, the seas, names",
+   "sources": "Cleasby-Vigfusson, Austr-vegr and Vestr-vegir (oldnorsedictionary.com)",
+   "body": "Home folk do not name the seas. They name the roads. A man has \"gone the East Way\", or \"sailed the West Way and not come back\".\n\n| The way | Old Norse | Where it goes |\n| --- | --- | --- |\n| **The North Way** | *Norðrvegr* | north, to the cold, the fjords and the old families |\n| **The South Way** | *Suðrvegr* | south, to the rich, settled lowlands, the towns and the churches |\n| **The East Way** | *Austrvegr* | east, to the rivers, the traders and the markets |\n| **The West Way** | *Vestrvegr* | west, over the open ocean, to the unknown |\n\n**Real root.** The Norse named the lands they sailed to by these four ways. *Fara í Austrveg*, \"to go the East Way\", meant a\ntrading or raiding voyage into the Baltic, and the West Way meant the British Isles. Norway is the North Way.\n\nThese are home's names. In the seas themselves, folk have names of their own, and those belong to each sea's chapter.\n\nIN THE GAME: The lore's wish, as everywhere: found, not told. A way's name could reach the chart once the hero has heard it."
   },
   {
    "id": "world.faith",
@@ -648,13 +660,13 @@
    "title": "The burnt steading",
    "kind": "place",
    "status": "canon",
-   "decided": "Robin's idea (2026-10-05): a broken village on the home island where the first friendly person is met and the first legendary Viking is heard of. Robin, 2026-10-16: the hero comes to it while the survivor, Arnor, is there scavenging and fixing what he can; he was left alive to tell the story.",
+   "decided": "Robin's idea (2026-10-05): a broken village on the home island where the first friendly person is met and the first legendary Viking is heard of. Robin, 2026-10-16: the hero comes to it while the survivor, Arnor, is there scavenging and fixing what he can; he was left alive to tell the story.; Robin, 2026-10-25: the claimed place is Thorgunnastad",
    "summary": "The steading on the starter island that Ormr Midgardbane burned two winters ago. A burnt hall, a hut still whole, a plank house by the well, a palisade with gaps, and Arnor in the ruin, mending what he can.",
    "region": "home",
    "chapter": "chapter.1",
    "tags": "chapter 1, the first home, ruins, the survivor",
    "game": "the broken village (templates/game.html), village.ruin",
-   "body": "A burnt hall with its walls knocked in. A wattle hut still whole. A plank house by the well missing five walls and its roof,\nwhich becomes the hero's first home when he mends it. A palisade with gaps. Crates to break. And [[person.arnor|Arnor]],\nthe smith, in the ruin when the hero comes over the rise, scavenging and fixing what he can (Robin, 2026-10-16). The dead\nunder the turf behind the hall.\n\nPROPOSED: **Whose it was.** It was [[person.thorgunna|Thorgunna]]'s steading, and the folk of the big island still call it\nthat. Behind the hall: the graves, each with a small marker, and Thorgunna's under the biggest stone, with Arnor's crooked\nrunes. By the well, toppled: the steading's old claim stone (the game already has one; raising it is how the hero makes the\nplace his). In the smithy: Arnor's broken forge, the anvil split, which he has never mended, because he wants it seen.\n\nPROPOSED: **Arnor's mending.** Small things show he has been at work for two winters: a door rehung on new hinges in a house\nwith no roof, a new bucket on the well, a shutter that closes. He fixes what he can, not what is needed.\n\nIN THE GAME: Today the game calls it \"Hildir's steading\", Brokk stands by the well, and Ragnar's crew burnt it. The names\nchange with Robin's decision of 2026-10-16.\n\nIN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): the map label is \"The burnt steading\". The first claim stone raised there names the place \"Thorgunnastead\" (the Game Developer's word, marked LORE? in the code).\n\nPROPOSED: Name the claimed place **Thorgunnastad**, after her and the old ending *-stad*, \"place\". It keeps her name on the land, which is the point of a claim stone, and sounds like the rest of Skargard's place names."
+   "body": "A burnt hall with its walls knocked in. A wattle hut still whole. A plank house by the well missing five walls and its roof,\nwhich becomes the hero's first home when he mends it. A palisade with gaps. Crates to break. And [[person.arnor|Arnor]],\nthe smith, in the ruin when the hero comes over the rise, scavenging and fixing what he can (Robin, 2026-10-16). The dead\nunder the turf behind the hall.\n\nPROPOSED: **Whose it was.** It was [[person.thorgunna|Thorgunna]]'s steading, and the folk of the big island still call it\nthat. Behind the hall: the graves, each with a small marker, and Thorgunna's under the biggest stone, with Arnor's crooked\nrunes. By the well, toppled: the steading's old claim stone (the game already has one; raising it is how the hero makes the\nplace his). In the smithy: Arnor's broken forge, the anvil split, which he has never mended, because he wants it seen.\n\nPROPOSED: **Arnor's mending.** Small things show he has been at work for two winters: a door rehung on new hinges in a house\nwith no roof, a new bucket on the well, a shutter that closes. He fixes what he can, not what is needed.\n\nIN THE GAME: Today the game calls it \"Hildir's steading\", Brokk stands by the well, and Ragnar's crew burnt it. The names\nchange with Robin's decision of 2026-10-16.\n\nIN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): the map label is \"The burnt steading\". The first claim stone raised there names the place \"Thorgunnastead\" (the Game Developer's word, marked LORE? in the code).\n\nROBIN DECIDED: On 2026-10-25, the claimed place is **Thorgunnastad**, after her and the old ending *-stad*, \"place\". It keeps her name on the land, which is the point of a claim stone, and sounds like the rest of Skargard's place names."
   },
   {
    "id": "place.troll-cave",

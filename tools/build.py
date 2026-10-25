@@ -20,7 +20,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes2.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js'), '__MONSTERS_JS__': read('src', 'monsters.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__ROOFS__': read('src', 'roofs_winter.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes2.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js'), '__SEASONS__': read('src', 'seasons.js'), '__WEATHER__': read('src', 'weather.js'), '__SUN__': read('src', 'sun.js'), '__WORLDMAP__': read('src', 'worldmap.js'), '__MONSTERS_JS__': read('src', 'monsters.js')}
 
 # The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09): the Character Editor and the Blender Editor get each sheet's
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
@@ -63,6 +63,7 @@ def lore_lines():
     if L.get('places'): out['$places'] = L['places']
     return json.dumps(out, ensure_ascii=False)
 SRC['__LORE__'] = lore_lines()
+SRC['__PLACENAMES__'] = read('assets', 'lore', 'place-names.json')   # the map's place-name words (the Lore Director's, handoff 16, 2026-10-25)
 def fire_art():
     """the Art Director's fires (assets/fires, copied whole from its out/fires/sheets, 2026-10-20): per fire its base, embers and
     flames sheets (tagged by their bytes) and its numbers (w, h, ax, ay, upp; the flames' frames and fps)"""
