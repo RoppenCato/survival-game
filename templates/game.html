@@ -289,7 +289,7 @@ __COMBAT__
     var a = AC; if (!a) return false;
     if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
     var name = recName(n, v, x); if (name === '') return true; if (!name) return false;
-    var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
+    var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 }; if (SFX_VI != null) o.vi = SFX_VI;
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
     if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boar') o.rate = 0.88; }   /* the cry a moment after the hit (the studio's preview); the boar's cry was made for the young one, so a grown boar's is slower (the Sound Director's advice) */
@@ -2703,8 +2703,8 @@ __COMBAT__
   }
   function fishPress() {
     if (!fishing) return; var ev = Fishing.press(fishing);
-    if (ev === 'scared') { note('Too soon: it darted off'); fishSnd('fish_splash', 'clink'); }
-    else if (ev === 'hooked') { fishSnd('fish_splash', 'craft'); fishFloat.splash = 0.8; }
+    if (ev === 'scared') { note('Too soon: it darted off'); fishSnd('fish_splash', 'clink', 1, 2); }
+    else if (ev === 'hooked') { fishSnd('fish_splash', 'craft', 1, 0); fishFloat.splash = 0.8; }
   }
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
   function fishBubble(P) {                 /* the prompt over him with a rod in hand: the mouse's button and the word (no E) */
@@ -2714,7 +2714,8 @@ __COMBAT__
     return null;
   }
   function fishEnd() { fishing = null; fishFloat = null; var P = hero(); P.fishPose = null; P.fishT = 0; fishReelLoop(false); }
-  function fishSnd(n, fb, v) { if (Sfx.has(pickOf(n))) sfx(n, v); else if (fb) sfx(fb, v); }   /* Derek, SD's fishing sounds by name (briefed 2026-10-24), the borrowed sound until they are in the bundle */
+  var SFX_VI = null;
+  function fishSnd(n, fb, v, vi) { if (Sfx.has(pickOf(n))) { SFX_VI = vi == null ? null : vi; sfx(n, v); SFX_VI = null; } else if (fb) sfx(fb, v); }   /* vi: the splash's variation for its moment (Derek, SD's drop of 2026-10-25: 1 the hook, 2 a run, 3 a fish darting off) */   /* Derek, SD's fishing sounds by name (briefed 2026-10-24), the borrowed sound until they are in the bundle */
   var REELH = null;
   function fishReelLoop(on) {             /* fish_reel, his seamless loop, while E draws the line in */
     if (on && !REELH) { var nm = pickOf('fish_reel'); if (S_sound() && ac() && AC.state === 'running' && Sfx.has(nm)) REELH = Sfx.loop(AC, weatherSfxDest(), nm, { v: 1, ramp: 0.15 }); }
@@ -2741,7 +2742,7 @@ __COMBAT__
     if (ev === 'nibble') { fishFloat.splash = 0.25; }
     else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.6; }
     else if (ev === 'missed') { note('It let go'); }
-    else if (ev === 'run') { fishSnd('fish_splash', 'pick'); fishFloat.splash = 0.5; }
+    else if (ev === 'run') { fishSnd('fish_splash', 'pick', 1, 1); fishFloat.splash = 0.5; }
     else if (ev === 'lost') { note('The line snapped'); fishSnd('fish_snap', 'fall'); fishEnd(); }
     else if (ev === 'landed') { fishLand(); }
     if (fishing && fishing.phase === 'fight') { var u = Math.max(0.18, fishing.dist / (60 + fishing.fish.size * 60)); fishFloat.x = P.x + fishFloat.cx * fishFloat.d0 * u; fishFloat.y = P.y + fishFloat.cy * fishFloat.d0 * u; }   // the float comes in with the fish

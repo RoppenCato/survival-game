@@ -61,7 +61,7 @@ var Sfx = (function () {
     }
     var list = bufs[n]; if (!list || !list.length) return false;
     o = o || {};
-    var i = Math.floor(Math.random() * list.length);
+    var i = o.vi != null ? o.vi % list.length : Math.floor(Math.random() * list.length);   /* o.vi: a chosen variation (the fishing splash's three moments, Derek, SD's) */
     if (list.length > 1 && i === last[n]) i = (i + 1) % list.length;
     last[n] = i;
     var src = ctx.createBufferSource(), g = ctx.createGain(), pv = o.pitch == null ? 0.03 : o.pitch;
