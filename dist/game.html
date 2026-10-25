@@ -12122,11 +12122,13 @@ if (typeof module !== 'undefined') module.exports = Gather;
    or null ('nibble', 'tap', 'bite', 'missed', 'hooked', 'run', 'landed', 'lost'); Fishing.press(st) is a press of the button (hooks at
    the bite; anything sooner does nothing). tests/fishing.js plays it with bots.
 
-   THE FIGHT since 2026-10-25 (Robin: "too hard to catch"; "more interesting when catching. But it should be quite easy. It should
-   feel relaxing ... guide the fish somehow when reeling it in, with W and S"): the fish swims up and down a short track, drifting to
-   a new depth now and then and, if it is a runner, darting; W and S move a band along the track, gently, with a little glide; while
-   the fish is in the band the catch fills and it comes in, and out of it the catch ebbs slowly; full, it is landed, empty, it gets
-   away. No line to snap. The numbers are GUIDE, mine: a herring in about three seconds of keeping up, a salmon in about six. */
+   THE FIGHT since 2026-10-25 (Robin: "too hard to catch"; then, of a track beside the hero, "I dont want it to be the same catching
+   system as Stardew valley ... I want the catching to be 'live in the game' so it doesnt become a minigame ... guiding it in the water
+   somehow"): the hooked fish swims in the water before you, where the page draws it, its own way, mostly away and to the side, now and
+   then bolting; holding W reels it in, fastest while its head points at you; A and D pull the rod to the left or the right of the
+   screen, which turns its head that way (side strain, as anglers turn a fish); it tires as it fights; at the water's edge before you
+   it is landed; let it swim off past the line's reach and it slips the hook. inp: { reel, left, right, water(dx, dy) } with the fish's
+   place relative to the hero (st.fx, st.fy, world units). The numbers are STEER, mine. */
 var Fishing = (function () {
   'use strict';
   var FISH = {
@@ -12138,7 +12140,7 @@ var Fishing = (function () {
     chest: { name: 'Sunken chest', kg: [15, 30], fight: 0.6, runs: 0, water: 'deep', weight: 0, line: 'Something heavy and square: a chest off a wreck, weed hanging from its iron bands.' }
   };
   var ORDER = ['herring', 'perch', 'cod', 'pike', 'salmon'];
-  var GUIDE = { zone: 0.34, accel: 5, maxV: 1.2, drag: 4, fill: 0.2, drain: 0.2, start: 0.25, grace: 1.2, margin: 0.02 };   /* the fight's band (a share of the track; an iron-hooked rod's is wider, start's o.zone), its glide, how fast the catch fills and ebbs */
+  var STEER = { reel: 34, pullAD: 9, turnW: 0.25, turnAD: 2.4, turnSelf: 1.3, swim: [13, 28], runK: 2.1, tireK: 0.07, tireMax: 0.55, land: 26, edge: 70, slack: 90, slip: 1.6 };   /* the fight: the reel's pull, A and D's, how fast the strain or its own will turns its head, its speed by its fight, a bolt, how it tires, where it is landed (near you, or at the water's edge before you), how far past the cast it may run and for how long before it slips the hook */
   var CHEST_CHANCE = 0.03;                                 // a sunken chest's share of bites in deep water
   // what bites where: depth is how deep the water is under the float (units of elevation below the waterline, 0.5 shallow, 6 deep);
   // lowland says the island is the second biome's. The weights favour the water each fish lives in.
@@ -12162,10 +12164,10 @@ var Fishing = (function () {
   function make(R, id) { var f = FISH[id], u = R(), kg = f.kg[0] + (f.kg[1] - f.kg[0]) * u * u; return { id: id, name: f.name, kg: Math.round(kg * 10) / 10, size: u, fight: f.fight * (0.75 + 0.5 * u), runs: f.runs, line: f.line }; }
   function start(R, depth, lowland, o) {   /* o: { fresh: a lake, patience: how fast the line's tension rises (a wooden rod 1.15, an iron one 0.8) } */
     o = o || {}; var fish = roll(R, depth, lowland, o.fresh);
-    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, fresh: !!o.fresh, patience: o.patience || 1, zoneH: o.zone || GUIDE.zone, time: 0, snaps: 0 };
+    return { phase: 'wait', t: 0, until: 3 + R() * 6, fish: fish, dist: 0, tension: 0, run: 0, runIn: 0, calm: 0, bob: 0, R: R, depth: depth, lowland: !!lowland, fresh: !!o.fresh, patience: o.patience || 1, reelK: o.reel || 1, reach: o.reach || 100, time: 0, snaps: 0 };
   }
   function press(st) {
-    if (st.phase === 'bite') { st.phase = 'fight'; st.t = 0; st.prog = GUIDE.start; st.fy = 0.5; st.fty = st.R() < 0.5 ? 0.08 + st.R() * 0.2 : 0.72 + st.R() * 0.2; st.fNext = 1.2; st.zy = 0.5; st.zv = 0; st.on = true; st.dist = (1 - st.prog) * (60 + st.fish.size * 60); st.runIn = (1.5 + st.R() * 2.5) / Math.max(0.3, st.fish.runs || 0.3); st.run = 0; return 'hooked'; }   /* (a press before the bite does nothing now: it scared the fish, too hard, 2026-10-25) */
+    if (st.phase === 'bite') { st.phase = 'fight'; st.t = 0; if (st.fx == null) { st.fx = 0; st.fy = -st.reach; } var r0 = Math.hypot(st.fx, st.fy) || 1; st.fh = Math.atan2(st.fy, st.fx) + (st.R() - 0.5) * 2; st.fht = st.fh; st.fNext = 0.8; st.tire = 0; st.lean = 0; st.slipT = 0; st.maxR = r0 + STEER.slack; st.dist = r0; st.runIn = (1.5 + st.R() * 2.5) / Math.max(0.3, st.fish.runs || 0.3); st.run = 0; st.on = false; return 'hooked'; }   /* (a press before the bite does nothing now: it scared the fish, too hard, 2026-10-25) */
     return null;
   }
   function tick(st, dt, inp) {
@@ -12178,23 +12180,30 @@ var Fishing = (function () {
     }
     if (st.phase === 'bite') { var sn = Math.min(1, st.t / 0.07); st.bob = 4.6 * (1 - (1 - sn) * (1 - sn)) + Math.sin(st.time * 22) * 0.6;   /* the bite snaps it down, under to its red cap (Robin: "make it snap down a little") */ if (st.t >= st.until) { st.phase = 'wait'; st.t = 0; st.until = 2 + st.R() * 3; return 'missed'; } return null; }   /* a missed bite: the same fish comes back soon */
     if (st.phase === 'fight') {
-      var f = st.fish, ev = null, up = inp && inp.up, dn = inp && inp.down, zh = st.zoneH, spd = f.id === 'chest' ? 0.17 : 0.24 + f.fight * 0.28;
-      st.fNext -= dt; if (st.fNext <= 0) { st.fty = st.R() < 0.5 ? 0.05 + st.R() * 0.33 : 0.62 + st.R() * 0.33;   /* (a new depth toward either end: it crosses the middle, it does not linger there, so a band left alone catches little) */ st.fNext = (0.7 + st.R() * 1.1) / (0.8 + f.fight * 0.5); }   /* the fish drifts to a new depth now and then */
-      if (st.run > 0) st.run -= dt; else if (f.runs > 0) { st.runIn -= dt; if (st.runIn <= 0) { st.run = 0.5 + st.R() * 0.4; st.fty = st.fy > 0.5 ? 0.04 + st.R() * 0.2 : 0.76 + st.R() * 0.2; st.runIn = (2.2 + st.R() * 3) / Math.max(0.3, f.runs); ev = 'run'; } }   /* a runner darts to the far end */
-      var gap = st.fty - st.fy, sp = spd * (st.run > 0 ? 2.4 : 1); st.fy += Math.max(-sp * dt, Math.min(sp * dt, gap * Math.min(1, dt * 3) + Math.sign(gap) * sp * dt * 0.4)); st.fy = Math.max(0, Math.min(1, st.fy));
-      st.zv += ((up ? 1 : 0) - (dn ? 1 : 0)) * GUIDE.accel * dt; if (!up && !dn) st.zv *= Math.max(0, 1 - GUIDE.drag * dt); st.zv = Math.max(-GUIDE.maxV, Math.min(GUIDE.maxV, st.zv));
-      st.zy += st.zv * dt; if (st.zy < zh / 2) { st.zy = zh / 2; st.zv = 0; } if (st.zy > 1 - zh / 2) { st.zy = 1 - zh / 2; st.zv = 0; }
-      st.on = Math.abs(st.fy - st.zy) <= zh / 2 + GUIDE.margin;
-      if (st.on) st.prog += dt * GUIDE.fill / (0.55 + f.fight * 0.9) * (f.id === 'chest' ? 0.6 : 1);   /* (a herring comes in about twice as fast as a salmon) */ else if (st.t > GUIDE.grace) st.prog -= dt * GUIDE.drain;
-      st.prog = Math.max(0, Math.min(1, st.prog)); st.dist = (1 - st.prog) * (60 + f.size * 60); st.tension = st.on ? 0 : 0.5;
-      st.bob = st.run > 0 ? Math.sin(st.time * 16) * 2.5 : Math.sin(st.time * 5) * 1;
-      if (st.prog >= 1) { st.phase = 'landed'; return 'landed'; }
-      if (st.prog <= 0) { st.phase = 'lost'; st.snaps++; return 'lost'; }
+      var f = st.fish, ev = null, wat = (inp && inp.water) || function () { return true; }, reel = !!(inp && inp.reel), ld = (inp && inp.right ? 1 : 0) - (inp && inp.left ? 1 : 0);
+      st.lean += (ld - st.lean) * Math.min(1, dt * 8);
+      var r = Math.hypot(st.fx, st.fy) || 1, toH = Math.atan2(-st.fy, -st.fx), hx = -st.fx / r, hy = -st.fy / r;
+      st.fNext -= dt; if (st.fNext <= 0) { st.fht = toH + Math.PI + (st.R() - 0.5) * 2.6; st.fNext = 1 + st.R() * 1.6; }   /* its own will: away from you and to the side */
+      if (st.run > 0) st.run -= dt; else if (f.runs > 0) { st.runIn -= dt; if (st.runIn <= 0) { st.run = 0.6 + st.R() * 0.5; st.fht = toH + Math.PI + (st.R() - 0.5) * 1.6; st.fh = st.fh * 0.5 + st.fht * 0.5; st.runIn = (2.5 + st.R() * 3.5) / Math.max(0.3, f.runs); ev = 'run'; } }
+      var strain = Math.abs(st.lean) > 0.15 || reel, px = hx + st.lean * 1.2, py = hy, pullDir = Math.atan2(py, px);   /* the rod's pull: toward you, leaned to the screen's left or right */
+      var leaning = Math.abs(st.lean) > 0.15, want = leaning && st.run <= 0 ? pullDir : st.fht, rate = leaning && st.run <= 0 ? STEER.turnAD : STEER.turnSelf * (st.run > 0 ? 0.6 : 1), dh = Math.atan2(Math.sin(want - st.fh), Math.cos(want - st.fh));
+      st.fh += Math.max(-rate * dt, Math.min(rate * dt, dh));   /* A or D turns its head toward the pull; left alone, or only reeled, it swims where it will */
+      if (reel && !leaning) { var dw = Math.atan2(Math.sin(toH - st.fh), Math.cos(toH - st.fh)); st.fh += Math.max(-STEER.turnW * dt, Math.min(STEER.turnW * dt, dw)); }   /* (the reel alone turns it a little) */
+      st.tire = Math.min(STEER.tireMax, st.tire + dt * STEER.tireK * (strain ? 1 : 0.3));
+      var sp = (STEER.swim[0] + (STEER.swim[1] - STEER.swim[0]) * Math.min(1, f.fight)) * (1 - st.tire) * (st.run > 0 ? STEER.runK : 1) * (f.id === 'chest' ? 0.5 : 1);
+      var fc = Math.max(0, Math.cos(st.fh - toH)), vx = Math.cos(st.fh) * sp * (1 - 0.8 * fc), vy = Math.sin(st.fh) * sp * (1 - 0.8 * fc);   /* (turned toward you it hangs back: it never swims in on its own) */
+      if (reel) { var face = Math.max(0, Math.cos(st.fh - toH)), rp = STEER.reel * st.reelK * (0.15 + 0.85 * face) * (f.id === 'chest' ? 0.6 : 1) / (0.75 + 0.5 * Math.min(1, f.fight)); vx += hx * rp; vy += hy * rp; }
+      if (Math.abs(st.lean) > 0.15) { vx += st.lean * STEER.pullAD; }
+      var nx = st.fx + vx * dt, ny = st.fy + vy * dt;
+      if (wat(nx, ny)) { st.fx = nx; st.fy = ny; } else { var tL = st.fh + 1.3, tR = st.fh - 1.3; st.fh = wat(st.fx + Math.cos(tL) * 8, st.fy + Math.sin(tL) * 8) ? tL : tR; st.fht = st.fh; if (reel && r < STEER.edge && !wat(st.fx + hx * 10, st.fy + hy * 10)) { st.phase = 'landed'; return 'landed'; } }   /* it turns along the shore; reeled against the water's edge before you, it is landed up the beach */
+      r = Math.hypot(st.fx, st.fy); st.dist = r; st.on = reel; st.bob = st.run > 0 ? Math.sin(st.time * 16) * 2.5 : Math.sin(st.time * 5) * 1;
+      if (r < STEER.land || (reel && r < STEER.edge && !wat(st.fx + hx * 10, st.fy + hy * 10))) { st.phase = 'landed'; return 'landed'; }
+      if (r > st.maxR) { st.slipT += dt; if (st.slipT > STEER.slip) { st.phase = 'lost'; st.snaps++; return 'lost'; } } else st.slipT = Math.max(0, st.slipT - dt);
       return ev;
     }
     return null;
   }
-  return { FISH: FISH, GUIDE: GUIDE, ORDER: ORDER, CHEST_CHANCE: CHEST_CHANCE, table: table, roll: roll, start: start, press: press, tick: tick };
+  return { FISH: FISH, STEER: STEER, ORDER: ORDER, CHEST_CHANCE: CHEST_CHANCE, table: table, roll: roll, start: start, press: press, tick: tick };
 })();
 if (typeof module !== 'undefined') module.exports = Fishing;
 
@@ -18565,7 +18574,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), sp = k == null ? castSpot(P) : castAim(P, k), rod = handItem(); if (!sp) { if (k != null) note('Cast out over the water'); return; }
     var depth = -w.elevAt(sp.x, sp.y), low = w.biomeAt(Math.floor(sp.x / T), Math.floor(sp.y / T)) > 128, fresh = inlandWater(sp.x, sp.y);
     var kc = k == null ? 0.5 : Math.max(0, Math.min(1, k)), t0 = k == null ? FISH_POSE.cast : FISH_POSE.cast * 0.7;   /* (a charged cast begins from the wind-up the charge held, frame 3 of 10) */
-    fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, zone: rod && rod.mat === 'iron' ? 0.4 : 0.34 });   /* (the iron-hooked rod's band wider) */ fishing.until += t0 + FISH_POSE.fly; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: 1, flyLen: 0.2 + 0.25 * kc };
+    fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, reach: sp.d, reel: rod && rod.mat === 'iron' ? 1.25 : 1 });   /* (the iron-hooked rod reels a quarter faster) */ fishing.until += t0 + FISH_POSE.fly; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: 1, flyLen: 0.2 + 0.25 * kc };
     P.vx = P.vy = 0; P.face = Math.atan2(sp.cy, sp.cx); P.fishPose = 'cast'; P.fishT = t0; fishSnd('fish_cast', 'swing', 0.4 + 0.3 * kc);
   }
   function fishPress() {
@@ -18576,7 +18585,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function fishBubbles(n) { if (!fishFloat) return; if (!fishFloat.bub) fishFloat.bub = []; for (var i = 0; i < n; i++) fishFloat.bub.push({ dx: (Math.random() - 0.5) * 7, dy: 1 + Math.random() * 1.5, r: 0.6 + Math.random() * 0.7, t: -i * 0.06 }); }   /* bubbles that rise beside the float and pop */
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
   function fishBubble(P) {                 /* the prompt over him with a rod in hand: the mouse's button and the word (no E) */
-    if (fishing) { if (fishing.phase === 'bite') return { say: 'Hook it', mouse: 'L' }; if (fishing.phase === 'fight') return { say: 'Guide it', keys: ['W', 'S'] }; return null; }
+    if (fishing) { if (fishing.phase === 'bite') return { say: 'Hook it', mouse: 'L' }; if (fishing.phase === 'fight') return { say: 'Bring it in', keys: ['A', 'W', 'D'] }; return null; }
     if (P.fishCharge > 0) return null;
     if (castReady(P) && castAim(P, 1)) return { say: 'Cast', mouse: 'L' };
     return null;
@@ -18590,14 +18599,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (!on && REELH) { Sfx.cut(AC, REELH, 0.2); REELH = null; }
   }
   var reelHeld = false, fishInPrev = false;
-  var fishRPrev = false, fishGuide = { up: false, down: false };
+  var fishRPrev = false, fishGuide = { reel: false, left: false, right: false, water: function (dx, dy) { var P = hero(); return w.isWater(P.x + dx, P.y + dy); } };
   function fishInput(dt) {                 /* Robin, 2026-10-25: the left button (or J) casts, held longer to cast further, and hooks at the bite; the right button (or K) pulls the line in and ends the round; W and S guide the fish in the fight */
     var IN2 = Combat.dbg().IN, P = hero(), L1 = !!(IN2.lmb || IN2.keys.KeyJ), R1 = !!(IN2.rmb || IN2.keys.KeyK), pressL = L1 && !fishInPrev, pressR = R1 && !fishRPrev; fishInPrev = L1; fishRPrev = R1;
-    fishGuide.up = !!(IN2.keys.KeyW || IN2.keys.ArrowUp); fishGuide.down = !!(IN2.keys.KeyS || IN2.keys.ArrowDown); reelHeld = !!(fishing && fishing.phase === 'fight' && fishing.on);
+    fishGuide.reel = !!(IN2.keys.KeyW || IN2.keys.ArrowUp); fishGuide.left = !!(IN2.keys.KeyA || IN2.keys.ArrowLeft); fishGuide.right = !!(IN2.keys.KeyD || IN2.keys.ArrowRight); reelHeld = !!(fishing && fishing.phase === 'fight' && fishGuide.reel);
     if (pressR && (P.fishCharge > 0 || fishing)) { if (fishing) { fishEnd(); fishSnd('fish_reel', 'pick', 0.5); } P.fishCharge = 0; P.fishK = 0; if (P.fishPose === 'charge') P.fishPose = null; return; }   /* the line pulled in */
     if (!fishing && castReady(P)) { if (L1 && (pressL || P.fishCharge > 0)) { P.fishCharge = (P.fishCharge || 0) + dt; P.fishK = Math.min(1, P.fishCharge / FISH_CAST.full); if (mouseW) P.face = Math.atan2(mouseW.y - P.y, mouseW.x - P.x); P.fishPose = 'charge'; } else if (P.fishCharge > 0) { var kq = P.fishK; P.fishCharge = 0; P.fishK = 0; P.fishPose = null; castLine(kq); } return; }
     if (P.fishCharge > 0 || P.fishPose === 'charge') { P.fishCharge = 0; P.fishK = 0; if (P.fishPose === 'charge') P.fishPose = null; }
-    if (fishing && pressL && fishing.phase !== 'fight') fishPress();
+    if (fishing && pressL && fishing.phase !== 'fight') { if (fishFloat) { fishing.fx = fishFloat.x - P.x; fishing.fy = fishFloat.y - P.y; } fishPress(); }   /* (the fish starts where the float lay) */
   }
   Combat.api.handBusy = function () { var P = hero(); return P.mode === 'gather' && rodInHand(); };
   function fishTick(dt) {
@@ -18609,7 +18618,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.fly = fishFloat.flyLen || FISH_POSE.fly; fishFloat.from = rodTip ? { x: rodTip.x, y: rodTip.y } : null; }   /* the float leaves the rod at the cast's contact and flies out */
     if (fishFloat && fishFloat.fly > 0) { fishFloat.fly -= dt; if (fishFloat.fly <= 0) { fishFloat.fly = 0; fishFloat.splash = 0.5; fishSnd('fish_plop', 'pick'); } }   /* and lands with a splash */   /* the float leaves the rod at the cast's loose and lands with a splash */
     if (P.fishT <= 0) P.fishPose = fishing.phase === 'fight' ? 'fight' : 'wait';
-    var ev = Fishing.tick(fishing, dt, fishGuide); fishReelLoop(!!fishing && fishing.phase === 'fight' && !!fishing.on);
+    var ev = Fishing.tick(fishing, dt, fishGuide); fishReelLoop(!!fishing && fishing.phase === 'fight' && reelHeld);
     if (ev === 'nibble') { fishFloat.splash = 0.2; }
     else if (ev === 'tap') { fishFloat.splash = 0.3; fishBubbles(2 + Math.floor(Math.random() * 2)); fishSnd('fish_plop', 'pick', 0.35); }   /* a blub: a ripple, a few bubbles, a soft plop */
     else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.7; fishBubbles(4); }
@@ -18617,7 +18626,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (ev === 'run') { fishSnd('fish_splash', 'pick', 1, 1); fishFloat.splash = 0.5; }
     else if (ev === 'lost') { note('It got away'); fishSnd('fish_splash', 'pick', 1, 2); fishEnd(); }
     else if (ev === 'landed') { fishLand(); }
-    if (fishing && fishing.phase === 'fight') { var u = Math.max(0.18, fishing.dist / (60 + fishing.fish.size * 60)), sw = ((fishing.fy || 0.5) - 0.5) * 26 * Math.max(0.4, u); fishFloat.x = P.x + fishFloat.cx * fishFloat.d0 * u - fishFloat.cy * sw; fishFloat.y = P.y + fishFloat.cy * fishFloat.d0 * u + fishFloat.cx * sw; }   /* it comes in as the catch fills, swimming from side to side with the fish's place on the track */   // the float comes in with the fish
+    if (fishing && fishing.phase === 'fight') { fishFloat.x = P.x + fishing.fx; fishFloat.y = P.y + fishing.fy; P.face = Math.atan2(fishing.fy, fishing.fx); if (ev === 'run' || (fishing.run > 0 && Math.random() < dt * 4)) fishFloat.splash = Math.max(fishFloat.splash, 0.5); }   /* the float rides with the fish where it swims; he faces it */   // the float comes in with the fish
   }
   function fishLand() {
     var f = fishing.fish, P = hero();
@@ -18633,18 +18642,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
     function hookAt(x, y) { c.strokeStyle = hookC; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.4); c.arc(x - 0.9, y + 2.4, 0.9, 0, Math.PI * 0.85); c.stroke(); }
     if (fishFloat.flyT > 0) { c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(tipX, tipY + 8); c.stroke(); floatAt(tipX, tipY + 9); hookAt(tipX + 0.5, tipY + 12); return; }   /* (the float hangs a short line from the tip until the cast lets it go) */
     if (fishFloat.fly > 0) { var fu = 1 - fishFloat.fly / (fishFloat.flyLen || FISH_POSE.fly), f0 = fishFloat.from || { x: tipX, y: tipY }, ax = f0.x + (fx - f0.x) * fu, ay = f0.y + (fy - f0.y) * fu - Math.sin(fu * Math.PI) * 18; c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(ax, ay); c.stroke(); floatAt(ax, ay); return; }   /* its flight out over the water */
-    if (st.phase === 'fight') { var sh = Math.max(4, 5 + st.fish.size * 7), away = st.run > 0 ? 10 : 4; c.fillStyle = 'rgba(20,30,40,0.38)'; c.beginPath(); c.ellipse(fx + fishFloat.cx * away, fy + fishFloat.cy * away * K + 2, sh, sh * 0.42, Math.atan2(fishFloat.cy * K, fishFloat.cx), 0, 7); c.fill(); }   // the fish, a shadow under the surface
     c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && reelHeld ? 2 : 14), fx, fy); c.stroke();
     if (fishFloat.splash > 0) { var sp = fishFloat.splash; c.strokeStyle = 'rgba(235,250,255,' + (sp * 0.9).toFixed(2) + ')'; c.lineWidth = 1; c.beginPath(); c.ellipse(fx, fishFloat.y * K + 1, 6 + (0.8 - sp) * 14, (6 + (0.8 - sp) * 14) * 0.45, 0, 0, 7); c.stroke(); }
     var wl = fishFloat.y * K + 2.2;   /* the water line: the float is drawn sunk by its dip and cut there, so a tap dips it and a bite pulls it under to its red cap */
     if (fishFloat.bub) fishFloat.bub.forEach(function (b) { if (b.t < 0) return; var u = b.t / 0.55; c.strokeStyle = 'rgba(239,230,210,' + (0.75 * (1 - u)).toFixed(2) + ')'; c.lineWidth = 0.5; c.beginPath(); c.arc(fx + b.dx, wl - 1 - b.dy * u * 3, b.r * (1 + u * 0.6), 0, 7); c.stroke(); });
     c.save(); c.beginPath(); c.rect(fx - 8, wl - 40, 16, 40); c.clip(); floatAt(fx, fy); c.restore(); if (st.phase !== 'fight' && st.phase !== 'bite') hookAt(fx + 3.2, fishFloat.y * K + 1.5);   // the cork float, red on top, the hook beside it
-    if (st.phase === 'fight') {            /* the guide (2026-10-25): an upright track beside him, the fish swimming in it, the band W and S move, and the catch filling beside it */
-      var TH = 44, bx = P.x + (fishFloat.cx > 0 ? -24 : 15), by = P.y * K - 44 - (hero().lvl ? UP : 0), Y = function (v) { return by + TH * (1 - v); }, on = !!st.on;
-      c.save(); c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(bx - 1.5, by - 1.5, 9, TH + 3, 2.5); c.fill();
-      var zt = Y(st.zy + st.zoneH / 2), zb = Y(st.zy - st.zoneH / 2); c.fillStyle = on ? 'rgba(239,230,210,0.55)' : 'rgba(239,230,210,0.28)'; c.beginPath(); c.roundRect(bx, zt, 6, zb - zt, 1.5); c.fill(); if (on) { c.strokeStyle = 'rgba(255,214,110,0.9)'; c.lineWidth = 0.7; c.stroke(); }
-      var fyy = Y(st.fy); c.fillStyle = st.fish.id === 'chest' ? '#8a6a48' : '#9fb4c4'; c.strokeStyle = '#2e2a30'; c.lineWidth = 0.5; c.beginPath(); c.ellipse(bx + 3, fyy, 2.6, 1.3, 0, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(bx + 5.4, fyy); c.lineTo(bx + 7, fyy - 1.3); c.lineTo(bx + 7, fyy + 1.3); c.closePath(); c.fill(); c.stroke();
-      var gp = Math.max(0, Math.min(1, st.prog || 0)); c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(bx + 8.5, by - 1.5, 3.5, TH + 3, 1.5); c.fill(); c.fillStyle = '#9be58b'; c.fillRect(bx + 9.3, by + TH * (1 - gp), 1.9, TH * gp);
+    if (st.phase === 'fight') {            /* the fish itself under the water where it swims (2026-10-25, Robin: "live in the game"): a dark shape turned to its heading, its tail beating faster as it bolts, a wake behind it */
+      var hd = st.fh || 0, ln = 8 + st.fish.size * 8 + (st.fish.id === 'chest' ? 4 : 0), sx = Math.cos(hd), sy = Math.sin(hd) * K, nl = Math.hypot(sx, sy) || 1; sx /= nl; sy /= nl;
+      var cxw = fishFloat.x - sx * ln * 0.45, cyw = fishFloat.y * K + 2.5 - sy * ln * 0.45, tb = Math.sin(st.time * (st.run > 0 ? 26 : 12)) * 0.6, tx = cxw - sx * ln * 0.55, ty = cyw - sy * ln * 0.55, wl2 = 8 + (st.run > 0 ? 6 : 0);   /* the line at its mouth, its body behind the float */
+      c.save(); c.globalAlpha = 0.5; c.strokeStyle = 'rgba(235,245,250,0.85)'; c.lineWidth = 0.7; c.lineCap = 'round'; [-1, 1].forEach(function (sd) { c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx - sx * wl2 - sy * sd * wl2 * 0.45, ty - sy * wl2 + sx * sd * wl2 * 0.45); c.stroke(); });   /* the wake, a V spreading behind it */
+      c.globalAlpha = 0.6; c.translate(cxw, cyw); c.rotate(Math.atan2(sy, sx)); c.fillStyle = st.fish.id === 'chest' ? 'rgba(40,30,20,0.9)' : 'rgba(16,28,40,0.92)'; c.beginPath(); c.ellipse(0, 0, ln * 0.55, ln * 0.2, 0, 0, 7); c.fill();
+      if (st.fish.id !== 'chest') { c.beginPath(); c.moveTo(-ln * 0.45, 0); c.lineTo(-ln * 0.82, -ln * 0.22 + tb * 2); c.lineTo(-ln * 0.82, ln * 0.22 + tb * 2); c.closePath(); c.fill(); }   /* its tail */
       c.restore();
     }
 

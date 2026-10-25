@@ -2702,7 +2702,7 @@ __COMBAT__
     var P = hero(), sp = k == null ? castSpot(P) : castAim(P, k), rod = handItem(); if (!sp) { if (k != null) note('Cast out over the water'); return; }
     var depth = -w.elevAt(sp.x, sp.y), low = w.biomeAt(Math.floor(sp.x / T), Math.floor(sp.y / T)) > 128, fresh = inlandWater(sp.x, sp.y);
     var kc = k == null ? 0.5 : Math.max(0, Math.min(1, k)), t0 = k == null ? FISH_POSE.cast : FISH_POSE.cast * 0.7;   /* (a charged cast begins from the wind-up the charge held, frame 3 of 10) */
-    fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, zone: rod && rod.mat === 'iron' ? 0.4 : 0.34 });   /* (the iron-hooked rod's band wider) */ fishing.until += t0 + FISH_POSE.fly; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: 1, flyLen: 0.2 + 0.25 * kc };
+    fishing = Fishing.start(Math.random, depth, low, { fresh: fresh, reach: sp.d, reel: rod && rod.mat === 'iron' ? 1.25 : 1 });   /* (the iron-hooked rod reels a quarter faster) */ fishing.until += t0 + FISH_POSE.fly; fishFloat = { x: sp.x, y: sp.y, d0: sp.d, cx: sp.cx, cy: sp.cy, splash: 0, flyT: 1, flyLen: 0.2 + 0.25 * kc };
     P.vx = P.vy = 0; P.face = Math.atan2(sp.cy, sp.cx); P.fishPose = 'cast'; P.fishT = t0; fishSnd('fish_cast', 'swing', 0.4 + 0.3 * kc);
   }
   function fishPress() {
@@ -2713,7 +2713,7 @@ __COMBAT__
   function fishBubbles(n) { if (!fishFloat) return; if (!fishFloat.bub) fishFloat.bub = []; for (var i = 0; i < n; i++) fishFloat.bub.push({ dx: (Math.random() - 0.5) * 7, dy: 1 + Math.random() * 1.5, r: 0.6 + Math.random() * 0.7, t: -i * 0.06 }); }   /* bubbles that rise beside the float and pop */
   function fishPrompt() { if (!fishing) return ''; return fishing.phase === 'bite' ? 'Hook it' : fishing.phase === 'fight' ? (fishing.run > 0 ? 'Let it run' : 'Hold to reel') : fishing.phase === 'nibble' ? 'Wait' : 'Waiting'; }
   function fishBubble(P) {                 /* the prompt over him with a rod in hand: the mouse's button and the word (no E) */
-    if (fishing) { if (fishing.phase === 'bite') return { say: 'Hook it', mouse: 'L' }; if (fishing.phase === 'fight') return { say: 'Guide it', keys: ['W', 'S'] }; return null; }
+    if (fishing) { if (fishing.phase === 'bite') return { say: 'Hook it', mouse: 'L' }; if (fishing.phase === 'fight') return { say: 'Bring it in', keys: ['A', 'W', 'D'] }; return null; }
     if (P.fishCharge > 0) return null;
     if (castReady(P) && castAim(P, 1)) return { say: 'Cast', mouse: 'L' };
     return null;
@@ -2727,14 +2727,14 @@ __COMBAT__
     else if (!on && REELH) { Sfx.cut(AC, REELH, 0.2); REELH = null; }
   }
   var reelHeld = false, fishInPrev = false;
-  var fishRPrev = false, fishGuide = { up: false, down: false };
+  var fishRPrev = false, fishGuide = { reel: false, left: false, right: false, water: function (dx, dy) { var P = hero(); return w.isWater(P.x + dx, P.y + dy); } };
   function fishInput(dt) {                 /* Robin, 2026-10-25: the left button (or J) casts, held longer to cast further, and hooks at the bite; the right button (or K) pulls the line in and ends the round; W and S guide the fish in the fight */
     var IN2 = Combat.dbg().IN, P = hero(), L1 = !!(IN2.lmb || IN2.keys.KeyJ), R1 = !!(IN2.rmb || IN2.keys.KeyK), pressL = L1 && !fishInPrev, pressR = R1 && !fishRPrev; fishInPrev = L1; fishRPrev = R1;
-    fishGuide.up = !!(IN2.keys.KeyW || IN2.keys.ArrowUp); fishGuide.down = !!(IN2.keys.KeyS || IN2.keys.ArrowDown); reelHeld = !!(fishing && fishing.phase === 'fight' && fishing.on);
+    fishGuide.reel = !!(IN2.keys.KeyW || IN2.keys.ArrowUp); fishGuide.left = !!(IN2.keys.KeyA || IN2.keys.ArrowLeft); fishGuide.right = !!(IN2.keys.KeyD || IN2.keys.ArrowRight); reelHeld = !!(fishing && fishing.phase === 'fight' && fishGuide.reel);
     if (pressR && (P.fishCharge > 0 || fishing)) { if (fishing) { fishEnd(); fishSnd('fish_reel', 'pick', 0.5); } P.fishCharge = 0; P.fishK = 0; if (P.fishPose === 'charge') P.fishPose = null; return; }   /* the line pulled in */
     if (!fishing && castReady(P)) { if (L1 && (pressL || P.fishCharge > 0)) { P.fishCharge = (P.fishCharge || 0) + dt; P.fishK = Math.min(1, P.fishCharge / FISH_CAST.full); if (mouseW) P.face = Math.atan2(mouseW.y - P.y, mouseW.x - P.x); P.fishPose = 'charge'; } else if (P.fishCharge > 0) { var kq = P.fishK; P.fishCharge = 0; P.fishK = 0; P.fishPose = null; castLine(kq); } return; }
     if (P.fishCharge > 0 || P.fishPose === 'charge') { P.fishCharge = 0; P.fishK = 0; if (P.fishPose === 'charge') P.fishPose = null; }
-    if (fishing && pressL && fishing.phase !== 'fight') fishPress();
+    if (fishing && pressL && fishing.phase !== 'fight') { if (fishFloat) { fishing.fx = fishFloat.x - P.x; fishing.fy = fishFloat.y - P.y; } fishPress(); }   /* (the fish starts where the float lay) */
   }
   Combat.api.handBusy = function () { var P = hero(); return P.mode === 'gather' && rodInHand(); };
   function fishTick(dt) {
@@ -2746,7 +2746,7 @@ __COMBAT__
     if (P.fishPose === 'cast' && P.fishT <= FISH_POSE.cast - FISH_POSE.loose && fishFloat.flyT > 0) { fishFloat.flyT = 0; fishFloat.fly = fishFloat.flyLen || FISH_POSE.fly; fishFloat.from = rodTip ? { x: rodTip.x, y: rodTip.y } : null; }   /* the float leaves the rod at the cast's contact and flies out */
     if (fishFloat && fishFloat.fly > 0) { fishFloat.fly -= dt; if (fishFloat.fly <= 0) { fishFloat.fly = 0; fishFloat.splash = 0.5; fishSnd('fish_plop', 'pick'); } }   /* and lands with a splash */   /* the float leaves the rod at the cast's loose and lands with a splash */
     if (P.fishT <= 0) P.fishPose = fishing.phase === 'fight' ? 'fight' : 'wait';
-    var ev = Fishing.tick(fishing, dt, fishGuide); fishReelLoop(!!fishing && fishing.phase === 'fight' && !!fishing.on);
+    var ev = Fishing.tick(fishing, dt, fishGuide); fishReelLoop(!!fishing && fishing.phase === 'fight' && reelHeld);
     if (ev === 'nibble') { fishFloat.splash = 0.2; }
     else if (ev === 'tap') { fishFloat.splash = 0.3; fishBubbles(2 + Math.floor(Math.random() * 2)); fishSnd('fish_plop', 'pick', 0.35); }   /* a blub: a ripple, a few bubbles, a soft plop */
     else if (ev === 'bite') { fishSnd('fish_bite', 'clink'); fishFloat.splash = 0.7; fishBubbles(4); }
@@ -2754,7 +2754,7 @@ __COMBAT__
     else if (ev === 'run') { fishSnd('fish_splash', 'pick', 1, 1); fishFloat.splash = 0.5; }
     else if (ev === 'lost') { note('It got away'); fishSnd('fish_splash', 'pick', 1, 2); fishEnd(); }
     else if (ev === 'landed') { fishLand(); }
-    if (fishing && fishing.phase === 'fight') { var u = Math.max(0.18, fishing.dist / (60 + fishing.fish.size * 60)), sw = ((fishing.fy || 0.5) - 0.5) * 26 * Math.max(0.4, u); fishFloat.x = P.x + fishFloat.cx * fishFloat.d0 * u - fishFloat.cy * sw; fishFloat.y = P.y + fishFloat.cy * fishFloat.d0 * u + fishFloat.cx * sw; }   /* it comes in as the catch fills, swimming from side to side with the fish's place on the track */   // the float comes in with the fish
+    if (fishing && fishing.phase === 'fight') { fishFloat.x = P.x + fishing.fx; fishFloat.y = P.y + fishing.fy; P.face = Math.atan2(fishing.fy, fishing.fx); if (ev === 'run' || (fishing.run > 0 && Math.random() < dt * 4)) fishFloat.splash = Math.max(fishFloat.splash, 0.5); }   /* the float rides with the fish where it swims; he faces it */   // the float comes in with the fish
   }
   function fishLand() {
     var f = fishing.fish, P = hero();
@@ -2770,18 +2770,17 @@ __COMBAT__
     function hookAt(x, y) { c.strokeStyle = hookC; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.4); c.arc(x - 0.9, y + 2.4, 0.9, 0, Math.PI * 0.85); c.stroke(); }
     if (fishFloat.flyT > 0) { c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(tipX, tipY + 8); c.stroke(); floatAt(tipX, tipY + 9); hookAt(tipX + 0.5, tipY + 12); return; }   /* (the float hangs a short line from the tip until the cast lets it go) */
     if (fishFloat.fly > 0) { var fu = 1 - fishFloat.fly / (fishFloat.flyLen || FISH_POSE.fly), f0 = fishFloat.from || { x: tipX, y: tipY }, ax = f0.x + (fx - f0.x) * fu, ay = f0.y + (fy - f0.y) * fu - Math.sin(fu * Math.PI) * 18; c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.lineTo(ax, ay); c.stroke(); floatAt(ax, ay); return; }   /* its flight out over the water */
-    if (st.phase === 'fight') { var sh = Math.max(4, 5 + st.fish.size * 7), away = st.run > 0 ? 10 : 4; c.fillStyle = 'rgba(20,30,40,0.38)'; c.beginPath(); c.ellipse(fx + fishFloat.cx * away, fy + fishFloat.cy * away * K + 2, sh, sh * 0.42, Math.atan2(fishFloat.cy * K, fishFloat.cx), 0, 7); c.fill(); }   // the fish, a shadow under the surface
     c.strokeStyle = 'rgba(239,230,210,0.8)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(tipX, tipY); c.quadraticCurveTo((tipX + fx) / 2, Math.max(tipY, fy) + (st.phase === 'fight' && reelHeld ? 2 : 14), fx, fy); c.stroke();
     if (fishFloat.splash > 0) { var sp = fishFloat.splash; c.strokeStyle = 'rgba(235,250,255,' + (sp * 0.9).toFixed(2) + ')'; c.lineWidth = 1; c.beginPath(); c.ellipse(fx, fishFloat.y * K + 1, 6 + (0.8 - sp) * 14, (6 + (0.8 - sp) * 14) * 0.45, 0, 0, 7); c.stroke(); }
     var wl = fishFloat.y * K + 2.2;   /* the water line: the float is drawn sunk by its dip and cut there, so a tap dips it and a bite pulls it under to its red cap */
     if (fishFloat.bub) fishFloat.bub.forEach(function (b) { if (b.t < 0) return; var u = b.t / 0.55; c.strokeStyle = 'rgba(239,230,210,' + (0.75 * (1 - u)).toFixed(2) + ')'; c.lineWidth = 0.5; c.beginPath(); c.arc(fx + b.dx, wl - 1 - b.dy * u * 3, b.r * (1 + u * 0.6), 0, 7); c.stroke(); });
     c.save(); c.beginPath(); c.rect(fx - 8, wl - 40, 16, 40); c.clip(); floatAt(fx, fy); c.restore(); if (st.phase !== 'fight' && st.phase !== 'bite') hookAt(fx + 3.2, fishFloat.y * K + 1.5);   // the cork float, red on top, the hook beside it
-    if (st.phase === 'fight') {            /* the guide (2026-10-25): an upright track beside him, the fish swimming in it, the band W and S move, and the catch filling beside it */
-      var TH = 44, bx = P.x + (fishFloat.cx > 0 ? -24 : 15), by = P.y * K - 44 - (hero().lvl ? UP : 0), Y = function (v) { return by + TH * (1 - v); }, on = !!st.on;
-      c.save(); c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(bx - 1.5, by - 1.5, 9, TH + 3, 2.5); c.fill();
-      var zt = Y(st.zy + st.zoneH / 2), zb = Y(st.zy - st.zoneH / 2); c.fillStyle = on ? 'rgba(239,230,210,0.55)' : 'rgba(239,230,210,0.28)'; c.beginPath(); c.roundRect(bx, zt, 6, zb - zt, 1.5); c.fill(); if (on) { c.strokeStyle = 'rgba(255,214,110,0.9)'; c.lineWidth = 0.7; c.stroke(); }
-      var fyy = Y(st.fy); c.fillStyle = st.fish.id === 'chest' ? '#8a6a48' : '#9fb4c4'; c.strokeStyle = '#2e2a30'; c.lineWidth = 0.5; c.beginPath(); c.ellipse(bx + 3, fyy, 2.6, 1.3, 0, 0, 7); c.fill(); c.stroke(); c.beginPath(); c.moveTo(bx + 5.4, fyy); c.lineTo(bx + 7, fyy - 1.3); c.lineTo(bx + 7, fyy + 1.3); c.closePath(); c.fill(); c.stroke();
-      var gp = Math.max(0, Math.min(1, st.prog || 0)); c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(bx + 8.5, by - 1.5, 3.5, TH + 3, 1.5); c.fill(); c.fillStyle = '#9be58b'; c.fillRect(bx + 9.3, by + TH * (1 - gp), 1.9, TH * gp);
+    if (st.phase === 'fight') {            /* the fish itself under the water where it swims (2026-10-25, Robin: "live in the game"): a dark shape turned to its heading, its tail beating faster as it bolts, a wake behind it */
+      var hd = st.fh || 0, ln = 8 + st.fish.size * 8 + (st.fish.id === 'chest' ? 4 : 0), sx = Math.cos(hd), sy = Math.sin(hd) * K, nl = Math.hypot(sx, sy) || 1; sx /= nl; sy /= nl;
+      var cxw = fishFloat.x - sx * ln * 0.45, cyw = fishFloat.y * K + 2.5 - sy * ln * 0.45, tb = Math.sin(st.time * (st.run > 0 ? 26 : 12)) * 0.6, tx = cxw - sx * ln * 0.55, ty = cyw - sy * ln * 0.55, wl2 = 8 + (st.run > 0 ? 6 : 0);   /* the line at its mouth, its body behind the float */
+      c.save(); c.globalAlpha = 0.5; c.strokeStyle = 'rgba(235,245,250,0.85)'; c.lineWidth = 0.7; c.lineCap = 'round'; [-1, 1].forEach(function (sd) { c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx - sx * wl2 - sy * sd * wl2 * 0.45, ty - sy * wl2 + sx * sd * wl2 * 0.45); c.stroke(); });   /* the wake, a V spreading behind it */
+      c.globalAlpha = 0.6; c.translate(cxw, cyw); c.rotate(Math.atan2(sy, sx)); c.fillStyle = st.fish.id === 'chest' ? 'rgba(40,30,20,0.9)' : 'rgba(16,28,40,0.92)'; c.beginPath(); c.ellipse(0, 0, ln * 0.55, ln * 0.2, 0, 0, 7); c.fill();
+      if (st.fish.id !== 'chest') { c.beginPath(); c.moveTo(-ln * 0.45, 0); c.lineTo(-ln * 0.82, -ln * 0.22 + tb * 2); c.lineTo(-ln * 0.82, ln * 0.22 + tb * 2); c.closePath(); c.fill(); }   /* its tail */
       c.restore();
     }
 
