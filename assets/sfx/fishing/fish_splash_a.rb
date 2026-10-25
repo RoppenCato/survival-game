@@ -17,7 +17,7 @@ define :from do |f, t, o|                   # a piece started t seconds in (at i
   sample f, o.merge(start: t / sample_duration(f))
 end
 
-P = [["plop_4", 0.0], ["plop_1", 0.035], ["plop_5", 0.0]]
+P = [["plop_5", 0.0], ["plop_4", 0.0], ["plop_1", 0.035]]   # 1 the hook going in (the sharp one), 2 a run (the big one), 3 a fish darting off (Clive, GD's order)
 
 define :one do |v|
   f, t = P[v]

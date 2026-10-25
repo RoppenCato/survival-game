@@ -21,7 +21,7 @@ end
 define :one do |v|
   use_random_seed 14300 + v
   r = 1 + rrand(-0.05, 0.05)
-  sample W + "splash_#{[4, 1, 3][v]}.wav", rate: r, amp: 1.0, attack: 0, sustain: 0.4, release: 0.2
+  sample W + "splash_#{[4, 1, 3][v]}.wav", rate: r, amp: 1.0, attack: 0, sustain: 0.4, release: 0.2   # 1 the hook going in (sharp), 2 a run (the big one), 3 a fish darting off
   sample S + "oar_quick_#{[2, 4, 1][v]}.wav", rate: 1.1 * r, amp: 0.5, attack: 0.02, sustain: 0.3, release: 0.2
   [0.25, 0.38, 0.5].each_with_index { |t, i| at [t] do sample C + "drop_#{(v + i) % 6 + 1}.wav", rate: rrand(1.1, 1.4), amp: 0.3 - 0.07 * i end }
 end
