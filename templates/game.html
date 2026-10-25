@@ -888,12 +888,13 @@ __COMBAT__
   }
   function drawZones(c) {                  /* in build mode the places on the ground, Colin, AD's recipe (2026-10-25): each in its sign's colour lightened, a dark hair under every edge; an idle place only its corners and a faint fill, the one under the cursor its whole dashed edge; the sign's badge before its name; the larger first where they overlap (Z shows and hides them) */
     var my = mouseW ? mouseW.y + (lvl() ? UP / K : 0) : -1e9, Z = (B.zones || []).slice().sort(function (a, b) { return (b.x1 - b.x0) * (b.y1 - b.y0) - (a.x1 - a.x0) * (a.y1 - a.y0); });
-    Z.forEach(function (z) { var Zc = ZONE[z.kind] || ZONE.sleep, lv = zoneLevel(z).n, x = z.x0 * T, y = z.y0 * TS, wd = (z.x1 - z.x0) * T, ht = (z.y1 - z.y0) * TS, hot = !!mouseW && inZone(z, mouseW.x, my), Lc = Math.min(8, wd / 3, ht / 3);
+    var zs = Math.max(1, ZOOM0 / cam.z);   /* (zoomed out while building, the names, the badge and the edges keep their size on screen) */
+    Z.forEach(function (z) { var Zc = ZONE[z.kind] || ZONE.sleep, lv = zoneLevel(z).n, x = z.x0 * T, y = z.y0 * TS, wd = (z.x1 - z.x0) * T, ht = (z.y1 - z.y0) * TS, hot = !!mouseW && inZone(z, mouseW.x, my), Lc = Math.min(8 * zs, wd / 3, ht / 3);
       c.save(); c.fillStyle = 'rgba(' + Zc.col + ',' + (hot ? 0.16 : 0.08) + ')'; c.fillRect(x, y, wd, ht);
       function edge(dx, dy, col, lw) { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); if (hot) { c.setLineDash([4, 3]); c.rect(x + 0.5 + dx, y + 0.5 + dy, wd - 1, ht - 1); } else { [[x, y, 1, 1], [x + wd, y, -1, 1], [x, y + ht, 1, -1], [x + wd, y + ht, -1, -1]].forEach(function (q) { var qx = q[0] + q[2] * 0.5 + dx, qy = q[1] + q[3] * 0.5 + dy; c.moveTo(qx + q[2] * Lc, qy); c.lineTo(qx, qy); c.lineTo(qx, qy + q[3] * Lc); }); } c.stroke(); c.setLineDash([]); }
-      edge(0.6, 0.6, 'rgba(30,22,18,0.55)', 1.2); edge(0, 0, 'rgba(' + Zc.col + ',0.95)', 1);
-      var bd = himg('places/zoneSign_' + z.kind), bx = x + 3, tx0 = bx + (bd ? 8 : 1); var ly = y + ht + 8; if (bd) c.drawImage(bd, bx, ly - 6, 7, 7);   /* (under the square, clear of the post's carved face wherever it stands inside) */
-      c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2; c.strokeStyle = 'rgba(30,22,18,0.85)'; var lb = Zc.name + (lv ? '  •  comfort ' + lv : '  •  no bed'); c.strokeText(lb, tx0, ly); c.fillStyle = 'rgba(' + Zc.col + ',1)'; c.fillText(lb, tx0, ly); c.restore(); });
+      edge(0.6 * zs, 0.6 * zs, 'rgba(30,22,18,0.55)', 1.2 * zs); edge(0, 0, 'rgba(' + Zc.col + ',0.95)', zs);
+      var bd = himg('places/zoneSign_' + z.kind), bx = x + 3, tx0 = bx + (bd ? 8 : 1); var ly = y + ht + 8 * zs; if (bd) c.drawImage(bd, bx, ly - 6 * zs, 7 * zs, 7 * zs); tx0 = bx + (bd ? 8 * zs : 1);   /* (under the square, clear of the post's carved face wherever it stands inside) */
+      c.font = '600 ' + (6 * zs).toFixed(1) + 'px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2 * zs; c.strokeStyle = 'rgba(30,22,18,0.85)'; var lb = Zc.name + (lv ? '  •  comfort ' + lv : '  •  no bed'); c.strokeText(lb, tx0, ly); c.fillStyle = 'rgba(' + Zc.col + ',1)'; c.fillText(lb, tx0, ly); c.restore(); });
   }
 
   var restedMax = 600;
@@ -5812,7 +5813,7 @@ __COMBAT__
      pass, the room's own shape (its floor and the face of its north wall, a storey up upstairs) is cut out of it with a soft edge, and the
      layer is laid over the frame, easing in and out over about half a second. INS holds the numbers (mine). */
   var INS = { k: 0, t: 0, room: null, L: 0, on: true, res: 1, blur: 0.6, dark: 0.72, sat: 0.62, edge: 2.5, wall: 40, ease: 0.45, cv: null, mk: null };   /* (the gentle look of the two shown to Robin; the strong one was res 2, blur 0.9, dark 0.62, sat 0.5) */
-  function insideNow() { var P = hero(); if (inCave || P.dead || (raft && raft.aboard) || !INS.on) return null; var L = P.lvl || 0, R = L ? roomInfo1 : roomInfo; if (!R) return null; var ri = R.at(Math.floor(P.x / T), Math.floor(P.y / T)); if (ri < 0) return null; var r = R.rooms[ri]; if (!r || !r.tiles || !r.tiles.length || (!L && ruinAt(r.tiles[0][0], r.tiles[0][1]))) return null; return { r: r, L: L }; }
+  function insideNow() { var P = hero(); if (inCave || P.dead || (raft && raft.aboard) || !INS.on || P.mode === 'build') return null;   /* (not while building: the places' names and the ghost outside the room were dimmed with the world, 2026-10-25) */ var L = P.lvl || 0, R = L ? roomInfo1 : roomInfo; if (!R) return null; var ri = R.at(Math.floor(P.x / T), Math.floor(P.y / T)); if (ri < 0) return null; var r = R.rooms[ri]; if (!r || !r.tiles || !r.tiles.length || (!L && ruinAt(r.tiles[0][0], r.tiles[0][1]))) return null; return { r: r, L: L }; }
   function insideDraw(c) {
     var now = insideNow(), dt = Math.max(0, Math.min(0.1, clock - (INS.t || clock))); INS.t = clock; if (now) { INS.room = now.r; INS.L = now.L; }
     INS.k += ((now ? 1 : 0) - INS.k) * Math.min(1, dt / INS.ease * 3); if (INS.k < 0.01 || !INS.room) { if (!now) INS.room = null; return; }
