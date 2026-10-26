@@ -17508,7 +17508,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     w.plant(); (function () { var gone2 = []; w.eachProp(function (o) { if (isleAt(o.x, o.y) !== 0) return; if (o.name === 'fireRing') gone2.push(o); else if (o.name === 'struckTree') o.name = 'birch'; }); gone2.forEach(function (o) { w.removeProp(o); }); })();   /* (no charcoal on the starter island: no old fire rings, no lightning-struck trees; Robin 2026-10-20) */ if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; R2 = Runes2.start(); Combat.api.runeState = R2; ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(CHART_PX);
-    raft = null; fleet = []; banner = null; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
+    raft = null; fleet = []; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     villageClear(); weirPlace(); caveSetup(); hamletClear(); cryptSetup(); cellarSetup(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
@@ -19229,7 +19229,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var roofLater = null;
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
-  var raft = null, leftChk = 0, banner = null;
+  var raft = null, leftChk = 0;
   /* The fleet (docs/ships-rework.md; Robin, 2026-10-22: several ships, every one you have built yours, each staying where you left it
      until you come back or summon it at a shipyard; never lost): `fleet` holds them all and `raft` is the one in use, the one you are
      aboard or, ashore, the one of yours you stand nearest (fleetTick), so everything that sails, boards, crews and stows works on it as
@@ -19297,7 +19297,43 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (C.sub) plcGlow(c, C.sub, 600, y + 43, hf('italic', 17), 'center');
       c.restore(); });
   }
-  function bigStep(title, line) { banner = { title: title, line: line, t: 9 }; sfx('craft'); }   /* a big step announced on a bordered board (2026-10-14, Robin): the bar, building, the raft, the island left */
+  /* "New" (Robin's picks of 2026-10-26 through Colin, AD, his out/announce/NOTES.md): the slim oak plaque bottom left (T2, V1) when a
+     recipe, a dish or a piece first becomes known, "NEW TO MAKE" or "NEW TO BUILD" over its name, in over 0.3 s, held 4 s, out over 0.8 s, a
+     second one stacked 52 above; several at once are one plaque ("and 3 more"); and in the menus a small red lozenge with "new" on the thing,
+     and a dot on its tab, until it has been looked at (hovered or chosen). An older save's known things count as looked at (seen.newV). */
+  var NEWQ = [], NEWT = { fadeIn: 0.3, hold: 4, fadeOut: 0.8 }, newWatchT = 0;
+  function lookedAt(id) { return !!(seen.looked && seen.looked[id]); }
+  function markLooked(id) { seen.looked = seen.looked || {}; seen.looked[id] = 1; }
+  function pieceKey(p) { return 'p:' + p.id + ':' + p.m; }
+  function newKnown() { return { r: RECIPES2.filter(known), d: RECIPES.filter(dishKnown), p: seen.build ? PIECES.filter(pieceKnown) : [] }; }
+  function newWatch(dt) {
+    if (SCENE || naming || (newWatchT -= dt) > 0) return; newWatchT = 0.5; var K2 = newKnown(), kn;
+    if (!seen.newV) { seen.newV = 1; kn = seen.knownN = {}; seen.looked = seen.looked || {}; K2.r.concat(K2.d).forEach(function (r) { kn[r.id] = 1; seen.looked[r.id] = 1; }); K2.p.forEach(function (q) { kn[pieceKey(q)] = 1; seen.looked[pieceKey(q)] = 1; }); return; }
+    kn = seen.knownN = seen.knownN || {}; var mk = [], bd = [];
+    K2.r.concat(K2.d).forEach(function (r) { if (!kn[r.id]) { kn[r.id] = 1; mk.push(r); } }); K2.p.forEach(function (q) { var k = pieceKey(q); if (!kn[k]) { kn[k] = 1; bd.push(q); } });
+    if (mk.length) NEWQ.push({ kind: 'make', first: mk[0], n: mk.length, t: 0 }); if (bd.length) NEWQ.push({ kind: 'build', first: bd[0], n: bd.length, t: 0 });
+  }
+  function newTick(dt) { var on = NEWQ.slice(0, 2); on.forEach(function (q) { q.t += dt; }); while (NEWQ.length && NEWQ[0].t > NEWT.fadeIn + NEWT.hold + NEWT.fadeOut) NEWQ.shift(); }
+  function newMark(c, x, y, r) { c.fillStyle = HC.rubric; c.beginPath(); c.moveTo(x, y - r); c.lineTo(x + r, y); c.lineTo(x, y + r); c.lineTo(x - r, y); c.closePath(); c.fill(); c.strokeStyle = 'rgba(40,14,8,0.6)'; c.lineWidth = 0.8; c.stroke(); }
+  function newDot(c, x, y) { c.fillStyle = HC.rubric; c.beginPath(); c.arc(x, y, 4.5, 0, 7); c.fill(); c.strokeStyle = 'rgba(40,14,8,0.7)'; c.lineWidth = 1; c.stroke(); }
+  function newInCraftTab(id) { if (id === 'hearth') return RECIPES.some(function (d) { return dishKnown(d) && !lookedAt(d.id); }); return RECIPES2.some(function (r) { return r.at === id && known(r) && !lookedAt(r.id); }); }
+  function newInBuildCat(cat) { return PIECES.some(function (q) { return q.cat === cat && pieceKnown(q) && !lookedAt(pieceKey(q)); }); }
+  function drawNewPlaques(c) {
+    if (!NEWQ.length || invOpen || menu || bookOpen || mapOpen) return;
+    hPx(c, 0, 0, function () { NEWQ.slice(0, 2).forEach(function (q, k) {
+      var t = q.t, a = t < NEWT.fadeIn ? t / NEWT.fadeIn : t < NEWT.fadeIn + NEWT.hold ? 1 : Math.max(0, 1 - (t - NEWT.fadeIn - NEWT.hold) / NEWT.fadeOut); if (a <= 0) return;
+      var W = 300, H = 46, x = 16, y = 618 - k * 52 + (1 - Math.min(1, t / NEWT.fadeIn)) * 8, cx = x + 23, cy = y + 23;
+      c.save(); c.globalAlpha = a; c.beginPath(); c.roundRect(x, y, W, H, 23); c.save(); c.clip(); var wp = hpat(c, 'wood_tile'); c.fillStyle = wp || '#4e3a2c'; c.fillRect(x, y, W, H); c.fillStyle = 'rgba(30,18,10,0.35)'; c.fillRect(x, y, W, H); c.restore();
+      c.strokeStyle = 'rgba(232,192,96,0.7)'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(x + 3.5, y + 3.5, W - 7, H - 7, 20); c.stroke();
+      c.fillStyle = '#2b1c13'; c.beginPath(); c.arc(cx, cy, 17, 0, 7); c.fill(); c.strokeStyle = '#d8b062'; c.lineWidth = 1.6; c.stroke();
+      c.save(); c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.clip();
+      if (q.kind === 'make') hUnits(c, cx, cy, function () { infoIcon(c, q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }, 0, 0, 0.5); });
+      else { var pic = q.first.prop ? himg('pieces/' + q.first.prop) : null; if (pic) c.drawImage(pic, cx - 17, cy - 17, 34, 34); else hUnits(c, cx, cy, function () { if (q.first.icon) q.first.icon(c); else Build.icon(c, q.first.id, q.first.m); }); }
+      c.restore();
+      var nm = q.kind === 'make' ? (q.first.out ? recipeName(q.first) : q.first.name || q.first.id) : q.first.name, line = nm.charAt(0).toUpperCase() + nm.slice(1) + (q.n > 1 ? ' and ' + (q.n - 1) + ' more' : '') + (q.kind === 'build' ? '  (B)' : '');
+      hText(c, q.kind === 'make' ? 'NEW TO MAKE' : 'NEW TO BUILD', x + 50, y + 19, hf('bold', 10), '#e8c060'); c.font = hf('', 16); while (line.length > 8 && c.measureText(line).width > W - 64) line = line.slice(0, -2); hText(c, line, x + 50, y + 36, hf('', 16), '#f2e6c8');
+      c.restore(); }); });
+  }
   // how the vessels handle: the Sea Editor's numbers (Yard.HANDLING), or what its "Use in the game" handed over (game.boat);
   // the raft is a slower, clumsier share of the boat's
   function handling(kind) {
@@ -19450,7 +19486,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     Sea.tick(sea, dt, seaEnv);
   }
   function raftTick(dt) {
-    if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    
     if (!seen.left && !SCENE && !inCave && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1;  } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt); sunTick(); rimTick(dt); wmTick(dt); yearTick(dt); weatherTick(dt); wgTick(dt); swimTick(dt); landingTick(dt); seaTick(dt); trimTick(dt); fleetTick();
     var zt = zoomTarget(); if (!inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6); if (!(zoom > 0.15)) zoom = zt > 0.15 ? zt : ZOOM0;   /* (a guard: the frame log once showed the camera's zoom below nothing for ten frames, 2026-10-22, the night's light then threw) */   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
@@ -20849,7 +20885,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (npc.line >= L.length) { npc.quietUntil = clock + TALK_QUIET; return; }   // (told already; the state moves on as it ends, so this is only a guard)
     npc.say = L[npc.line]; npc.line++; npc.sayT = 6;
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
-      if (st === 'meet' && !seen.met) { seen.met = 1; seen.build = 1; bigStep('Building', 'Press B. The plank house by the well wants its walls, a door and a roof.'); save(); }
+      if (st === 'meet' && !seen.met) { seen.met = 1; seen.build = 1;  save(); }
       else if (st === 'teach' && !seen.raft) { seen.raft = 1; mapToldOf(w.isles.findIndex(function (q) { return q.role === 'big'; })); arnorBoatGive(); note('Arnor\u2019s boat lies at the shore'); save(); }   /* his boat given (Robin, 2026-10-26), no board */
     }
   }
@@ -21364,7 +21400,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drawNotes(c, top) {              // top: a board lies over the hero; the notes are stacked above its top edge, centred
     var P = hero(), sx = (P.x - cam.x) * cam.z + 200 + 15, sy = (P.y * K - cam.y) * cam.z + 125 - 24, k = 0, i;
     if (promptBox && top == null) sx = Math.max(sx, promptBox.x1 + 4);
-    if (banner && sy < 118 && top == null) sy = 118;   /* (under a big-step board, never over it) */
     notes = notes.filter(function (q) { return clock - q.born < 3.6; });
     c.save(); c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = 'rgba(30,18,10,0.85)';
     for (i = notes.length - 1; i >= 0; i--, k++) {
@@ -21750,7 +21785,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null; menu.pin = null; menu.minus = null; menu.plus = null;
     var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
     hPx(c, X, Y, function () {
-      menu.tabs.forEach(function (t) { hTab(c, t.py, t.hp, t.name, t.id === menuTab, th === t); });   // the flaps first: their right edges go under the board
+      menu.tabs.forEach(function (t) { hTab(c, t.py, t.hp, t.name, t.id === menuTab, th === t); if (newInCraftTab(t.id)) newDot(c, (t.id === menuTab ? -24 : -18) + 4, t.py + 9); });   // the flaps first: their right edges go under the board; a dot on a tab with something new
       hBoard(c, 453, 500);
       hTitle(c, menuTab === 'hearth' ? 'Cooking' : menuTab === 'furnace' ? 'Smelting' : 'Crafting');   /* (the heading by the board: mine) */
       // the list, in its dark well
@@ -21763,7 +21798,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (on) { if (!nine(c, 'list_bar_gold', LX + 2, top + 2, 146, 26, 6) && !nine(c, 'list_bar', LX + 2, top + 2, 146, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 146, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 146, 26); }
         var can = infoCan(e); c.globalAlpha = q.dim ? 0.45 : (can ? 1 : 0.5); hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
         hText(c, infoName(e), LX + 38, top + 21, hf('', 16), HC.cream); c.globalAlpha = 1;
-        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 142, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (!q.dim && isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 140, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
+        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 142, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (!q.dim && !lookedAt(e.id)) { newMark(c, LX + 117, top + 15, 4); hText(c, 'new', LX + 124, top + 19, hf('italic', 11), HC.under); }   /* new: until looked at (Robin's pick, 2026-10-26; it was a gold dot until made) */
+        if ((on || hovR) && !q.dim) markLooked(e.id);
       });
       c.restore();
       if (menu.maxScroll) { var kh = Math.max(24, wellH * wellH / (menu.listTotal * 3)), ky = LY + (wellH - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(LX + 144, LY, 5, wellH); c.fillStyle = 'rgba(240,227,196,0.55)'; c.fillRect(LX + 144, ky, 5, kh); }
@@ -21832,7 +21868,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (menu.info) { drawInfo(c); var isl = shiftK && infoSel(); if (isl && isl.r && isl.r.out && isl.r.out.item) { var imk = Items.make(isl.r.out.item[0], isl.r.out.item[1]), icm = heldLike(imk); if (icm) itemCard(c, icm, menu.x - 146, menu.y + 40, 'Now'); } return; }   /* (with Shift, what you have now beside it: Robin, 2026-10-22) */
     var P = hero(), hit = menuHit(), th = menuTabHit(), i;
     hPx(c, menu.x, menu.y, function () {
-      menu.tabs.forEach(function (t) { hTopFlap(c, t.px, 8 - t.ph, t.pw, t.ph, t.name, t.on, th === t); });   // the flaps first: their feet go under the board
+      menu.tabs.forEach(function (t) { hTopFlap(c, t.px, 8 - t.ph, t.pw, t.ph, t.name, t.on, th === t); if (t.id && newInBuildCat(String(t.id).replace(/^cat:/, ''))) newDot(c, t.px + t.pw - 9, 8 - t.ph + 9); });   // the flaps first: their feet go under the board
       hBoard(c, menu.w * 3, menu.h * 3);
       hTitle(c, 'Building');
       for (i = 0; i < menu.items.length; i++) {
@@ -21842,7 +21878,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var pic = p.prop ? himg('pieces/' + p.prop) : null; c.save(); c.beginPath(); c.rect(cx + 3, cy + 3, cw - 6, 67); c.clip(); if (pic) c.drawImage(pic, cx + (cw - 70) / 2, cy + 1, 70, 70); else hUnits(c, cx + cw / 2, cy + 36, function () { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); }); c.restore();   // the piece: the studio's cell icon for a set piece (assets/hud/pieces), else as the game draws it, in the upper 70
         c.font = hf('', 13); var nl = wrapText(c, p.name, cw - 10).slice(0, 2); nl.forEach(function (ln, k) { hText(c, ln, cx + cw / 2, nl.length === 1 ? cy + 89 : cy + 80 + k * 15, hf('', 13), HC.cream, 'center'); });
         hCostRow(c, cost, cx + cw / 2, cy + 111);
-        if (isNew('p:' + p.id + ':' + p.m)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(cx + cw - 11, cy + 11, 3.5, 0, 7); c.fill(); }   // never built: the mark the crafting list has
+        if (!lookedAt(pieceKey(p))) newMark(c, cx + cw - 12, cy + 12, 5);   /* new: until looked at, as the crafting list */
+        if (on || hit === it) markLooked(pieceKey(p));
         c.restore();
         if ((on || hit === it) && !nine(c, 'build_cell_chosen', cx, cy, cw, chh, 8)) { c.strokeStyle = HC.gold; c.lineWidth = 3; c.strokeRect(cx + 1.5, cy + 1.5, cw - 3, chh - 3); }
       }
@@ -22294,7 +22331,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
       }
     });
   }
-  function isNew(id) { return !(seen.made && seen.made[id]); }
   function markMade(id) { if (!seen.made) seen.made = {}; seen.made[id] = 1; }
   function drawChar(c) {
     var x0 = chLeft(), P = hero(), hov = chSlotAt(), hovT = chTabAt();
@@ -24256,12 +24292,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         c.fillStyle = 'rgba(35,26,22,0.85)'; c.beginPath(); c.roundRect(gx, gy - 8, gw, 12, 2.5); c.fill(); c.fillStyle = ghostLabel.bad ? '#ff9a8a' : '#d8ffd8'; c.textAlign = 'left'; c.fillText(ghostLabel.text, gx + 5, gy + 1);
       }
       drawPlaceCard(c);   /* the big turns in the map's lettering */
-      if (banner) {                        // a big step, on a bordered board: the title and one line
-        var ba = Math.min(1, (9 - banner.t) / 0.6, banner.t / 1.5), by = 62; c.save(); c.globalAlpha = ba; c.font = '600 6.5px system-ui, sans-serif';
-        var bls = wrapText(c, banner.line, 220), bh = 36 + bls.length * 9; wood(c, 80, by - 14, 240, bh);
-        c.font = 'bold 13px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText(banner.title, 200, by + 4);
-        c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; bls.forEach(function (ln, k) { c.fillText(ln, 200, by + 18 + k * 9); }); c.restore();
-      }
+      drawNewPlaques(c);   /* something new to make or build: the oak plaque bottom left */
       if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
       stones().forEach(function (st) { if (Math.hypot(P.x - st.x, P.y - st.y) > 90 || inCave) return; var sx = (st.x - cam.x) * cam.z + 200, sy = (st.y * K - cam.y) * cam.z + 125 - 50 * cam.z, tt = (st.named || 'The stead') + ':  room for ' + roomFor(st) + ',  food for ' + foodDays(st) + (foodDays(st) === 1 ? ' day' : ' days'); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.2; c.strokeStyle = '#2e1a10'; c.strokeText(tt, sx, sy); c.fillStyle = '#f6e2b8'; c.fillText(tt, sx, sy); });
       if (!inCave) folk.forEach(function (f) { if (!f.dead && !f.fallen && !f.hidden && Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); }); if (DLG.actor && DLG.actor.stage) bubble(c, DLG.actor);
@@ -25674,7 +25705,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hown ? sleepComfortAt(P.x, P.y) : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); arrowPickTick(); butcherTick(dt); placeTick(dt); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); arrowPickTick(); butcherTick(dt); placeTick(dt); newWatch(dt); newTick(dt); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
