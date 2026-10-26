@@ -62,7 +62,8 @@ and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leav
 | **Teaches** | Gathering and making, hunting with the bow, carrying and butchering, comfort, the fire, quests in the book. |
 | **Special** | **Arnor's boat.** The first boat is simple, no colours to choose: **Arnor mends his broken boat and gives it to you for helping**, mending the house and bringing him meat. Leaving is the end of the chapter. |
 | **Glimpses** | Mine to propose: the altar-like butcher's table before the altar; Ormr's raid in the ruin and its graves; the big island on the horizon. |
-| **Open** | The flint sword in the steading's chest (a second weapon on the starter island: keep it, or move it?). Whether the steading's other houses stay as ruin, Arnor's being the only one mended. |
+| **Decided since** (Robin, 2026-10-26) | **The flint sword goes** from the steading's chest. |
+| **Open** | **How much building in chapter 0** (Robin, 2026-10-26: "maybe we shouldnt introduce base building at the start. Maybe it should be limited to building the basic comfort stuff first, and a crafting bench?"), and where the player learns to build his own home: a practice island, Arnor visiting later, or the village giving land (being discussed). Whether the steading's other houses stay as ruin. |
 
 ---
 
@@ -82,7 +83,8 @@ the season's end, and the wolf you bring to it: the chapter's main goal. The vil
 | **The way out** | **The village's shipwright** (mine, Robin's yes): once you are taken in at the rite, he builds you a small sail boat from wood and a sail the village weaves, and the sail is what carries you past the swell at home water's edge. |
 | **Reasons to go round** (mine, Robin's yes) | The fisherman; a small village trading what the big island lacks; an island with yew for a better bow; rumours. **The islands must be interesting and of value**, and **varied places to want to build a base on** (Robin). |
 | **Glimpses** (mine, Robin's yes) | A southern trader at the village with copper goods; a raided village's ruins; **troll traces in the wolves' cave** and old bones or tracks pointing north. |
-| **Open** | Where the player builds his own village (the claim stone, Arnor joining) if it is in this chapter. The moose and the bear on the big island: kept here? The mountain's copper veins go (no copper): the mountain stays to explore. |
+| **Decided since** (Robin, 2026-10-26) | **Arnor does not join as the first hirdman.** **The moose and the bear are saved for later** (on the list below). |
+| **Open** | Where the player builds his own village (the claim stone) if it is in this chapter, and **a practice ground for base building** (Robin: "Maybe we should have one of the islands to be used as a practice grounds for base building, where the player is taught how to do it. We need to figure this out."). The mountain's copper veins go (no copper): the mountain stays to explore. |
 
 ---
 
@@ -110,7 +112,8 @@ placement in chapter' ... so we have a list"). A system leaves this list when a 
 | --- | --- | --- |
 | **Pets** | `docs/pet.md`, a family close with animals (Robin) | N |
 | **Your own village** | The claim stone and its reach, places (the sleeping place built; the hall, hearth, storehouse, smithy, weaving, woodwork and grove places waiting), mending | P |
-| **The hird** | Recruiting, jobs at workplaces, eating from chests, the muster, following; Arnor as the first hirdman; **the hird's own building** (Robin, 2026-10-25) | P |
+| **The hird** | Recruiting, jobs at workplaces, eating from chests, the muster, following; **the hird's own building** (Robin, 2026-10-25); **Arnor is not the first hirdman** (Robin, 2026-10-26): who is, is open | P |
+| **Free base building** | Walls, doors, roofs that close by themselves, floors, the Building board; where it is first taught (Robin, 2026-10-26: perhaps not at the start; a practice island?) | B |
 | **Your own ships** | The naust and its panel (sizes, colours, fittings: Raider, Cargo, Voyager), the karve, the longship, the fleet | B |
 | **Your own altar and blót** | The stone altar you build, the storm's offer, binding at the altar; the blót at your own fire to turn the season | B |
 | **The year in play** | Seasons and weather drawn; what a season gives (winter takes berries and grass); not built: the ice shutting the sea, bolder wolves, the events after winter | P |
@@ -129,7 +132,7 @@ placement in chapter' ... so we have a list"). A system leaves this list when a 
 | **Rumours** | The lore's rumours (whisper, lead, truth) in the data; how they surface | N |
 | **The map's claims** | Renaming a place once claimed (renaming built, claiming not) | P |
 | **The mountain's places** | The lookout, the waterfall, the rock shelter | B |
-| **Big beasts** | The moose and the bear | B |
+| **Big beasts** | The moose and the bear (Robin, 2026-10-26: saved for later) | B |
 | **Trolls and väsen** | The trolls and Hårungen (chapter 2's north), the draugr, the huldra, Näcken, the bysen, the forest troll, the Gape, the three-headed troll, Trollmor | P |
 | **World monsters** | The kraken (the World monsters editor) | P |
 | **Bees and honey** | Bee skeps, honey as a key | P |

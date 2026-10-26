@@ -62,7 +62,7 @@ and not built (`docs/idea-bank.md`).
   them. **They follow and work only inside your territory and on raids, never in the open world** (and, mine 2026-10-21: with no
   stone raised yet there is no territory to keep to, so Admin's men follow anywhere, board and land as at home). Claim stones cost stone
   and berries (and snake blood, as built); every stone after the first needs a hirdman as its keeper; without food they are
-  slow and sad, never leaving. Arnor is the first hirdman. **The hird gets a building of its own** (Robin, 2026-10-25), not beds in
+  slow and sad, never leaving. **Arnor is not the first hirdman** (Robin, 2026-10-26; he was until then: who is, is open). **The hird gets a building of its own** (Robin, 2026-10-25), not beds in
   the sleeping place (not built).
 - **The year:** spring, summer, autumn, winter, Stardew Valley style but **the player decides when a season moves**, at a
   moment at the end of each season; not abusable, never a stress; seasons feel different and open different things. After
@@ -100,7 +100,7 @@ and not built (`docs/idea-bank.md`).
   count; big animals give nothing until carried to a butcher's table (the first at Arnor's); wooden arrows made and used up; chapter 0
   with the strong stick in place of the club, only a shirt, trousers and leather shoes, no wolves, no altar, no cooked food (berries
   eaten raw, a 2-minute wait), the player sleeping on a straw bed in Arnor's house once it is mended, and Arnor's mended boat given
-  for helping; chapter 1 with no trolls (an abandoned cave the wolves hold, troll traces in it), no copper, the Spear, the knock-out
+  for helping; the flint sword gone from the steading; the moose and the bear saved for later; chapter 1 with no trolls (an abandoned cave the wolves hold, troll traces in it), no copper, the Spear, the knock-out
   cudgel only on a wolf with low health, cooking learnt in the village, fishing from a fisherman, the first rite at the village with a
   wolf as the goal, Old Aslak's brother found in the cave's depths (the arm ring's story gone), the shipwright's sail boat the way out.
   **One chapter at a time** (Robin, 2026-10-20): a chapter is finished when Robin is happy with its content and six areas, each
