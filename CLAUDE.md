@@ -89,14 +89,24 @@ and not built (`docs/idea-bank.md`).
 - **Scope for now (2026-10-09): the starter island and the big island only**, until they feel great (`spec.sizes` [120,
   400], `biomes` [0, 0], `count` 2); the lowlands and further islands stay in the code, not spawned. **The big island has a
   small mountain** (foothills and a small plateau, about a sixth of it, its north-west; the first copper).
-- **Chapters** (`docs/chapters.md`, read it first when choosing what to do; keep its status tables up to date): 1 the starter
-  island, 2 home water (the big island and its neighbours), 3 the first sea and the first raid, 4 the other seas, 5 and
-  beyond (the cut is mine, 2026-10-20). **One chapter at a time** (Robin, 2026-10-20): a chapter is finished when Robin is
-  happy with its content and six areas, each perfected for that chapter: models and art, combat and gathering, menus and
-  crafting, the interface, music and sound and effects, the day and night. **What belongs to another chapter is moved there**
-  and not worked on now. A system is perfected where the player first meets it (the basics all in chapter 1). Foundations
-  (saves, memory, the generator) are done when a chapter needs them. **The current chapter is 1.** One engine and one set of
-  numbers throughout.
+- **Chapters are stages of progression** (Robin, 2026-10-26; `docs/chapters.md`, read it first when choosing what to do, and keep it up
+  to date): a word for us only, **never announced in the game**, which is one open world ("fishing is learnt in chapter 1"); and a band
+  of islands round the starter island: **chapter 0 the starter island, chapter 1 the islands round it with the big island and the first
+  village, chapter 2 the next band** (its south: a big island with roads, towns and a Jarl's high seat, the smaller guarded towns round
+  it the first raids; its north: cold, caves, trolls, the Trollvinir town; east and west saved). Under each chapter: what the player
+  sees, makes and holds, the systems he starts, what it teaches, anything special, and **glimpses** of what is coming; a system no
+  chapter has yet is on the doc's list **Systems that need a chapter**. **Robin's decisions of 2026-10-26, not built yet:** no
+  announcing boards (the big-step boards go); **quests**, kept in the book as what was said and what needs doing, in words, never a
+  count; big animals give nothing until carried to a butcher's table (the first at Arnor's); wooden arrows made and used up; chapter 0
+  with the strong stick in place of the club, only a shirt, trousers and leather shoes, no wolves, no altar, no cooked food (berries
+  eaten raw, a 2-minute wait), the player sleeping on a straw bed in Arnor's house once it is mended, and Arnor's mended boat given
+  for helping; chapter 1 with no trolls (an abandoned cave the wolves hold, troll traces in it), no copper, the Spear, the knock-out
+  cudgel only on a wolf with low health, cooking learnt in the village, fishing from a fisherman, the first rite at the village with a
+  wolf as the goal, Old Aslak's brother found in the cave's depths (the arm ring's story gone), the shipwright's sail boat the way out.
+  **One chapter at a time** (Robin, 2026-10-20): a chapter is finished when Robin is happy with its content and six areas, each
+  perfected for that chapter: models and art, combat and gathering, menus and crafting, the interface, music and sound and effects,
+  the day and night. **What belongs to another chapter is moved there** and not worked on now. **The current chapter is 0.** One
+  engine and one set of numbers throughout.
 - **The start:** you land with nothing at a wreck on the starter island; an abandoned, broken steading there shows how a
   village is set up and that the world is dangerous; there you meet Arnor, the first friendly person, and hear of the first
   legendary Viking. **Robin's start (2026-10-16, through the Lore Director; canon):** the hero's past is never explained and
