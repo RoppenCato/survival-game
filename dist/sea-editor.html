@@ -11364,13 +11364,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
      and the studio's viewer. The väsen's names are the Lore Director's canon. The things in the hand and the worn icons are no
      figures and stay out. */
   var CAST = [
-    { id: 'hero-kit', name: 'The hero', group: 'The hero', game: true, ch: 1 },
+    /* the chapters as stages of progression (Robin, 2026-10-26): 0 the starter island, 1 the big island and its first village, 2 the next band (the trolls in the north); the bear and the moose saved for later */
+    { id: 'hero-kit', name: 'The hero', group: 'The hero', game: true, ch: 0 },
     { id: 'people', name: 'People', group: 'People', game: true, ch: 1 },
-    { id: 'boar', name: 'Wild boar', group: 'Beasts', game: true, ch: 1 }, { id: 'deer', name: 'Deer', group: 'Beasts', game: true, ch: 1 },
+    { id: 'boar', name: 'Wild boar', group: 'Beasts', game: true, ch: 0 }, { id: 'deer', name: 'Deer', group: 'Beasts', game: true, ch: 0 },
     { id: 'wolf', name: 'Wolf', group: 'Beasts', game: true, ch: 1 }, { id: 'snake', name: 'Adder', group: 'Beasts', game: true, ch: 1 },
-    { id: 'bear', name: 'Bear', group: 'Beasts', game: true, ch: 2 }, { id: 'moose', name: 'Moose', group: 'Beasts', game: true, ch: 2 },
-    { id: 'hen', name: 'Hen', group: 'Farm animals', game: true, ch: 2 }, { id: 'goat', name: 'Goat', group: 'Farm animals', game: true, ch: 2 },
-    { id: 'sheep', name: 'Sheep', group: 'Farm animals', game: true, ch: 2 }, { id: 'cow', name: 'Cow', group: 'Farm animals', game: true, ch: 2 },
+    { id: 'bear', name: 'Bear', group: 'Beasts' }, { id: 'moose', name: 'Moose', group: 'Beasts' },
+    { id: 'hen', name: 'Hen', group: 'Farm animals', game: true, ch: 1 }, { id: 'goat', name: 'Goat', group: 'Farm animals', game: true, ch: 1 },
+    { id: 'sheep', name: 'Sheep', group: 'Farm animals', game: true, ch: 1 }, { id: 'cow', name: 'Cow', group: 'Farm animals', game: true, ch: 1 },
     { id: 'troll_boulder', name: 'Mountain troll', group: 'Trolls', game: true, ch: 2 }, { id: 'troll_unge', name: 'H\u00e5rungen', group: 'Trolls', game: true, ch: 2 },
     { id: 'troll_mor', name: 'Trollmor', group: 'Trolls' }, { id: 'troll_forest', name: 'Forest troll', group: 'Trolls' },
     { id: 'troll_maw', name: 'The Gape', group: 'Trolls' }, { id: 'troll_three', name: 'Three-headed troll', group: 'Trolls' },

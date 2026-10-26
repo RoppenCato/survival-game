@@ -52,7 +52,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>The game</h1>
-  <p class="lede">The first island. You land with nothing: pick up branches and stones at camp and make your first tools by hand, chop and mine, build a hut, put a workbench under its roof, hunt the boar for meat and hide, and come back to it all later: the game saves itself. Esc has restart and a sandbox.</p>
+  <p class="lede">The starter island, then the big island. You wake at a wreck with nothing: gather and make your first tools by hand, hunt and butcher, help Arnor mend his house and bring him meat, and earn his boat. The game saves itself in this browser.</p>
   <div class="stage"><canvas id="cv" width="800" height="500" aria-label="The island"></canvas></div>
   <section class="panel">
     <p class="stat" id="stat"></p>
@@ -64,32 +64,29 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <div>
         <h2>Controls</h2>
         <dl class="keys">
-          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to sprint</dd>
-          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Swing the sword or the tool, or shoot the bow. Hold for a charged swing</dd>
-          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block. Press just before a hit to parry</dd>
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to sprint; <kbd>C</kbd> sneaks, on and off</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Swing what is in hand (hold for a charged swing); with the bow, let the arrow go</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Raise the guard (just before a blow lands, a parry); with the bow, draw it. Both held: the bash</dd>
           <dt><kbd>Space</kbd></dt><dd>Dash</dd>
-          <dt><kbd>1</kbd> to <kbd>6</kbd></dt><dd>Take the thing in that slot of the bar in hand, or use it (food, a torch); its number again puts it away. The bar is the bag's top row: drag things into it. An axe, a pick, a knife or a rod in hand gathers; anything else, or empty hands, fights. The right tool does full damage, the wrong one half</dd>
-          <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest beast; again for the next, then let go</dd>
-          <dt><kbd>X</kbd></dt><dd>Draw your weapon, or put it away. Among other people it is away until you draw it, and a drawn blade is a threat</dd>
-          <dt><kbd>Esc</kbd></dt><dd>Closes whatever board is open; else the menu: continue, a sandbox to try things out in, restart with nothing or a new island (each asks for a second click), the music and the sounds of the world</dd>
-          <dt><kbd>B</kbd></dt><dd>Build mode. The Building board opens with it, and again on <kbd>Right click</kbd>: a tab for walls, floors and roofs, ground, yard, furniture, work and outdoors, every piece with its name and what it costs. Pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows, and a click takes it down and gives the material back</dd>
-          <dt><kbd>Mouse wheel</kbd></dt><dd>Pick a slot on the bar (<kbd>Enter</kbd> takes the pick in hand, or puts it away; a number key does the same for its slot); in build mode through the pieces you know (it turns a thing you are about to set down), and over the Building board through its tabs</dd>
-          <dt><kbd>E</kbd></dt><dd>Use what you face: a workbench, a hearth or a furnace (its board; E again closes it), a bed from dusk (sleep until morning), a chest (opens beside the bag), a seat, a boat, a cave, a person to talk to, berries to pick. The words over the hero say what it will do</dd>
-          <dt>In the bag</dt><dd><kbd>Drag</kbd> a thing to move it; off the boards, to lay it on the ground (a weapon or a tool lies there until <kbd>E</kbd> takes it up again). <kbd>Right click</kbd> uses it: eats a food, lights a torch, sends a weapon or a tool to its bar, puts a garment on (on the character panel, takes it off). <kbd>Shift</kbd> and click sends it across to an open chest, or out of one. <kbd>Shift</kbd> and drag carries half a stack</dd>
-          <dt><kbd>Tab</kbd></dt><dd>The one screen: your panel top left (the hero and what is worn; pages for the numbers and the ring come as you earn them), the bag under it, and on the right what you can make where you stand (by hand, or the bench, hearth or furnace beside you): six slots wide, stacks of 25, its top two rows the Fight bar and the Gather bar. Point at a thing for its card. Sort tidies the rows below the bars</dd>
+          <dt><kbd>1</kbd> to <kbd>6</kbd></dt><dd>Take the thing in that slot of the bar in hand, or use it (food, a torch); its number again puts it away. The mouse wheel picks a slot, <kbd>Enter</kbd> takes it</dd>
+          <dt><kbd>E</kbd></dt><dd>Use what you face: talk, open, pick, take up, butcher, sleep, board a boat</dd>
+          <dt><kbd>Tab</kbd></dt><dd>Your gear, the bag and what you can make where you stand</dd>
+          <dt><kbd>L</kbd> and <kbd>O</kbd></dt><dd>The book: what you have met, and your own half (quests, runes)</dd>
+          <dt><kbd>M</kbd></dt><dd>The world map</dd>
+          <dt><kbd>B</kbd></dt><dd>Build (right click opens the Building board), once Arnor has spoken of it</dd>
+          <dt><kbd>T</kbd></dt><dd>The torch</dd>
+          <dt><kbd>X</kbd></dt><dd>Draw your weapon or put it away (a drawn blade among people is a threat)</dd>
+          <dt><kbd>G</kbd></dt><dd>Your men: tap "with me", hold "hold here"</dd>
+          <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest foe, then the next, then let go</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Closes a board; else the menu (continue, sandbox, restart, new island, music and sound, Admin)</dd>
         </dl>
       </div>
       <div>
         <h2>What there is to do</h2>
-        <p class="desc" style="margin-top:0">Trees take a few chops with the axe and fall. Rocks crack as you mine them and break apart. Bushes are cut with the knife. What falls out lies on the ground until you walk over it, and lands in your inventory.</p>
-        <p class="desc">The bow shoots without arrows for now (the quiver is gone until a better way of carrying arrows is found).</p>
-        <p class="desc">Young boars, deer and adders live on the starter island; on the big island grown boars, moose and bears too, and a troll in his cave. They keep to their home ranges and leave you alone until you come close; the deer go in herds and run, the rest charge. A deer you have shot bleeds: follow the blood. At night a pack of wolves comes, and a fire keeps it off. Meat and hide from most; antler from the moose. Berry bushes give berries.</p>
-        <p class="desc">Somewhere inland is a broken steading: a burnt hall, a hut still standing, a plank house by the well with its walls broken and its roof gone (mend it, and it is your first home), a palisade with gaps, crates with things left behind (break them open with the axe), and Arnor the smith by the well, who will tell you what happened. The pieces are the same you build with, and the wreck cursor takes them apart for their wood and stone. A chest you build holds twelve stacks.</p>
-        <p class="desc">Food never punishes you: you do not have to eat. Eat, and you heal; cook a meal at the hearth and your health keeps coming back for minutes, with your top health raised. Roast boar is good; boar and berry stew is better. Open the bag and right click food to eat it, or put it on the bar and press its number.</p>
-        <p class="desc">Building is cheap: a wall, door or window costs two wood (a stone wall two stone), a floor tile one wood, and a hearth of your own four stone and two wood (you can cook at it like the one at camp). Close a loop of walls and a thatch roof appears by itself, and fades when you step inside. Add a door, or you will not get in.</p>
-        <p class="desc">Your island, inventory, buildings and felled trees are saved in this browser and are there when you come back. "New island" throws it all away and starts again.</p>
-        <p class="desc">The chart in the corner shows the island; the yellow dot is you.</p>
+        <p class="desc" style="margin-top:0">The game explains nothing on purpose: look, walk over things, talk to people. Trees fell toward the notch you cut; rocks crack; berries and grass are picked by hand. A big animal gives its meat and hide only at a butcher's table. Arrows are made and carried in a quiver.</p>
+        <p class="desc">Arnor lives in the burnt steading inland. What he asks of you is kept in the book (O). Sleep in the straw bed in his house once it is mended.</p>
+        <p class="desc">Everything is saved in this browser. "New island" throws it all away and starts again.</p>
       </div>
     </div>
   </section>
@@ -2002,7 +1999,7 @@ __COMBAT__
   // The battle test scene (2026-10-13, docs/archive/battle-plan.md): the starter island for the field, and a lowland island beside it for the town
   // (Village.plan gives the biggest lowland island a walled town, a church or a farm, and a place on the shore). No mountain: it is not needed here.
   var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
-  if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
+  if (SCENE === 'battle' || SCENE === 'ruin') { spec.waters = false; spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null;   /* (the two islands of the trials, not the sea as waters: under the waters the town found no room and every town row fell through; the cleanup of 2026-10-26) */ if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   /* The save keeps only what the player changed on the ground (2026-10-20: the whole painted field was 1.5 MB of a save, most of
      the browser's room; the bigger sea would not have fit). groundBase is the field as the world paints it at every start
@@ -8330,7 +8327,7 @@ __COMBAT__
       { id: 'whole', name: 'Whole again' }, { id: 'again', name: 'The sampler anew' },
       { id: 'wind', name: 'The wind blows ' + (wind.k < 0.05 ? 'not at all' : (wn ? wn[0] : 'about')) },
       { id: 'torch', name: torchOn ? 'Put the torch out' : 'Light a torch', on: torchOn }, { id: 'stuff', name: 'More to mend with' }, { id: 'heal', name: 'Heal' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' },
-      { id: 'big', name: TRIAL.big ? 'Places: great ones' : 'Places: as in the game', on: TRIAL.big }, { id: 'roomy', name: 'Houses: ' + (TRIAL.roomy > 1.7 ? 'twice as big' : TRIAL.roomy > 1 ? 'half again as big' : 'as now'), on: TRIAL.roomy > 1 }].concat(TRIAL.roomy > 1 ? [{ id: 'loud', name: TRIAL.loud > 1 ? 'Heard as far again, too' : 'Heard as far as before', on: TRIAL.loud > 1 }] : []);   // (the last two grow the world anew: the page loads again)
+      { id: 'big', name: TRIAL.big ? 'Places: great ones' : 'Places: as in the game', on: TRIAL.big }];   // (the last grows the world anew: the page loads again; the bigger houses' trial went in the cleanup of 2026-10-26: the houses grew for good on 2026-10-22, so &roomy and &loud are only for the URL)
   }
   function ruinAct(id) {
     var P = hero(), r, f = BT.field;
@@ -8338,7 +8335,7 @@ __COMBAT__
     else if (id === 'gate' || id === 'church' || id === 'hall' || id === 'ship') battleAct(id);
     else if (id === 'place') { RU.place = RU.place === 'village' ? 'town' : 'village'; if (townOf() < 0) toast('No such place in this world'); else { battleAct('gate'); toast(villages[townOf()].name + ', ' + Village.ARCH[villages[townOf()].arch].name.toLowerCase()); } }
     else if (id === 'raid') { TOWN_N = RU.men || 20; RU.men = TOWN_N; raidSet(); }
-    else if (id === 'big' || id === 'roomy' || id === 'loud') { var nb = id === 'big' ? !TRIAL.big : TRIAL.big, nr = id === 'roomy' ? (TRIAL.roomy > 1.7 ? 1 : TRIAL.roomy > 1 ? 2 : 1.5) : TRIAL.roomy, nl = id === 'loud' ? !(TRIAL.loud > 1) : TRIAL.loud > 1 || TRIAL.roomy === 1; location.search = '?scene=ruin' + (nb ? '&big=1' : '') + (nr > 1 ? '&roomy=' + nr + (nl ? '' : '&loud=0') : ''); return; }
+    else if (id === 'big') { var nb = id === 'big' ? !TRIAL.big : TRIAL.big, nr = id === 'roomy' ? (TRIAL.roomy > 1.7 ? 1 : TRIAL.roomy > 1 ? 2 : 1.5) : TRIAL.roomy, nl = id === 'loud' ? !(TRIAL.loud > 1) : TRIAL.loud > 1 || TRIAL.roomy === 1; location.search = '?scene=ruin' + (nb ? '&big=1' : '') + (nr > 1 ? '&roomy=' + nr + (nl ? '' : '&loud=0') : ''); return; }
     else if (id === 'men') { RU.men = RU.men === 0 ? 12 : RU.men === 12 ? 20 : RU.men === 20 ? 30 : RU.men === 30 ? 40 : 0; var tv = townOf(); if (tv >= 0) { if (RU.men) { TOWN_N = RU.men; var px = P.x, py = P.y; townSet(); battleClearMine(); P.x = px; P.y = py; } else { var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === tv); }); guards = guards.filter(function (e) { return e.vi !== tv; }); BT.setup = 'none'; } } }
     else if (id === 'held') { RU.held = !RU.held; if (RU.held) P.mode = P.mode === 'gather' ? 'gather' : P.mode; }
     else if (id === 'burn') { r = nearestRoom(P, function (q) { return Ruin.burnsRoof(RUIN, B, q, BCFG.roof) && !roofBurning(q); }); if (r && Ruin.ignite(RUIN, B, 'R', null, r, null, BCFG.roof)) { var c = Ruin.centre(r); fireLit(c[0], c[1], true); folkFlush(r); } else { var bw = null, bwd = 320; ['H', 'V'].forEach(function (L) { for (var k in B[L]) { if (!Ruin.burnsWall(RUIN, B[L][k]) || Ruin.onFire(B, L, k)) continue; var p = k.split(','), m = edgeMidOf(L, +p[0], +p[1]), d = Math.hypot(m.x - P.x, m.y - P.y); if (d < bwd) { bwd = d; bw = [L, k, m]; } } }); if (bw && Ruin.ignite(RUIN, B, bw[0], bw[1])) { fireLit(bw[2].x, bw[2].y, true); var bp = bw[1].split(','); edgeRooms(bw[0], +bp[0], +bp[1]).forEach(folkFlush); toast('No roof here burns: a wall, then'); } else toast('Nothing near that would burn'); } }
@@ -8549,9 +8546,45 @@ __COMBAT__
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather'); day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
     sandboxRunes(); year.day = YEAR.days; sceneBoarWait = 30; seen.pried = 1; armsOut = true; save();   /* (the boar out cold is placed a few frames in, once the island's animals stand; no wreck reminder here) */
   }
+  /* The mountain scene's start and its board (2026-10-12; lost with the rune rework of 2026-10-23 and put back in the cleanup of 2026-10-26, the rowboat for the old boat). A fresh start puts the hero at the foot of the first slope with tools,
+     weapons and building stuff, by day; the board on the left takes him to a slope, the foothills, the high plateau, the peaks and
+     the cave, brings night or the troll, and gives more to build with. */
+  function fellRamp(n, k) { var l = w.mt ? w.mt.ramps.filter(function (rm) { return rm.n === n && !rm.gap; }) : []; return l.length ? l[(k || 0) % l.length] : null; }
+  function mountainScene() {
+    var P = hero(), r1 = fellRamp(1, 1);
+    ['wood', 'stone', 'fiber', 'leather', 'copper', 'berries', 'meat', 'charcoal', 'copperBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; }); addItem('wood', 125); addItem('stone', 75); addItem('fiber', 25);   // enough for a house or two
+    seen.mason = 1; seen.raft = 1;
+    [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
+    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather'); day.t = 200; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.village = 1; seen.cave = 1;
+    if (r1) { var sp = w.nearFlat(r1.x1, r1.y1 + 70, 0) || { x: r1.x1, y: r1.y1 + 70 }; P.x = sp.x; P.y = sp.y; P.face = -Math.PI / 2; }
+    recount(); save();
+  }
+  function mountainRows() {
+    return [{ id: 'slope1', name: 'To a slope (foothills)' }, { id: 'slope2', name: 'To a slope (plateau)' }, { id: 'foot', name: 'Onto the foothills' }, { id: 'plateau', name: 'Onto the high plateau' }, { id: 'peaks', name: 'Under the peaks' }, { id: 'northrim', name: 'North of the fells' }, { id: 'fall', name: 'To the waterfall' }, { id: 'look', name: 'To the lookout' }, { id: 'seaboat', name: 'A boat under the sea cliffs' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'pool', name: 'To the cave’s pool' }, { id: 'chasm', name: 'To the chasm' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'young', name: 'To the troll’s young' }, { id: 'mine', name: 'To the old mine' }, { id: 'minein', name: 'Into the mine' }, { id: 'minedeep', name: 'To the fall of rock' }, { id: 'shelter', name: 'To the rock shelter' }, { id: 'vein', name: 'To a copper vein' }, { id: 'seacave', name: 'A boat at the sea cave' }, { id: 'seain', name: 'Into the sea cave' }, { id: 'seabeach', name: 'To the cave’s beach' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'mbeasts', name: 'Beasts: bear, wolf, boar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'stuff', name: 'More to build with' }, { id: 'wreck', name: 'To the wreck' }, { id: 'reset', name: 'Start the scene over' }];
+  }
+  var slopeI = 0;
+  function mountainAct(id) {
+    var P = hero(), go = function (q) { if (q) { if (inCave) caveSwap(false); P.x = q.x; P.y = q.y; P.vx = P.vy = 0; P.lvl = 0; } else toast('No such place on this island'); };
+    if (id === 'slope1' || id === 'slope2') { var rm = fellRamp(id === 'slope1' ? 1 : 2, slopeI++); go(rm ? (w.nearFlat(rm.x1, rm.y1 + 60, rm.n - 1) || { x: rm.x1, y: rm.y1 + 60 }) : null); return true; }
+    if (id === 'foot' || id === 'plateau') { var rp = fellRamp(id === 'foot' ? 1 : 2, slopeI++); go(rp ? w.nearFlat(rp.x0, rp.y0 - 80, rp.n) : null); return true; }
+    if (id === 'peaks') { var pk = null; w.mt.peaks.forEach(function (o) { if (!pk || Math.abs(o.x - P.x) < Math.abs(pk.x - P.x)) pk = o; }); go(pk ? w.nearFlat(pk.x, pk.y + 240, 2) : null); return true; }
+    if (id === 'northrim') { var pn = null, yn; w.mt.peaks.forEach(function (o) { if (!pn || o.y < pn.y) pn = o; }); var xn = pn ? pn.x : w.isles[0].x * T; for (yn = w.mt.by0; yn < w.mt.by1; yn += 16) if (w.cellAt(xn, yn) & 63) break; go(w.nearFlat(xn, yn - 80, 0, 20)); return true; }   // the low ground behind the mountains: down from the north until the fells begin
+    if (id === 'wreck') { if (inCave) caveSwap(false); toCamp(); return true; }
+    if (id === 'fall') { var f0 = w.mt.falls[0]; go(f0 ? (w.nearFlat(f0.x + f0.pool.rx + 26, f0.pool.y + 26, f0.lvl, 10) || { x: f0.x + f0.pool.rx + 26, y: f0.pool.y + 26 }) : null); return true; }
+    if (id === 'look') { var l0 = w.mt.lookouts[0]; go(l0 ? { x: l0.x + 30, y: l0.y + 12 } : null); return true; }
+    if (id === 'seaboat') { var by0 = w.mt.bay; if (!by0) { toast('No bay on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = by0.x - w.mt.seaSide * by0.a * 0.45; P.y = by0.y - by0.b * 0.1; P.lvl = 0; if (giveBoat('rowboat')) raftUse(); return true; }
+    var cvOf = function (k) { return caves.filter(function (c2) { return c2.kind === k; })[0]; };
+    if (id === 'mine' || id === 'minein' || id === 'minedeep') { var cm2 = cvOf('mine'); if (!cm2) { toast('No mine on this island'); return true; } if (inCave) caveSwap(false); if (id === 'mine') { P.x = cm2.mouth.x; P.y = cm2.mouth.y + 60; P.lvl = 0; } else { caveSwap(true, cm2); if (id === 'minedeep') { P.x = cm2.cave.block.x - (cm2.cave.flip ? -70 : 70); P.y = cm2.cave.block.y; } } return true; }
+    if (id === 'seain' || id === 'seabeach') { var cs2 = cvOf('sea'); if (!cs2) { toast('No sea cave on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; caveSwap(true, cs2); if (id === 'seabeach') { P.x = cs2.cave.beach.x; P.y = cs2.cave.beach.y + 40; } return true; }
+    if (id === 'seacave') { var cs3 = cvOf('sea'); if (!cs3) { toast('No sea cave on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = cs3.mouth.x; P.y = cs3.mouth.y + 130; P.lvl = 0; if (giveBoat('rowboat')) raftUse(); return true; }
+    if (id === 'shelter') { var sh0 = w.mt.shelters[0]; go(sh0 ? { x: sh0.x + 30, y: sh0.y + 50 } : null); return true; }
+    if (id === 'vein') { var vs = w.mt.veins.filter(function (v) { return v.left > 0; }); if (!vs.length) { toast('Every vein is worked out'); return true; } var v0 = vs[slopeI++ % vs.length]; go({ x: v0.x, y: v0.y + 26 }); return true; }
+    if (id === 'mbeasts') { ['bear', 'wolf', 'boar'].forEach(function (k, i) { var at = w.nearFlat(P.x + 110 + i * 50, P.y + 90, w.levelAt(P.x, P.y)) || { x: P.x + 110, y: P.y + 90 }, e = placeAnimal(k, 0, at, false); if (e) { e.awake = false; e.aggro = 70; } }); toast('Beasts, south-east of you'); return true; }
+    return false;
+  }
   function runeRows() {
     var due = yearDue(), alt = runeSite;
-    return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
+    return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'No runes (the Bash and the Dash are his own)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
       { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (the Throwing axe bound)' }, { id: 'unbuilt', name: Runes2.OPTS.includeData ? 'The storm offers the unbuilt runes too' : 'The storm offers only the built runes', on: Runes2.OPTS.includeData },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
@@ -8562,7 +8595,7 @@ __COMBAT__
     if (SCENE === 'ruin') { ruinAct(id); return; }
     if ((SCENE === 'mountain' || ['slope1', 'slope2', 'foot', 'plateau', 'look', 'shelter', 'vein'].indexOf(id) >= 0) && w.mt && mountainAct(id)) { save(); return; }
     if (id === 'all') { sandboxRunes(); toast('Every rune known'); }
-    else if (id === 'start') { R2 = Runes2.start(); Combat.api.runeState = R2; toast('The Bash and the Dash'); }
+    else if (id === 'start') { R2 = Runes2.start(); Combat.api.runeState = R2; toast('No runes: the Bash and the Dash are the base moves'); }
     else if (id === 'tiers') { Runes2.LIST.forEach(function (r) { Runes2.learn(R2, r.id, 3); }); toast('Every rune at tier III'); }
     else if (id === 'due') { year.day = yearDue() ? 0 : YEAR.days; }
     else if (id === 'boar' || id === 'deer' || id === 'bear') { var kb = placeAnimal(id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) Combat.api.knockOut(kb); }
