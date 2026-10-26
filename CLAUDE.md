@@ -333,7 +333,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   drawn as pictures (`tuftPic`, fifteen sway steps, six shapes a count: 47 to 54 fps), and the save's ground diff is kept until
   the ground is painted again (`GDIFF`, `w.groundRev`: the autosave cost 120 ms every ten seconds, a hitch). Before judging a
   change by its fps, measure it in alternation with a near-empty frame (`PERF.skip`), as outside load moves both.
-- **The error log and the frame log:** every error a page throws (or a frame throws: the loop catches it and goes on) goes to
+- **Admin's Download my settings** (2026-10-26, `settingsDownload`): `settings.txt` with every key the browser keeps for the game and the editors but the saves and the logs, so a tuning that lives only in Robin's browser (the old Gathering, Grass, Hird, Item and Creature editors' `game.gather`, `game.grass`, `game.hird`, `game.give`, `game.creatures`, which the game still reads) can be made the game's own. **The error log and the frame log:** every error a page throws (or a frame throws: the loop catches it and goes on) goes to
   `ERR.lines` and `game.errlog`; Admin downloads `errorlog.txt`. Every second of play writes a line to the frame log
   (`game.perflog`; Admin downloads `framelog.txt`; a frame over 50 ms is a SPIKE line). Robin puts both in the project folder.
 

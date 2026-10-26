@@ -21869,6 +21869,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
     { id: 'stroll', name: 'The hero walks at 60 (yesterday\u2019s pace)', text: 'He walks at 60 on the power walk as on 2026-10-21 instead of jogging at 78; Shift still sprints. To compare the two.', toggle: true },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
+    { id: 'settings', name: 'Download my settings', text: 'Saves settings.txt: every tuning this browser keeps for the game and the editors (the hand-overs, the old editors’ numbers, Admin’s switches), not the saves or the logs, so the Game Developer can make them the game’s own. Put it in the project folder.' },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
     { id: 'reveal', name: 'Reveal the chart', text: 'The steading, every village and the cave known; the raft taught.' },
     { id: 'dusk', name: 'Skip to dusk', text: 'The clock jumps to the evening.' },
@@ -21970,6 +21971,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); if (id === 'stroll') { gaitSync(); toast(ADMIN.stroll ? 'The hero walks at 60, yesterday\u2019s pace' : 'The hero jogs at 78'); } return; }
     if (id === 'perflog') { perfDownload(); return; }
     if (id === 'errlog') { errDownload(); return; }
+    if (id === 'settings') { settingsDownload(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
     else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; seen.vill = {}; villages.forEach(function (vv, vi) { seen.vill[vi] = 1; }); toast('The chart knows the islands'); }
@@ -25585,6 +25587,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('unhandledrejection', function (ev) { var r = ev.reason; logErr('rejection', r && r.message ? r.message : r, r && r.stack); });
   (function () { var ce = console.error; console.error = function () { try { logErr('console', Array.prototype.map.call(arguments, function (a) { return a && a.message ? a.message : String(a); }).join(' ')); } catch (e) {} return ce.apply(console, arguments); }; })();
   function errText() { return 'Error log, ' + new Date().toISOString() + ', ' + navigator.userAgent + '\n' + (ERR.lines.length ? ERR.lines.join('\n') : '(no errors)') + '\n\nThe last of the frame log:\n' + PERF.lines.slice(-60).join('\n'); }
+  function settingsDownload() {             /* every key this browser keeps for the game and the editors but the saves and the logs (2026-10-26: the old editors' numbers the game still reads, to be made the game's own) */
+    var out = ['Settings, ' + new Date().toISOString() + ', ' + location.href.split('?')[0]], k, v, i;
+    for (i = 0; i < localStorage.length; i++) { k = localStorage.key(i); if (/save|errlog|perflog/i.test(k)) continue; try { v = localStorage.getItem(k); } catch (e) { v = null; } if (v == null) continue; out.push(k + ' = ' + (v.length > 20000 ? v.slice(0, 20000) + ' ...(cut)' : v)); }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([out.join(String.fromCharCode(10))], { type: 'text/plain' })); a.download = 'settings.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('settings.txt saved: put it in the project folder');
+  }
   function errDownload() {
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([errText()], { type: 'text/plain' })); a.download = 'errorlog.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('errorlog.txt saved: put it in the project folder');
   }
