@@ -33,7 +33,8 @@ var KINDS = {
   trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 0.08, desc: 'For the legs.' },
   boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 0.05, desc: 'Good on rock and in snow.' },
   cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 0.05, desc: 'Against the wind at sea.' },
-  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 0.1, desc: 'A round shield with an iron boss, painted the way you like.' }
+  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 0.1, desc: 'A round shield with an iron boss, painted the way you like.' },
+  quiver: { name: 'Quiver', len: 10, w: 2, dmg: 0, tool: null, gear: 'quiver', armor: 0, desc: 'A leather tube on the belt. The arrows go in it.' }   /* (2026-10-26: the arrows' slot outside the bag, Robin; Colin, AD's quiver) */
 };
 var MATS = {
   wood: { name: 'Wooden', face: '#b98a5a', dark: '#8a5a3a', edge: '#e9cfa0', glow: '255,230,170', power: 0.7, grain: true },
@@ -54,7 +55,7 @@ function make(kind, mat, o) {
   for (k in DEF) it[k] = DEF[k];
   for (k in o || {}) if (o[k] != null) it[k] = o[k];
   if (!it.name) it.name = name(it);
-  if (!it.desc) it.desc = desc(it);
+  if (!it.desc || (it.mat !== 'gold' && it.desc.indexOf('Gold does not hold') >= 0)) it.desc = desc(it);   /* (a saved leather thing's tale had the gold line) */
   return it;
 }
 function name(it) {
@@ -64,6 +65,7 @@ function name(it) {
   if (it.mat === 'leather' && it.kind === 'boots') return 'Leather Shoes';
   if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
+  if (it.kind === 'quiver') return 'Quiver';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
   if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
   if (it.mat === 'iron' && it.kind === 'shield') return 'Painted Shield';
@@ -86,7 +88,7 @@ function desc(it) {
   else if (it.mat === 'wool' && it.kind === 'tunic') bits.push('Layers of wool and linen quilted thick. Warm, and it takes the sting out of a blow.');
   else if (it.mat === 'iron') bits.push('Honest iron from a bloomery: bog ore and charcoal, hammered into a bar and then into this.');
   else if (it.mat === 'silver') bits.push('Silver-bright. Made for a chieftain, or taken from one.');
-  else bits.push('Gold does not hold an edge, but no one who sees it forgets it.');
+  else if (it.mat === 'gold') bits.push('Gold does not hold an edge, but no one who sees it forgets it.');   /* (only gold: the leather things had taken this line, 2026-10-26) */
   if (it.size >= 1.3) bits.push('Larger than most.'); else if (it.size <= 0.75) bits.push('Small enough to hide.');
   if (it.glow >= 0.5) bits.push('It shines with a light of its own.');
   if (Math.abs(it.twist) >= 0.5) bits.push('The ' + (it.kind === 'bow' ? 'limbs' : 'blade') + ' bend' + (it.kind === 'bow' ? '' : 's') + ' in a way no smith intended.');

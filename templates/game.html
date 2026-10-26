@@ -415,7 +415,7 @@ __COMBAT__
     var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind === 'club' && it.mat === 'wood' && M.layers.indexOf('stickWood') >= 0 ? 'stick' : it.kind) : null;   /* (the Strong Stick its own layer, Colin, AD's stickWood, 2026-10-26) */   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
-    if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : 'arrowNock'; if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
+    if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : M.layers.indexOf('arrowNockWood') >= 0 ? 'arrowNockWood' : 'arrowNock';   /* (the wooden arrow on the string, Colin, AD's arrowNockWood: every arrow is wooden yet) */ if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
     if (shieldHeld()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
     return out;
   }
@@ -453,6 +453,7 @@ __COMBAT__
     var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, mf = function (it, d) { return (it && Items.MATS[it.mat] && Items.MATS[it.mat].face) || d; };
     var L = [{ l: 'body' }, { l: 'legs', t: equip.legs ? mf(equip.legs, S.legs) : S.legs }, { l: 'tunic', t: S.tunic }, { l: equip.feet ? 'boots' : 'shoes' }, { l: 'belt' }];
     if (equip.chest) L.push(equip.chest.mat === 'iron' ? { l: 'mail', t: Items.MATS.iron.face } : { l: 'coat', t: mf(equip.chest, '#9a6a44') });
+    if (equip.quiver) { L.push({ l: 'quiver' }); if (quiverCount() > 0) L.push({ l: 'arrowsQuiver' }); }   /* the quiver on his right hip, its arrows' ends while it holds any (Colin, AD's, 2026-10-26): after the worn layers, before the cloak */
     if (equip.cloak) L.push({ l: 'cloak', t: mf(equip.cloak, '#6b4f36') });
     if (ring) L.push({ l: 'armring', t: (RING_METALS[ring.metal] && RING_METALS[ring.metal].col) || '#b07a3a' });
     var hd = equip.head && (HERO_HEADS[equip.head.mat] || HERO_HEADS.leather);
@@ -882,7 +883,7 @@ __COMBAT__
     B.items.push({ name: 'zonePost_' + t.piece.zone, x: t.px, y: t.py, r: 2, zoneId: id, rot: 0 }); bDirty = true; sfx('build'); save();
   }
   function arnorZone() { if (!village) return; B.zones = B.zones || []; var x0 = village.tx + 14, y0 = village.ty + 9; if (B.zones.some(function (z) { return z.kind === 'sleep' && z.x0 <= x0 + 1 && z.x1 >= x0 + 5 && z.y0 <= y0 + 1 && z.y1 >= y0 + 5; })) return; B.zones.push({ id: 'zArnor', kind: 'sleep', x0: x0, y0: y0, x1: x0 + 6, y1: y0 + 6, named: 1, arnor: 1 }); }   /* (no post: it is Arnor's) */
-  function butcherTableEnsure() { arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st !== 'mending' && arnorState() === 'teach') abt.st = 'mending'; if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
+  function butcherTableEnsure() { if (!seen.quiverV) { seen.quiverV = 1; if (!equip.quiver && quiver.slots.some(function (q) { return q && q.n > 0; })) equip.quiver = Items.make('quiver', 'leather'); }   /* (an older save with arrows gets the quiver they were in, once) */ arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st !== 'mending' && arnorState() === 'teach') abt.st = 'mending'; if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
     if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
   function zonesTick() { butcherTableEnsure(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
@@ -1655,6 +1656,7 @@ __COMBAT__
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
+    { id: 'quiver', cat: 'armour', out: { item: ['quiver', 'leather'] }, needs: { leather: 1, fiber: 2 }, at: 'hand', key: 'leather' },   /* the quiver by hand from a hide and cord (mine, 2026-10-26): the arrows are carried in it, so the bow wants one */
     { id: 'woodArrows', cat: 'supply', out: { stack: ['arrow', 5] }, needs: { wood: 1, fiber: 1 }, at: 'hand', key: 'fiber' },   /* simple wooden arrows, five at a time (Robin, 2026-10-26: arrows made and used up; the numbers mine) */
     { id: 'arrows5', cat: 'supply', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
     { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
@@ -2100,8 +2102,8 @@ __COMBAT__
   function recount() { for (var k in inv) inv[k] = 0; slots.forEach(function (s) { if (s && s.kind !== 'item') inv[s.kind] = (inv[s.kind] || 0) + s.n; }); inv.fish = 0; for (var fk in FISH_KINDS) inv.fish += inv[fk] || 0; }   // 'fish' is every fish together
   // weapons and tools are things: one to a slot, never stacked, kept as { kind: 'item', n: 1, item: spec }
   function addThing(spec) { for (var k = 0; k < SLOTS; k++) { var i = (BAG0 + k) % SLOTS; if (!slots[i]) { slots[i] = { kind: 'item', n: 1, item: spec }; return true; } } return false; }   // the bag rows first, then the bars
-  var TOOL_SLOT = { shield: 'shield', helmet: 'head', tunic: 'chest', trousers: 'legs', boots: 'feet', cloak: 'cloak' }, TOOL_IDS = ['axe', 'pick', 'knife'];   // worn gear; weapons and tools live on the bars
-  var equip = { shield: null, trinket: null, trinket2: null, ring1: null, ring2: null, neck: null, head: null, cloak: null, chest: null, legs: null, feet: null };
+  var TOOL_SLOT = { shield: 'shield', helmet: 'head', tunic: 'chest', trousers: 'legs', boots: 'feet', cloak: 'cloak', quiver: 'quiver' }, TOOL_IDS = ['axe', 'pick', 'knife'];   // worn gear; weapons and tools live on the bars
+  var equip = { shield: null, quiver: null, trinket: null, trinket2: null, ring1: null, ring2: null, neck: null, head: null, cloak: null, chest: null, legs: null, feet: null };
   function startKit() { for (var k in equip) equip[k] = null; }   // you start with nothing: the first tools are made by hand
   var CAMP_WOOD = 4, CAMP_STONE = 9, WRECK_WOOD = 4, WRECK_PRIES = 4;   /* (2026-10-14: the wreck is the first wood, pried from its hull, four times three; fewer branches lie about) */      // the axe, knife, pick and stick sword take 9 branches and 6 stones; the rest is for the first bench
   function campScatter() {               // branches and stones lying round the camp, on land, clear of the spot you land on
@@ -4271,7 +4273,7 @@ __COMBAT__
     [['wood', 25], ['stone', 25], ['fiber', 25], ['leather', 12], ['torch', 6], ['berries', 10], ['meat', 5], ['copper', 12], ['charcoal', 12], ['copperBar', 6], ['bogIron', 9], ['ironBar', 6]].forEach(function (q) { addItem(q[0], q[1]); });
     barPut(Items.make('sword', 'iron')); barPut(Items.make('bow', 'wood')); barPut(Items.make('rod', 'iron')); seen.fishTaught = 1; barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); equip.shield = Items.make('shield', 'wood'); hand = 0;
     ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); });
-    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
+    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather');
     ORDER.forEach(function (k) { seen[k] = 1; }); ['raft', 'mason', 'ship1', 'ship2', 'ship3'].forEach(function (k) { seen[k] = 1; });
     if (SHOW.runes) sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
   }
@@ -5201,7 +5203,7 @@ __COMBAT__
   }
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
   var noArrowT = 0;
-  Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && quiverCount() <= 0 && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast('No arrows'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
+  Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && (!equip.quiver || quiverCount() <= 0) && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast(equip.quiver ? 'No arrows' : 'No quiver'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
   var TRAP_STACK = { tripper: 'trapTripper', poison: 'trapPoison' };
   Combat.api.trapHave = function (kind) { if (ADMIN.free) return 99; return inv[TRAP_STACK[kind]] || 0; };   /* the Trapper's traps come from the bag (Robin, 2026-10-24) */
   Combat.api.trapUse = function (kind) { if (!ADMIN.free) takeItem(TRAP_STACK[kind], 1); };
@@ -5300,11 +5302,11 @@ __COMBAT__
   /* ---------- the character panel: slides in from the left on Tab, the bag from the right ---------- */
   var CHAR_H = 120, CHAR = { w: 110, h: CHAR_H, x: 8, y: 16 / 3, slide: 0 };   /* (330 by 360 canvas pixels at Robin's size, the studio's spec, 2026-10-20) */   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
   function chLeft() { return CHAR.x - (1 - CHAR.slide) * (CHAR.w + 40); }
-  var EQUIP = [['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['shield', 'Shield'], ['neck', 'Necklace'], ['ring1', 'Ring'], ['ring2', 'Ring'], ['trinket', 'Trinket'], ['trinket2', 'Trinket']];   // the right column: shield, necklace, two rings, two trinkets (Robin, 2026-10-07)
+  var EQUIP = [['quiver', 'Quiver'], ['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['shield', 'Shield'], ['neck', 'Necklace'], ['ring1', 'Ring'], ['ring2', 'Ring'], ['trinket', 'Trinket'], ['trinket2', 'Trinket']];   // the right column: shield, necklace, two rings, two trinkets (Robin, 2026-10-07)
   var EQUIPPED = { weapon: 'sword', bow: 'bow' };
   function gearFor(id) { if (equip[id]) return true; for (var k in Items.KINDS) if (TOOL_SLOT[k] === id) return true; return false; }   // is there anything in the game that goes in this slot?
-  var GEAR_L = ['head', 'cloak', 'chest', 'armring', 'legs', 'feet'], GEAR_R = ['shield', 'neck', 'ring1', 'ring2', 'trinket', 'trinket2'];   /* six round slots a side (the spec); the arm ring stands where the spec has "armour" (mine: the game's coat or mail is the chest's) */
-  var SKETCH = { head: 'head', cloak: 'cloak', chest: 'chest', legs: 'legs', feet: 'feet', shield: 'shield', neck: 'neck', ring1: 'ring', ring2: 'ring', trinket: 'trinket', trinket2: 'trinket', armring: 'ring' };
+  var GEAR_L = ['head', 'cloak', 'chest', 'armring', 'legs', 'feet'], GEAR_R = ['shield', 'neck', 'ring1', 'ring2', 'trinket', 'quiver'];   /* (the quiver where the second trinket was, 2026-10-26, mine: nothing fills a trinket yet) */   /* six round slots a side (the spec); the arm ring stands where the spec has "armour" (mine: the game's coat or mail is the chest's) */
+  var SKETCH = { head: 'head', cloak: 'cloak', chest: 'chest', legs: 'legs', feet: 'feet', shield: 'shield', neck: 'neck', ring1: 'ring', ring2: 'ring', trinket: 'trinket', trinket2: 'trinket', quiver: 'quiver', armring: 'ring' };
   function chSlots() {                      // the Gear slots: px and py where the board draws them, x, y, w, h in units for the mouse
     var x0 = chLeft(), out = [], nm = {}; EQUIP.forEach(function (q) { nm[q[0]] = q[1]; });
     [GEAR_L, GEAR_R].forEach(function (col, side) { col.forEach(function (id, i) { var px = side ? 278 : 52, py = 78 + i * 46, r = 20 / 3; out.push({ id: id, name: id === 'armring' ? 'Arm ring' : nm[id], ringSlot: id === 'armring', px: px, py: py, x: x0 + px / 3 - r, y: CHAR.y + py / 3 - r, w: r * 2, h: r * 2 }); }); });
@@ -5462,7 +5464,7 @@ __COMBAT__
       });
       // under the window: what you wear turns aside, or what the slot you point at holds
       var txt = '';   /* (no status line under the window: the Stats tab has it, Robin's update) */
-      if (hov) { var txt = hov.ringSlot ? (ring ? RING_METALS[ring.metal].name + ' arm ring' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty'); }
+      if (hov) { var txt = hov.ringSlot ? (ring ? RING_METALS[ring.metal].name + ' arm ring' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + (hov.id === 'quiver' ? ', ' + quiverCount() + ' arrows' : '') + '  (right click: take off)' : hov.name + ': empty'); }
       if (txt) { c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center'); }
     });
     if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
@@ -7923,7 +7925,7 @@ __COMBAT__
     for (k = 0; k < SLOTS; k++) slots[k] = null;
     BT_WPN.slice(0, 6).forEach(function (kd, i) { slots[i] = { kind: 'item', n: 1, item: Items.make(kd, 'iron') }; });       // one of every weapon on the bar: the number keys change what is in hand
     addThing(Items.make('axe', 'iron')); addThing(Items.make('pick', 'iron')); addThing(Items.make('knife', 'iron')); addThing(Items.make('bow', 'wood'));
-    equip.shield = Items.make('shield', 'wood'); battleGear(); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
+    equip.shield = Items.make('shield', 'wood'); battleGear(); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather');
     addItem('cookedMeat', 10); hand = 0; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.village = 1; seen.fiber = 1; noSave = true;
     P.mode = 'fight'; recount(); battleSet('one');
   }
@@ -8586,7 +8588,7 @@ __COMBAT__
     var as0 = altarStand(runeSite); P.x = as0.x; P.y = as0.y; P.face = Math.PI / 2; P.lvl = 0; P.mode = 'fight';   /* (he works the altar from the north: Robin, 2026-10-23) */
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); }); addItem('trapTripper', 5); addItem('trapPoison', 5);   /* (traps to throw with the Trapper) */
-    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
+    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather'); day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
     sandboxRunes(); year.day = YEAR.days; sceneBoarWait = 30; seen.pried = 1; armsOut = true; save();   /* (the boar out cold is placed a few frames in, once the island's animals stand; no wreck reminder here) */
   }
   function runeRows() {
