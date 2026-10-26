@@ -193,11 +193,11 @@ var WorldMap = (function () {
       var SB = fogField(), D = T.img.data, N = T.N, M = T.M, ppt = T.ppt, u, v, t;
       var PA = hex(S.paper), PD = [PA[0] * 0.87, PA[1] * 0.83, PA[2] * 0.75], SEA = hex(S.sea), SH = hex(S.shallowCol), RC = hex(S.rippleCol), LD = hex(S.landDark), LM = hex(S.landMid), LL = hex(S.landLight), INK = hex(S.inkCol), BC = hex(S.beachCol);
       var OC1 = [176, 150, 74], OC2 = [206, 182, 98], LV = [0.16, 0.055, 0.025].slice(0, Math.round(S.ripples)), kn = Array.from(ISLES, function (q, i) { return knowOf(i); });
-      for (v = 0; v < TILE; v++) for (u = 0; u < TILE; u++) {
+      function pass(D, nofog) { for (v = 0; v < TILE; v++) for (u = 0; u < TILE; u++) {   /* (nofog: the minimap's copy shows the land everywhere, Robin's pick B of 2026-10-26; the big map keeps its fog) */
         var i = v * TILE + u, j = (v + M) * N + u + M, p = i * 4, X = (T.tx * TILE + u + 0.5) / ppt, Y = (T.ty * TILE + v + 0.5) / ppt, fib = T.FIB[i] * 6, edge = T.EDG[i];
         t = sm(0.5, 0.85, T.MOT[i]) * S.mottle; var pr = PA[0] + (PD[0] - PA[0]) * t + fib, pg = PA[1] + (PD[1] - PA[1]) * t + fib, pb = PA[2] + (PD[2] - PA[2]) * t + fib;
         t = sm(70, 4, edge) * S.burn; pr += (128 - pr) * t; pg += (84 - pg) * t; pb += (44 - pb) * t;
-        var sb = sampleG(SB, X, Y), ns = Math.max(sm(0.002, 0.045, sb), sm(0.25, 0.6, sampleG(G.TB, X, Y))), be = sm(0.002, 0.012, sb) * (1 - sm(0.012, 0.03, sb));
+        var sb = nofog ? 1 : sampleG(SB, X, Y), ns = nofog ? 1 : Math.max(sm(0.002, 0.045, sb), sm(0.25, 0.6, sampleG(G.TB, X, Y))), be = nofog ? 0 : sm(0.002, 0.012, sb) * (1 - sm(0.012, 0.03, sb));
         var k = (S.wash + S.streak * (T.ST[i] - 0.5)) * ns; if (k < 0) k = 0;
         var r = pr + (pr * SEA[0] / 255 - pr) * k, g = pg + (pg * SEA[1] / 255 - pg) * k, b = pb + (pb * SEA[2] / 255 - pb) * k;
         t = sm(0.02, 0.32, T.H8[i]) * S.shallows * ns; r += (pr + (SH[0] - pr) * 0.6 - r) * t; g += (pg + (SH[1] - pg) * 0.6 - g) * t; b += (pb + (SH[2] - pb) * 0.6 - b) * t;
@@ -231,9 +231,10 @@ var WorldMap = (function () {
           if (vis < 0.5 && kn[is] === 1 && S.toldLine > 0 && ((Math.floor(X * 0.7) + Math.floor(Y * 0.7)) % 3 === 0)) { t = ink * 0.45 * S.toldLine; r += (96 - r) * t; g += (88 - g) * t; b += (80 - b) * t; }   /* told of: a broken pencil line */
         }
         D[p] = r; D[p + 1] = g; D[p + 2] = b; D[p + 3] = edge < 1 ? 0 : 255;
-      }
-      if (T.li <= 2) { if (!T.mini) { T.mini = document.createElement('canvas'); T.mini.width = TILE; T.mini.height = TILE; T.mimg = T.mini.getContext('2d').createImageData(TILE, TILE); } var MD = T.mimg.data;   /* the minimap's copy, lifted for its small size (Colin, AD, 2026-10-25): no pixel read per frame */
-        for (var mi = 0; mi < D.length; mi += 4) { var lum = D[mi] * 0.3 + D[mi + 1] * 0.59 + D[mi + 2] * 0.11; for (var mk = 0; mk < 3; mk++) { var vv = lum + (D[mi + mk] - lum) * 1.05; vv = (vv - 200) * 1.3 + 200; MD[mi + mk] = vv < 0 ? 0 : vv > 255 ? 255 : vv; } MD[mi + 3] = D[mi + 3]; }
+      } }
+      pass(D, false);
+      if (T.li <= 2) { if (!T.mini) { T.mini = document.createElement('canvas'); T.mini.width = TILE; T.mini.height = TILE; T.mimg = T.mini.getContext('2d').createImageData(TILE, TILE); } var MD = T.mimg.data, FD = new Uint8ClampedArray(D.length); pass(FD, true);   /* the minimap's copy, painted with no fog and lifted for its small size (Colin, AD, 2026-10-25): no pixel read per frame */
+        for (var mi = 0; mi < FD.length; mi += 4) { var lum = FD[mi] * 0.3 + FD[mi + 1] * 0.59 + FD[mi + 2] * 0.11; for (var mk = 0; mk < 3; mk++) { var vv = lum + (FD[mi + mk] - lum) * 1.05; vv = (vv - 200) * 1.3 + 200; MD[mi + mk] = vv < 0 ? 0 : vv > 255 ? 255 : vv; } MD[mi + 3] = FD[mi + 3]; }
         T.mini.getContext('2d').putImageData(T.mimg, 0, 0); }
       T.raw.getContext('2d').putImageData(T.img, 0, 0); var qc = T.cv.getContext('2d'); qc.clearRect(0, 0, TILE + 2, TILE + 2); qc.drawImage(T.raw, 1, 1);
       qc.drawImage(T.raw, 0, 0, 1, TILE, 0, 1, 1, TILE); qc.drawImage(T.raw, TILE - 1, 0, 1, TILE, TILE + 1, 1, 1, TILE); qc.drawImage(T.cv, 0, 1, TILE + 2, 1, 0, 0, TILE + 2, 1); qc.drawImage(T.cv, 0, TILE, TILE + 2, 1, 0, TILE + 1, TILE + 2, 1);   /* (each edge pixel copied outward, or the seams show) */
