@@ -881,7 +881,9 @@ __COMBAT__
     B.zones.push({ id: id, kind: t.piece.zone, x0: t.r.x0, y0: t.r.y0, x1: t.r.x1, y1: t.r.y1 });
     B.items.push({ name: 'zonePost_' + t.piece.zone, x: t.px, y: t.py, r: 2, zoneId: id, rot: 0 }); bDirty = true; sfx('build'); save();
   }
-  function butcherTableEnsure() { if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
+  function arnorZone() { if (!village) return; B.zones = B.zones || []; var x0 = village.tx + 14, y0 = village.ty + 9; if (B.zones.some(function (z) { return z.kind === 'sleep' && z.x0 <= x0 + 1 && z.x1 >= x0 + 5 && z.y0 <= y0 + 1 && z.y1 >= y0 + 5; })) return; B.zones.push({ id: 'zArnor', kind: 'sleep', x0: x0, y0: y0, x1: x0 + 6, y1: y0 + 6, named: 1, arnor: 1 }); }   /* (no post: it is Arnor's) */
+  function butcherTableEnsure() { if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
+    if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
   function zonesTick() { butcherTableEnsure(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
     if (!B.zonesV && roomInfo && !bDirty) { B.zonesV = 1; roomInfo.rooms.forEach(function (r, ri) { var bed = B.items.filter(function (it) { return it.bed && !(it.lvl || 0) && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri; })[0]; if (!bed || placeAt(bed.x, bed.y) >= 0) return;
@@ -1219,7 +1221,7 @@ __COMBAT__
     if (bv < 0 && !SCENE && !zoneAt(bd.x, bd.y, 'sleep')) return 'Mark a sleeping place round it';   /* on your own ground a bed answers inside a sleeping place (Robin, 2026-10-25); a village's beds are homes already */
     return null;
   }
-  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening() || bedWhy(bd)) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: sleepComfortAt(bd.x, bd.y) }; invOpen = false; menu = null; }
+  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening() || bedWhy(bd)) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: sleepComfortAt(bd.x, bd.y), bd: bd }; invOpen = false; menu = null; }
 
   /* ---------- the night (Robin, 2026-10-06): dark, and the wolves come. Home, with its fire, is where you are safe ----------
      Wolves live nowhere by day. When the light has mostly gone a pack of three comes in from the edge of your view, on
@@ -2266,6 +2268,7 @@ __COMBAT__
   function feastEat(it) { it.eaten = day.n; eat('feast', true); toast('Their feast is yours'); theftSeen(it); deed('feast'); }
   function spriteName(o) {               // a prop's picture by what it is: the graves are mounds (Thorgunna's a standing stone), a hacked stake a stump (the Art Director's steading and fence pieces, 2026-10-20)
     if (o.name === 'graveStone') return o.grave === 'thorgunna' ? 'graveThorgunna' : 'graveMound';
+    if (o.name === 'strawBed' && sleep && sleep.bd === o && World.IMAGES.strawBed_sleeper) return 'strawBed_sleeper';   /* asleep in the straw bed: the blanket drawn up over him, Colin, AD's (2026-10-26), in place of the hero */
     if (o.name === 'stake' && o.cut) return 'stake_stump';
     if (o.name === 'stake' && o.mended) return 'stake_new';   /* (a mended run of the ring: pale new wood, the polygon rings, 2026-10-21) */
     return o.name;
@@ -2292,7 +2295,8 @@ __COMBAT__
     house(vx + 14, vy + 1, 6, 6, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
     item('table', vx + 14.6, vy + 1.2); item('barrel', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });   /* (the steading's crates are barrels and a chest since 2026-10-22: Robin, through the Art Director) */
     house(vx + 14, vy + 9, 6, 6, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
-    item('bed', vx + 14, vy + 9, { bed: true });
+    item('strawBed', vx + 15, vy + 10, { bed: true, r: 10 });
+    arnorZone();   /* Arnor's house is a sleeping place from the start (the starter island has no Places tab), so its comfort and the straw bed answer */   /* the spare straw bed on Arnor's floor, the player's place to wake (Robin, 2026-10-26; Colin, AD's picture) */
     item('woodenWell', vx + 12, vy + 10); item('stoneHearth', vx + 8.6, vy + 10.6, { light: 1 });   // Arnor's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
     item('barrel', vx + 19, vy + 10, { loot: { berries: 5, meat: 2 } });
     for (x = vx; x < vx + village.w; x++) if (!(x >= vx + 11 && x <= vx + 12) && R() < 0.8) H(x, vy, 'palisade', 0);   // the palisade: a gate in the north, gaps all round
@@ -5840,6 +5844,7 @@ __COMBAT__
     var W2 = Combat.dbg().W, P = hero(); if (!W2.stuck || !W2.stuck.length) return;
     for (var i = W2.stuck.length - 1; i >= 0; i--) { var st = W2.stuck[i]; if (st.on || st.drop || st.surf === 'stone' || st.reflected || st.t < 0.6) continue; if (Math.hypot(st.x - P.x, st.y - P.y) > 16) continue; if (quiverAdd('arrow', 1) > 0) continue; W2.stuck.splice(i, 1); sfx('pick'); save(); }
   }
+  var hdSleep = Combat.api.heroSprite; if (hdSleep) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (sleep && sleep.bd && sleep.bd.name === 'strawBed' && World.IMAGES.strawBed_sleeper) return; hdSleep(c, x, y, face, an, dashing); };   /* (he is the shape under the blanket while he sleeps in the straw bed) */
   Combat.api.drawFireArrow = function (c, pr) {   /* in flight: the loop at 12 fps, pointing along +x, turned to the flight angle as drawProj turns the drawn one */
     if (!World.IMAGES.fireArrow_0) return false; var sp = sprite('fireArrow_' + (Math.floor(clock * 12) % 6)); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
@@ -7603,7 +7608,8 @@ __COMBAT__
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h2' + (typeof Village !== 'undefined' && Village.VERSION > 1 ? ':v' + Village.VERSION : ''); }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
-  function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
+  function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }
+  function toSpawn() { var P = hero(), sb = questDone('quest.arnor.house') ? B.items.filter(function (it) { return it.name === 'strawBed'; })[0] : null; if (!sb) { toCamp(); return; } P.x = sb.x; P.y = sb.y + 18; P.vx = P.vy = 0; }   /* after a fall he wakes by the straw bed in Arnor's house once it is mended (Robin, 2026-10-26: "a basic spawnpoint until you build your own village"), else at the wreck */   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     if (BT.on || SCENE === 'models') { noSave = true; try { localStorage.removeItem(SAVE); } catch (e) {} }   /* the battle and destruction scenes save nothing and load nothing (2026-10-15: something saved during their very first load, before the scene switched saving off, and every later visit loaded it: the destruction scene then had no sampler and "To the sampler" threw) */
     var sv = fresh || BT.on ? null : loadSave(), k;
@@ -8725,7 +8731,7 @@ __COMBAT__
   // one step of the world: the solids near the hero, every tick of the page, then the engine (also the debug hook `tick`, so checks can run it without rendering)
   function simTick(dt) {
     var D = Combat.dbg(), P = D.P;
-    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; craftJob = null; if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } menLive = {}; isleLive = {}; if (wakeAtSea && raft) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; wakeAtSea = null; carrying = null; toast('Your men dragged you aboard'); } else { toCamp(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } } spawnBoars(); if (BT.on && BT.field) battleSet(BT.setup); }   // the raft drifts back to the camp shore; on a raid with his men standing he wakes aboard (raid step 3)     // R after falling: the engine made a new hero
+    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; craftJob = null; if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } menLive = {}; isleLive = {}; if (wakeAtSea && raft) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; wakeAtSea = null; carrying = null; toast('Your men dragged you aboard'); } else { toSpawn(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } } spawnBoars(); if (BT.on && BT.field) battleSet(BT.setup); }   // the raft drifts back to the camp shore; on a raid with his men standing he wakes aboard (raid step 3)     // R after falling: the engine made a new hero
     else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
     if (P.mode === 'build' && lastMode !== 'build') { menuFrom = 'B'; openMenu('build'); }   // B opens the Building board (what you make by hand is on C)
     if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
