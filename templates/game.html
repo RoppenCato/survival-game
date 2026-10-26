@@ -2409,7 +2409,7 @@ __COMBAT__
       c.strokeStyle = 'rgba(232,192,96,0.7)'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(x + 3.5, y + 3.5, W - 7, H - 7, 20); c.stroke();
       c.fillStyle = '#2b1c13'; c.beginPath(); c.arc(cx, cy, 17, 0, 7); c.fill(); c.strokeStyle = '#d8b062'; c.lineWidth = 1.6; c.stroke();
       c.save(); c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.clip();
-      if (q.kind === 'make') hUnits(c, cx, cy, function () { infoIcon(c, q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }, 0, 0, 0.5); });
+      if (q.kind === 'make') hUnits(c, cx, cy, function () { var e0 = q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }; infoIcon(c, e0, 0, 0, e0.dish ? 0.7 : e0.r.out.item ? 0.66 : 0.75); });   /* its longest side about 90% of the ring, clipped to the socket (Colin, AD, 2026-10-26; measured: the icons fill 93 to 98% of their pictures, so no crop is needed) */
       else { var pic = q.first.prop ? himg('pieces/' + q.first.prop) : null; if (pic) c.drawImage(pic, cx - 17, cy - 17, 34, 34); else hUnits(c, cx, cy, function () { if (q.first.icon) q.first.icon(c); else Build.icon(c, q.first.id, q.first.m); }); }
       c.restore();
       var nm = q.kind === 'make' ? (q.first.out ? recipeName(q.first) : q.first.name || q.first.id) : q.first.name, line = nm.charAt(0).toUpperCase() + nm.slice(1) + (q.n > 1 ? ' and ' + (q.n - 1) + ' more' : '') + (q.kind === 'build' ? '  (B)' : '');
