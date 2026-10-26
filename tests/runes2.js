@@ -3,11 +3,11 @@
 const R = require('../src/runes2.js');
 function ok(c, s) { console.log((c ? '  ' : '  !! ') + s); }
 let st = R.start();
-ok(R.known(st, 'bash') && R.bound(st, 'guardBlow') === 'bash' && R.bound(st, 'dash') === 'dash', 'the start: the Bash and the Dash known and bound');
+ok(!R.known(st, 'bash') && !R.bound(st, 'guardBlow') && !R.bound(st, 'dash') && Object.keys(st.lib).length === 0, 'the start: no rune known; the Bash and the Dash are base abilities (Robin, 2026-10-26)');
 ok(!R.bind(st, 'guardBlow', 'charge'), 'an unknown rune cannot be bound');
 ok(!R.bind(st, 'hand', 'bash'), 'a rune binds only to its own slot');
 R.learn(st, 'charge', 1); ok(R.bind(st, 'guardBlow', 'charge') && R.bound(st, 'guardBlow') === 'charge', 'the Charge learnt and bound in the Bash’s place');
-ok(R.fits(st, 'guardBlow').map(r => r.id).join(',') === 'bash,charge', 'what fits the guard-blow: ' + R.fits(st, 'guardBlow').map(r => r.id).join(','));
+ok(R.fits(st, 'guardBlow').map(r => r.id).join(',') === 'charge', 'what fits the guard-blow: ' + R.fits(st, 'guardBlow').map(r => r.id).join(','));
 ok(R.ready(st, 'guardBlow') && R.cost(st, 'guardBlow') === 30, 'a bound active is ready at once and costs stamina (the Charge 30): no blood ring (Robin, 2026-10-25: stamina only)');
 ok(R.howOf('bash').length > 0 && R.howOf('thorsFell')[0].indexOf('[K]') >= 0, 'the rune screen has the keys for each: ' + R.howOf('bash')[0]);
 ok(R.SLOT.dash.active && R.BY.dash.n.wrong, 'the dash slot is an active and the Dash rune has its new numbers (the slot had been written over, 2026-10-24)');

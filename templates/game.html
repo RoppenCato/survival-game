@@ -142,9 +142,9 @@ __COMBAT__
     deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
     snake: { start: 0, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },   /* start 0: no adders on the starter island (Robin, 2026-10-22: "you have no use for the blood yet"; it was 3) */
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
-    moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
+    moose: { n: 0, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
     troll: { n: 0, ground: 'dark', r: 9, dmg: 40, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
-    bear: { n: 1, ground: 'far', r: 12, dmg: 30, aggro: 85, range: 90, drops: { meat: 3, leather: 2 } },
+    bear: { n: 0, ground: 'far', r: 12, dmg: 30, aggro: 85, range: 90, drops: { meat: 3, leather: 2 } },
     unge: { n: 0, ground: 'dark', r: 9, dmg: 6, aggro: 0, range: 60, drops: { stone: 1, copper: 0.3 } },   // the troll's young: only in his cave (ungeSpawn)
     // the villages' animals (2026-10-21; n 0: never on an island of their own, placed by stockSpawn): a hen, a sheep and a cow scatter from you (flee) and come back; a goat butts
     hen: { n: 0, ground: 'grass', r: 2, dmg: 0, aggro: 70, range: 46, flee: true, drops: { meat: 1 } },
@@ -708,7 +708,7 @@ __COMBAT__
   // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
   // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Arnor's raft). 2026-10-08, Robin: the
   // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
-  var STARTER_PIECES = { 'Log wall': 1, 'Plank wall': 1, 'Wattle wall': 1, 'Door': 1, 'Window': 1, 'Post': 1, 'Plank floor': 1, 'Packed earth': 1, 'Thatch roof': 1, 'Workbench': 1, 'Bed': 1, 'Shipyard': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1, 'Stone altar': 1, 'Trapper\u2019s bench': 1, 'Sleeping place': 1 };   /* (the list is mine) */
+  var STARTER_PIECES = { 'Log wall': 1, 'Plank wall': 1, 'Wattle wall': 1, 'Door': 1, 'Window': 1, 'Post': 1, 'Plank floor': 1, 'Packed earth': 1, 'Thatch roof': 1, 'Workbench': 1, 'Bed': 1, 'Shipyard': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1, 'Sleeping place': 1 };   /* no altar and no trapper's bench on the starter island (Robin, 2026-10-26) */   /* (the list is mine) */
   function onStarter() { var P = hero(); return !SCENE && !!w && isleAt(P.x, P.y) === 0; }
   function pieceKnown(p) { if (onStarter() && !STARTER_PIECES[p.name]) return false; return !p.key || !!seen[p.key]; }   /* on the starter island, only what the house and the raft need (Robin, 2026-10-20) */   /* keys: a kind picked up, a thing built, Arnor's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
   function stepPiece(d) { var P = hero(), n = 0; do { P.piece = (P.piece + d + PIECES.length) % PIECES.length; } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }   // the next piece you know (it called itself until 2026-10-12: the wheel on a piece not yet known froze the game)
@@ -912,7 +912,7 @@ __COMBAT__
     blot: { summer: 'Sigrblót', autumn: 'Haustblót', winter: 'Jólablót', spring: 'Dísablót' },   /* the rite that turns the year INTO the season (Alistair, LD's handoff 11, Robin's yes: Yule into winter) */
     line: { spring: 'The ice goes. The sea is open.', summer: 'The long days.', autumn: 'The leaves turn. Gather what the winter wants.', winter: 'The snow lies. The sea is shut.' },   /* LORE? */
     tint: { spring: '#9fd36a', summer: '#4f9a3c', autumn: '#d8862e', winter: '#dfe8f4' } };
-  var year = { season: 'summer', day: 4, winters: 0 };
+  var year = { season: 'summer', day: 2, winters: 0 };   /* the first summer about 4 days (Robin, 2026-10-26) */
   function yearNext(sn) { return YEAR.order[(YEAR.order.indexOf(sn) + 1) % 4]; }
   function yearDue() { return year.day >= YEAR.days && !year.pending; }   /* (a season already called waits for the night's sleep: year.pending) */
   var DUSK_HASTE = 7;                        /* how much faster the day runs down after a rite until it is night (mine) */
@@ -1204,7 +1204,7 @@ __COMBAT__
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ runeLearn('keenEye', 1, 'the first night slept'); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else if (false) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
@@ -1252,7 +1252,7 @@ __COMBAT__
     });
     if (L > 0.6 && !nightSpawned && !inCave && !sleep) {
       nightSpawned = true;
-      var isle = isleAt(P.x, P.y), first = null; if (isle < 0) return;
+      var isle = isleAt(P.x, P.y), first = null; if (isle < 0 || isle === 0) return;   /* no wolves on the starter island (Robin, 2026-10-26) */
       placeIsle = isle;
       for (i = 0; i < 3; i++) { var e = placeAnimal('wolf', 380, first ? { x: first.wander.x0, y: first.wander.y0 } : null, false); if (!e) continue; if (!first) first = e; e.isle = isle; e.night = true; e.wander.r = 260; nightWolves.push(e); }
       placeIsle = null;
@@ -1664,7 +1664,7 @@ __COMBAT__
   ];
   // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
   // bow, leather for armour); until then it is not shown at all. Taught recipes (the raft) wait for the teaching.
-  var STARTER_HIDE = { flintKnife: 1 };   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
+  var STARTER_HIDE = { flintKnife: 1, flintSword: 1, leatherHelmet: 1, leatherCloak: 1 };   /* (2026-10-26, Robin: the flint sword goes; the outfit only a shirt, trousers and leather shoes) */   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
   function known(r) { if (r.out && r.out.arrows) return false; if (STARTER_HIDE[r.id] && onStarter()) return false; if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
   function dishKnown(d) { if (d.taught && !seen[d.taught]) return false; for (var k in d.needs) if (!seen[k]) return false; return true; }
   function recipeName(r) { return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? (r.out.stack[0] === 'torch' ? r.out.stack[1] + ' torches' : NAMES[r.out.stack[0]]) : r.out.arrows + ' wood arrows')); }
@@ -2262,7 +2262,7 @@ __COMBAT__
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
     for (x = vx; x < vx + 8; x++) if (R() < 0.7) H(x, vy + village.h, 'fence', 2);
     item('woodpile', vx + 2, vy + 9.3); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 8.6, vy + 9.3); item('haystack', vx + 2, vy + 13);
-    item('shieldRack', vx + 18.4, vy + 7.4); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
+    item('shieldRack', vx + 18.4, vy + 7.4); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }].concat(lootSlots({}).slice(1)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
     item('dragonPost', vx + 9.6, vy + 0.6); item('barrel', vx + 1, vy + 5, { loot: { arrows: 10 } });
     item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.6, vy + 9.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
     // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
@@ -3917,7 +3917,7 @@ __COMBAT__
       if (arnorStep(dt)) return;
       var gv = village.graves, Lg = loreLines('line.arnor.graves'); npc.face = Math.atan2(gv.y - npc.y, gv.x - npc.x);
       if (d > HEAR) { if (npc.sayT > 0 && npc.seq.i >= 0) { npc.sayT = 0; npc.seq.i--; } return; }   /* (you walked off: he waits, and says the cut line again when you are back) */
-      if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = Math.max(2.4, Math.min(6, 1.6 + Lg[npc.seq.i].length * 0.055)); }   /* (each line as long as it takes to read: handoff 14 cut them to one grave a line, 2026-10-25) */ else { seen.graves = 1; runeLearn('catFoot', 1, 'the graves read'); npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
+      if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = Math.max(2.4, Math.min(6, 1.6 + Lg[npc.seq.i].length * 0.055)); }   /* (each line as long as it takes to read: handoff 14 cut them to one grave a line, 2026-10-25) */ else { seen.graves = 1; npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
       return;
     }
     if (npc.shore) { npc.job = null; if (d > 1600) arnorHome(); else if (d < 300) npc.face = Math.atan2(P.y - npc.y, P.x - npc.x); return; }
@@ -4486,7 +4486,7 @@ __COMBAT__
     var s = stationNear(P), it = s && s.it;                          // the built things: one of them, already chosen by the same rule
     if (s && s.kind === 'carver') { if (!build) add(it, 'Cut runes', function () { openRing(it); }); }
     else if (s && s.kind === 'seat') { if (!build) add(it, 'Sit', function () { sitDown(it); }); }
-    else if (s && s.kind === 'hearth') { if (!build && yearDue() && isHearth(it) && !theirs(it.x, it.y)) add(it, 'Hold the blót', function () { blot(it); }); add(it, 'Cook', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('hearth'); }); }
+    else if (s && s.kind === 'hearth') { if (!onStarter()) add(it, 'Cook', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('hearth'); }); }
     else if (s && s.kind === 'furnace') add(it, 'Smelt', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('furnace'); });
     else if (s && s.kind === 'bench') { if (!build) add(it, 'Craft', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); }); }
     else if (s && s.kind === 'trapper') { if (!build) add(it, 'Make traps', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('trapper'); }); }
@@ -4582,8 +4582,10 @@ __COMBAT__
     c.translate(x - 23, y); c.scale(0.55, 0.55); if (kind) drawDropIcon(c, kind, 0, 0, 1.3); else if (r && r.out.item) Items.icon(c, Items.make(r.out.item[0], r.out.item[1]), 14); else if (r) drawDropIcon(c, r.out.stack ? r.out.stack[0] : 'arrow', 0, 0, 1.3); c.restore();
     if (n > 1) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText('x' + n, x + 18, y + 2); c.fillStyle = '#fff'; c.fillText('x' + n, x + 18, y + 2); }
   }
+  var BERRY_CD = 120, berryAt = -1e9;   /* berries eaten raw: a little health, then a 2-minute wait (Robin, 2026-10-26: "No food on the starter island. Instead the berries can be eaten for a little health but has 2 min cooldown") */
   function eat(kind, free) {
     var f = FOOD[kind], P = hero(); if (!f || (!free && !(inv[kind] > 0)) || P.dead) return;
+    if (kind === 'berries') { var bl = BERRY_CD - (clock - berryAt); if (bl > 0) { toast('You have had your fill of berries for now'); return; } berryAt = clock; }
     if (!free) takeItem(kind, 1);
     if (f.time) fed = { kind: kind, left: f.time * (runeHas('hearthsGift') ? runeN('hearthsGift', 'lastK') || 1 : 1), regen: f.regen + (runeHas('hearthsGift') ? runeN('hearthsGift', 'heal') || 0 : 0), bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };   /* the Hearth's gift: a dish lasts longer, heals a little every second at III */
     if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (f.time && runeHas('warmBelly') ? runeN('warmBelly', 'healK') || 1 : 1));   /* the Warm belly: a hot dish heals twice */
@@ -5594,10 +5596,10 @@ __COMBAT__
   var STONE_POOL = ['catFoot', 'keenEye', 'thickHide', 'bloodlust'];   /* what a runestone read can teach (the world's runes), by the stone's place */
   function stoneNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.hypot(o.x - P.x, o.y - P.y) < 44) best = o; }); return best; }
   function stoneRune(o) { return STONE_POOL[Math.floor(hash(Math.round(o.x), Math.round(o.y), 11) * STONE_POOL.length) % STONE_POOL.length]; }
-  function readStone(o) { var key = propKey(o), id = stoneRune(o); seen.stones = seen.stones || {}; if (seen.stones[key]) { toast('You have read this stone'); return; } seen.stones[key] = 1; if (!runeLearn(id, 1, 'read from a runestone')) { toast('The stone speaks of ' + Runes2.BY[id].name + ', which you know'); save(); } }
+  function readStone(o) { var key = propKey(o); seen.stones = seen.stones || {}; if (!seen.stones[key]) { seen.stones[key] = 1; save(); } toast('Old runes, worn past reading'); }   /* the runes are placed now, not scattered (Robin, 2026-10-26): a stone teaches none until one is placed here (it taught from STONE_POOL) */
   function fighting() { var P = hero(); return Combat.dbg().W.enemies.some(function (e) { return !e.dead && e.side !== 1 && !e.out && e.awake && Math.hypot(e.x - P.x, e.y - P.y) < 240; }); }
   function sandboxRunes() { Runes2.LIST.forEach(function (r) { Runes2.learn(R2, r.id, 1); }); }
-  function killDeed(e) { if (!e || e.side === 1) return; var k = e.stock || e.kind; if (k === 'boar' && !e.unge) runeLearn('charge', 1, 'the first boar'); else if (k === 'wolf') runeLearn('bloodlust', 1, 'the first wolf'); }   /* the world's runes met where they are met: a beast's at its first kill (Runes2) */
+  function killDeed(e) { }   /* (runes from deeds stopped: Robin, 2026-10-26; the first boar gave the Charge, the first wolf Bloodlust) */
   function deed(kind, n) { }   /* (the old runes' deeds: counted no more since the rework of 2026-10-23; the calls stay as marks of what the hero does) */
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
@@ -5849,11 +5851,12 @@ __COMBAT__
   var OB_TABS = [['runes', 'Runes']];   /* the book's own half (the right edge): the runes now; the hird, the beasts and home when they have something (mine) */
   var OB_SLOTS = ['guardBlow', 'dash', 'swing', 'shot', 'hand', 'foot', 'eye', 'heart', 'hearth', 'helm'];
   function obOpenIt() { bookOpen = true; bookHp = hero().hp; LB.tab = 'runes'; invOpen = false; cookOpen = false; menu = null; mapOpen = false; altarOpen = false; musterOpen = false; clothOpen = false; }
+  function obTabsShown() { return OB_TABS.filter(function (t) { return t[0] !== 'runes' || Object.keys((R2 && R2.lib) || {}).length > 0; }); }   /* a tab of your own once it holds something: the runes after the first blót */
   function bookOwn(tab) { return tab === 'runes' || OB_TABS.some(function (t) { return t[0] === tab; }); }
   function bookTabRects() {                  // the thumb tabs out of the page edges: the world's on the left, your own on the right, a picture and the word on each
     var H = 96, out = [];
     lbTabsShown().forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: -1, x: -30, y: 112 + i * 92, w: 74, h: 86 }); });
-    OB_TABS.forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: 1, x: 908, y: 112 + i * 92, w: 74, h: 86 }); });
+    obTabsShown().forEach(function (t, i) { out.push({ id: t[0], name: t[1], side: 1, x: 908, y: 112 + i * 92, w: 74, h: 86 }); });
     return out;
   }
   function bookTabsDraw(c) {                 // Colin, AD's thumb tabs: the chosen red, the world's blue-grey, your own brown; a picture and the word turned up under it
@@ -6859,7 +6862,7 @@ __COMBAT__
      seconds, so the engine carries only the islands round him. Boar, deer and adder everywhere; moose and bear only on islands
      of 80 tiles' radius or more outside home water (distance from home sets how hard: Robin). */
   var BEAST_NEAR = 1100, BEAST_FAR = 2600, BEAST_HOLD = 40, isleLive = {}, isleTickT = 0;
-  function isleBeastKinds(q) { var ks = ['boar', 'deer', 'snake']; if (q.r >= 80 && q.ring >= 1) ks.push('moose', 'bear'); return ks; }
+  function isleBeastKinds(q) { var ks = ['boar', 'deer', 'snake']; return ks; }   /* the moose and the bear saved for later (Robin, 2026-10-26) */
   function islePopulate(i) { var q = w.isles[i]; isleBeastKinds(q).forEach(function (k) { placeIsle = i; for (var j = 0, n1 = animalN(k, i); j < n1; j++) { var e = placeAnimal(k, 260, null, false); if (!e) break; e.isle = i; j += herdOf(e, k, n1 - j - 1); } placeIsle = null; }); }
   function isleClear(i) { Combat.dbg().W.enemies.forEach(function (e) { if (e.isle === i && !e.human && !e.night && !e.unge && e.kind !== 'troll' && !e.dead) e.away = true; }); }
   /* The villages' animals (the Art Director's step 5A, 2026-10-20; wired 2026-10-21, mine): hens, goats, sheep and cows on the
@@ -7373,7 +7376,7 @@ __COMBAT__
     if (e.code === 'KeyX') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) drawToggle(); return; }   // draw your weapon, or put it away
     if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !altarOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
-    if (e.code === 'KeyO') { e.preventDefault(); if (!e.repeat && !naming && SCENE !== 'models') { if (bookOpen && bookOwn(LB.tab)) bookOpen = false; else { if (bookOpen) bookTurn = performance.now(); obOpenIt(); } } return; }   /* O: the rune screen (Robin, 2026-10-25: "Own key. Use O.") */
+    if (e.code === 'KeyO') { e.preventDefault(); if (!e.repeat && !naming && SCENE !== 'models' && obTabsShown().length) { if (bookOpen && bookOwn(LB.tab)) bookOpen = false; else { if (bookOpen) bookTurn = performance.now(); obOpenIt(); } } return; }   /* O: the rune screen (Robin, 2026-10-25: "Own key. Use O.") */
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { if (bookOpen && !bookOwn(LB.tab)) bookOpen = false; else { if (bookOpen && lbHasAny()) bookTurn = performance.now(); lbOpen(); } } return; }
     if (e.code === 'KeyH') { e.preventDefault(); if (!e.repeat && !pauseOpen) { if (scenePanel()) runePanel.folded = !runePanel.folded; else skyOpen = !skyOpen; } return; }   /* in a test scene H opens and shuts its board (Robin, 2026-10-24); the sky board is Admin's Season and Weather rows there */   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
     if (altarOpen && (e.code === 'KeyE' || e.code === 'Escape') && !e.repeat) { e.preventDefault(); altarOpen = false; return; }
@@ -7492,7 +7495,7 @@ __COMBAT__
     if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The world was remade: a fresh start'); }, 500); }
     if (sv && sv.isle && sv.isle !== spec.isle) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The island was remade at a new size: a fresh start'); }, 500); }   // a save from an island of another size does not fit
     if (sv) spec.seed = sv.seed;
-    year = sv && sv.year && YEAR.names[sv.year.season] ? { season: sv.year.season, day: sv.year.day || 0, winters: sv.year.winters || 0 } : { season: 'summer', day: 4, winters: 0 };
+    year = sv && sv.year && YEAR.names[sv.year.season] ? { season: sv.year.season, day: sv.year.day || 0, winters: sv.year.winters || 0 } : { season: 'summer', day: 2, winters: 0 };
     heroName = sv && sv.heroName ? sv.heroName : ''; pins = sv && sv.pins ? sv.pins.filter(function (id) { return !!recipeById(id); }).slice(0, 3) : []; craftN = sv && sv.craftN ? sv.craftN : {}; naming = !heroName && !SCENE && !BT.on ? { name: '' } : null;   /* the hero's name, asked once */
     ungeSense = Object.assign({ hits: 0, kills: 0, ore: 0, dead: 0, day: -1 }, sv && sv.unge ? sv.unge : {}); ungeSense.hits = 0; ungeInit = false; trollSeekT = 0;   /* the troll's young: how many are lost, and what the troll has sensed */
     buildWorld(); if (year.season !== 'summer') w.setSeason(year.season);
@@ -8629,7 +8632,7 @@ __COMBAT__
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
     if (Math.abs(P.vx) + Math.abs(P.vy) > 10) deed('walk', dt); STACK = false ? 40 : 25;
-    riteTick(dt); riteTick2(dt); bindTick(dt); runeReadyTick(); heroRingSync(); if (!seen.hurt && P.hp < P.maxHp - 1 && fighting()) { seen.hurt = 1; runeLearn('thickHide', 1, 'the first blow taken'); }
+    riteTick(dt); riteTick2(dt); bindTick(dt); runeReadyTick(); heroRingSync();
     Combat.api.skills = [];
     handSync();
     Combat.api.buildSlots = buildSlots0;

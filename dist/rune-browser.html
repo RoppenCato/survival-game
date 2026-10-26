@@ -193,7 +193,7 @@ var ANIMAL_TIER = {}; for (var ak in ANIMAL_RANK) ANIMAL_TIER[ak] = RANKS[ANIMAL
 function rankOf(kind) { return RANKS[ANIMAL_RANK[kind] || 1]; }
 var MARKS = { struck: { t: 10, col: '#ffe9a0' }, bleeding: { t: 20, col: '#c8322a' }, afraid: { t: 6, col: '#c9a8ff' }, chilled: { t: 8, col: '#a8d8ff' }, burning: { t: 6, col: '#ff9a40' } };
 function fresh() { return { lib: {}, bound: {}, uses: {}, blood: {} }; }
-function start(st) { st = st || fresh(); learn(st, 'bash', 1); learn(st, 'dash', 1); if (!st.bound.guardBlow) bind(st, 'guardBlow', 'bash'); if (!st.bound.dash) bind(st, 'dash', 'dash'); return st; }   // what every hero has from the first day
+function start(st) { st = st || fresh(); ['bash', 'dash'].forEach(function (id) { delete st.lib[id]; delete st.uses[id]; for (var s in st.bound) if (st.bound[s] === id) delete st.bound[s]; }); return st; }   /* the Bash and the Dash are base abilities now (Robin, 2026-10-26), so a hero starts with no rune and an older save's two are taken back; the first runes come at the first blót */
 function known(st, id) { return !!(st && st.lib && st.lib[id]); }
 function tierOf(st, id) { if (!known(st, id)) return 0; var t = st.lib[id], u = st.uses[id] || 0, g = 1; while (g < TIERS && u >= GROW[g]) g++; return Math.max(t, g); }   // the tier given, or the one use has reached
 function learn(st, id, tier) { if (!BY[id]) return false; var t = Math.max(1, Math.min(TIERS, tier || 1)); if (!st.lib[id] || st.lib[id] < t) st.lib[id] = t; return true; }

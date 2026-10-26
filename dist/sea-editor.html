@@ -8314,7 +8314,8 @@ function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k]
    burning) are how runes work together: one lays, another reads. */
 var R2DEF = null, KO_T = 60;
 function RS2() { if (api.runeState) return api.runeState; if (!R2DEF && typeof Runes2 !== 'undefined') R2DEF = Runes2.start(); return R2DEF; }
-function rune(slot) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.bound(st, slot) : (slot === 'guardBlow' ? 'bash' : slot === 'dash' ? 'dash' : null); }
+var BASE_MOVE = { guardBlow: 'bash', dash: 'dash' };   /* the Bash and the Dash are base abilities (Robin, 2026-10-26: "Bash and dash as base abilities sounds good"): a slot with no rune does its own move */
+function rune(slot) { var st = RS2(), b = st && typeof Runes2 !== 'undefined' ? Runes2.bound(st, slot) : null; return b || BASE_MOVE[slot] || null; }
 function runeHas(id) { var st = RS2(); return !!(st && typeof Runes2 !== 'undefined' && Runes2.has(st, id)); }
 function runeN(id, key) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.num(st, id, key) : 0; }
 function swingRune() { return rune('swing'); }
@@ -8327,7 +8328,7 @@ function berserkOn() { return runeHas('berserk') && P.hp < P.maxHp * runeN('bers
 function bowFull() { return BOW.full; }
 function bowSnap() { return BOW.dmgMin; }
 function bowOver() { return runeHas('quickDraw') ? (runeN('quickDraw', 'over') || 1) : 0; }   /* the Aimed shot (Robin, 2026-10-24): the draw goes on past full for as long again */
-function runeReady(slot) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return true; return Runes2.ready(st, slot) && (!P || P.st >= (Runes2.cost(st, slot) || 0)); }
+function runeReady(slot) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return true; if (!Runes2.bound(st, slot)) return !!BASE_MOVE[slot]; return Runes2.ready(st, slot) && (!P || P.st >= (Runes2.cost(st, slot) || 0)); }
 function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; var own = slot === 'guardBlow' ? CROWD.shoveSt : 0, more = Math.max(0, (Runes2.cost(st, slot) || 0) - own); if (more && P) { P.st = Math.max(0, P.st - more); P.stDelay = Math.max(P.stDelay || 0, 0.6); } var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
 function runeBlood(n) { var st = RS2(); if (st && typeof Runes2 !== 'undefined') Runes2.drawBlood(st, n); }
 function markOn(e, mark, t) { if (!e) return; e.marks = e.marks || {}; e.marks[mark] = Math.max(e.marks[mark] || 0, t || 1); }

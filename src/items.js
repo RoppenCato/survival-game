@@ -60,7 +60,8 @@ function make(kind, mat, o) {
 function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
-  if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.mat === 'wood' && it.kind === 'club') return 'Strong Stick';   /* Robin, 2026-10-26: "It makes more sense to be hitting with a stick than to create a club" */
+  if (it.mat === 'leather' && it.kind === 'boots') return 'Leather Shoes';
   if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
@@ -73,7 +74,7 @@ function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
-  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A branch with a knot at the end, hardened in the fire. Good enough for a boar.');
+  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A stout branch, knotted and heavy at one end. Good enough for a boar.');
   else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');

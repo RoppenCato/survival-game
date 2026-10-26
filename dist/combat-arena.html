@@ -2380,7 +2380,7 @@ var ANIMAL_TIER = {}; for (var ak in ANIMAL_RANK) ANIMAL_TIER[ak] = RANKS[ANIMAL
 function rankOf(kind) { return RANKS[ANIMAL_RANK[kind] || 1]; }
 var MARKS = { struck: { t: 10, col: '#ffe9a0' }, bleeding: { t: 20, col: '#c8322a' }, afraid: { t: 6, col: '#c9a8ff' }, chilled: { t: 8, col: '#a8d8ff' }, burning: { t: 6, col: '#ff9a40' } };
 function fresh() { return { lib: {}, bound: {}, uses: {}, blood: {} }; }
-function start(st) { st = st || fresh(); learn(st, 'bash', 1); learn(st, 'dash', 1); if (!st.bound.guardBlow) bind(st, 'guardBlow', 'bash'); if (!st.bound.dash) bind(st, 'dash', 'dash'); return st; }   // what every hero has from the first day
+function start(st) { st = st || fresh(); ['bash', 'dash'].forEach(function (id) { delete st.lib[id]; delete st.uses[id]; for (var s in st.bound) if (st.bound[s] === id) delete st.bound[s]; }); return st; }   /* the Bash and the Dash are base abilities now (Robin, 2026-10-26), so a hero starts with no rune and an older save's two are taken back; the first runes come at the first blót */
 function known(st, id) { return !!(st && st.lib && st.lib[id]); }
 function tierOf(st, id) { if (!known(st, id)) return 0; var t = st.lib[id], u = st.uses[id] || 0, g = 1; while (g < TIERS && u >= GROW[g]) g++; return Math.max(t, g); }   // the tier given, or the one use has reached
 function learn(st, id, tier) { if (!BY[id]) return false; var t = Math.max(1, Math.min(TIERS, tier || 1)); if (!st.lib[id] || st.lib[id] < t) st.lib[id] = t; return true; }
@@ -2500,7 +2500,8 @@ function make(kind, mat, o) {
 function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
-  if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.mat === 'wood' && it.kind === 'club') return 'Strong Stick';   /* Robin, 2026-10-26: "It makes more sense to be hitting with a stick than to create a club" */
+  if (it.mat === 'leather' && it.kind === 'boots') return 'Leather Shoes';
   if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
   if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
@@ -2513,7 +2514,7 @@ function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
-  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A branch with a knot at the end, hardened in the fire. Good enough for a boar.');
+  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A stout branch, knotted and heavy at one end. Good enough for a boar.');
   else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
@@ -2734,7 +2735,8 @@ function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k]
    burning) are how runes work together: one lays, another reads. */
 var R2DEF = null, KO_T = 60;
 function RS2() { if (api.runeState) return api.runeState; if (!R2DEF && typeof Runes2 !== 'undefined') R2DEF = Runes2.start(); return R2DEF; }
-function rune(slot) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.bound(st, slot) : (slot === 'guardBlow' ? 'bash' : slot === 'dash' ? 'dash' : null); }
+var BASE_MOVE = { guardBlow: 'bash', dash: 'dash' };   /* the Bash and the Dash are base abilities (Robin, 2026-10-26: "Bash and dash as base abilities sounds good"): a slot with no rune does its own move */
+function rune(slot) { var st = RS2(), b = st && typeof Runes2 !== 'undefined' ? Runes2.bound(st, slot) : null; return b || BASE_MOVE[slot] || null; }
 function runeHas(id) { var st = RS2(); return !!(st && typeof Runes2 !== 'undefined' && Runes2.has(st, id)); }
 function runeN(id, key) { var st = RS2(); return st && typeof Runes2 !== 'undefined' ? Runes2.num(st, id, key) : 0; }
 function swingRune() { return rune('swing'); }
@@ -2747,7 +2749,7 @@ function berserkOn() { return runeHas('berserk') && P.hp < P.maxHp * runeN('bers
 function bowFull() { return BOW.full; }
 function bowSnap() { return BOW.dmgMin; }
 function bowOver() { return runeHas('quickDraw') ? (runeN('quickDraw', 'over') || 1) : 0; }   /* the Aimed shot (Robin, 2026-10-24): the draw goes on past full for as long again */
-function runeReady(slot) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return true; return Runes2.ready(st, slot) && (!P || P.st >= (Runes2.cost(st, slot) || 0)); }
+function runeReady(slot) { var st = RS2(); if (!st || typeof Runes2 === 'undefined') return true; if (!Runes2.bound(st, slot)) return !!BASE_MOVE[slot]; return Runes2.ready(st, slot) && (!P || P.st >= (Runes2.cost(st, slot) || 0)); }
 function runeSpend(slot, id) { var st = RS2(); if (!st || typeof Runes2 === 'undefined' || !id) return; var own = slot === 'guardBlow' ? CROWD.shoveSt : 0, more = Math.max(0, (Runes2.cost(st, slot) || 0) - own); if (more && P) { P.st = Math.max(0, P.st - more); P.stDelay = Math.max(P.stDelay || 0, 0.6); } var g = Runes2.use(st, id); if (g && api.onRuneGrow) api.onRuneGrow(id, g); }
 function runeBlood(n) { var st = RS2(); if (st && typeof Runes2 !== 'undefined') Runes2.drawBlood(st, n); }
 function markOn(e, mark, t) { if (!e) return; e.marks = e.marks || {}; e.marks[mark] = Math.max(e.marks[mark] || 0, t || 1); }
