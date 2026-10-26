@@ -28,7 +28,7 @@ I.MELEE.forEach(k=>{arm.melee=k;const prof=C.api.profiles()[k];P.atk.ph='none';P
 // ranged
 P.weapon='ranged';
 I.RANGED.forEach(k=>{arm.ranged=k;clear();shot=[];landed=[];const e=beast(300,170);P.x=200;P.y=170;P.face=0;P.fireCd=0;P.st=100;P.atk.ph='none';
-  C.mouse(300,125);C.key('KeyJ',true);C.update(0.016);C.key('KeyJ',false);for(let i=0;i<90;i++)C.update(0.016);
+  C.mouse(300,125);C.key('KeyK',true);for(let i=0;i<40;i++)C.update(0.016);C.key('KeyJ',true);C.update(0.016);C.key('KeyJ',false);C.key('KeyK',false);for(let i=0;i<90;i++)C.update(0.016);   // drawn first (K held) and let go with J, as the game shoots since 2026-10-23
   console.log(k.padEnd(9),'shot',shot.join(','),'hit for',(100-e.hp).toFixed(2),'landed',landed.join(',')||'-');
   if(100-e.hp<=0){console.log('  BAD: no hit');bad++;}
   if(I.KINDS[k].thrown&&!landed.length){console.log('  BAD: a thrown thing should land');bad++;}

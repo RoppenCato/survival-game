@@ -7,7 +7,7 @@ Run everything: `npm install` once, then `npm test` from the project root.
 
 | Script | What it checks |
 | --- | --- |
-| weapons.js | the weapons through the engine: each melee kind at two beasts in a line (the spear both, the seax the first), the club's stagger, the chains, the ranged kinds (a thrown thing should land: two `BAD` lines for the javelin and the throwing axe stand open since before the cleanup of 2026-10-26) |
+| weapons.js | the weapons through the engine: each melee kind at two beasts in a line (the spear both, the seax the first), the club's stagger, the chains, the ranged kinds, each drawn with K and let go with J as the game shoots (a thrown thing lands) |
 | gather.js | gathering (src/gather.js): the sweet spot, the rhythm window, the crack, a felled tree felling its neighbours, trunks into logs, stumps growing back |
 | iron.js | iron (2026-10-07): iron tools and arms step up from copper, iron gear turns more aside than leather, the gambeson between, the Norse names, the 60% cap |
 | karve.js | the ship line (docs/ships-rework.md): every size of the three models fitted by designParts, its seats, rig, stem head and shields |

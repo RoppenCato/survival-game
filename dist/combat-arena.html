@@ -6384,7 +6384,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     var host = document.getElementById('runes'); if (!host) return; host.innerHTML = '';
     Runes2.SLOTS.forEach(function (sl) {
       var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('span'); lab.textContent = sl.name + (sl.active ? ' (' + sl.input + ')' : ''); row.appendChild(lab);
-      var sel = document.createElement('select'); sel.setAttribute('aria-label', sl.name); var o0 = document.createElement('option'); o0.value = ''; o0.textContent = sl.active && (sl.id === 'guardBlow' || sl.id === 'dash') ? 'the start’s' : 'none'; sel.appendChild(o0);
+      var sel = document.createElement('select'); sel.setAttribute('aria-label', sl.name); var o0 = document.createElement('option'); o0.value = ''; o0.textContent = sl.active && (sl.id === 'guardBlow' || sl.id === 'dash') ? 'none (the base move)' : 'none';   /* (the Bash and the Dash are base moves, not runes: Robin, 2026-10-26) */ sel.appendChild(o0);
       Runes2.LIST.filter(function (r) { return r.slot === sl.id; }).forEach(function (r) { var o = document.createElement('option'); o.value = r.id; o.textContent = r.name + (r.status === 'data' ? ' (not built)' : ''); sel.appendChild(o); });
       var tier = document.createElement('select'); tier.setAttribute('aria-label', sl.name + ' tier'); ['I', 'II', 'III'].forEach(function (t, i) { var o = document.createElement('option'); o.value = i + 1; o.textContent = 'tier ' + t; tier.appendChild(o); });
       var cur = ARUNES[sl.id] || {}; sel.value = cur.id || ''; tier.value = cur.tier || 1;
@@ -6392,7 +6392,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
       sel.addEventListener('change', change); tier.addEventListener('change', change);
       var tw = document.createElement('span'); tw.appendChild(sel); tw.appendChild(tier); row.appendChild(tw); host.appendChild(row);
     });
-    var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'Back to the start’s'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
+    var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'No runes'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
     runesApply();
   }
   /* The Rune trial (Robin, 2026-10-24: "a trial of all the runes ... test the rune, decide if it should stay or be retired, if it needs modification; simple and clear, like the combat arena; go through each rune one by one and note what I think"): every rune in the library's order, each with how to try it and what the arena sets up for it; a verdict and a note a rune, kept in runetrial; Export gives the text for the Game Developer. The how-lines and the set-ups are mine. */

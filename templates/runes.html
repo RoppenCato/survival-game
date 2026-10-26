@@ -99,7 +99,7 @@ __RUNES__
     els.ed.innerHTML = '<h2>' + (r.isNew ? 'A new rune' : r.name) + '</h2>' +
       '<div class="two">' + field('id (letters only, never changed once in the game)', '<input type="text" id="f_id" value="' + r.id + '"' + (r.isNew ? '' : ' disabled') + '>') + field('name', '<input type="text" id="f_name" value="' + esc(r.name || '') + '">') + '</div>' +
       '<div class="two">' + field('kind', '<select id="f_kind">' + kd + '</select>') + field('slot', '<select id="f_slot">' + sl + '</select>') + '</div>' +
-      '<div class="two">' + field('pool (start: everyone; storm: the sacrifice; world: a deed, see source; legend: a jarl’s or a boss’s blood)', '<select id="f_pool">' + pl + '</select>') + field('status', '<select id="f_status">' + st + '</select>') + '</div>' +
+      '<div class="two">' + field('pool (start: the base moves every hero has, the Bash and the Dash, no rune to find; storm: the blót; world: kept for runes placed in the world, none yet since deeds stopped; legend: a jarl’s or a boss’s blood)', '<select id="f_pool">' + pl + '</select>') + field('status', '<select id="f_status">' + st + '</select>') + '</div>' +
       field('source (a world rune: the deed that teaches it)', '<input type="text" id="f_source" value="' + esc(r.source || '') + '">') +
       field('tier I: what it does', '<textarea id="f_t0">' + esc((r.text || [])[0] || '') + '</textarea>') + field('tier II: what more', '<textarea id="f_t1">' + esc((r.text || [])[1] || '') + '</textarea>') + field('tier III: what more', '<textarea id="f_t2">' + esc((r.text || [])[2] || '') + '</textarea>') +
       field('the numbers by tier, as JSON (each key three numbers, tier I to III)', '<textarea id="f_n">' + esc(JSON.stringify(r.n || {})) + '</textarea>') +
