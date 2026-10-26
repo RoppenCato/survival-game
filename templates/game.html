@@ -4426,7 +4426,7 @@ __COMBAT__
      topped up from the chest's same kind, and the quiver's arrows: potions, arrows, bandages); N quick stacks at home, as in Grounded: inside
      your ground (a claim stone's reach or one of your places), every stack of the bag's rows goes into any of your chests within reach that
      already holds its kind. */
-  function sortAll() { sortBag(); if (store && store.store) { sortSlots(store.store, 0, store.store.length); save(); } sfx('pick'); }
+  function sortAll() { if (store && store.store) { sortSlots(store.store, 0, store.store.length); save(); } else sortBag(); sfx('pick'); }   /* Q: the open chest only, else the bag (Robin, 2026-10-26) */
   function stackInto(ch, onlyHeld) {         // the bag's rows below the bar into the chest ch: kinds it already holds; returns how many went
     if (!ch || !ch.store) return 0; var have = {}, n = 0, i, j; ch.store.forEach(function (q) { if (q && q.kind !== 'item') have[q.kind] = 1; });
     for (i = BAG0; i < SLOTS; i++) { var sl = slots[i]; if (!sl || sl.kind === 'item' || !have[sl.kind]) continue;
@@ -7598,7 +7598,7 @@ __COMBAT__
     }
     if (invOpen && INV.slide > 0.9) {
       var b = btnAt(), sl = slotAt();
-      if (b === 'sort') { sortAll(); return; } if (b === 'close') { invOpen = false; return; }
+      if (b === 'sort') { sortBag(); sfx('pick'); return; } if (b === 'close') { invOpen = false; return; }
       if (store && STORE_UI.btns && e.button === 0) { var cb = STORE_UI.btns.filter(function (q) { return hitS(q); })[0]; if (cb) { if (cb.id === 'sort') sortAll(); else if (cb.id === 'in') stackInStore(); else fillFromStore(); return; } }   /* the chest's Sort, Stack in and Fill up */
       if (sl >= 0) { if (e.button === 0 && slots[sl]) { var nowC = Date.now(); if (lastSlotClick && lastSlotClick.i === sl && nowC - lastSlotClick.t < 380 && !e.shiftKey) { lastSlotClick = null; pick = null; useSlot(sl); return; } lastSlotClick = { i: sl, t: nowC }; pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false, shift: e.shiftKey, half: e.shiftKey && slots[sl].kind !== 'item' && slots[sl].n > 1 }; } else if (e.button === 2 && slots[sl]) openSlotMenu(sl); return; }   /* (Robin, 2026-10-22: "Doubleclicking on an item should equip it. rightclicking should give a little menu with options") */
       if (mouseS.x > invLeft() - 4 && mouseS.y > CHAR.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the boards, nothing behind them
