@@ -9359,6 +9359,7 @@ var MATS = {
   wool: { name: 'Padded', face: '#c9bfa8', dark: '#8c8270', edge: '#ece6d6', glow: '255,240,220', power: 0.9, grain: true, armor: 1.35 },   // the gambeson: quilted wool and linen
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
+var WOOD_SWORD = 0.6;   /* the Wooden Sword's share of what wood would give a sword: 0.42 of a copper sword's blow, the old Strong Stick's 0.6 */
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
 var ORDER = ['sword', 'axe', 'club', 'cudgel', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['cudgel', 'sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe', 'maul'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
@@ -9370,9 +9371,8 @@ function make(kind, mat, o) {
   return it;
 }
 function name(it) {
-  if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
+  if (it.mat === 'wood' && it.kind === 'sword') return 'Wooden Sword';     /* the first weapon (Robin, 2026-10-26: the Strong Stick renamed, a sword's traits but very weak) */
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
-  if (it.mat === 'wood' && it.kind === 'club') return 'Strong Stick';   /* Robin, 2026-10-26: "It makes more sense to be hitting with a stick than to create a club" */
   if (it.mat === 'leather' && it.kind === 'boots') return 'Leather Shoes';
   if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';
@@ -9385,9 +9385,8 @@ function name(it) {
 }
 function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
-  if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
+  if (it.mat === 'wood' && it.kind === 'sword') bits.push('A blade whittled from a split of ash and hardened in the fire. It cuts like a sword, if only just. Good enough for a young boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
-  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A stout branch, knotted and heavy at one end. Good enough for a boar.');
   else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
@@ -9408,7 +9407,8 @@ function desc(it) {
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
-  var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
+  var weak = it.kind === 'sword' && it.mat === 'wood' ? WOOD_SWORD : 1;   /* the Wooden Sword: very weak (Robin, 2026-10-26; the number mine) */
+  var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * weak * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
@@ -9545,7 +9545,7 @@ function tintCanvas(im, tint) {
   g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.drawImage(im, 0, 0); return cv;
 }
 function iconImage(c, it, s) {
-  var set = SPR.imgs && (it.kind === 'club' && it.mat === 'wood' && SPR.imgs.stick ? SPR.imgs.stick : SPR.imgs[it.kind]); if (!set) return false;   /* the Strong Stick its own icon (Colin, AD's, 2026-10-26) */
+  var set = SPR.imgs && SPR.imgs[it.kind]; if (!set) return false;
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
   if (!ok(wood) && !ok(metal)) return false;
   var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
@@ -17334,7 +17334,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (riteKnife || BUTCH) { if (M.layers.indexOf('knifeWood') >= 0) out.push('knifeWood'); if (M.layers.indexOf('knifeMetal') >= 0) out.push({ layer: 'knifeMetal', tint: Items.MATS.iron.face }); return out; }   /* the sacrifice's knife */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
     if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
-    var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind === 'club' && it.mat === 'wood' && M.layers.indexOf('stickWood') >= 0 ? 'stick' : it.kind) : null;   /* (the Strong Stick its own layer, Colin, AD's stickWood, 2026-10-26) */   /* (the maul in the club's hand until Colin, AD's layers) */
+    var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : M.layers.indexOf('arrowNockWood') >= 0 ? 'arrowNockWood' : 'arrowNock';   /* (the wooden arrow on the string, Colin, AD's arrowNockWood: every arrow is wooden yet) */ if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
@@ -17384,7 +17384,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (berserkNow()) L.push({ l: 'berserk' });   /* Berserk: Colin, AD's face layer over the hair, the beard and the headgear, the eyes glowing through a helm's holes (2026-10-24) */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (riteKnife || BUTCH) { it = null; away = true; if (has('knifeWood')) L.push({ l: 'knifeWood', hand: 1 }); if (has('knifeMetal')) L.push({ l: 'knifeMetal', t: bladeTint('iron'), metal: 1, hand: 1 }); }
-    var hk = it && it.kind === 'club' && it.mat === 'wood' && has('stickWood') ? 'stick' : it && it.kind;   /* the Strong Stick its own layer (Colin, AD's stickWood) */
+    var hk = it && it.kind;
     if (!away && it && has(hk + 'Wood')) L.push({ l: hk + 'Wood', hand: 1 });
     if (!away && it && has(it.kind + 'Metal') && !(it.kind === 'rod' && it.mat === 'wood')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
@@ -17800,7 +17800,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     B.items = B.items.filter(function (it) { return !(STEAD_GONE[it.name] && inS(Math.floor(it.x / T), Math.floor(it.y / T))); });
     decals = decals.filter(function (d) { return !(d.k === 'litter' && d.name === 'brokenDoor' && inS(Math.floor(d.x / T), Math.floor(d.y / T))); });
     bDirty = true; save(); }
-  function butcherTableEnsure() { steadTidy(); if (!seen.quiverV) { seen.quiverV = 1; if (!equip.quiver && quiver.slots.some(function (q) { return q && q.n > 0; })) equip.quiver = Items.make('quiver', 'leather'); }   /* (an older save with arrows gets the quiver they were in, once) */ arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st === 'broken' && questDone('quest.arnor.house') && questDone('quest.arnor.meat')) abt.st = 'mending'; if (abt && abt.st === 'ready' && npc && !npc.shore && !npc.seq && !npc.joined) arnorByBoat(abt);   /* (after a load, or once he has walked home: back by the boat while she waits for you) */ if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
+  function woodSwordSwap() { if (seen.woodSwordV) return; seen.woodSwordV = 1; var sw = function (q) { return q && q.kind === 'item' && q.item && q.item.kind === 'club' && q.item.mat === 'wood' ? Object.assign({}, q, { item: Items.make('sword', 'wood') }) : q; };   /* an older save's Strong Stick becomes the Wooden Sword (2026-10-26) */
+    for (var i = 0; i < slots.length; i++) slots[i] = sw(slots[i]); B.items.forEach(function (it) { if (it.store) for (var j = 0; j < it.store.length; j++) it.store[j] = sw(it.store[j]); }); }
+  function butcherTableEnsure() { steadTidy(); woodSwordSwap(); if (!seen.quiverV) { seen.quiverV = 1; if (!equip.quiver && quiver.slots.some(function (q) { return q && q.n > 0; })) equip.quiver = Items.make('quiver', 'leather'); }   /* (an older save with arrows gets the quiver they were in, once) */ arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st === 'broken' && questDone('quest.arnor.house') && questDone('quest.arnor.meat')) abt.st = 'mending'; if (abt && abt.st === 'ready' && npc && !npc.shore && !npc.seq && !npc.joined) arnorByBoat(abt);   /* (after a load, or once he has walked home: back by the boat while she waits for you) */ if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
     if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
   function zonesTick() { butcherTableEnsure(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
@@ -18540,7 +18542,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'torch', cat: 'supply', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
     { id: 'flintPick', cat: 'tool', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
-    { id: 'woodClub', cat: 'weapon', out: { item: ['club', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
+    { id: 'woodSword', cat: 'weapon', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },   /* the Wooden Sword (Robin, 2026-10-26: the Strong Stick renamed, a sword not a blunt weapon) */
     { id: 'trapTripper', cat: 'supply', out: { stack: ['trapTripper', 1] }, needs: { wood: 2, stone: 3, fiber: 2 }, at: 'trapper', key: 'trapper' },   /* the Trapper's traps (Robin, 2026-10-24): made at the trapper's bench; the costs mine */
     { id: 'trapPoison', cat: 'supply', out: { stack: ['trapPoison', 1] }, needs: { stone: 2, berries: 3, fiber: 1 }, at: 'trapper', key: 'trapper' },   /* (a clay pot of crushed troll-berries: Alistair, LD's thing.troll-berry-pot, handoff 12, Robin's yes of 2026-10-24) */
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
@@ -25539,7 +25541,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     runeSite = item('runeAltar', ax, ay, { altar: true }); item('campfire', ax + 84, ay - 10, { hearth: true, light: 1 }); bDirty = true;
     var as0 = altarStand(runeSite); P.x = as0.x; P.y = as0.y; P.face = Math.PI / 2; P.lvl = 0; P.mode = 'fight';   /* (he works the altar from the north: Robin, 2026-10-23) */
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
-    [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); }); addItem('trapTripper', 5); addItem('trapPoison', 5);   /* (traps to throw with the Trapper) */
+    [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('sword', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); }); addItem('trapTripper', 5); addItem('trapPoison', 5);   /* (traps to throw with the Trapper) */
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; equip.quiver = Items.make('quiver', 'leather'); day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
     sandboxRunes(); year.day = YEAR.days; sceneBoarWait = 30; seen.pried = 1; armsOut = true; save();   /* (the boar out cold is placed a few frames in, once the island's animals stand; no wreck reminder here) */
   }

@@ -58,7 +58,7 @@ the git history.
 and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leave.
 
 **Status (2026-10-26): built** but for the "Cooking" tag on what is only for cooking and the glimpses (`CLAUDE.md`, "Chapter 0 as rebuilt"):
-the strong stick, leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
+the wooden sword (the strong stick renamed, a sword not a blunt weapon, very weak: Robin, 2026-10-26), leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
 quests in the book's Quests page, his house mended as a guided repair, the straw bed and waking by it, berries raw with their wait, no
 wolves, altar, cooking or free building, his boat mended overnight and given; the steading tidied of what a farm would not have.
 Robin has not played it through yet.
@@ -66,7 +66,7 @@ Robin has not played it through yet.
 | Heading | What (Robin, 2026-10-26, unless marked mine) |
 | --- | --- |
 | **Sees** | The wreck, the island, the burnt steading and Arnor, boars and deer. **No wolves on the starter island.** No altar. |
-| **Makes and holds** | Basic tools and weapons. **The "strong stick"** in place of the club ("it makes more sense to be hitting with a stick than to create a club"). **A basic outfit: chest, trousers and leather shoes only** (fewer things made at the start). **A bow and simple wooden arrows**, to hunt deer. |
+| **Makes and holds** | Basic tools and weapons. **The Wooden Sword** in place of the club (first the "strong stick": "it makes more sense to be hitting with a stick than to create a club"; renamed on 2026-10-26: a sword's traits, very weak, not blunt). **A basic outfit: chest, trousers and leather shoes only** (fewer things made at the start). **A bow and simple wooden arrows**, to hunt deer. |
 | **Starts** | **Crafting** basic tools and weapons. **Butchering**: a big animal carried back and butchered on **the butcher's table at Arnor's** (the first place it can be done; it also brings in carrying before the altar). **Basic building, by fixing Arnor's house**, which teaches comfort and its needs. **The fire**: comfort, and health back over time close to it. **Quests**: the first ones Arnor's. |
 | **Food** | **No cooked food on the starter island.** Berries can be eaten for a little health, with a 2-minute wait between, so the player can keep going a bit. What is only for cooking carries a **"Cooking" tag**, so it is clear it should be kept. |
 | **Home** | **Arnor's house**; the player sleeps on the spare **straw bed on the floor**: the place he wakes until he builds his own village. |
