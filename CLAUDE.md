@@ -275,7 +275,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 - `templates/`: one HTML shell per page with placeholders (`__ART__`, `__WORLD__`, `__COMBAT__`, `__SPRITES__`, ...) that
   `tools/build.py` fills with `src/` and the sheets' numbers (sheet paths carry `?v=` and a hash of their bytes, so a changed
   sheet is always fetched).
-- `tools/`: `build.py`, `open.js`, the art pipeline (`blender.js`, `sprites.js`, `people.js`, `peoplerender.js`,
+- `tools/`: `build.py`, `parsecheck.js`, `dupcheck.js`, `unusedcheck.js` (the cleanup's dead-code check), `open.js`, the art pipeline (`blender.js`, `sprites.js`, `people.js`, `peoplerender.js`,
   `shieldrender.js`, `props.js`), `sfxjs.js` and `musicjs.js` (sound into scripts that load from disk), `seedrand.js`,
   `sweepmen.js`, `roomsize.js`. `tools/visual/`: scripts that render to PNG for checking (`props.js`, `house.js`,
   `villages.js`, `bigplace.js`, `boats.js`, `beasts.js`, `trollsheet.js`, `vasensheet.js`, `people.js`, `mountain.js`,
