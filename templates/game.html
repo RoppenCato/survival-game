@@ -412,7 +412,7 @@ __COMBAT__
     if (riteKnife) { if (M.layers.indexOf('knifeWood') >= 0) out.push('knifeWood'); if (M.layers.indexOf('knifeMetal') >= 0) out.push({ layer: 'knifeMetal', tint: Items.MATS.iron.face }); return out; }   /* the sacrifice's knife */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
     if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
-    var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
+    var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind === 'club' && it.mat === 'wood' && M.layers.indexOf('stickWood') >= 0 ? 'stick' : it.kind) : null;   /* (the Strong Stick its own layer, Colin, AD's stickWood, 2026-10-26) */   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : 'arrowNock'; if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
@@ -461,7 +461,8 @@ __COMBAT__
     if (berserkNow()) L.push({ l: 'berserk' });   /* Berserk: Colin, AD's face layer over the hair, the beard and the headgear, the eyes glowing through a helm's holes (2026-10-24) */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (riteKnife) { it = null; away = true; if (has('knifeWood')) L.push({ l: 'knifeWood', hand: 1 }); if (has('knifeMetal')) L.push({ l: 'knifeMetal', t: bladeTint('iron'), metal: 1, hand: 1 }); }
-    if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
+    var hk = it && it.kind === 'club' && it.mat === 'wood' && has('stickWood') ? 'stick' : it && it.kind;   /* the Strong Stick its own layer (Colin, AD's stickWood) */
+    if (!away && it && has(hk + 'Wood')) L.push({ l: hk + 'Wood', hand: 1 });
     if (!away && it && has(it.kind + 'Metal') && !(it.kind === 'rod' && it.mat === 'wood')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
     var cl = carryLayer(); if (cl) L.push({ l: cl });
@@ -1652,6 +1653,7 @@ __COMBAT__
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
+    { id: 'woodArrows', cat: 'supply', out: { stack: ['arrow', 5] }, needs: { wood: 1, fiber: 1 }, at: 'hand', key: 'fiber' },   /* simple wooden arrows, five at a time (Robin, 2026-10-26: arrows made and used up; the numbers mine) */
     { id: 'arrows5', cat: 'supply', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
     { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
     { id: 'arrows15', cat: 'supply', out: { arrows: 15 }, needs: { wood: 4, fiber: 2 }, at: 'bench', key: 'fiber' },
@@ -2046,7 +2048,7 @@ __COMBAT__
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
   var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
-  var NAMES = { trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
@@ -4340,7 +4342,7 @@ __COMBAT__
   };
   Combat.api.barSelect = barPress;
   Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9); else { c.save(); c.beginPath(); c.rect(-9, -9, 18, 18); c.clip(); drawDropIcon(c, s.kind, 0, 0, 1.25); c.restore(); } } } : null; }) }; };
-  function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
+  function ammoOf(s) { return s && s.kind === 'item' && s.item && s.item.kind === 'bow' ? quiverCount() : null; }   /* the bow's slot shows the arrows in the quiver (Robin, 2026-10-26) */   // arrows for a bow, stones for a sling: written in the thing's own slot
   function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)
     var P = hero(), it = handItem(), tool = !!(it && GATHER_KINDS[it.kind]), want = tool ? 'gather' : 'fight';
     if (P.mode === 'fight' || P.mode === 'gather') { if (P.mode !== want) { P.mode = want; P.atk.ph = 'none'; P.atk.since = 9; P.atkBuf = 0; P.guard = false; P.holdT = 0; } }
@@ -4349,6 +4351,7 @@ __COMBAT__
     P.weapon = it && !tool && Items.KINDS[it.kind].ranged ? 'ranged' : 'melee';
   }
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
+    if (kind === 'arrow') { var qleft = quiverAdd('arrow', n); recount && recount(); save(); return qleft; }   /* arrows go to the quiver, outside the bag (Robin, 2026-10-26) */
     var i, s, take; noteSeen(kind); if (FISH_KINDS[kind]) noteSeen('fish'); if (kind === 'charcoal' || kind === 'honey') deed(kind, n);
     for (i = 0; i < SLOTS && n > 0; i++) { s = slots[i]; if (s && s.kind === kind && s.n < STACK) { take = Math.min(n, STACK - s.n); s.n += take; n -= take; } }
     for (var k2 = 0; k2 < SLOTS && n > 0; k2++) { i = (BAG0 + k2) % SLOTS; if (!slots[i]) { take = Math.min(n, STACK); slots[i] = { kind: kind, n: take }; n -= take; } }   // the bag rows first, then the bars
@@ -5184,7 +5187,8 @@ __COMBAT__
     return Math.max(0, n);
   }
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
-  Combat.api.canShoot = function () { return !!rangedHand(); };   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
+  var noArrowT = 0;
+  Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && quiverCount() <= 0 && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast('No arrows'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
   var TRAP_STACK = { tripper: 'trapTripper', poison: 'trapPoison' };
   Combat.api.trapHave = function (kind) { if (ADMIN.free) return 99; return inv[TRAP_STACK[kind]] || 0; };   /* the Trapper's traps come from the bag (Robin, 2026-10-24) */
   Combat.api.trapUse = function (kind) { if (!ADMIN.free) takeItem(TRAP_STACK[kind], 1); };
@@ -5193,6 +5197,7 @@ __COMBAT__
     deed('shots');
     var it = rangedHand(); if (!it) return;
     if (thrown) { var hs = hand; if (hs >= 0 && slots[hs] && slots[hs].kind === 'item' && slots[hs].item === it) slots[hs] = null; recount(); save(); return; }   // the thing itself flies
+    if (it.kind === 'bow' && !ADMIN.free) { onShootArrow(); save(); }   /* an arrow from the quiver */
   };
   function onShootArrow() {
     var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
@@ -5822,6 +5827,18 @@ __COMBAT__
     hdTrap(c, x, y, face, an, dashing); var PT = Combat.dbg().P; if (!PT.throwQ || !PT.throwQ.trap || !sprHero || !sprHero.last || sprHero.last.a !== 'throw' || !Sprites.hand) return;
     var h = Sprites.hand(sprHero, sprHero.last, face, 0, Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1)), im = STACK_IMG[PT.throwQ.trap === 'poison' ? 'trapPoison' : 'trapTripper']; if (h && im && im.complete && im.naturalWidth) c.drawImage(im, x + h[0] - 4.5, y + h[1] - 4.5, 9, 9);
   };
+  Combat.api.drawArrow = function (c, pr) {   /* the wooden arrow in flight (Colin, AD's, 2026-10-26): pointing along +x, turned to the flight angle */
+    var sp = World.IMAGES.arrowWood && sprite('arrowWood'); if (!sp || !sp.cv || sp.w <= 1) return false;
+    c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
+  };
+  Combat.api.drawStuckArrow = function (c, st, x, y, dy, ang) {   /* stuck: in a wall or a tree facing the eye, in the turf steep or low, broken on stone; in a body the engine's drawn arrow */
+    if (st.surf === 'body' || !World.IMAGES.arrowWood) return false; var flip = Math.cos(st.ang) < 0, name = st.drop || st.surf === 'stone' ? 'arrowWoodBroken' : st.surf === 'wood' ? 'arrowWoodWall' : (Math.abs(Math.sin(st.ang)) > 0.6 ? 'arrowWoodGround_0' : 'arrowWoodGround_1'), sp = sprite(name); if (!sp || !sp.cv || sp.w <= 1) return false;
+    c.save(); c.translate(x, y); if (flip) c.scale(-1, 1); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
+  };
+  function arrowPickTick() {                 /* an arrow standing in wood or earth is picked up again by walking over it; one broken on stone or in a body is lost (mine) */
+    var W2 = Combat.dbg().W, P = hero(); if (!W2.stuck || !W2.stuck.length) return;
+    for (var i = W2.stuck.length - 1; i >= 0; i--) { var st = W2.stuck[i]; if (st.on || st.drop || st.surf === 'stone' || st.reflected || st.t < 0.6) continue; if (Math.hypot(st.x - P.x, st.y - P.y) > 16) continue; if (quiverAdd('arrow', 1) > 0) continue; W2.stuck.splice(i, 1); sfx('pick'); save(); }
+  }
   Combat.api.drawFireArrow = function (c, pr) {   /* in flight: the loop at 12 fps, pointing along +x, turned to the flight angle as drawProj turns the drawn one */
     if (!World.IMAGES.fireArrow_0) return false; var sp = sprite('fireArrow_' + (Math.floor(clock * 12) % 6)); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
@@ -8702,7 +8719,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hown ? sleepComfortAt(P.x, P.y) : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); arrowPickTick(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

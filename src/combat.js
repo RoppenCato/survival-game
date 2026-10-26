@@ -1921,14 +1921,14 @@ var STUCK = { life: 60, inBody: 1e9, max: 60, fade: 0.8, dropT: 0.35, dropH: 10 
 function stickArrow(pr) {
   if (pr.thing || pr.kind === 'stone' || pr.fire || pr.reflected || pr.owner === 'enemy') return; var on = pr.stuckOn || null, drop = !on && pr.hitSurf === 'stone';
   if (!W.stuck) W.stuck = []; if (W.stuck.length >= STUCK.max) { for (var si = 0; si < W.stuck.length; si++) { var old = W.stuck[si]; if (old.life - old.t > STUCK.fade) { old.life = old.t + STUCK.fade; break; } } } while (W.stuck.length >= STUCK.max + 10) W.stuck.shift();   /* (past the cap the oldest not yet fading begins to fade, and never more than ten over it: the fuzz of 2026-10-24 found the list growing while the oldest faded) */
-  W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: on ? STUCK.inBody : STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected });
+  W.stuck.push({ x: pr.x, y: pr.y, ang: pr.ang, t: 0, life: on ? STUCK.inBody : STUCK.life, on: on, ox: on ? pr.x - on.x : 0, oy: on ? pr.y - on.y : 0, drop: drop, lie: (Math.random() - 0.5) * 0.5, reflected: !!pr.reflected, surf: on ? 'body' : pr.hitSurf || 'ground' });   /* (surf: what it stuck in, for the page's pictures and for picking it up again) */
 }
 function stuckTick(dt) { if (!W.stuck) return; for (var i = W.stuck.length - 1; i >= 0; i--) { var st = W.stuck[i]; st.t += dt; var gone = st.on && (st.on.away || st.on.hidden || (st.on.dead && st.on.deadFor != null && st.on.deadT >= st.on.deadFor) || (st.on !== P && W.enemies.indexOf(st.on) < 0 && (st.on.dead || st.on.gone))); if (gone && st.life > st.t + STUCK.fade) st.life = st.t + STUCK.fade; if (st.t > st.life) W.stuck.splice(i, 1); } }   /* (in a body: it goes as the body goes, fading with it; a page's person, a villager, when he is dead or gone) */
 function drawStuck(c, st) {
   var x = st.on ? st.on.x + st.ox : st.x, y = st.on ? st.on.y + st.oy : st.y, al = Math.min(1, (st.life - st.t) / STUCK.fade), ang = st.ang, dy = -10;
   if (st.drop) { var dk = Math.min(1, st.t / STUCK.dropT); dy = -10 + STUCK.dropH * dk; ang = st.ang + (st.lie - st.ang * 0.9) * dk; }
   else if (!st.on) { dy = -6; }
-  c.save(); c.globalAlpha = al; drawArrowAt(c, x, y * K + dy, ang, st.reflected); c.restore();
+  c.save(); c.globalAlpha = al; if (!(api.drawStuckArrow && api.drawStuckArrow(c, st, x, y * K, dy, ang))) drawArrowAt(c, x, y * K + dy, ang, st.reflected); c.restore();
 }
 function updateProjs(dt) {
   stuckTick(dt); trapTick(dt); axeTick(dt);
@@ -2483,7 +2483,8 @@ function drawArrowAt(c, x, y, ang, reflected) {   // an arrow: shaft, iron head,
   c.strokeStyle = '#eef3fb'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 1.5, by - sa * 3 + py * 1.5); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 1.5, by - sa * 3 - py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 1.5, by - sa * 0.5 + py * 1.5); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 1.5, by - sa * 0.5 - py * 1.5); c.stroke();
 }
 function drawProj(c, pr) {
-  if (pr.fire && api.drawFireArrow && api.drawFireArrow(c, pr)) return;   /* the burning arrow in flight: the page's picture (Colin, AD's, 2026-10-24) */
+  if (pr.fire && api.drawFireArrow && api.drawFireArrow(c, pr)) return;
+  if (!pr.fire && !pr.thing && pr.kind !== 'stone' && pr.owner !== 'enemy' && pr.owner !== 'man' && api.drawArrow && api.drawArrow(c, pr)) return;   /* the hero's arrow in flight: the page's picture (Colin, AD's wooden arrow, 2026-10-26) */   /* the burning arrow in flight: the page's picture (Colin, AD's, 2026-10-24) */
   var x = pr.x, y = pr.y * K - 10;
   if (pr.owner === 'enemy') {
     lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);

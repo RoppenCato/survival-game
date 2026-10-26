@@ -232,7 +232,7 @@ function tintCanvas(im, tint) {
   g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.drawImage(im, 0, 0); return cv;
 }
 function iconImage(c, it, s) {
-  var set = SPR.imgs && SPR.imgs[it.kind]; if (!set) return false;
+  var set = SPR.imgs && (it.kind === 'club' && it.mat === 'wood' && SPR.imgs.stick ? SPR.imgs.stick : SPR.imgs[it.kind]); if (!set) return false;   /* the Strong Stick its own icon (Colin, AD's, 2026-10-26) */
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
   if (!ok(wood) && !ok(metal)) return false;
   var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
