@@ -63,7 +63,8 @@ and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leav
 | **Special** | **Arnor's boat.** The first boat is simple, no colours to choose: **Arnor mends his broken boat and gives it to you for helping**, mending the house and bringing him meat. Leaving is the end of the chapter. |
 | **Glimpses** | Mine to propose: the altar-like butcher's table before the altar; Ormr's raid in the ruin and its graves; the big island on the horizon. |
 | **Decided since** (Robin, 2026-10-26) | **The flint sword goes** from the steading's chest. |
-| **Open** | **How much building in chapter 0** (Robin, 2026-10-26: "maybe we shouldnt introduce base building at the start. Maybe it should be limited to building the basic comfort stuff first, and a crafting bench?"), and where the player learns to build his own home: a practice island, Arnor visiting later, or the village giving land (being discussed). Whether the steading's other houses stay as ruin. |
+| **Building in chapter 0** (Robin, 2026-10-26: "maybe we shouldnt introduce base building at the start. Maybe it should be limited to building the basic comfort stuff first, and a crafting bench?") | **No free building.** The comfort pieces and the crafting bench only, and **mending Arnor's house as a guided repair** (mine, Robin's yes): the gaps in his walls and roof marked, a plank or thatch placed into each, his comfort rising as the pieces go in. |
+| **Open** | Whether the steading's other houses stay as ruin. |
 
 ---
 
@@ -84,7 +85,8 @@ the season's end, and the wolf you bring to it: the chapter's main goal. The vil
 | **Reasons to go round** (mine, Robin's yes) | The fisherman; a small village trading what the big island lacks; an island with yew for a better bow; rumours. **The islands must be interesting and of value**, and **varied places to want to build a base on** (Robin). |
 | **Glimpses** (mine, Robin's yes) | A southern trader at the village with copper goods; a raided village's ruins; **troll traces in the wolves' cave** and old bones or tracks pointing north. |
 | **Decided since** (Robin, 2026-10-26) | **Arnor does not join as the first hirdman.** **The moose and the bear are saved for later** (on the list below). |
-| **Open** | Where the player builds his own village (the claim stone) if it is in this chapter, and **a practice ground for base building** (Robin: "Maybe we should have one of the islands to be used as a practice grounds for base building, where the player is taught how to do it. We need to figure this out."). The mountain's copper veins go (no copper): the mountain stays to explore. |
+| **Your own home: Arnor resettles** (mine, Robin's yes, 2026-10-26: "Arnor can become your first villager then") | Near the end of the chapter, after the rite and the shipwright, **Arnor comes over to the village** (on a trader's or the fishermen's boat): he cannot stay at Thorgunna's among the graves and wants to start again, and asks the player to help him build. **The player picks the spot** among the islands, so the varied islands matter; **Arnor teaches free building by building beside him** through his quest (walls and a door, a roof, a hearth); what they build is the player's first home and **Arnor its first villager**, who stays and works about the place (Robin). |
+| **Open** | The claim stone and the village growing from that first home, and **a practice ground for base building** (Robin: "Maybe we should have one of the islands to be used as a practice grounds for base building, where the player is taught how to do it. We need to figure this out."). The mountain's copper veins go (no copper): the mountain stays to explore. |
 
 ---
 
@@ -113,12 +115,11 @@ placement in chapter' ... so we have a list"). A system leaves this list when a 
 | **Pets** | `docs/pet.md`, a family close with animals (Robin) | N |
 | **Your own village** | The claim stone and its reach, places (the sleeping place built; the hall, hearth, storehouse, smithy, weaving, woodwork and grove places waiting), mending | P |
 | **The hird** | Recruiting, jobs at workplaces, eating from chests, the muster, following; **the hird's own building** (Robin, 2026-10-25); **Arnor is not the first hirdman** (Robin, 2026-10-26): who is, is open | P |
-| **Free base building** | Walls, doors, roofs that close by themselves, floors, the Building board; where it is first taught (Robin, 2026-10-26: perhaps not at the start; a practice island?) | B |
 | **Your own ships** | The naust and its panel (sizes, colours, fittings: Raider, Cargo, Voyager), the karve, the longship, the fleet | B |
 | **Your own altar and blót** | The stone altar you build, the storm's offer, binding at the altar; the blót at your own fire to turn the season | B |
 | **The year in play** | Seasons and weather drawn; what a season gives (winter takes berries and grass); not built: the ice shutting the sea, bolder wolves, the events after winter | P |
 | **The rune kinds beyond the body** | Gathering, sailing, raiding and cooking runes (45 in all, 41 built) and which come where | B |
-| **Metals and their stations** | Copper (chapter 2), the furnace and bars, charcoal and the clamp, iron and bog iron, the bloomery, the mason's bench and stone walls, timber frame | B |
+| **Metals and their stations** | Copper (chapter 2), the furnace and bars, charcoal and the clamp, iron and bog iron, the bloomery, the mason's bench and stone walls, timber frame. **Arnor, the old smith, brings in the blacksmith once the player has found copper ore or a bar** (Robin, 2026-10-26) | B |
 | **Armour and shields** | The wooden shield and the bash, the leather cap and coat, mail, the nine helms; the painted shield | B |
 | **Weapons after the spear** | The flint sword, the axe as a weapon, the seax, the Dane axe, the maul, the sling, the javelin, the throwing axe | B |
 | **The fight's depth** | The parry and its chain, the finishing blow, the perfect dodge, the shield bash, fighting two or three, the shield wall: where each is first needed | B |

@@ -62,7 +62,7 @@ and not built (`docs/idea-bank.md`).
   them. **They follow and work only inside your territory and on raids, never in the open world** (and, mine 2026-10-21: with no
   stone raised yet there is no territory to keep to, so Admin's men follow anywhere, board and land as at home). Claim stones cost stone
   and berries (and snake blood, as built); every stone after the first needs a hirdman as its keeper; without food they are
-  slow and sad, never leaving. **Arnor is not the first hirdman** (Robin, 2026-10-26; he was until then: who is, is open). **The hird gets a building of its own** (Robin, 2026-10-25), not beds in
+  slow and sad, never leaving. **Arnor is not the first hirdman** (Robin, 2026-10-26; he was until then: who is, is open); **he becomes the first villager of the player's own home** (Robin, the same day: he comes over to the village late in chapter 1, wants to start again, teaches free building as they build it together on the spot the player picks, stays and works about the place, and later, the old smith, brings in the blacksmith once copper ore or a bar is found; not built). **The hird gets a building of its own** (Robin, 2026-10-25), not beds in
   the sleeping place (not built).
 - **The year:** spring, summer, autumn, winter, Stardew Valley style but **the player decides when a season moves**, at a
   moment at the end of each season; not abusable, never a stress; seasons feel different and open different things. After
