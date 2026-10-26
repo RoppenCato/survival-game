@@ -997,8 +997,8 @@ Measured: 77 to 78 on the jog, 59 to 60 with the switch; `tests/battle.js ladder
   tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|C:/dev/SG/Sound Director/out/sfx/chapter1|C:/dev/SG/Sound
   Director/out/sfx/flesh|C:/dev/SG/Sound Director/out/sfx/ui|assets/sfx/free" combat @assets/sfx/keep.txt` (the `ui` folder since 2026-10-22: the talk window's and the book's); `Sfx.vol` 0.5; where no recording exists the
   synthesized sound plays. Sources and licences in `assets/sfx/free/CREDITS.md`. What plays:
-  - the sword's swing (and fists, and the men's) the free swish E, F on a heavy blow (`SWING_SETS`); the other weapons' the
-    studio's `swish_<kind>`;
+  - the sword's swing (and fists, the men's, the club's and any weapon with no swish of its own, Robin 2026-10-26) the free swish E, F on a heavy blow (`SWING_SETS`); the other weapons' the
+    studio's `swish_<kind>` (axe, Dane axe, seax, spear);
   - the hit **W** (the slap: hand slaps on skin over a punch) and the heavy hit **X** (the punch with a whip-crack snap), the
     studio's flesh set, every weapon's, pitched by the weapon (`HIT_RATE`), **the club's too since 2026-10-21** (Robin: the dry
     wooden knock **V** was bad; it stays a candidate in the arena);

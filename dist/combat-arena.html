@@ -6283,7 +6283,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     if (n === 'boxbreak') return pickedOnly('boxbreak');
     if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickedOnly(n + '_' + x.kind)) return pickedOnly(n + '_' + x.kind);   /* the club's own hit, picked, before the hit every weapon shares */
     if (n === 'heavyhit' && x && x.kind && !(('heavyhit_' + x.kind) in SFX_PICK) && pickedOnly('hit_' + x.kind) && Sfx.has('heavyhit_' + x.kind + '_' + SFX_PICK['hit_' + x.kind])) return 'heavyhit_' + x.kind + '_' + SFX_PICK['hit_' + x.kind];   /* its heavy hit follows its hit's letter unless chosen on its own */
-    if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
+    if (n === 'swing' && (!x || !x.kind || x.kind === 'sword' || x.kind === 'club' || !Sfx.has('swish_' + x.kind))) return swingName(x);   /* the club, and any weapon with no swish of its own (the cudgel, the maul), swing with the sword's swing (Robin, 2026-10-26: swish_club out) */
     if (n === 'swing' && x && x.kind && SFX_PICK.swish !== 'orig' && Sfx.has('swish_' + x.kind)) return 'swish_' + x.kind;   /* the other weapons: the studio's swishes made from Robin's E and F (2026-10-15), lighter faster, heavier slower */
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
     if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
@@ -6364,7 +6364,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
   /* the listening panel (2026-10-15): every fight sound by name, recorded if the studio's set has it, else the old one */
   var SFX_ROWS = [   /* what the game plays (Robin's picks locked in, 2026-10-20) */
-    ['Swings', ['swing_e', 'swing_f', 'swish_seax', 'swish_spear', 'swish_axe', 'swish_club', 'swish_greataxe']],
+    ['Swings', ['swing_e', 'swing_f', 'swish_seax', 'swish_spear', 'swish_axe', 'swish_greataxe']],
     ['Hits', ['hit_w', 'heavyhit_x', 'hit_club_v', 'heavyhit_club_v']],
     ['Defence', ['raise_h', 'block_a', 'parry', 'crit']],
     ['The chain', ['chain_2', 'chain_3', 'chain_4']],
