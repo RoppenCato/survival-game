@@ -410,8 +410,9 @@ __COMBAT__
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
     if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
     var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
-    if (it && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
-    if (it && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
+    if (it && it.kind === 'sword' && it.mat === 'wood' && M.layers.indexOf('ashSword') >= 0) { out.push('ashSword'); lk = null; }   /* the Wooden Sword: Colin, AD's ash sword in place of the sword's wood and metal, untinted (2026-10-26) */
+    if (it && lk && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
+    if (it && lk && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : M.layers.indexOf('arrowNockWood') >= 0 ? 'arrowNockWood' : 'arrowNock';   /* (the wooden arrow on the string, Colin, AD's arrowNockWood: every arrow is wooden yet) */ if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
     if (shieldHeld()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
     return out;
@@ -459,9 +460,10 @@ __COMBAT__
     if (berserkNow()) L.push({ l: 'berserk' });   /* Berserk: Colin, AD's face layer over the hair, the beard and the headgear, the eyes glowing through a helm's holes (2026-10-24) */
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (riteKnife || BUTCH) { it = null; away = true; if (has('knifeWood')) L.push({ l: 'knifeWood', hand: 1 }); if (has('knifeMetal')) L.push({ l: 'knifeMetal', t: bladeTint('iron'), metal: 1, hand: 1 }); }
-    var hk = it && it.kind;
-    if (!away && it && has(hk + 'Wood')) L.push({ l: hk + 'Wood', hand: 1 });
-    if (!away && it && has(it.kind + 'Metal') && !(it.kind === 'rod' && it.mat === 'wood')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
+    var hk = it && it.kind, ash = it && it.kind === 'sword' && it.mat === 'wood' && has('ashSword');   /* the Wooden Sword: Colin, AD's ashSword, no tint */
+    if (!away && ash) L.push({ l: 'ashSword', hand: 1 });
+    if (!away && it && !ash && has(hk + 'Wood')) L.push({ l: hk + 'Wood', hand: 1 });
+    if (!away && it && !ash && has(it.kind + 'Metal') && !(it.kind === 'rod' && it.mat === 'wood')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
     var cl = carryLayer(); if (cl) L.push({ l: cl });
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
