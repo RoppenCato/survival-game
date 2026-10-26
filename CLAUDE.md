@@ -722,9 +722,7 @@ is health and stamina top left, the chart and the meal top right, **in oak and i
   `PROFILES`, `MEN`, `BEAST_GAME` or `WPRE`.** The men are
   armed from `MAN_PF`, a copy of `PROFILES` taken before the hero's tuning, so the hero's weapon numbers are his alone.
   Robin's first tuning (2026-10-15, "this feels good") is the default: the sword wu 0.11, ac 0.4, rec 0.2, reach 50, lunge
-  123; the boar's speed 1.1. **But the sword's blows (and the fists') take their pace from `STEPS`, not `PROFILES.sword`**
-  (found 2026-10-20): the arena's sword sliders for wu, ac and rec do not move a sword blow (its reach and lunge do); whether
-  to switch the sword to its profile is Robin's (it would change the feel he approved). **The player's blows start on the
+  123; the boar's speed 1.1. **The sword's blows (and the fists') take their pace from `STEPS`, the chain of three, not `PROFILES.sword`** (found 2026-10-20); **since 2026-10-26 the arena's sword sliders move that chain** (Robin: "Wire the sliders to the chain's pace"): the tune group `sword` (`SWORD`, `swordStep`: the blow, recovery, damage, reach, arc, step, push and stagger, each scaling all three blows by its share of the first's), its defaults the chain's first blow, so every saved tuning plays exactly as before; the windup stays the press-start. **The player's blows start on the
   press** (Robin, 2026-10-20): every kind's wu 0.03 (the Dane axe 0.15, its weight), `STEPS` 0.03 (0.06 on the chain's last);
   a charged blow keeps its hold; the men keep theirs. **The men retuned to it (mine, 2026-10-20): `MEN.dmg` 18, was 12**, the one
   number that brings `tests/battle.js ladder` back to its targets (the tapping bot wins half against one axe-man in leather,

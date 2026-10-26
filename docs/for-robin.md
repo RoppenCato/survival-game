@@ -6,7 +6,7 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
 
 ## Waiting from before
 
-- **The sword's timing switch** (`STEPS` or its profile): would change the feel you approved.
+- (The sword's timing switch: answered 2026-10-26, the sliders wired to the chain; nothing waits here now.)
 
 (Answered and taken out in the cleanup of 2026-10-26: the lighting review, the home water names, `art/render/`, the first answers of
 2026-10-21; the ships section, settled by your decisions of 2026-10-22, `docs/ships-rework.md`.)

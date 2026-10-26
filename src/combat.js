@@ -99,6 +99,12 @@ var STEPS = [
   { wu: 0.13, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.2, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
+/* The sword's chain as the arena tunes it (Robin, 2026-10-26: "Wire the sliders to the chain's pace"): its own tune group, `sword`, whose
+   defaults are the chain's first blow, so every saved tuning (which has no `sword`) plays exactly as before; each number scales all three
+   blows of the chain by its share of the first's (the heavy third keeps its own weight). The windup stays the press-start (2026-10-20). */
+var SWORD_KEYS = ['ac', 'rec', 'reach', 'arc', 'lunge', 'dmg', 'kb', 'stag'], SWORD0 = {}, SWORD = {};
+SWORD_KEYS.forEach(function (k) { SWORD0[k] = STEPS[0][k]; SWORD[k] = STEPS[0][k]; });
+function swordStep(s) { var o = Object.assign({}, s); SWORD_KEYS.forEach(function (k) { if (SWORD0[k]) o[k] = s[k] * SWORD[k] / SWORD0[k]; }); return o; }
 // How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
 // recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
 // the heavy one), the motion (a swing, a thrust straight out, or a smash down from over the shoulder), the stamina a
@@ -793,7 +799,7 @@ function stepData0(a) {
       dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, wt: pf.wt || 1 };
   }
   else if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
-  else { s = STEPS[a.combo]; if (P.mode === 'fight') s = Object.assign({}, s, { wu: a.combo === 2 ? 0.06 : 0.03 }); }   /* the sword and the fists take their blows from STEPS, not PROFILES.sword: they start on the press too (Robin, 2026-10-20) */
+  else { s = STEPS[a.combo]; if (pf === PROFILES.sword) s = swordStep(s); if (P.mode === 'fight') s = Object.assign({}, s, { wu: a.combo === 2 ? 0.06 : 0.03 }); }   /* the sword and the fists take their blows from STEPS, not PROFILES.sword: they start on the press too (Robin, 2026-10-20) */
   if (S.juice) return s;
   return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag, motion: s.motion, pierce: s.pierce, guardBreak: s.guardBreak };
 }
@@ -2718,7 +2724,7 @@ var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge'
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
   if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
-  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, postureParry: POSTURE.parry, postureDodge: POSTURE.dodge, postureBlock: POSTURE.block, postureHit: POSTURE.hit, rallyShare: RALLY.share, rallyHit: RALLY.perHit, rallyTime: RALLY.time, perfectWin: PERFECT.win, perfectBonus: PERFECT.bonus, toolDmg: TOOL_DMG, shockR: CROWD.shockR, shockT: CROWD.shockT, fearR: CROWD.fearR, fearT: CROWD.fearT, shove: CROWD.shove, shoveD: CROWD.shoveD, shoveT: CROWD.shoveT, shoveSt: CROWD.shoveSt, shoveCd: CROWD.shoveCd }, hero: {}, men: {}, beasts: {} }, k, i;
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, postureParry: POSTURE.parry, postureDodge: POSTURE.dodge, postureBlock: POSTURE.block, postureHit: POSTURE.hit, rallyShare: RALLY.share, rallyHit: RALLY.perHit, rallyTime: RALLY.time, perfectWin: PERFECT.win, perfectBonus: PERFECT.bonus, toolDmg: TOOL_DMG, shockR: CROWD.shockR, shockT: CROWD.shockT, fearR: CROWD.fearR, fearT: CROWD.fearT, shove: CROWD.shove, shoveD: CROWD.shoveD, shoveT: CROWD.shoveT, shoveSt: CROWD.shoveSt, shoveCd: CROWD.shoveCd }, hero: {}, men: {}, beasts: {}, sword: JSON.parse(JSON.stringify(SWORD0)) }, k, i;
   for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
   for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
   for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
@@ -2731,6 +2737,7 @@ function tune(over) {
   WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; POSTURE.parry = T.feel.postureParry; POSTURE.dodge = T.feel.postureDodge; POSTURE.block = T.feel.postureBlock; POSTURE.hit = T.feel.postureHit; RALLY.share = T.feel.rallyShare; RALLY.perHit = T.feel.rallyHit; RALLY.time = T.feel.rallyTime; CROWD.shockR = T.feel.shockR; CROWD.shockT = T.feel.shockT; CROWD.fearR = T.feel.fearR; CROWD.fearT = T.feel.fearT; CROWD.shove = T.feel.shove; CROWD.shoveD = T.feel.shoveD; CROWD.shoveT = T.feel.shoveT; CROWD.shoveSt = T.feel.shoveSt; CROWD.shoveCd = T.feel.shoveCd; PERFECT.win = T.feel.perfectWin; PERFECT.bonus = T.feel.perfectBonus; TOOL_DMG = T.feel.toolDmg;
   for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
   for (k in T.men) MEN[k] = T.men[k];
+  SWORD_KEYS.forEach(function (sk) { if (T.sword && typeof T.sword[sk] === 'number') SWORD[sk] = T.sword[sk]; });
   TUNED = T; return T;
 }
 function tuneDiff(T) { var D0 = tuneDefaults(), out = {}, g, k, kk; for (g in T) { for (k in T[g]) { if (typeof T[g][k] === 'object') { for (kk in T[g][k]) if (D0[g] && D0[g][k] && Math.abs(T[g][k][kk] - D0[g][k][kk]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = out[g][k] || {}; out[g][k][kk] = T[g][k][kk]; } } else if (D0[g] && Math.abs(T[g][k] - D0[g][k]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = T[g][k]; } } } return out; }   // what differs from the code's own numbers
