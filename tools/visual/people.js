@@ -17,6 +17,7 @@ const label = (c, t, x, y) => { c.fillStyle = 'rgba(20,16,12,0.62)'; c.font = 'b
 const IRON = '#9ca3ad', RED = '#8a3a34', BLUE = '#3f5a7a';
 function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 async function hero(c, x, y, Z, d) {
+  if (!fs.existsSync(path.join('assets', 'sprites', 'hero2-mixamo'))) return;   // (the old hero beside them for scale; deleted on Robin's word, 2026-10-26)
   const hd = path.join('assets', 'sprites', 'hero2-mixamo'), HJ = JSON.parse(fs.readFileSync(path.join(hd, 'hero2-mixamo.json'), 'utf8')), A = HJ.anims.idle, im = await loadImage(path.join(hd, A.sheets.body)), k = Z / 3, fw = HJ.frame.w, fh = HJ.frame.h, row = HJ.dirs.indexOf(d || 's');
   c.drawImage(im, 0, row * fh, fw, fh, x - HJ.anchor.x * k, y - HJ.anchor.y * k, fw * k, fh * k);
 }

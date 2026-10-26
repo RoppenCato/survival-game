@@ -1,7 +1,7 @@
 /* Sprites: the Blender models' sheets drawn in the game and the editors (2026-10-09, the first foundation of docs/moving-to-blender.md;
    Robin: the new character model in every editor and the game). A sheet set is what tools/sprites.js packs into assets/sprites/<name>/
    and tools/build.py inlines as the page's sprite table ({ name: { meta, images: { file: path } } }). `hero(SP)` loads the game's hero model
-   (game.blenderHero in storage, else hero2-mixamo, else the first sheet); `attach(Combat, H, opts)` makes it the engine's hero
+   (game.heroSet in storage, else the kit, else the first sheet); `attach(Combat, H, opts)` makes it the engine's hero
    through Combat.api.heroSprite, with the clips chosen from the engine's own state (walk and run, the attack's phases for the
    slashes, chop and mine by the tool in hand, the hit, sitting, the bow's shot, death) and the cast shadow laid as the props throw
    theirs; `play(H, name, then)` queues a one-shot clip; `drawDead(c, H, ...)` draws the fallen hero where a page lists it (the engine
@@ -15,11 +15,10 @@
     for (var f in set.images) { var im = new Image(); im.src = set.images[f]; H.img[f] = im; }
     return H;
   }
-  function heroName(SP, storage) {        /* the hero's set: game.heroSet (since 2026-10-20; game.blenderHero named the old sets), else the kit, else the old Mixamo hero */
+  function heroName(SP, storage) {        /* the hero's set: game.heroSet (since 2026-10-20; game.blenderHero named the old sets), else the kit (the old Mixamo hero, hero2-mixamo, deleted on Robin's word, 2026-10-26) */
     var want = null; try { want = storage && storage.getItem('game.heroSet'); } catch (e) {}
     if (want && SP && SP[want]) return want;
     if (SP && SP['hero-kit']) return 'hero-kit';
-    if (SP && SP['hero2-mixamo']) return 'hero2-mixamo';
     var names = SP ? Object.keys(SP).filter(function (k) { return k !== 'people'; }) : []; return names.length ? names[0] : null;
   }
   function isKit(SP, name) { var st = SP && SP[name]; return !!(st && st.meta && st.meta.boxed); }   // a set in the people's format (an atlas cut per frame, layers in a pile)
@@ -337,8 +336,7 @@
     { id: 'troll_mor', name: 'Trollmor', group: 'Trolls' }, { id: 'troll_forest', name: 'Forest troll', group: 'Trolls' },
     { id: 'troll_maw', name: 'The Gape', group: 'Trolls' }, { id: 'troll_three', name: 'Three-headed troll', group: 'Trolls' },
     { id: 'bysen', name: 'Bysen', group: 'V\u00e4sen' }, { id: 'huldra', name: 'Huldra', group: 'V\u00e4sen' },
-    { id: 'nacken', name: 'N\u00e4cken', group: 'V\u00e4sen' }, { id: 'draugr', name: 'Draugr', group: 'V\u00e4sen' },
-    { id: 'hero2-mixamo', name: 'The old hero', group: 'Backup' }
+    { id: 'nacken', name: 'N\u00e4cken', group: 'V\u00e4sen' }, { id: 'draugr', name: 'Draugr', group: 'V\u00e4sen' }
   ], GROUPS = ['The hero', 'People', 'Beasts', 'Farm animals', 'Trolls', 'V\u00e4sen', 'Backup', 'Compare'], NOT_FIGURES = { items: 1, worn: 1 };
   function castOf(SP, id) {                // a set's entry: the table's, else what an override entry says (label, group), else its id under Compare
     var set = SP && SP[id], i; for (i = 0; i < CAST.length; i++) if (CAST[i].id === id) { var c = CAST[i]; return set && (set.label || set.group) ? { id: id, name: set.label || c.name, group: set.group || c.group, game: c.game, ch: c.ch } : c; }

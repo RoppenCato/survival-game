@@ -32,7 +32,7 @@ How to tell what is unused:
   `templates/`. Run it once; one that throws on code that no longer exists, or checks a system that is gone, is archived.
 - An **asset folder**: is it read by `tools/build.py` (`prop_images`, the HUD folders, the sprite sets, `sfx/keep.txt`), named in a
   template, or loaded by a script? A sprite set not in `Sprites.CAST`'s game or waiting groups, a prop folder whose pictures no code
-  names, a HUD piece nothing draws: archive (big sets, like `hero2-mixamo`, only on Robin's word; list them in the report).
+  names, a HUD piece nothing draws: archive (big sets only on Robin's word, as `hero2-mixamo` was deleted on 2026-10-26; list them in the report).
 - **Code in the pages** (`templates/*.html`, `src/*.js`): `node tools/unusedcheck.js` lists every function a page defines that nothing
   calls (run it again after removing: one removal can leave another unused); also a function nothing calls, a branch for a thing removed, a switch for a trial
   that is decided, a stub left after a rework. Remove it (git keeps it); never comment it out. After each removal, `npm run build`,

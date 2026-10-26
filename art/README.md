@@ -16,9 +16,6 @@ the game was drawn in code; this folder is the first place where a model lives i
 
 ```
 npm run art:mixamo     # build hero2 (build/hero2_build.py) and bind it to the Mixamo skeleton: source/hero2_mixamo.blend
-npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
-npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
-npm run art:shield     # the hero's round shield (three layers on the left arm) and his block and walk-with-shield clips: built, rendered, merged and packed into his sheets (tools/shieldrender.js; run again after art:mixamo)
 npm run art:icons      # each thing alone as an icon for the bag (assets/sprites/items)
 npm run art:rocks      # the mountains' set pieces (the cave, mine and sea cave mouths, the rock shelter): modelled, rendered once each and packed into assets/props
 npm run art:vasen      # the draugr, the huldra, Nacken and the bysen (art:draugr, art:huldra, art:nacken, art:bysen), then vasen.png
@@ -33,11 +30,7 @@ then binds the real parts to that skeleton (each part already named by its bone,
 skeleton has no hand bones), collects every clip's action and saves `source/hero2_mixamo.blend`, which `build/render.py` renders
 like any other (the armature sits under a 'Turn' empty for the directions). The downloads land in Downloads under temporary
 names. `render.py --frames` takes a count per clip (`idle=16,walk=12,8`) and `tools/sprites.js` packs each at its own count;
-`assets/sprites/hero2-mixamo` holds all eighteen clips for the Blender Editor, whose Clips keys play them. The sheets are loaded by
-path from the pages (not inlined), so the workbench server serves the repo root. The editor's **Use in the game** hands a model
-to the game (`game.blenderHero`): the game then draws its hero from the sheets and plays the clips on its own actions (walk, run,
-the slashes, chop, mine, the shot, the hit, sitting, death); **Take back** returns the drawn hero. A trial: nothing is drawn in his
-hands yet.
+The old Mixamo hero's sheets (`assets/sprites/hero2-mixamo`) and the scripts that made them were deleted on Robin's word, 2026-10-26 (git keeps them); the hero is Colin, AD's kit, `assets/sprites/hero-kit`, built and rendered in his studio. `source/hero2_mixamo.blend` and the Mixamo clips stay as sources.
 
 **The style test (2026-10-09):** `build/hero2_build.py` is the second hero, about 3.75 heads, chunky, built in a **T-pose** so Mixamo
 can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a

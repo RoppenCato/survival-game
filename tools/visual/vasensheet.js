@@ -16,6 +16,7 @@ const W = 2300, ROW = 420, H = ROW * ROWS.length + 20, Z = 3;
   const label = (t, x, y) => { c.fillStyle = 'rgba(20,16,12,0.62)'; c.font = 'bold 14px sans-serif'; const tw = c.measureText(t).width; c.fillRect(x - 4, y - 15, tw + 8, 20); c.fillStyle = '#f0e6cc'; c.fillText(t, x, y); };
   const sil = {};
   async function put(name, anim, d, fr, x, y, s) {
+    if (!fs.existsSync(path.join('assets', 'sprites', name))) return;   // (a set no longer there, as the old hero since 2026-10-26)
     const dir = path.join('assets', 'sprites', name), J = JSON.parse(fs.readFileSync(path.join(dir, name + '.json'), 'utf8')), A = J.anims[anim]; if (!A) return;
     const file = A.sheets.body, im = await loadImage(path.join(dir, file)), fw = (A.frame || J.frame).w, fh = (A.frame || J.frame).h, row = J.dirs.indexOf(d), k = s * (J.scale || 1) * Z / 3, f = Math.min(A.frames - 1, Math.floor(A.frames * fr));
     const q = SPRT.pieceOf({ meta: J, rc: {} }, A, anim, 'body', row, f); if (!q.w) return;   // (a packed set: the frame's own piece, tools/framepack.js)

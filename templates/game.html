@@ -7786,7 +7786,7 @@ __COMBAT__
       if (kinds.length) ['none'].concat(kinds).forEach(function (k) { var b = msBtn(k === 'none' ? 'Empty hands' : k.charAt(0).toUpperCase() + k.slice(1), function () { MS.handKind = k === 'none' ? null : k; Array.prototype.forEach.call(E.hand.children, function (q) { q.setAttribute('aria-pressed', q === b ? 'true' : 'false'); }); msSheet(); }); b.setAttribute('aria-pressed', k === 'none' ? 'true' : 'false'); E.hand.appendChild(b); });
     }
     if (!E.gear.children.length && !E.hand.children.length) E.gear.innerHTML = '<span class="desc">Nothing to wear or hold on this one.</span>';
-    E.place.hidden = !MS_PLACE[id]; E.useGame.hidden = !(id === 'hero-kit' || id === 'hero2-mixamo');
+    E.place.hidden = !MS_PLACE[id]; E.useGame.hidden = id !== 'hero-kit';
     msSheet(); msNumbers();
   }
   function msBtn(text, fn) { var b = document.createElement('button'); b.textContent = text; b.addEventListener('click', function (e) { fn(); e.currentTarget.blur(); }); return b; }
