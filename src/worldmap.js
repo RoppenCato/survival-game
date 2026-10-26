@@ -532,6 +532,14 @@ var WorldMap = (function () {
       setGoal: function (g) { var k = g ? Math.round(g.x) + ',' + Math.round(g.y) : ''; if (k !== api._goal) { api._goal = k; GOAL = g; dirty = true; } },
       worldAt: function (sx, sy) { return sx < VP.x || sy < VP.y || sx > VP.x + VP.w || sy > VP.y + VP.h ? null : toW(sx, sy); }, inPanel: function (sx, sy) { return sx >= 42 && sy >= 21 && sx <= 1158 && sy <= 729 || palAt(sx, sy) >= 0; },
       features: function () { return FEATS; }, nameOf: function (id, d) { return nameOf(id, d); },
+      piece: function (X0, Y0, W, H, li) {   /* a piece of the map round a place, no fog, at level li (1 px a tile by default): the Quests page's "Where" (Colin, AD's Q1, 2026-10-26); null until its tiles are painted, one a call */
+        if (!ready) { prepare(); return null; } li = li == null ? 2 : Math.min(2, li); var ppt = LEVELS[li], cw = Math.max(1, Math.ceil(W * ppt)), chh = Math.max(1, Math.ceil(H * ppt)), pc = document.createElement('canvas'); pc.width = cw; pc.height = chh;
+        var g = pc.getContext('2d'); g.fillStyle = S.paper; g.fillRect(0, 0, cw, chh); fogField(); if (!paintedKey) paintedKey = 'p' + (++gen); var missing = false, todo = null;
+        for (var ty = Math.floor(Y0 * ppt / TILE); ty <= Math.floor((Y0 + H) * ppt / TILE); ty++) for (var tx = Math.floor(X0 * ppt / TILE); tx <= Math.floor((X0 + W) * ppt / TILE); tx++) {
+          var key = tileKey(li, tx, ty), T = TILES.get(key); if (!T || !T.mini) { missing = true; if (!todo) todo = [tx, ty, key]; continue; } g.drawImage(T.mini, tx * TILE - X0 * ppt, ty * TILE - Y0 * ppt); }
+        if (todo) { var T3 = TILES.get(todo[2]); if (!T3) { T3 = buildTile(li, todo[0], todo[1]); TILES.set(todo[2], T3); } paintTile(T3); dirty = true; }
+        return missing ? null : pc;
+      },
       miniWindow: function (X0, Y0, W, H, open) {   /* the minimap's window (Colin, AD's restyle, 2026-10-25): the painted tiles covering a rectangle of tiles at half a pixel a tile, the old chart's resolution, into a small canvas; null until every covering tile has been painted once, and then a stale tile is drawn while it is painted again; at most one tile painted a call, and none more often than every 0.6 s while the big map is shut */
         if (!ready) { prepare(); return null; } if (BLOOM) return miniCv || null;
         var li = 1, ppt = LEVELS[li], cw = Math.max(1, Math.ceil(W * ppt)), chh = Math.max(1, Math.ceil(H * ppt)), now = Date.now(), missing = false, todo = null;
