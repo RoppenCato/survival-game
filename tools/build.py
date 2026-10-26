@@ -243,9 +243,9 @@ def lore_book():
     with open(fp, encoding='utf-8') as f: L = json.load(f)
     out = {}
     for e in L.get('entries', []):
-        if e.get('status') not in ('canon', 'in-game') or e.get('kind') not in ('person', 'being', 'beast', 'place', 'thing', 'family'): continue
+        if e.get('status') not in ('canon', 'in-game') or e.get('kind') not in ('person', 'being', 'beast', 'place', 'thing', 'family', 'quest'): continue
         o = out[e['id']] = { 'kind': e['kind'], 'title': e.get('title', '') }
-        for k in ('norse', 'byname', 'book', 'book_more', 'book_more_after', 'book_facts'):
+        for k in ('norse', 'byname', 'book', 'book_more', 'book_more_after', 'book_facts', 'giver', 'chapter'):   # (a quest's giver and chapter: Alistair, LD's quests, handoff 17)
             if e.get(k): o[k] = e[k]
     return json.dumps(out, ensure_ascii=False)
 SRC['__LOREBOOK__'] = lore_book()

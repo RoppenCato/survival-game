@@ -708,7 +708,7 @@ __COMBAT__
   // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
   // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Arnor's raft). 2026-10-08, Robin: the
   // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
-  var STARTER_PIECES = { 'Log wall': 1, 'Plank wall': 1, 'Wattle wall': 1, 'Door': 1, 'Window': 1, 'Post': 1, 'Plank floor': 1, 'Packed earth': 1, 'Thatch roof': 1, 'Workbench': 1, 'Bed': 1, 'Shipyard': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1, 'Sleeping place': 1 };   /* no altar and no trapper's bench on the starter island (Robin, 2026-10-26) */   /* (the list is mine) */
+  var STARTER_PIECES = { 'Workbench': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1 };   /* no free building on the starter island (Robin, 2026-10-26): the comfort pieces and the crafting bench; Arnor's house is mended a gap at a time; the boat is Arnor's, so no shipyard */   /* no altar and no trapper's bench on the starter island (Robin, 2026-10-26) */   /* (the list is mine) */
   function onStarter() { var P = hero(); return !SCENE && !!w && isleAt(P.x, P.y) === 0; }
   function pieceKnown(p) { if (onStarter() && !STARTER_PIECES[p.name]) return false; return !p.key || !!seen[p.key]; }   /* on the starter island, only what the house and the raft need (Robin, 2026-10-20) */   /* keys: a kind picked up, a thing built, Arnor's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
   function stepPiece(d) { var P = hero(), n = 0; do { P.piece = (P.piece + d + PIECES.length) % PIECES.length; } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }   // the next piece you know (it called itself until 2026-10-12: the wheel on a piece not yet known froze the game)
@@ -881,7 +881,7 @@ __COMBAT__
     B.items.push({ name: 'zonePost_' + t.piece.zone, x: t.px, y: t.py, r: 2, zoneId: id, rot: 0 }); bDirty = true; sfx('build'); save();
   }
   function butcherTableEnsure() { if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
-  function zonesTick() { butcherTableEnsure();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
+  function zonesTick() { butcherTableEnsure(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
     if (!B.zonesV && roomInfo && !bDirty) { B.zonesV = 1; roomInfo.rooms.forEach(function (r, ri) { var bed = B.items.filter(function (it) { return it.bed && !(it.lvl || 0) && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri; })[0]; if (!bed || placeAt(bed.x, bed.y) >= 0) return;
       var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (tl) { x0 = Math.min(x0, tl[0]); y0 = Math.min(y0, tl[1]); x1 = Math.max(x1, tl[0] + 1); y1 = Math.max(y1, tl[1] + 1); });
@@ -1946,7 +1946,7 @@ __COMBAT__
     if (!flip) { c.drawImage(sp.cv, x + sp.l, y * K + sp.t, sp.w, sp.h); return; }
     c.save(); c.translate(x, 0); c.scale(-1, 1); c.drawImage(sp.cv, sp.l, y * K + sp.t, sp.w, sp.h); c.restore();   // turned: seen from the other side
   }
-  Combat.api.overlay = function (c) { drawGhost(c); };   /* (over the world's things, so what is being placed is never hidden behind them: Robin, 2026-10-20) */
+  Combat.api.overlay = function (c) { drawHouseGaps(c); drawGhost(c); };   /* (over the world's things, so what is being placed is never hidden behind them: Robin, 2026-10-20) */
   function drawGhost(c) {
     var P = hero(); ghostLabel = null;
     if (P.mode === 'build' && zonesShow) drawZones(c);
@@ -2163,7 +2163,42 @@ __COMBAT__
   /* Arnor, the village smith, the one Ormr Midgardbane left alive to tell it (the lore's person.arnor, Robin 2026-10-16; he was
      Arnor the dwarf until then). He tells the story once, names what your home still lacks, and when it is a home (Comfort 4)
      teaches you a boat (seen.raft, saved: the rowboat at a shipyard, docs/ships-rework.md). Every word he says is the canon's (line.arnor.*). */
-  function arnorState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
+  function arnorState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (questDone('quest.arnor.house') && questDone('quest.arnor.meat') ? 'teach' : 'wait')); }   // the story always comes first; his boat once the house is mended and the meat brought (Robin, 2026-10-26)
+  /* Quests (Robin, 2026-10-26: "a basic quest system ... it shouldnt become a massive list of a checklist"; Alistair, LD's words, handoff 17): a quest is given and done by the game's own events (QUEST_WHEN, mine); its words are the lore's book and book_more, kept in the book's own half (the Quests tab); given or done, a quiet note and a red mark on the tab until it is read. */
+  var QUEST_WHEN = {
+    'quest.arnor.house': { give: function () { return !!seen.met; }, done: function () { return arnorHouseMended(); } },
+    'quest.arnor.meat': { give: function () { return questDone('quest.arnor.house') || (seen.met && day.n >= 2); }, done: function () { return !!seen.meatForArnor; } }
+  };
+  function questOf(id) { return (seen.quests || {})[id]; }
+  function questDone(id) { var q = questOf(id); return !!(q && q.done); }
+  function questTick() {
+    if (SCENE || !village) return; seen.quests = seen.quests || {}; var ch = false;
+    Object.keys(QUEST_WHEN).forEach(function (id) { var W2 = QUEST_WHEN[id], q = seen.quests[id];
+      if (!q && W2.give()) { seen.quests[id] = { given: day.n, fresh: 1 }; ch = true; note('A new line in your book'); }
+      else if (q && !q.done && W2.done()) { q.done = day.n; q.fresh = 1; ch = true; note('A line in your book is closed'); } });
+    if (ch) save();
+  }
+  /* Arnor's house mended as a guided repair (Robin, 2026-10-26: no free building in chapter 0): the gaps in its walls marked on the ground, E fills one with a plank wall for its cost; the roof comes by itself once it is closed (as every room's); mended once closed, roofed and with a fire burning by its door. */
+  function arnorHouse() { if (!village) return null; var x0 = village.tx + 14, y0 = village.ty + 9; return { x0: x0, y0: y0, w: 6, h: 6, door: { x: (village.tx + 17.5) * T, y: (y0 + 6) * T } }; }
+  function houseGaps() { var h = arnorHouse(), out = [], x, y; if (!h) return out; var kk = function (a, b) { return a + ',' + b; };
+    for (x = h.x0; x < h.x0 + h.w; x++) { if (!B.H[kk(x, h.y0)]) out.push({ d: 'H', x: x, y: h.y0 }); if (!B.H[kk(x, h.y0 + h.h)]) out.push({ d: 'H', x: x, y: h.y0 + h.h }); }
+    for (y = h.y0; y < h.y0 + h.h; y++) { if (!B.V[kk(h.x0, y)]) out.push({ d: 'V', x: h.x0, y: y }); if (!B.V[kk(h.x0 + h.w, y)]) out.push({ d: 'V', x: h.x0 + h.w, y: y }); }
+    return out; }
+  function gapMid(g) { return g.d === 'H' ? { x: (g.x + 0.5) * T, y: g.y * T } : { x: g.x * T, y: (g.y + 0.5) * T }; }
+  function gapNear(P) { var q = questOf('quest.arnor.house'); if (!q || q.done) return null; var best = null, bd = 30; houseGaps().forEach(function (g) { var m = gapMid(g), d = Math.hypot(m.x - P.x, m.y - P.y); if (d < bd) { bd = d; best = g; } }); return best; }
+  var MEND_COST = { wood: 2 };   /* a plank wall's cost (the Building board's) */
+  function mendGap(g) { if (!g) return; for (var k in MEND_COST) if ((inv[k] || 0) < MEND_COST[k]) { toast('It wants ' + MEND_COST[k] + ' ' + (NAMES[k] || k).toLowerCase()); return; } for (var k2 in MEND_COST) takeItem(k2, MEND_COST[k2]); B[g.d][g.x + ',' + g.y] = { t: 'wall', m: 1 }; bDirty = true; sfx('build'); save(); }
+  function arnorHouseMended() { var h = arnorHouse(); if (!h || houseGaps().length) return false; var bd = B.items.filter(function (it) { return it.bed && Math.floor(it.x / T) >= h.x0 && Math.floor(it.x / T) < h.x0 + h.w && Math.floor(it.y / T) >= h.y0 && Math.floor(it.y / T) < h.y0 + h.h; })[0]; return !!bd && benchRoofed(bd) && fireNear(h.door.x, h.door.y, FIRE_YARD + 30); }
+  function drawHouseGaps(c) {                // the gaps marked on the ground while the quest is open: a pale dashed line where a wall goes, a stake at each end
+    var q = questOf('quest.arnor.house'); if (!q || q.done) return; var P = hero(), h = arnorHouse(); if (!h || Math.hypot(P.x - (h.x0 + 3) * T, P.y - (h.y0 + 3) * T) > 700) return;
+    c.save(); c.lineCap = 'round'; houseGaps().forEach(function (g) { var x0 = g.x * T, y0 = g.y * TS, x1 = g.d === 'H' ? x0 + T : x0, y1 = g.d === 'H' ? y0 : y0 + TS, near = gapNear(P) === g;
+      c.setLineDash([4, 4]); c.strokeStyle = near ? 'rgba(255,236,190,0.95)' : 'rgba(240,226,190,0.6)'; c.lineWidth = near ? 2.2 : 1.6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.setLineDash([]);
+      c.fillStyle = 'rgba(120,90,60,0.9)'; [[x0, y0], [x1, y1]].forEach(function (q2) { c.fillRect(q2[0] - 1, q2[1] - 5, 2, 6); }); }); c.restore();
+  }
+  /* Arnor's boat (Robin, 2026-10-26: "Arnor fixes his broken boat and gives it to you for helping out"; his lines the lore's line.arnor.teach): when his story of it is told, his mended boat lies at the shore nearest the steading. */
+  function arnorBoatGive() { if (!village) return; var cx = (village.tx + village.w / 2) * T, cy = (village.ty + village.h / 2) * T, best = null, bd = 1e9, a, r;
+    for (a = 0; a < 6.283; a += 0.13) for (r = 200; r < 3200; r += 40) { var x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; if (!isLand(x, y)) { if (r < bd) { bd = r; best = { x: x, y: y }; } break; } }
+    if (best) { var sp = raftSpot(best.x, best.y) || best; giveBoat('rowboat', sp); } }
   function arnorLineId(st) {               // the lore entry a state speaks from (its mode says how: a sequence is a story told once, line by line; variants are remarks, one a talk)
     if (st === 'meet') return 'line.arnor.meet';
     if (st === 'wait') { var cf = baseComfort(), n = cf.n, has = cf.has || {}; return 'line.arnor.wait.' + (!n ? (cf.marked ? 'no-bed' : 'no-zone') : !has.roof ? 'no-walls' : !has.hearth ? 'no-hearth' : !has.bench ? 'no-bench' : 'no-rug'); }
@@ -3897,7 +3932,7 @@ __COMBAT__
     npc.say = L[npc.line]; npc.line++; npc.sayT = 6;
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
       if (st === 'meet' && !seen.met) { seen.met = 1; seen.build = 1; bigStep('Building', 'Press B. The plank house by the well wants its walls, a door and a roof.'); save(); }
-      else if (st === 'teach' && !seen.raft) { seen.raft = 1; mapToldOf(w.isles.findIndex(function (q) { return q.role === 'big'; })); bigStep('A boat', 'Arnor has taught you a boat. Build a shipyard on the sand, at the water.'); save(); }
+      else if (st === 'teach' && !seen.raft) { seen.raft = 1; mapToldOf(w.isles.findIndex(function (q) { return q.role === 'big'; })); arnorBoatGive(); note('Arnor\u2019s boat lies at the shore'); save(); }   /* his boat given (Robin, 2026-10-26), no board */
     }
   }
   /* Arnor before he is yours (Robin, 2026-10-16: in the ruin, scavenging and fixing what he can): from spot to spot by the yard,
@@ -3988,8 +4023,8 @@ __COMBAT__
   function uiSfxTick() {                    // the sounds by what changed: the window opening, its next line, the book opening and shutting, a page turned
     var w = talkWin; if (w && !uiWas.talk) uiSfx('talk_open', 0.5); else if (w && w.line !== uiWas.line) uiSfx('talk_next', 0.35);
     uiWas.talk = w; uiWas.line = w ? w.line : null;
-    if (bookOpen && !uiWas.book) uiSfx('book_open', 0.5); else if (!bookOpen && uiWas.book) uiSfx('book_close', 0.5); else if (bookOpen && LB.tab + '|' + LB.sel + '|' + OB.sel !== uiWas.sel) uiSfx('book_page', 0.45);
-    uiWas.book = bookOpen; uiWas.sel = bookOpen ? LB.tab + '|' + LB.sel + '|' + OB.sel : null;
+    if (bookOpen && !uiWas.book) uiSfx('book_open', 0.5); else if (!bookOpen && uiWas.book) uiSfx('book_close', 0.5); else if (bookOpen && LB.tab + '|' + LB.sel + '|' + OB.sel + '|' + QB.sel !== uiWas.sel) uiSfx('book_page', 0.45);
+    uiWas.book = bookOpen; uiWas.sel = bookOpen ? LB.tab + '|' + LB.sel + '|' + OB.sel + '|' + QB.sel : null;
   }
   function talkOpen(who, fn) {              // a Talk: the line is said, in the window when he has a portrait
     fn(); var id = speakerId(who); if (id) lbMeet(id);
@@ -4450,6 +4485,7 @@ __COMBAT__
     if (!P || P.dead || sleep) return null;
     if (talkWin) return { say: null, act: talkNext };   /* (the talk window: E gives the next line) */
     var rUse = raftUsable(), cargo = cargoHome() && rUse && !raft.aboard, build = P.mode === 'build';
+    var gp0 = !carrying && !build ? gapNear(P) : null; if (gp0) return { say: 'Mend the wall (' + MEND_COST.wood + ' wood)', act: function () { mendGap(gp0); } };   /* Arnor's house, a gap at a time (the guided repair) */
     if (carrying && carrying.beast && butcherable(carrying.beast)) { var bt0 = butcherNear(P); if (bt0) return { say: 'Butcher the ' + (BEAST_WORD[carrying.beast.kind] || 'beast'), act: function () { butcherIt(bt0); } }; }   /* the butcher's table (Robin, 2026-10-26) */
     if (carrying && carrying.beast) { var alt0 = altarNear(P); if (alt0 && !alt0.laid) return { say: 'Lay it on the altar', act: function () { layOnAltar(alt0); } }; return { say: 'Set it down', act: setDownBeast }; }   /* a beast out cold on your shoulders (the cudgel) */
     if (carrying) return rUse && !raft.aboard ? { say: carrying.man ? 'Lay him aboard' : 'Stow it aboard', act: stowHeavy } : { say: carrying.man ? 'Set him down' : 'Put it down', act: putDown };
@@ -5851,10 +5887,10 @@ __COMBAT__
   }
   /* The rune screen on O (Robin, 2026-10-25: "some sort of rune interface you can also open when you are not at the altar. Where you can see the runes you have activated. It should also clearly explain what buttons you use, how the rune is used and how you do it"; and "we're gonna need some interface for that, and also later pets, hirdmen, base etc."): one board in the Lore Book's clothes with tabs down its left edge, each once it has something (Runes now; the hird, the pets and home later, mine). The left page: every slot and what is bound in it; the right page: the rune chosen, its tier, the keys drawn as key caps (Runes2.howOf), the weapon it wants, its stamina, what it does tier by tier and how near it is to growing. It only reads: runes are bound at the altar. */
   var bookHp = 0, bookK = 0, bookT0 = 0, bookTurn = 0, OB = { sel: 'guardBlow' };
-  var OB_TABS = [['runes', 'Runes']];   /* the book's own half (the right edge): the runes now; the hird, the beasts and home when they have something (mine) */
+  var OB_TABS = [['quests', 'Quests'], ['runes', 'Runes']];   /* the book's own half (the right edge): the runes now; the hird, the beasts and home when they have something (mine) */
   var OB_SLOTS = ['guardBlow', 'dash', 'swing', 'shot', 'hand', 'foot', 'eye', 'heart', 'hearth', 'helm'];
-  function obOpenIt() { bookOpen = true; bookHp = hero().hp; LB.tab = 'runes'; invOpen = false; cookOpen = false; menu = null; mapOpen = false; altarOpen = false; musterOpen = false; clothOpen = false; }
-  function obTabsShown() { return OB_TABS.filter(function (t) { return t[0] !== 'runes' || Object.keys((R2 && R2.lib) || {}).length > 0; }); }   /* a tab of your own once it holds something: the runes after the first blót */
+  function obOpenIt() { bookOpen = true; bookHp = hero().hp; var ot = obTabsShown(), fr = ot.filter(function (t) { return t[0] === 'quests' && questFresh(); })[0]; LB.tab = fr ? 'quests' : bookOwn(LB.tab) && ot.some(function (t) { return t[0] === LB.tab; }) ? LB.tab : (ot[0] || ['runes'])[0]; invOpen = false; cookOpen = false; menu = null; mapOpen = false; altarOpen = false; musterOpen = false; clothOpen = false; }
+  function obTabsShown() { return OB_TABS.filter(function (t) { return t[0] === 'quests' ? Object.keys(seen.quests || {}).length > 0 : t[0] !== 'runes' || Object.keys((R2 && R2.lib) || {}).length > 0; }); }   /* a tab of your own once it holds something: the runes after the first blót */
   function bookOwn(tab) { return tab === 'runes' || OB_TABS.some(function (t) { return t[0] === tab; }); }
   function bookTabRects() {                  // the thumb tabs out of the page edges: the world's on the left, your own on the right, a picture and the word on each
     var H = 96, out = [];
@@ -5867,7 +5903,7 @@ __COMBAT__
       if (im) c.drawImage(im, t.x, t.y); else { c.fillStyle = on ? '#7a2a20' : t.side < 0 ? '#3e4652' : '#4a3324'; c.fillRect(t.x, t.y, t.w, t.h); }
       var ox = t.side < 0 ? t.x + 19 : t.x + 74 - 19; if (pic) { c.globalAlpha = on ? 1 : 0.8; c.drawImage(pic, ox - 11, t.y + 8, 22, 22); c.globalAlpha = 1; }
       c.save(); c.translate(ox + 4.5, t.y + 33 + (86 - 33) / 2); c.rotate(-Math.PI / 2); hText(c, t.name, 0, 0, hf('bold', 12), on ? HC.cream : '#e0cfa6', 'center'); c.restore();
-      if (t.side < 0 && lbTabFresh(t.id)) { c.beginPath(); c.arc(t.x + 8, t.y + 8, 4.5, 0, 7); c.fillStyle = HC.rubric; c.fill(); } });
+      if ((t.side < 0 && lbTabFresh(t.id)) || (t.id === 'quests' && questFresh())) { c.beginPath(); c.arc(t.side < 0 ? t.x + 8 : t.x + t.w - 8, t.y + 8, 4.5, 0, 7); c.fillStyle = HC.rubric; c.fill(); } });
   }
   function bookNine(c, im, x, y, w, h, I) { var W = im.naturalWidth, H = im.naturalHeight, sx = [0, I, W - I, W], dx = [x, x + I, x + w - I, x + w], sy = [0, I, H - I, H], dy = [y, y + I, y + h - I, y + h]; for (var j = 0; j < 3; j++) for (var i = 0; i < 3; i++) c.drawImage(im, sx[i], sy[j], sx[i + 1] - sx[i], sy[j + 1] - sy[j], dx[i], dy[j], dx[i + 1] - dx[i], dy[j + 1] - dy[j]); }
   function bookFrame(c, tab) {               // the oak codex in Colin, AD's order: the spine, the covers, the brass, the clasp, the tabs, the page blocks, the pages, the fold, the headbands, the section's sketch
@@ -5902,6 +5938,7 @@ __COMBAT__
       cx += w + 3; });
   }
   function drawOwnBook(c) {
+    if (LB.tab === 'quests') { drawQuestBook(c); return; }
     bookDim(c);
     hPx(c, LBB.x, LBB.y, function () {
       var bw = 952, bh = 644, lx = 40, rx = 476, py = 38, pw = 436, ph = 572, i, rows = obRows();
@@ -5941,8 +5978,35 @@ __COMBAT__
       hText(c, 'Runes are bound at the stone altar.', x, py + ph - 26, hf('italic', 14), HC.sepia); bookTurnDraw(c, rx, py, pw, ph);
     });
   }
+  /* The Quests page (Colin, AD's looks to come; Robin picks): the left page the quests, the open ones then those done under a rule; the right page the chosen one, what was said and what needs doing, in the lore's words; a red dot on what is new or changed until it is read */
+  var QB = { sel: null };
+  function questList() { var Q = seen.quests || {}, ids = Object.keys(Q).filter(function (id) { return LOREBOOK[id]; }); var open = ids.filter(function (id) { return !Q[id].done; }), done = ids.filter(function (id) { return Q[id].done; }); return { open: open, done: done }; }
+  function questFresh() { var Q = seen.quests || {}; return Object.keys(Q).some(function (id) { return Q[id].fresh; }); }
+  function questRows() { var L = questList(), out = [], y = 38 + 104; L.open.forEach(function (id) { out.push({ id: id, x: 54, y: y, w: 400, h: 52 }); y += 56; }); if (L.done.length) y += 34; L.done.forEach(function (id) { out.push({ id: id, x: 54, y: y, w: 400, h: 52, done: true }); y += 56; }); return out; }
+  function drawQuestBook(c) {
+    bookDim(c);
+    hPx(c, LBB.x, LBB.y, function () {
+      var lx = 40, rx = 476, py = 38, pw = 436, ph = 572, rows = questRows(), L = questList(); bookFrame(c, 'quests');
+      if (!QB.sel || !rows.some(function (r) { return r.id === QB.sel; })) QB.sel = rows.length ? rows[0].id : null;
+      lbHeading(c, 'Quests', lx + 26, py + 46, false);
+      if (L.done.length && rows.filter(function (r) { return r.done; })[0]) { var ry = rows.filter(function (r) { return r.done; })[0].y - 14; c.strokeStyle = 'rgba(107,82,54,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(lx + 26, ry); c.lineTo(lx + pw - 26, ry); c.stroke(); hText(c, 'Done', lx + 26, ry - 6, hf('italic', 13), HC.sepia); }
+      rows.forEach(function (rw) { var e = LOREBOOK[rw.id] || {}, giver = e.giver, on = rw.id === QB.sel, q = (seen.quests || {})[rw.id] || {};
+        if (on) { c.fillStyle = 'rgba(184,140,60,0.22)'; c.fillRect(rw.x - 8, rw.y, rw.w, rw.h); }
+        var im = giver && portraitImg(giver), cx = rw.x + 20, cy = rw.y + 26; c.save(); c.beginPath(); c.arc(cx, cy, 20, 0, 7); c.clip(); c.fillStyle = 'rgba(150,120,80,0.2)'; c.fillRect(cx - 21, cy - 21, 42, 42); if (im) { var W2 = im.naturalWidth; c.drawImage(im, W2 * 0.33, im.naturalHeight * 0.1, W2 * 0.52, W2 * 0.52, cx - 21, cy - 21, 42, 42); } c.restore(); c.strokeStyle = HC.sepia; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, 20, 0, 7); c.stroke();
+        hText(c, ((LOREBOOK[giver] || {}).title || ''), rw.x + 52, rw.y + 20, hf('italic', 13), HC.sepia);
+        hText(c, e.title || rw.id, rw.x + 52, rw.y + 40, hf('bold', 16), rw.done ? 'rgba(59,42,31,0.55)' : HC.ink);
+        if (q.fresh) { c.beginPath(); c.arc(rw.x + rw.w - 22, rw.y + 26, 5, 0, 7); c.fillStyle = HC.rubric; c.fill(); } });
+      if (!QB.sel) return; var e2 = LOREBOOK[QB.sel] || {}, q2 = (seen.quests || {})[QB.sel] || {}, x = rx + 30, cw = pw - 60, y = py + 66;
+      if (q2.fresh) { q2.fresh = 0; }
+      lbHeading(c, e2.title || '', x, y, true); y += 26; hText(c, (LOREBOOK[e2.giver] || {}).title || '', x, y, hf('italic', 14), HC.sepia); y += 38;
+      c.font = hf('', 15); wrapLines(c, e2.book || '', cw).forEach(function (ln) { hText(c, ln, x, y, c.font, q2.done ? 'rgba(107,82,54,0.75)' : HC.ink); y += 21; });
+      if (q2.done && e2.book_more) { y += 14; c.font = hf('', 15); wrapLines(c, e2.book_more, cw).forEach(function (ln) { hText(c, ln, x, y, c.font, HC.ink); y += 21; }); }
+      bookTurnDraw(c, rx, py, pw, ph);
+    });
+  }
+  function questRowAt() { if (!mouseS) return null; var mx = (mouseS.x - LBB.x) * 3, my = (mouseS.y - LBB.y) * 3, rs = questRows(); for (var i = 0; i < rs.length; i++) { var q = rs[i]; if (mx >= q.x - 8 && mx <= q.x - 8 + q.w && my >= q.y && my <= q.y + q.h) return q.id; } return null; }
   function obRowAt() { if (!mouseS) return null; var mx = (mouseS.x - LBB.x) * 3, my = (mouseS.y - LBB.y) * 3, rs = obRows(); for (var i = 0; i < rs.length; i++) { var q = rs[i]; if (mx >= q.x - 8 && mx <= q.x - 8 + q.w && my >= q.y && my <= q.y + q.h) return q.id; } return null; }
-  function obClick() { if (!mouseS) return; var r = obRowAt(); if (r) OB.sel = r; }
+  function obClick() { if (!mouseS) return; if (LB.tab === 'quests') { var qr = questRowAt(); if (qr) QB.sel = qr; return; } var r = obRowAt(); if (r) OB.sel = r; }
   function stoneUnderMouse() {               // which of the storm's stones the mouse is over (the choice), -1 for none
     if (!ceremony || ceremony.phase !== 'choose' || !mouseW) return -1; var pl = stonePlaces(ceremony.it, ceremony.offer.length), my = mouseW.y * K, best = -1;
     pl.forEach(function (q, k) { if (Math.abs(mouseW.x - q.x) < 11 * STONE_SCALE && my < q.sy + 4 && my > q.sy - 26 * STONE_SCALE) best = k; }); return best;
@@ -5998,7 +6062,8 @@ __COMBAT__
   function bodyLie(e) { return butcherable(e) ? BODY_LIE : DEAD_LIE; }
   function butcherNear(P) { var best = null, bd = 46; B.items.forEach(function (it) { if (it.name !== 'butcherTable') return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd) { bd = d; best = it; } }); return best; }
   function butcherIt(tb) { if (!carrying || !carrying.beast || !tb) return; var e = carrying.beast, g = BUTCHER[e.kind]; if (!g) return; var k2 = (e.sizeK || 1) < 0.95 ? 0.5 : 1; e.dead = true; e.hidden = true; e.away = true; e.deadT = 1e9; carrying = null;
-    for (var k in g) { var n = Math.max(1, Math.round(g[k] * k2)); drop(k, tb.x + (Math.random() - 0.5) * 10, tb.y + 10, n); } sfx('chop'); sfx('hit'); seen.butchered = (seen.butchered || 0) + 1; save(); }
+    var forArnor = !!(questOf('quest.arnor.meat') && !questDone('quest.arnor.meat') && !seen.meatForArnor); if (forArnor) seen.meatForArnor = 1;   /* the meat Arnor asked for: the first beast butchered at the table once he has asked; he keeps one piece */
+    for (var k in g) { var n = Math.max(1, Math.round(g[k] * k2)) - (forArnor && k === 'meat' ? 1 : 0); if (n > 0) drop(k, tb.x + (Math.random() - 0.5) * 10, tb.y + 10, n); } sfx('chop'); sfx('hit'); seen.butchered = (seen.butchered || 0) + 1; save(); }
   var DEAD_LIE = 12;                         /* how long a killed beast's body lies before it is gone (mine; Robin, 2026-10-23: a couple of seconds at least, so it can be picked up) */
   function bodyBeast(e) { return e.type === 'beast' && !e.human && ((e.ko > 0 && !e.dead) || (e.dead && e.deadT < (e.deadFor || 0))); }   /* a beast out cold or freshly killed: carried to the altar either way */
   function koNear(P) { var best = null, bd = 1e9; Combat.dbg().W.enemies.forEach(function (e) { if (!bodyBeast(e) || e.hidden || e.carried) return; var d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 44 && d < bd) { bd = d; best = e; } }); return best; }
