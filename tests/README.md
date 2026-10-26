@@ -7,6 +7,11 @@ Run everything: `npm install` once, then `npm test` from the project root.
 
 | Script | What it checks |
 | --- | --- |
+| weapons.js | the weapons through the engine: each melee kind at two beasts in a line (the spear both, the seax the first), the club's stagger, the chains, the ranged kinds (a thrown thing should land: two `BAD` lines for the javelin and the throwing axe stand open since before the cleanup of 2026-10-26) |
+| gather.js | gathering (src/gather.js): the sweet spot, the rhythm window, the crack, a felled tree felling its neighbours, trunks into logs, stumps growing back |
+| iron.js | iron (2026-10-07): iron tools and arms step up from copper, iron gear turns more aside than leather, the gambeson between, the Norse names, the 60% cap |
+| karve.js | the ship line (docs/ships-rework.md): every size of the three models fitted by designParts, its seats, rig, stem head and shields |
+| fishing.js | fishing played by bots: what bites where, the round's phases, the steering in the water, how long each catch takes |
 | sea.js | the living sea (2026-10-21): the water's patches by the wind and on the water only, the glitter by day, gulls round the ship, the whale's rises, the seal, the fish, a calm day, the drawing |
 | ships.js | the ships (2026-10-21): the hulls at true size, the crew's places (helmsman, rowers two a thwart facing aft, clear of each other), the hero's place, the stroke, the gangway and the landing spots |
 | ctest2.js | melee reach, body collision, enemy spacing, move speed, parry, auto ranged |

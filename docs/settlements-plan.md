@@ -2,7 +2,7 @@
 
 **Robin said yes the same day; the generator follows this plan since commit f5cbfac, with the sizes of section 3 grown since (a house 6 by 8 to 11, a longhouse 7 by 16 to 20, a hall 8 by 22 to 24; the sites with them). The ladder's numbers below are the first ones.**
 
-**A proposal (2026-10-22), waiting for Robin.** Robin's brief, shortened: villages and towns that feel natural, are fun to
+It was a proposal (2026-10-22). Robin's brief, shortened: villages and towns that feel natural, are fun to
 explore (different paths, secrets), fun to raid (destructible things, several ways in, an interesting layout), and come from
 one strict process that scales, so the generator rolls a farmstead, a village, a bigger village, a town or a great town at
 random and each is good. He asked for research online first; what it gave is in section 1, the sources are at the foot.

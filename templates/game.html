@@ -3742,7 +3742,7 @@ __COMBAT__
   function raiseStone(it) {                 // a fallen stone stood up again, or a new one placed: the place is claimed
     it.fallen = false; it.claim = true; sfx('build'); bDirty = true;
     if (!it.named) { it.named = ['Thorgunna', 'Eik', 'Vik', 'Hamar', 'Bjarg', 'Lund'][stones().length % 6] + 'stad'; }   /* the first is Thorgunnastad (Robin, 2026-10-25, the lore's canon); the others LORE? */
-    if (npc && !npc.joined && seen.met) arnorJoin(it);   // your first stone, anywhere: Arnor is yours once you have heard his story
+    /* (Arnor no longer joins at your first stone: Robin, 2026-10-26, "Arnor doesnt join as your first hirdman"; he becomes your home's first villager in chapter 1, not built; Admin's Arnor row still makes him join, for trials) */
     save();
   }
   function arnorJoin(st) {                  // Arnor is the first hirdman: he takes the steading's bench as his

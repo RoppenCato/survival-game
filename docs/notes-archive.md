@@ -485,7 +485,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   grid from the building data, the town's answer to noise, the raid as "how much you dare to take", a test scene
   `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Every rung is built** (its section 13,
   "How it went", says what each found); the raid, rung 6, as far as a script can judge it: Robin has not played any of it.
-- `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
+- `docs/archive/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
   looked at, what was found broken and fixed (`docs/pictures/ui-review.jpg`, before and after), and **what is proposed and waits for
   Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
   map showing only what has been seen, a book typeface (`docs/pictures/ui-type.jpg`), the HUD's three corners and the map in the art
@@ -2826,7 +2826,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `scene.planList()` from `host.tier()`; the Sea Editor's host has no tier and shows all). **The steading's half-gone house by the
   well is of planks** now, so wood mends it (Robin: the player should want to fix it with wooden pieces).
 - **The menus and boards reviewed (2026-10-12, Robin: look through all the menus, the crafting UI, the toolbar, the windows;
-  function, looks, sense). `docs/ui-review.md` has the whole review and the proposals; this is what changed in the code.**
+  function, looks, sense). `docs/archive/ui-review.md` has the whole review and the proposals; this is what changed in the code.**
   **The wheel froze the game:** `stepPiece` called itself, so in build mode on a fresh game the wheel reaching a piece not
   yet known threw on every frame after (since 2026-10-08); it steps now, and the wheel goes through the known pieces.
   **Boards are drawn over the HUD:** the engine calls **`scene.boards(c, P)`** after its bars and hotbar (`render` in
@@ -2878,7 +2878,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   click `transfer`, Shift and drag `splitTo`, `stackIn` draws a slot's thing for the bag and the chest. **Gear:**
   `gearFor(id)` hides a slot nothing can fill. **The map** has a north mark and `labels()` that keep off each other.
   **The frame readout** is on `ADMIN.fps` (bottom left, off by default; the log is kept either way). **"You have
-  fallen"** is the page's board (`scene.ownFallen`). `costText` reads in the game's words. `docs/ui-review.md` section 7.
+  fallen"** is the page's board (`scene.ownFallen`). `costText` reads in the game's words. `docs/archive/ui-review.md` section 7.
 - **The frame log (2026-10-08, Robin: it lags when I walk):** a readout (since 2026-10-12 **bottom left, on Admin's "Show frame time"**; it was on the left in the middle, always on)
   (`drawPerf`: frames a second in green, amber or red, the milliseconds, the things drawn, and the frame's parts: t tick, u update,
   g ground, d draw, e end). `PERF` times every frame in parts (the page's tick, the engine's update, the render split into the

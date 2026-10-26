@@ -7321,7 +7321,7 @@ function draw(c, V, env, clock) {
 }
 var SIZES = { porch: 1, apse: 1, gableCross: 1, font: 1, lychGate: 1, bellTower: 1, altar: 1, graveStone: 1, wayCross: 1, stall: 1, yew: 1, windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
-/* A town's men (2026-10-13, rung 5 of docs/battle-plan.md): where each of n stands at his day, in the world's units. Four at
+/* A town's men (2026-10-13, rung 5 of docs/archive/battle-plan.md): where each of n stands at his day, in the world's units. Four at
    the gate (two outside, two inside), two at the back gate, two by the market, a man by every house door, the jarl's own in
    the hall (the best; they must arm, so they come last: delay, seconds before a man who has heard something is on his way:
    18 to 32), a man inside every house (asleep or at table: 5 to 12), the rest about the yard. Each is { x, y, face, kind:
@@ -7466,7 +7466,7 @@ var T = 32, TS = 24, K = 0.75;
      how many strake rows it carries amidships, and hullProfile() draws the half-width of every column from it. thwarts
      [min, max] rowing seats; mast and rudder the cells they must go on (none: no rig); tier the bench's; cost paid when
      the vessel is launched (the parts are paid as they are laid); zoom the yard's camera, so a longship fits the screen. */
-  var U = 1 / 0.046;                     // units a metre (the canon scale: a unit is 4.6 cm; docs/ships-plan.md, 2026-10-21: the hulls at the sizes they were dug up at)
+  var U = 1 / 0.046;                     // units a metre (the canon scale: a unit is 4.6 cm; docs/archive/ships-plan.md, 2026-10-21: the hulls at the sizes they were dug up at)
   var KJ = 3, HULLS = {                    // m: the length in metres, beam in metres, n: keel cells (a cell a thwart's pitch, CW), per: rowers to a thwart, zoom: the yard's camera, sea: the game's camera when aboard
     faering: { name: 'Faering', m: 6.5, beam: 1.4, n: 5, per: 1, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, sea: 0.65, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound, six and a half metres: two rowing seats at most, one man to a seat with a pair of oars, no mast. Quick to turn, light to row.' },
     boat: { name: 'Boat', m: 9, beam: 2.0, n: 8, per: 2, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 0.9, sea: 0.65, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat of nine metres: three rowing seats at most, two men to a seat, no mast. The first that crosses to the big island with a crew.' },
@@ -7519,7 +7519,7 @@ var T = 32, TS = 24, K = 0.75;
     if (H.rudder) return AM && AM.helm ? AM.helm[0] : -(v.hw || 0) * 0.62;
     return v.seats && v.seats.length ? v.seats[0] : -(v.hw || 0) * 0.28;
   }
-  function crewPlaces(v, n, nFloor) {              /* where n men sit, in the hull's frame (x along the keel, the bow at +; y across, the right-hand side looking forward at +): on a rigged hull the first place is the helmsman's at the steering oar, facing forward; the rowers fill the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), facing aft; the rest sit on the floor in the stern and the bow. docs/ships-plan.md, 2026-10-21 */
+  function crewPlaces(v, n, nFloor) {              /* where n men sit, in the hull's frame (x along the keel, the bow at +; y across, the right-hand side looking forward at +): on a rigged hull the first place is the helmsman's at the steering oar, facing forward; the rowers fill the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), facing aft; the rest sit on the floor in the stern and the bow. docs/archive/ships-plan.md, 2026-10-21 */
     var H = HULLS[v.kind], out = [], pr, seats, per, i, k, fl = 0; nFloor = nFloor || 0; if (!H || !(n + nFloor > 0)) return out;
     pr = profileOf(v); seats = v.seats && v.seats.length ? v.seats : [0]; per = v.per || H.per || 2;
     var AM = ART[v.kind] && ART[v.kind].J.marks;
@@ -7537,7 +7537,7 @@ var T = 32, TS = 24, K = 0.75;
     while (out.length < n + nFloor) { var aft = fl % 2 === 0, q = Math.floor(fl / 2), x2 = aft ? -pr.L * 0.5 - q * 14 : pr.L * 0.42 + q * 14; out.push({ x: x2, y: (q % 2 ? -1 : 1) * 7, face: aft ? Math.PI / 2 : -Math.PI / 2, kind: 'floor', side: 0 }); fl++; }
     return out;
   }
-  /* On and off (docs/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
+  /* On and off (docs/archive/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
      all round and from each sample the walkable ground (the shore, or the shallows that can be waded) is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
      point (x, y), the land point to walk to (lx, ly, a step up the beach) and the distance. landingSpots spreads n men along the
      shore from a landing point: alternately either side along the shore line, a step apart and a step inland, each tested by
@@ -7855,7 +7855,7 @@ var T = 32, TS = 24, K = 0.75;
     if (!v.trail) v.trail = []; v.trailT = (v.trailT || 0) + dt; if (v.trailT > 0.12) { v.trailT = 0; v.trail.push({ x: v.x, y: v.y, age: 0, sp: Math.abs(v.speed) }); if (v.trail.length > 18) v.trail.shift(); }
     for (var ti = 0; ti < v.trail.length; ti++) v.trail[ti].age += dt;
     v.rowing = (crew > 0 || !rigged(v.kind)) && (iy < 0 || Math.abs(v.speed) > 8) && !(v.sailFill > 0.6);   // (alone in a rowing boat the hero rows)                                           // the oars pull while there is way to make and the sail is not doing the work; else they are shipped
-    if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/ships-plan.md)
+    if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/archive/ships-plan.md)
     return stuck;
   }
   // the water round a hull: a thin line of foam hugging it, and when it moves a wake of ripples trailing from the stern
@@ -7878,7 +7878,7 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
   function bobOf(v, clock) { return Math.sin(clock * 2 + v.x * 0.01) * 0.8; }
-  function drawVessel(c, v, clock, o) {                     // the vessel as it was laid in the yard, on the water. o.split: the hull alone (the page draws the crew, then drawRigOf, drawVesselFront and drawOars in its own order; docs/ships-plan.md step 2, 2026-10-21)
+  function drawVessel(c, v, clock, o) {                     // the vessel as it was laid in the yard, on the water. o.split: the hull alone (the page draws the crew, then drawRigOf, drawVesselFront and drawOars in its own order; docs/archive/ships-plan.md step 2, 2026-10-21)
     var bob = bobOf(v, clock), parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT;
     if (HULLS[v.kind]) { drawBoat(c, v, parts, bob, clock, o || {}); return; }
     var logs = parts.filter(function (p) { return p.id === 'log'; }), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
@@ -8067,7 +8067,7 @@ var T = 32, TS = 24, K = 0.75;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
     drawRig(c, v, pr, ds, bob, clock, at, null);
   }
-  /* The stroke (docs/ships-plan.md, 2026-10-21): v.stroke runs in sail() while v.rowing; the pull is the first two fifths of a cycle
+  /* The stroke (docs/archive/ships-plan.md, 2026-10-21): v.stroke runs in sail() while v.rowing; the pull is the first two fifths of a cycle
      (the blade in the water, moving aft), the recovery the rest (the blade lifted and carried forward). strokeLean gives how far
      along the keel a rower's body leans (toward the bow at the finish, since he faces aft); drawOars draws each oar from the
      rower's hands over the rail to the blade, all in time; at rest the oars are held out level. rowers: [{ x, y, side }] in the
@@ -9512,7 +9512,7 @@ function bruteAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
-/* ---------- men: sides, and the soldier (2026-10-12, docs/battle-plan.md; Robin: fight a hirdman, two, two with one beside
+/* ---------- men: sides, and the soldier (2026-10-12, docs/archive/battle-plan.md; Robin: fight a hirdman, two, two with one beside
    you, five against five, a town, the raid) ----------
    SIDES. Every fighter has a side: 0 is against the hero (every beast, a town's men), 1 is with him (his own men). The
    hero's blows pass through his friends; a soldier's blow lands on whoever of the other side stands in it (strike).
@@ -11348,7 +11348,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing === 2 ? 1.3 : dashing ? 1.1 : 1, sy: dashing === 2 ? 0.7 : dashing ? 0.92 : 1 });   /* (2: the Slide drawn low and long where no slide clip is; the kit has Colin, AD's) */
     if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
   }
-  /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
+  /* The people (2026-10-12, docs/archive/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
      Everybody is the one sheet set (assets/sprites/people, packed by tools/people.js: a sheet is an atlas, every frame of
      every layer trimmed to its own pixels; rectsOf lays the pieces out again by the packer's own shelf rule): a body, a tunic and trousers in near white that are coloured here, and hair, beards, a hood, a cap, a helmet,
      mail, a cloak, a dress, a shield and the things for the hand as layers. A LOOK is a short list of layers and colours
@@ -11534,7 +11534,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (opts.flash > 0.02) { c.globalAlpha = ga * Math.min(1, opts.flash) * 0.7; c.drawImage(silCol(e, '#ffffff'), 0, 0, hw, hh, dx, dy, dw, dh); c.globalAlpha = ga; }
     c.restore(); return true;
   }
-  /* A fighting man from the people's sheets: the engine's human enemies and the hero's own men (docs/battle-plan.md).
+  /* A fighting man from the people's sheets: the engine's human enemies and the hero's own men (docs/archive/battle-plan.md).
      The clip follows the engine's state as a beast's does: the death by the time since he fell (he lies as long as
      e.deadFor says), getting up again (e.riseT), on his knees (state 'yield'), the blow spread over its windup, strike
      and recovery (e.sw = { wu, ac, rec, clip }, set by the engine when a soldier begins a blow; a plain guard's lunge

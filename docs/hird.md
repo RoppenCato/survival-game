@@ -1,6 +1,6 @@
 # The hird: recruiting people and founding a town
 
-A design concept for Robin to approve or change (written 2026-10-05, nothing of it is built). It answers two
+A design concept (written 2026-10-05). **Built since:** claim stones with a reach, hirdmen who follow, work and eat, the muster (`CLAUDE.md`, "The hird"); **changed by Robin, 2026-10-26:** Arnor is not the first hirdman, he becomes your home's first villager in chapter 1; the hird gets a building of its own (2026-10-25). The rest is still a concept. It answers two
 questions from the plan: how do people join you, and what makes a place your town so that they can.
 
 Everything here follows the rules already decided: reward, never punish; subtle guidance, nothing explained; real

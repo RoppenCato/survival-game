@@ -2267,7 +2267,7 @@ if (typeof module !== 'undefined') module.exports = GameArt;
    reads it. This module is data and bookkeeping only, shared by the game, the editor and the tests; the powers themselves are
    in the engine and the page. The names and lines are LORE? until Alistair, LD's come. */
 var Runes2 = (function () {
-  var RETIRED = [['lastStand', 'The Last stand'], ['ironSkin', 'Iron skin'], ['windFoot', 'The Wind-foot'], ['sureFoot', 'The Sure-foot'], ['whirl', 'The Whirl'], ['feint', 'The Feint'], ['hawkEye', 'The Hawk’s eye'], ['longOar', 'The Long oar'], ['farSight', 'The Far sight'], ['sealSkin', 'The Seal-skin'], ['starRoad', 'The Star-road'], ['wreckersEye', 'The Wrecker’s eye'], ['quietBlade', 'The Quiet blade'], ['lockBreaker', 'The Lock-breaker'], ['ravenCall', 'The Raven’s call'], ['heavyBack', 'The Heavy back'], ['torchHand', 'The Torch-hand'], ['shieldWall', 'The Shield-wall'], ['hearthsGift', 'The Hearth’s gift'], ['secondPortion', 'The Second portion'], ['smokeAndSalt', 'Smoke and salt'], ['warmBelly', 'The Warm belly'], ['packBond', 'The Pack-bond'], ['trackersNose', 'The Tracker’s nose'], ['loyalHeart', 'The Loyal heart'], ['fenrirsJaw', 'Fenrir’s jaw'], ['allfathersEye', 'The All-father’s eye'], ['midgardsWall', 'Midgard’s wall']];   /* retired in Robin's rune trial of 2026-10-24 (docs/rune-trial-2026-10-24.md): out of the library and the offer; a save that knew one forgets it */
+  var RETIRED = [['lastStand', 'The Last stand'], ['ironSkin', 'Iron skin'], ['windFoot', 'The Wind-foot'], ['sureFoot', 'The Sure-foot'], ['whirl', 'The Whirl'], ['feint', 'The Feint'], ['hawkEye', 'The Hawk’s eye'], ['longOar', 'The Long oar'], ['farSight', 'The Far sight'], ['sealSkin', 'The Seal-skin'], ['starRoad', 'The Star-road'], ['wreckersEye', 'The Wrecker’s eye'], ['quietBlade', 'The Quiet blade'], ['lockBreaker', 'The Lock-breaker'], ['ravenCall', 'The Raven’s call'], ['heavyBack', 'The Heavy back'], ['torchHand', 'The Torch-hand'], ['shieldWall', 'The Shield-wall'], ['hearthsGift', 'The Hearth’s gift'], ['secondPortion', 'The Second portion'], ['smokeAndSalt', 'Smoke and salt'], ['warmBelly', 'The Warm belly'], ['packBond', 'The Pack-bond'], ['trackersNose', 'The Tracker’s nose'], ['loyalHeart', 'The Loyal heart'], ['fenrirsJaw', 'Fenrir’s jaw'], ['allfathersEye', 'The All-father’s eye'], ['midgardsWall', 'Midgard’s wall']];   /* retired in Robin's rune trial of 2026-10-24 (docs/archive/rune-trial-2026-10-24.md): out of the library and the offer; a save that knew one forgets it */
 'use strict';
 var SLOTS = [
   { id: 'guardBlow', name: 'Guard-blow', input: 'right held, left', active: true },
@@ -3935,7 +3935,7 @@ function bruteAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
-/* ---------- men: sides, and the soldier (2026-10-12, docs/battle-plan.md; Robin: fight a hirdman, two, two with one beside
+/* ---------- men: sides, and the soldier (2026-10-12, docs/archive/battle-plan.md; Robin: fight a hirdman, two, two with one beside
    you, five against five, a town, the raid) ----------
    SIDES. Every fighter has a side: 0 is against the hero (every beast, a town's men), 1 is with him (his own men). The
    hero's blows pass through his friends; a soldier's blow lands on whoever of the other side stands in it (strike).
@@ -5771,7 +5771,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, shadowDy: o.shadowDy || 0, sx: dashing === 2 ? 1.3 : dashing ? 1.1 : 1, sy: dashing === 2 ? 0.7 : dashing ? 0.92 : 1 });   /* (2: the Slide drawn low and long where no slide clip is; the kit has Colin, AD's) */
     if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
   }
-  /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
+  /* The people (2026-10-12, docs/archive/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
      Everybody is the one sheet set (assets/sprites/people, packed by tools/people.js: a sheet is an atlas, every frame of
      every layer trimmed to its own pixels; rectsOf lays the pieces out again by the packer's own shelf rule): a body, a tunic and trousers in near white that are coloured here, and hair, beards, a hood, a cap, a helmet,
      mail, a cloak, a dress, a shield and the things for the hand as layers. A LOOK is a short list of layers and colours
@@ -5957,7 +5957,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (opts.flash > 0.02) { c.globalAlpha = ga * Math.min(1, opts.flash) * 0.7; c.drawImage(silCol(e, '#ffffff'), 0, 0, hw, hh, dx, dy, dw, dh); c.globalAlpha = ga; }
     c.restore(); return true;
   }
-  /* A fighting man from the people's sheets: the engine's human enemies and the hero's own men (docs/battle-plan.md).
+  /* A fighting man from the people's sheets: the engine's human enemies and the hero's own men (docs/archive/battle-plan.md).
      The clip follows the engine's state as a beast's does: the death by the time since he fell (he lies as long as
      e.deadFor says), getting up again (e.riseT), on his knees (state 'yield'), the blow spread over its windup, strike
      and recovery (e.sw = { wu, ac, rec, clip }, set by the engine when a soldier begins a blow; a plain guard's lunge

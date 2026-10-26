@@ -1,4 +1,6 @@
-# Base building: a review, and how to make it fun (2026-10-24, waiting for Robin)
+# Base building: a review, and how to make it fun (2026-10-24)
+
+**Robin's picks of 2026-10-26** (through Colin, AD's picks page): **yes** to the cutaway, painted paths, the small shuttered window and the side-door porch, wall things, floor rugs and pelts, the lean-to and porch pieces, and lakes drawn as lakes, with wall things and rugs in **a Decorations tab** in the Building board (Robin: "We shouldnt do things automatically. But we also shouldnt add too much bloat"); **no** to the "make it lived in" button, the material styles and the painted door. Free building is chapter 1's, so they wait for it. The rest below waits for Robin.
 
 Robin's ask, 2026-10-24: try building by a lake, on the beach and in the mountains, several floors, decorating inside, a little village
 with paths; note what is lacking, what does not work and what is good; fix bugs on the way; talk it over with the Art Director; then

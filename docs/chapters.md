@@ -29,8 +29,9 @@ the git history.
 ## Rules for the whole game, as they now stand
 
 - **No announcing boards** (Robin, 2026-10-26: "I dont like the look of the board at all"): the big-step boards go ("Building",
-  "The raft", "A boat", "You have left the island"). Something is announced in a more discreet, immersive way (open: Colin, AD's
-  proposals asked for).
+  "The raft", "A boat", "You have left the island"). Something is announced in a more discreet, immersive way: **the big turns in the map's lettering** (Robin's pick F, built
+  2026-10-26: a season, an island, a water, a village fading in by name); for a new thing to do the way is still open (Colin, AD is
+  looking at how other games do it), and until then "Building" keeps its board.
 - **Quests** (Robin, 2026-10-26): a basic quest system that can point the player in directions through the world. **Never a big
   checklist.** A quest lives in the book: what was said in the talk, summed up, and what needs doing, **in words, not counts**. Robin's
   example: "X has said the rite is at the end of the season, and they think a wolf would be a greater offering. Wolves are mostly out
@@ -55,6 +56,12 @@ the git history.
 
 **Summary.** You wake at the wreck with nothing. You learn to make tools and simple clothes, hunt and butcher, mend Arnor's house
 and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leave.
+
+**Status (2026-10-26): built** but for the "Cooking" tag on what is only for cooking and the glimpses (`CLAUDE.md`, "Chapter 0 as rebuilt"):
+the strong stick, leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
+quests in the book's Quests page, his house mended as a guided repair, the straw bed and waking by it, berries raw with their wait, no
+wolves, altar, cooking or free building, his boat mended overnight and given; the steading tidied of what a farm would not have.
+Robin has not played it through yet.
 
 | Heading | What (Robin, 2026-10-26, unless marked mine) |
 | --- | --- |

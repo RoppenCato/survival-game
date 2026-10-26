@@ -1,6 +1,6 @@
 # Inside the buildings: what stands there, how it is placed, what breaks, and the catacombs
 
-**A proposal (2026-10-22), waiting for Robin.** Robin's brief, shortened: research how furniture should be placed so a room is
+**Decided in part (Robin, 2026-10-22: "Yes" to sections 5, what breaks, and 7, the catacombs; both built the same day, `CLAUDE.md` under Destruction and "Room for exploration"); section 6 built; the rest a proposal.** It was a proposal (2026-10-22). Robin's brief, shortened: research how furniture should be placed so a room is
 easy but interesting to explore and fight in; what furniture is there and what is destructible; what furniture these places
 really had; whether churches should have catacombs as their own instance like the caves; and designs for houses of different
 sizes with some randomness, that make sure the player can move about (nothing blocks the door). This follows
