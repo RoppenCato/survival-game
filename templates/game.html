@@ -6057,8 +6057,8 @@ __COMBAT__
   function questPlace(e) { var k = String((e && e.place) || '').split('.')[0]; return QPLACE[k] || ''; }
   function questWhere(id) {                /* where a quest points, in tiles, and the word by the pencil ring */
     if (!village) return null; var vx = village.tx, vy = village.ty;
-    if (id === 'quest.arnor.house') return { x: vx + 17, y: vy + 12, word: 'his house' };
-    if (id === 'quest.arnor.meat') { var tb = B.items.filter(function (it) { return it.name === 'butcherTable'; })[0]; return tb ? { x: tb.x / T, y: tb.y / T, word: 'the table' } : null; }
+    if (id === 'quest.arnor.house') return { x: vx + 17, y: vy + 12, word: 'his house, the plank house by the well' };
+    if (id === 'quest.arnor.meat') { var tb = B.items.filter(function (it) { return it.name === 'butcherTable'; })[0]; return tb ? { x: tb.x / T, y: tb.y / T, word: 'the butcher’s table, in the yard by the woodpile' } : null; }
     return null;
   }
   var QMAP = {};
@@ -6090,7 +6090,7 @@ __COMBAT__
       if (qm && y < py + ph - 230) { y += 26; hText(c, 'Where', x, y, hf('', 15), HC.rubric); y += 12; var mx = x, my = y, MW = 236, MH = 150;
         c.save(); c.imageSmoothingEnabled = true; c.drawImage(qm.cv, mx, my, MW, MH); c.restore(); c.strokeStyle = 'rgba(60,40,24,0.7)'; c.lineWidth = 1; c.strokeRect(mx + 0.5, my + 0.5, MW - 1, MH - 1);
         var rcx = mx + MW / 2, rcy = my + MH / 2; c.strokeStyle = 'rgba(70,52,36,0.85)'; c.lineWidth = 1.3; c.beginPath(); for (var ra = 0; ra <= 6.5; ra += 0.25) { var rr = 13 + Math.sin(ra * 3 + 1) * 1.2 + (ra > 6 ? 1.5 : 0), px2 = rcx + Math.cos(ra) * rr * 1.2, py2 = rcy + Math.sin(ra) * rr; if (ra === 0) c.moveTo(px2, py2); else c.lineTo(px2, py2); } c.stroke();
-        c.save(); c.font = hf('italic', 14); c.shadowColor = 'rgba(244,232,196,1)'; c.shadowBlur = 7; c.fillStyle = 'rgba(244,232,196,0.95)'; for (var gq = 0; gq < 4; gq++) c.fillText(qm.w.word, rcx + 20, rcy + 4); c.restore(); hText(c, qm.w.word, rcx + 20, rcy + 4, hf('italic', 14), HC.ink); }
+        hText(c, qm.w.word, mx, my + MH + 20, hf('italic', 14), HC.sepia); }   /* the words as a caption under the piece, the ring alone on the map (Colin, AD, 2026-10-26: the word on the green was too small) */
       hText(c, 'Quests are kept as they were told.', x, py + ph - 34, hf('italic', 13), HC.sepia);
       bookTurnDraw(c, rx, py, pw, ph);
     });
