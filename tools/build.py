@@ -224,7 +224,7 @@ SRC['__TAG_DAY_AUTUMN__'] = file_tag('assets', 'music', 'meadow-day-autumn.js')
 SRC['__TAG_RITE_B__'] = file_tag('assets', 'music', 'rite-b.js')   # the rite's music: the hum (Derek, SD's rite_b, Robin's pick of 2026-10-24)
 
 def portraits():
-    """the talk window's and the Lore Book's pictures (Colin, AD's; docs/talk-and-lore-book.md): assets/portraits/<lore id>.png as
+    """the talk window's and the Lore Book's pictures (Colin, AD's; docs/archive/talk-and-lore-book.md): assets/portraits/<lore id>.png as
     { lore id: its path with a tag of its bytes }, loaded by the page when first shown, as the sheets are"""
     d = os.path.join(ROOT, 'assets', 'portraits'); out = {}
     if os.path.isdir(d):

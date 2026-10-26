@@ -713,7 +713,7 @@ The walls and the peaks are painted in one hand now (`rockTone`, `paintPeaks`). 
 ## The beginning: who the hero is (Robin, 2026-10-12; not decided)
 
 Robin: *"Let's make the beginning more immersive. Maybe it should be the classic 'kid survives raid then works for revenge'?"*
-The expansion is its own document, **`docs/the-beginning.md`**: three ways to tell it, who the hero is, what revenge means in
+The expansion is its own document, **`docs/archive/the-beginning.md`**: three ways to tell it, who the hero is, what revenge means in
 play, what it costs, six questions. Nothing is decided.
 
 ## The starter island: what the play-through left open (2026-10-12)
@@ -730,7 +730,7 @@ Measured by script (`tools/visual/startplay.js`); Robin has not ruled on any of 
   is no threat either.
 - **The bow.** The scripted hunter lost a deer to ten arrows. A hand on the mouse will do better; worth a try by Robin.
 
-## The raid: what is left (2026-10-13, after rung 6 of docs/battle-plan.md and Robin's answers the same day)
+## The raid: what is left (2026-10-13, after rung 6 of docs/archive/battle-plan.md and Robin's answers the same day)
 
 Decided since, and so no longer here (they are in `CLAUDE.md` under 2026-10-13 and in the plan's last table): the shield
 wall, the men falling back with a carrier, a man left behind being taken, pursuit by what you took, keeping the ship,

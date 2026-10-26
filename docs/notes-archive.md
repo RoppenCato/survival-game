@@ -83,7 +83,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
   various ways; places that were not raided expanding). **The camera pulls out under sail** (a faster clock at sea: not
   sure, later). **Nothing handcrafted: everything generated in a controlled way**, the hub and the great seats too.
   **Warning beacons** that light along a coast when a raider's sail is seen are a good idea, kept in the idea bank.
-- **Decided 2026-10-13 (Robin's questionnaire on raids and the hird, after `docs/battle-plan.md` was built through; twelve
+- **Decided 2026-10-13 (Robin's questionnaire on raids and the hird, after `docs/archive/battle-plan.md` was built through; twelve
   answers).** **Most of this is not built yet: where the code does otherwise today is said in brackets.**
   **Walking in:** a town at peace lets you walk in **alone**; with armed men at your back the gate guards bar the way and
   shout (built: any band walks in until the first blow). **Pursuit is by what you took:** a short way for a quiet theft,
@@ -180,7 +180,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
-| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), **walk in unarmed, a night raid, storm it with a longship's crew (2026-10-13: see "Four ways to raid")**, to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
+| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/archive/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), **walk in unarmed, a night raid, storm it with a longship's crew (2026-10-13: see "Four ways to raid")**, to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
 | `game.html?scene=ruin` | `game.html` | **Destruction Editor (2026-10-13)**, the test scene of `docs/destruction.md`: the game on the battle test's world, started at a **sampler** (a small house in every wall material under every kind of roof, a locked store with a chest, a row of yard pieces with a barred gate), the Gather bar holding an iron axe, an iron pick, a knife, a flint axe and a copper pick on 1 to 5, torches and stuff to mend with in the bag. The board on the left (it folds): to the sampler, the town's gate, its church, its hall; the town's men (none, 12, 20); **this place is theirs or yours**; set fire to the nearest house; bring the nearest roof down; put the fires out; whole again; the sampler anew; the wind (east, south, west, north, none); **side walls as now or leaning**; a torch; more to mend with; heal; night or day. **Beside the game view a panel of sliders** (the only test scene with one): every number of `src/ruin.js`, the settings as text (what differs from the defaults), Defaults, **Use in the game** (`game.ruin`) and Take back. **Nothing is saved.** `RU`, `SAMPLER`, `samplerBuild()`, `ruinScene()`, `ruinRows()`, `ruinAct(id)`, `RU_GROUPS`, `ruinPanel()`; played by script with `tools/visual/ruinplay.js`. **The big trials (2026-10-13, the same day):** the board also has **the place** (the town or the village), its men **none, 12, 20, 30, 40**, **a raid on it** (your ship on the nearest shore and five of your own), and three switches that **reload the page**: **Places: great ones** (`&big=1`: three islands, a great village on the second and a great town on the third: `Village.ARCH.great`, `bigtown`), **Houses: as now / half again as big / twice as big** (`&roomy=1.5`, `2`: `Village.DEF.houseK`) and, with bigger houses, **Heard as far again, too** (on by default; `&loud=0` leaves hearing as it was). `TRIAL` = `{ big, roomy, loud }`, `townOf()`, `gateOf(v)`; played by `tools/visual/sackplay.js` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
@@ -438,10 +438,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
   shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
   lore and mechanics are marked; the rest are suggestions, not decided.
-- `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
+- `docs/archive/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
   is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
   and fishing, Brokk at the shore). A proposal, not decided.
-- `docs/the-beginning.md` (**a proposal, 2026-10-12**; Robin: make the beginning more immersive, "kid survives raid then works
+- `docs/archive/the-beginning.md` (**a proposal, 2026-10-12**; Robin: make the beginning more immersive, "kid survives raid then works
   for revenge"): three ways to tell it (the place knows you; a played memory at the burnt hall; a prologue), who the hero is
   and how they came to the wreck, what revenge means in play (Ragnar Ironside as the first legendary Viking, the ones who went
   with him, the ones taken as thralls, the ring), what the memory would take to build, and six questions for Robin. **Nothing
@@ -451,8 +451,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   to a side (hand, foot, eye, heart); the metal is the rank anyone can read (bronze, silver, twisted silver, gold, dragon)
   and grows only with biome events (the bronze ring from the dead Viking at the back of the troll's cave); runes come from
   beasts, stones, deeds, Brokk, later bosses and raids, and must change what you do. The casting cloth is to be scrapped;
-  nothing of the ring is built yet. `docs/roadmap.md` has the ladder of islands and their big events.
-- `docs/runes-ideas.md`: the discussion that led there.
+  nothing of the ring is built yet. `docs/archive/roadmap.md` has the ladder of islands and their big events.
+- `docs/archive/runes-ideas.md`: the discussion that led there.
 - `docs/weapons.md`: the weapon concept (2026-10-06, Robin: weapons that fight differently): six melee kinds (sword, axe, club,
   seax, spear, Dane axe) with a motion each (swing, thrust, smash), reach, arc, pace, chain length and one thing of their own
   (parry, guard break, stagger, crit, pierce, heavy), four ranged (bow, sling with stones from the bag, javelin and throwing
@@ -476,7 +476,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
   domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
   `grain`): see "World look and props".
-- `docs/battle-plan.md` (**a plan, 2026-10-12**; Robin: Blender the hirdmen and other humans, then fight one, two, two with
+- `docs/archive/battle-plan.md` (**a plan, 2026-10-12**; Robin: Blender the hirdmen and other humans, then fight one, two, two with
   one beside you, five against five, a town full, the raid, fixing bugs at every rung): where the code stands (the people
   are the last drawn figures; guards fight like boars; the hird never fights; **the engine has no sides and no
   way-finding**), people as **one neutral body with cropped layers and colours laid on at draw time** so every look shares
@@ -501,7 +501,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   **the template** (ten headings in six groups: the place, the events, the living world, what you make and gain, travel, making
   and checking it), each chapter's status table (Built, Partly, Not started, Idea, Open) with its gap list, and the checklist
   to copy for a new chapter. Update its tables when a feature is built.
-- `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
+- `docs/archive/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
   the survivor who teaches the raft, the shipwright's bench on the shore, the second island), nine steps each
   with Have / Build / Test, and the order of work. Below it the older build order (steps 1 to 10) and open
@@ -810,7 +810,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   hidden, so `tools/visual/drive.js` (load it in the page, then reload the page's own HTML with `document.write`) takes over
   `requestAnimationFrame` and the clock: `H2.step(n)` runs n frames, `H2.snap` tiles crops of the canvas into a sheet and
   `H2.part` hands it back as a JPEG.
-  **The people (2026-10-13, rung 0 of `docs/battle-plan.md`; Robin: Blender the hirdmen and other humans; one body, with
+  **The people (2026-10-13, rung 0 of `docs/archive/battle-plan.md`; Robin: Blender the hirdmen and other humans; one body, with
   layers).** `art/build/people_build.py` makes `art/source/people.blend` from the hero's own file (his parts on Mixamo's
   skeleton, his clips, his things for the hand): **one neutral body** in three collections, `Body` (the head with its face,
   the hands, boots and belt: never coloured), `PartTunic` and `PartLegs` (near white: **the game multiplies the colour in when
@@ -1078,7 +1078,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   Editor and by the well of the broken village in the game, turns to watch the hero, and E talks to him (a speech
   bubble cycling through a few lines). He does not walk, trade or give tasks yet.
 
-## Fighting men (2026-10-13; `docs/battle-plan.md`, Robin: fight a hirdman, two, two with one beside you, five against five, a town, the raid, fixing the bugs of each before the next)
+## Fighting men (2026-10-13; `docs/archive/battle-plan.md`, Robin: fight a hirdman, two, two with one beside you, five against five, a town, the raid, fixing the bugs of each before the next)
 
 Everything here is tried in **`game.html?scene=battle`** and by `tests/battle.js`. The men themselves are only in that
 test scene (the towns that would hold them are not spawned in the real game), **but the way-finding of rung 5 is in every
@@ -2743,7 +2743,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   station while you turn (`menuStation`). **Thatch** is the roof you get unless you pick another (`CFG.roof` 1) and is
   straw yellow. **The steading** has gravel and earth paths, a rail fence, a bit of dry-stone wall, a trough, flowers and a
   scarecrow. The Sea Editor starts you on the jetty's last plank (the jetty can be walked: tile code 4) and every editor
-  draws the hero as the Character Editor set it (`game.hero`). `docs/runes-ideas.md` holds the rune overhaul proposal
+  draws the hero as the Character Editor set it (`game.hero`). `docs/archive/runes-ideas.md` holds the rune overhaul proposal
   (tabs, one glow, one line each, quiet places to choose) with questions for Robin; nothing of it is built.
 - **Critters (2026-10-06):** butterflies, small birds and beetles live round the hero by day on open land (`critters`,
   `critterTick`, `drawCritter`): they flutter, hop and crawl, keep away when you come close (a bird flies off for good) and

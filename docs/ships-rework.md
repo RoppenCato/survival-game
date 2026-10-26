@@ -2,7 +2,7 @@
 
 **Robin's decisions, from six rounds of questions on 2026-10-22** ("Lets do a massive fix of the whole shipyard, boat building and
 boats system"). What bothered him: building ships, sailing them and how they look (the crew's seating and rowing, built
-2026-10-21, were not on his list). It replaces `docs/ships-plan.md` where the two differ; what that plan built (the crew seated
+2026-10-21, were not on his list). It replaces `docs/archive/ships-plan.md` where the two differ; what that plan built (the crew seated
 and rowing, the hero at the bow, the gangway, the file ashore, the camera pulled back at sea) stays. "All at once": every part
 below goes ahead together, each landing as it is ready.
 
@@ -74,5 +74,5 @@ below goes ahead together, each landing as it is ready.
 
 The old yard scene where a hull was laid part by part is gone; `tests/karve.js` checks the ship line in its place.
 
-Not in this rework: fighting from the deck and on the decks (`docs/ships-plan.md` stage A in chapter 2, stage B in chapter 3,
+Not in this rework: fighting from the deck and on the decks (`docs/archive/ships-plan.md` stage A in chapter 2, stage B in chapter 3,
 both as decided), the War fitting with them, and ships of other people that sail.

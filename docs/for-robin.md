@@ -164,7 +164,7 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
 
 ## The ships (2026-10-21, after "figure out how the ships should work")
 
-The design is `docs/ships-plan.md`: your six thoughts answered, eight build steps, six questions with my defaults. Steps 1 to 4
+The design is `docs/archive/ships-plan.md`: your six thoughts answered, eight build steps, six questions with my defaults. Steps 1 to 4
 are built (nothing here depends on your answers):
 
 1. **The hulls at true size.** The karve is 16 m by 4.2 m now (it was 12 by 1.4), the longship 23 m, the boat 9, the faering 6.5.

@@ -63,7 +63,7 @@ raft paddle and the karve's tiller, sleep). The old drawn hero stays until Robin
 
 ### 2. People
 
-**Done 2026-10-13 as rung 0 of `docs/battle-plan.md`**, not quite as written below: the hair, beards, hats and clothes are
+**Done 2026-10-13 as rung 0 of `docs/archive/battle-plan.md`**, not quite as written below: the hair, beards, hats and clothes are
 layers over **one neutral body whose tunic and trousers are coloured when drawn**, every layer an atlas of trimmed frames
 (the first pack, at the hero's fixed frame, was 62 MB and over a gigabyte decoded). The idles and jobs are still the
 hero's own clips; the Mixamo sitting for more is to come.

@@ -4,7 +4,7 @@
 for revenge'? Let's expand on that idea and what we can do."*
 
 This is a proposal to choose from, not a decision. Robin's idea is the frame; everything under it is suggestion until picked.
-`docs/start-loop.md` is the older proposal for the first hour (the view from the beach, the steading as home, the finds); the
+`docs/archive/start-loop.md` is the older proposal for the first hour (the view from the beach, the steading as home, the finds); the
 two fit together and this one answers the question that one left open: **why are you here?**
 
 ## 1. What the game already says

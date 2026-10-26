@@ -141,7 +141,7 @@ whether the breath in the last stand reads as a gasp (it is a man out of breath,
 
 ## Added 2026-10-24, the rune trial: the Hammer, the Throwing axe, the traps, the Shadowstep
 
-Robin's rune trial of 2026-10-24 (Clive, GD's `docs/rune-trial-2026-10-24.md`): nine sounds the game calls by name. Robin has
+Robin's rune trial of 2026-10-24 (Clive, GD's `docs/archive/rune-trial-2026-10-24.md`): nine sounds the game calls by name. Robin has
 picked the plain recording every time so far (nine of nine), so each sound leads with a plain one, **a** (and **b** where a
 second recording is as good), and a layered **v** beside it. New recordings: BigSoundBank's rat traps, a small chain, two steam
 hisses and a glass ball breaking (`sfx/runes/ref/bsb_traps/`, Robin's yes the same day); the medieval crossbow's mechanism, on

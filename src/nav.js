@@ -1,4 +1,4 @@
-/* Nav: finding a way round walls (2026-10-13, docs/battle-plan.md rung 5; Robin: fill a big town with hirdmen, then attack it).
+/* Nav: finding a way round walls (2026-10-13, docs/archive/battle-plan.md rung 5; Robin: fill a big town with hirdmen, then attack it).
    Movers in the engine walk straight at what they want and slide along circles, which is right in a field and hopeless in a
    town: nobody reaches anybody through a wall. A Nav grid is a stretch of the world in tiles: which tiles a man can stand
    on, and which edges between tiles are shut (a wall, a fence, a town wall; a locked door is shut to everyone without its

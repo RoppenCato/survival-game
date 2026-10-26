@@ -1,4 +1,4 @@
-"""The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
+"""The people (2026-10-12, docs/archive/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
 
 One body for everyone, made from the hero's (art/source/hero2_mixamo.blend: his parts on Mixamo's skeleton, his eighteen
 clips, the things for the hand), so a villager, a guard and a hirdman are the same sheets:

@@ -16,7 +16,7 @@ raw small fixes below. Steps 4 and 5 are not started.
 ## 0. Before you start
 
 **Read:** `CLAUDE.md` (all of it: the working rules, "Things to know before changing code", the controls), `docs/world-shape.md`,
-`docs/chapters.md` (keep its status tables up to date as steps land), `docs/villages.md`, `docs/battle-plan.md`, `docs/archive/raid.md`,
+`docs/chapters.md` (keep its status tables up to date as steps land), `docs/villages.md`, `docs/archive/battle-plan.md`, `docs/archive/raid.md`,
 `docs/archive/boats.md`.
 
 **The rules that bite in this work** (from CLAUDE.md, repeated because they are easy to break in a big change):

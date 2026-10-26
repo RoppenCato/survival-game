@@ -197,7 +197,7 @@ find."* `docs/pictures/destruction-trials.jpg` is the pictures.
   `SK.sack`, `SK.watch()`); **`tools/visual/bigplace.js`** renders one place large from the generator.
 
 **How it was played.** By script, with the game's own keys. The hero **never fights and never raises his shield**, so
-the raids are a floor, as in `docs/battle-plan.md`. He and his five are **set down at the gate**: the walk from the
+the raids are a floor, as in `docs/archive/battle-plan.md`. He and his five are **set down at the gate**: the walk from the
 ship (73 to 143 tiles in these worlds) was skipped. A **watch** runs with every step and counts what must never happen:
 anybody walking through a wall, a man standing still with somebody to go for, people hidden in a house that is gone,
 people fleeing who do not move, time spent standing in a fire. **Every number below is from the code as committed**
@@ -311,7 +311,7 @@ who stood still for five seconds or more, and 12 waits of half a minute or more 
     place that can be walked to from the yard.
 21. **A guard nudged a step from his place turned his back to walk the step home**, so nobody could come up behind
     him once the hero's own men had crowded his gate. (The old fault 18 had been keeping them out of it: the scripted
-    church raid of `docs/battle-plan.md` went from six quiet starts in six to two in twelve, and is back at five in
+    church raid of `docs/archive/battle-plan.md` went from six quiet starts in six to two in twelve, and is back at five in
     six.) He steps back as he stands.
 
 Nobody walked through a wall, nobody stood still with somewhere to go, and nobody hid in a house that was gone, in

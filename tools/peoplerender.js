@@ -1,5 +1,5 @@
 // Renders every layer of the people (art/source/people.blend, from art/build/people_build.py) into art/render/people,
-// several Blender processes at a time (2026-10-12, docs/battle-plan.md rung 0).   node tools/peoplerender.js [jobs at once]
+// several Blender processes at a time (2026-10-12, docs/archive/battle-plan.md rung 0).   node tools/peoplerender.js [jobs at once]
 // A layer is rendered for the clips it shows in: the body, its tunic and trousers, the hair, beards, hats, mail, the cloak,
 // the dress and the shield for every clip; a thing for the hand for the clips a hand holds it in. A frame already on disk
 // is left as it is (render.py --keep 1), so a stopped run goes on where it stopped, and a clip is rendered again by

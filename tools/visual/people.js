@@ -1,4 +1,4 @@
-// The people drawn by the game's own code (Sprites.person) outside a browser (2026-10-12, docs/battle-plan.md rung 0).
+// The people drawn by the game's own code (Sprites.person) outside a browser (2026-10-12, docs/archive/battle-plan.md rung 0).
 //   node tools/visual/people.js crowd [seed]     thirty people rolled as the game rolls them, the hero among them, on the starter island
 //                                               at the size Robin plays at (3 px a unit shown one and a half times larger): people_crowd.png
 //   node tools/visual/people.js clips [kind]     every clip of an armed man, all its frames, from three sides: people_clips.png

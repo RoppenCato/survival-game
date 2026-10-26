@@ -1,4 +1,4 @@
-// Fights between men, with no screen (docs/battle-plan.md: every rung of the ladder is tried here before it is played).
+// Fights between men, with no screen (docs/archive/battle-plan.md: every rung of the ladder is tried here before it is played).
 //   node tests/battle.js            the short run that npm test makes: a few fights of every rung, and what must not happen
 //   node tests/battle.js one [n]    rung 1: the hero, played by three bots, against one hirdman; n fights a line (200)
 //   node tests/battle.js two [n]    rung 2: against two

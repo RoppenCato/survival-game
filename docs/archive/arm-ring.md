@@ -1,6 +1,6 @@
 # The arm ring: what the runes became
 
-Decided with Robin, 2026-10-06. This replaces the casting cloth, the pouch and the hollows (`docs/runes-ideas.md` was the
+Decided with Robin, 2026-10-06. This replaces the casting cloth, the pouch and the hollows (`docs/archive/runes-ideas.md` was the
 discussion). Runes are **knowledge you unlock**, never items; they take no space. What you *know* does nothing until it is
 **cut into your arm ring and reddened with your blood** at the **carver's bench**. That is the whole system, and it is
 historical: every Viking wore arm rings, jarls gave them to their men, oaths were sworn on them, and in Egil's saga runes
@@ -137,4 +137,4 @@ the hollows now draw the glyph in the metal's light colour on red, and unknown i
 
 Nothing of this is built (2026-10-06). The old rune code (`RS`, the casting cloth, C, the pouch icon, `STONE_POOL`,
 `DEEDS`) stays hidden behind `SHOW.runes` until the bench replaces it; the rune drawings in `src/runes.js` and the deed
-counters are kept. The biome ladder the ring follows is in `docs/roadmap.md`.
+counters are kept. The biome ladder the ring follows is in `docs/archive/roadmap.md`.

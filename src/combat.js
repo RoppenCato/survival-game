@@ -1226,7 +1226,7 @@ function bruteAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
-/* ---------- men: sides, and the soldier (2026-10-12, docs/battle-plan.md; Robin: fight a hirdman, two, two with one beside
+/* ---------- men: sides, and the soldier (2026-10-12, docs/archive/battle-plan.md; Robin: fight a hirdman, two, two with one beside
    you, five against five, a town, the raid) ----------
    SIDES. Every fighter has a side: 0 is against the hero (every beast, a town's men), 1 is with him (his own men). The
    hero's blows pass through his friends; a soldier's blow lands on whoever of the other side stands in it (strike).

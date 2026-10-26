@@ -9,7 +9,7 @@ breaking in, fighting in); the defence interesting and varied in tactics and spr
 the Art Director makes villages and towns prettier, I do mechanics and gameplay.* The steps, the order and the tests are mine.
 This is chapter 3's centre (`docs/chapters.md`), started now on Robin's word; chapter 1 stays as it is throughout.
 
-**What stands today** (`CLAUDE.md`, "Men, towns and raids"; `docs/archive/raid.md`; `docs/battle-plan.md` rungs 0 to 6): the whole raid
+**What stands today** (`CLAUDE.md`, "Men, towns and raids"; `docs/archive/raid.md`; `docs/archive/battle-plan.md` rungs 0 to 6): the whole raid
 works in the Battle test (`game.html?scene=battle`) on the game's engine: a town of twenty with men at posts, noise and the alarm,
 locked doors to the axe, the quiet kill from behind, night with sleepers and a walking watch, the karve on the shore, the carry
 order, G's orders, storming, villagers who flee or arm, destruction and fire. **None of it runs in the real game**: no settlement

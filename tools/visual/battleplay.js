@@ -1,4 +1,4 @@
-// The battle scene played by script in the page (2026-10-13, docs/battle-plan.md: what Node cannot see: that the clips match
+// The battle scene played by script in the page (2026-10-13, docs/archive/battle-plan.md: what Node cannot see: that the clips match
 // the blows, that the shield is where the blow was stopped, that nobody slides). Load tools/visual/drive.js, write the page
 // again (game.html?scene=battle), then load this file.
 //   BP.set('one' | 'two' | 'friend' | 'five')   the board's own rows (BP.act(id) presses any row: 'wpn', 'gear', 'wits', 'again' ...)

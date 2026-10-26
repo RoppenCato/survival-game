@@ -1,4 +1,4 @@
-// The ships (docs/ships-plan.md, 2026-10-21): the hulls at true size, the crew's places (the helmsman forward at the steering
+// The ships (docs/archive/ships-plan.md, 2026-10-21): the hulls at true size, the crew's places (the helmsman forward at the steering
 // oar, the rowers from the stern two a thwart facing aft, clear of each other), the hero's place (alone at the oars, with a
 // crew in the bow), the stroke (a pull then a recovery, one phase for the ship), the gangway (the hull's point nearest the
 // land) and the landing spots (spread along the shore, every one free). Prints values; bad = 0 means all held.

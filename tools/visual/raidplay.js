@@ -1,4 +1,4 @@
-// A raid played by script in the page, with no pictures until asked (2026-10-13, rung 6 of docs/battle-plan.md: "a scripted raid
+// A raid played by script in the page, with no pictures until asked (2026-10-13, rung 6 of docs/archive/battle-plan.md: "a scripted raid
 // end to end for timing"). Load tools/visual/drive.js, write the page again (game.html?scene=battle), then battleplay.js and this.
 //   RP.begin()                    the board's "A raid on it": the town at its day, the karve on the shore, the hero and five beside it
 //   RP.go(x, y, { near, secs })   the hero walks there (by the town's grid where there is one); true when he is there

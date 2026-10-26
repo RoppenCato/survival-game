@@ -12,7 +12,7 @@ var T = 32, TS = 24, K = 0.75;
      how many strake rows it carries amidships, and hullProfile() draws the half-width of every column from it. thwarts
      [min, max] rowing seats; mast and rudder the cells they must go on (none: no rig); tier the bench's; cost paid when
      the vessel is launched (the parts are paid as they are laid); zoom the yard's camera, so a longship fits the screen. */
-  var U = 1 / 0.046;                     // units a metre (the canon scale: a unit is 4.6 cm; docs/ships-plan.md, 2026-10-21: the hulls at the sizes they were dug up at)
+  var U = 1 / 0.046;                     // units a metre (the canon scale: a unit is 4.6 cm; docs/archive/ships-plan.md, 2026-10-21: the hulls at the sizes they were dug up at)
   var KJ = 3, HULLS = {                    // m: the length in metres, beam in metres, n: keel cells (a cell a thwart's pitch, CW), per: rowers to a thwart, zoom: the yard's camera, sea: the game's camera when aboard
     faering: { name: 'Faering', m: 6.5, beam: 1.4, n: 5, per: 1, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, sea: 0.65, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound, six and a half metres: two rowing seats at most, one man to a seat with a pair of oars, no mast. Quick to turn, light to row.' },
     boat: { name: 'Boat', m: 9, beam: 2.0, n: 8, per: 2, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 0.9, sea: 0.65, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat of nine metres: three rowing seats at most, two men to a seat, no mast. The first that crosses to the big island with a crew.' },
@@ -65,7 +65,7 @@ var T = 32, TS = 24, K = 0.75;
     if (H.rudder) return AM && AM.helm ? AM.helm[0] : -(v.hw || 0) * 0.62;
     return v.seats && v.seats.length ? v.seats[0] : -(v.hw || 0) * 0.28;
   }
-  function crewPlaces(v, n, nFloor) {              /* where n men sit, in the hull's frame (x along the keel, the bow at +; y across, the right-hand side looking forward at +): on a rigged hull the first place is the helmsman's at the steering oar, facing forward; the rowers fill the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), facing aft; the rest sit on the floor in the stern and the bow. docs/ships-plan.md, 2026-10-21 */
+  function crewPlaces(v, n, nFloor) {              /* where n men sit, in the hull's frame (x along the keel, the bow at +; y across, the right-hand side looking forward at +): on a rigged hull the first place is the helmsman's at the steering oar, facing forward; the rowers fill the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), facing aft; the rest sit on the floor in the stern and the bow. docs/archive/ships-plan.md, 2026-10-21 */
     var H = HULLS[v.kind], out = [], pr, seats, per, i, k, fl = 0; nFloor = nFloor || 0; if (!H || !(n + nFloor > 0)) return out;
     pr = profileOf(v); seats = v.seats && v.seats.length ? v.seats : [0]; per = v.per || H.per || 2;
     var AM = ART[v.kind] && ART[v.kind].J.marks;
@@ -83,7 +83,7 @@ var T = 32, TS = 24, K = 0.75;
     while (out.length < n + nFloor) { var aft = fl % 2 === 0, q = Math.floor(fl / 2), x2 = aft ? -pr.L * 0.5 - q * 14 : pr.L * 0.42 + q * 14; out.push({ x: x2, y: (q % 2 ? -1 : 1) * 7, face: aft ? Math.PI / 2 : -Math.PI / 2, kind: 'floor', side: 0 }); fl++; }
     return out;
   }
-  /* On and off (docs/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
+  /* On and off (docs/archive/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
      all round and from each sample the walkable ground (the shore, or the shallows that can be waded) is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
      point (x, y), the land point to walk to (lx, ly, a step up the beach) and the distance. landingSpots spreads n men along the
      shore from a landing point: alternately either side along the shore line, a step apart and a step inland, each tested by
@@ -401,7 +401,7 @@ var T = 32, TS = 24, K = 0.75;
     if (!v.trail) v.trail = []; v.trailT = (v.trailT || 0) + dt; if (v.trailT > 0.12) { v.trailT = 0; v.trail.push({ x: v.x, y: v.y, age: 0, sp: Math.abs(v.speed) }); if (v.trail.length > 18) v.trail.shift(); }
     for (var ti = 0; ti < v.trail.length; ti++) v.trail[ti].age += dt;
     v.rowing = (crew > 0 || !rigged(v.kind)) && (iy < 0 || Math.abs(v.speed) > 8) && !(v.sailFill > 0.6);   // (alone in a rowing boat the hero rows)                                           // the oars pull while there is way to make and the sail is not doing the work; else they are shipped
-    if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/ships-plan.md)
+    if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/archive/ships-plan.md)
     return stuck;
   }
   // the water round a hull: a thin line of foam hugging it, and when it moves a wake of ripples trailing from the stern
@@ -424,7 +424,7 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
   function bobOf(v, clock) { return Math.sin(clock * 2 + v.x * 0.01) * 0.8; }
-  function drawVessel(c, v, clock, o) {                     // the vessel as it was laid in the yard, on the water. o.split: the hull alone (the page draws the crew, then drawRigOf, drawVesselFront and drawOars in its own order; docs/ships-plan.md step 2, 2026-10-21)
+  function drawVessel(c, v, clock, o) {                     // the vessel as it was laid in the yard, on the water. o.split: the hull alone (the page draws the crew, then drawRigOf, drawVesselFront and drawOars in its own order; docs/archive/ships-plan.md step 2, 2026-10-21)
     var bob = bobOf(v, clock), parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT;
     if (HULLS[v.kind]) { drawBoat(c, v, parts, bob, clock, o || {}); return; }
     var logs = parts.filter(function (p) { return p.id === 'log'; }), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
@@ -613,7 +613,7 @@ var T = 32, TS = 24, K = 0.75;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
     drawRig(c, v, pr, ds, bob, clock, at, null);
   }
-  /* The stroke (docs/ships-plan.md, 2026-10-21): v.stroke runs in sail() while v.rowing; the pull is the first two fifths of a cycle
+  /* The stroke (docs/archive/ships-plan.md, 2026-10-21): v.stroke runs in sail() while v.rowing; the pull is the first two fifths of a cycle
      (the blade in the water, moving aft), the recovery the rest (the blade lifted and carried forward). strokeLean gives how far
      along the keel a rower's body leans (toward the bow at the finish, since he faces aft); drawOars draws each oar from the
      rower's hands over the rail to the blade, all in time; at rest the oars are held out level. rowers: [{ x, y, side }] in the

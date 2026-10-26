@@ -1,4 +1,4 @@
-// Packs the people's renders into sheets, every frame of every layer trimmed to its own pixels (2026-10-12, docs/battle-plan.md rung 0).
+// Packs the people's renders into sheets, every frame of every layer trimmed to its own pixels (2026-10-12, docs/archive/battle-plan.md rung 0).
 //   node tools/people.js [art/render/people] [assets/sprites/people] [name]
 // tools/sprites.js packs every layer of a model at the one frame size, which is right for the hero (eleven layers) and far
 // too much for the people, who are one body under some thirty layers: a helmet is thirty pixels, not a whole frame, and a

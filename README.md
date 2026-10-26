@@ -100,7 +100,7 @@ and recruits, build a clan that crews your ships and works your village, and cla
 four seasons repopulates unclaimed places after each winter. The compass always means the same
 thing (cold north, rich south, trade to the east, open ocean to the west) but every world is generated anew.
 Ideas that are not decided yet are in
-`docs/idea-bank.md`, the build order with its tests in `docs/roadmap.md`, and the creatures' cards in `docs/beasts.md`.
+`docs/idea-bank.md`, the build order with its tests in `docs/archive/roadmap.md`, and the creatures' cards in `docs/beasts.md`.
 
 `CLAUDE.md` has the full, current design notes and the conventions for the code.
 
