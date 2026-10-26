@@ -452,9 +452,7 @@ differences (Robin: "instead of having a green +3"). **The materials' and the fo
 `drawDropIcon` in the bag, the bar, the cards and on the ground; a kind without one keeps its drawn icon; **wood and stone remade** the same day, Robin: "they look out of place": firewood in the trees' bark and an oval fieldstone, rendered from the world's camera to lie on the ground). **A drop lies unturned with a soft blue shadow to its lower right** (`drawDrop`, the studio's ask: the picture carries its own light). The panel
 ("You") has Gear (helmet, cloak, tunic, trousers, boots; shield, necklace, two rings, two trinkets, the arm ring's slot, drawn as an arc until something fills it), Stats after
 the first kill (the Ring page went with the old runes, 2026-10-23). **What is worn shows as the art studio's rendered icons** (`assets/sprites/worn/`, 2026-10-20; `Items.setWorn`, the game's `wornPick` choosing them as the hero is dressed, the cloth tinted by its material) in the slots, the bag and the crafting board; an empty slot shows its icon faint. The panel's redesign waits for Robin's pick of the studio's three directions. The crafting board sits lower right under the chart, **the list on the left and
-the chosen thing beside it** (Robin). **Each board lists only its own**: Tab opens what you make by hand, with a tab for a
-workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a furnace its bars, at a workbench its things
-(with a By hand tab). A chest takes the right side instead. The middle of the screen stays clear (Robin).
+the chosen thing beside it** (Robin). **One crafting board** (Robin, 2026-10-26: "Is the whole 'by hand' thing really needed? Or can it just show the available crafting?"; `openInfo`, `craftGroupsHere`): no flaps; what you make by hand under its headings, then the things of every station you stand at (a workbench, a fire, a furnace, a trapper's bench) under "At the workbench" and the like, live; E at a station opens the same board with its first thing chosen and scrolled to; **the switch "Elsewhere: shown / hidden"** at the board's top right shows or hides the stations you have stood at but are not at now, faint (`craftElsewhere`, `game.craftElsewhere`, shown at first). A chest takes the right side instead. The middle of the screen stays clear (Robin).
 
 **Crafting** (`RECIPES2`): a recipe is listed once you have picked up its key ingredient; a thing not yet looked at carries the red lozenge and "new" (above, under the start). **Crafting is as in Valheim** (Robin, 2026-10-21): made by hand anywhere or at a roofed workbench or a shipwright's bench,
 **one thing at a time, no queue**; a press pays and **the Craft button turns into Cancel, filling as the thing is made**; **the
@@ -471,10 +469,7 @@ above): **a pin** at the
 card's plate corner (`pins`, up to three, the oldest let go; saved): a pinned recipe shows as a **vellum slip** bottom left
 (`drawSlips`, 200 by 64 from x 24, y 560, 74 apart) while no board is open and no fight is on (`fightT`: a beast or man
 awake within 420 units, the music's test), with its picture, name and each material as have/need (green when enough, red
-when short) and "ready to make"; a click on the slip's pin lets it go; **the hand board teaches the stations**: under its
-own groups, faint, "At the hearth", "At the workbench", "At the furnace" for each station kind the hero has stood at
-(`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made
-at the hearth" in place of the button. The pin is the studio's `pin_on` and `pin_off` (drawn in code while they load).
+when short) and "ready to make"; a click on the slip's pin lets it go; **the board teaches the stations**: while "Elsewhere" is shown, faint groups "At the hearth", "At the workbench", "At the furnace" for each station kind the hero has stood at and is not at now (`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made at the hearth" in place of the button. The pin is the studio's `pin_on` and `pin_off` (drawn in code while they load).
 Hand: flint axe, knife, pick, the strong stick, stick bow, wooden arrows, the quiver, the hazel rod, the cudgel, torch; **not offered on the starter island**: the flint knife (Robin, 2026-10-21: "not really useful anyway"), the flint sword, the leather cap and cloak (`STARTER_HIDE`). Bench: the flint sword, the wooden shield, the leather set,
 copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20; and none at a village's fires and lanterns, only at fires outside any place or in one you hold, 2026-10-23): embers at dawn by every fire of yours, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
@@ -691,9 +686,7 @@ bottom so it's not so square"); the bag (330 by 306) under the flaps is dark soc
 narrower so more of the game shows: Robin) has its list in a dark well, a vellum card with the
 thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with
 the number needed in its corner, red when you have too few, and "Short of fibre" beside them** (Robin: "it should just be 3",
-no "Needs"), and the Craft button; **the station tabs are flaps off its left edge** (the studio's follow-up, 2026-10-20: `hTab`, `flap_left_on` in red
-leather 30 wide when chosen, `flap_left_off` in oak 24 wide, each as tall as its word plus 24, drawn before the board so their
-right edges go under it); a thing's hover card is vellum, over every board. **The Building board** (924 by its rows) is in the
+no "Needs"), and the Craft button; no station flaps since 2026-10-26 (one list); a thing's hover card is vellum, over every board. **The Building board** (924 by its rows) is in the
 same clothes (2026-10-20): its category tabs are **flaps across its top** (`hTopFlap`, `flap_top_on` 38 tall, `flap_top_off`
 30, as wide as the word plus 28, 6 apart, their feet under the board), the Building plaque, and **a dark cell a piece**
 (`build_cell`, 105 by 126 at the board's pitch of 111 by 132: the piece as the game draws it in the upper 70, the name in
