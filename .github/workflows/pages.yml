@@ -1,6 +1,7 @@
-# The game online (Robin, 2026-10-27: "a playable version that can be played in a browser on any comp"): every push to the
-# `stable` branch publishes the built pages (dist/) and what they load (assets/) to GitHub Pages. Work goes on in `main`;
-# `stable` is moved to a commit of main when Robin calls it stable. The site: https://roppencato.github.io/survival-game/
+# The test build online (Robin, 2026-10-27: "a playable version that can be played in a browser on any comp", clean of the Admin
+# things, for friends to try, raised a version at a time, "alpha 0.2"): every push to the `stable` branch publishes release/ (the
+# game alone and its start page, built by tools/build.py from RELEASE.json) and the assets it loads to GitHub Pages. Work goes on in
+# `main`; a new version is RELEASE.json raised, built, committed and `stable` moved to it. The site: https://roppencato.github.io/survival-game/
 name: Publish the game
 on:
   push:
@@ -24,9 +25,9 @@ jobs:
       - name: Lay out the site
         run: |
           mkdir _site
-          cp -r dist assets _site/
+          cp -r release assets _site/
           rm -rf _site/assets/sfx/free _site/assets/sfx/runes _site/assets/sfx/fishing _site/assets/sfx/bow _site/assets/sfx/weather
-          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=dist/index.html"><title>Skargard</title><a href="dist/index.html">Play</a>\n' > _site/index.html
+          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=release/index.html"><title>Skargard</title><a href="release/index.html">Play</a>\n' > _site/index.html
           touch _site/.nojekyll
           du -sh _site
       - uses: actions/configure-pages@v5

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skargard</title>
+<style>__FONTS__</style>
+<style>
+:root{--bg:#1d1611;--wood:#3a2a1e;--ink:#f2e6c8;--ink2:#cbb894;--gold:#e8c060;--red:#8a3a22;--line:#5a4430}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 20%,#2c2118 0%,var(--bg) 70%);color:var(--ink);font:17px/1.55 Alegreya,Georgia,serif;display:flex;justify-content:center}
+main{width:min(720px,100% - 32px);padding:64px 0 48px}
+h1{font-size:clamp(2.6rem,7vw,4rem);letter-spacing:.28em;margin:0;text-align:center;font-weight:700}
+.ver{text-align:center;color:var(--gold);font-style:italic;margin:.2em 0 1.6em}
+.rule{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:28px 0}
+p{color:var(--ink2);margin:.6em 0}
+.play{display:block;width:max-content;margin:28px auto;padding:14px 44px;border:2px solid var(--gold);border-radius:10px;background:var(--red);color:var(--ink);font:700 1.4rem Alegreya,Georgia,serif;text-decoration:none;letter-spacing:.08em}
+.play:hover{background:#a3472a}
+h2{font-size:1.1rem;color:var(--gold);margin:1.6em 0 .4em;font-weight:700}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+dt{white-space:nowrap}dd{margin:0;color:var(--ink2)}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:0 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--wood);font:600 .85rem ui-monospace,monospace;color:var(--ink)}
+.small{font-size:.9rem;color:#9a876a}
+</style>
+</head>
+<body>
+<main>
+  <h1>SKARGARD</h1>
+  <div class="ver">__VERSION__ &middot; a test build</div>
+  <p>__NOTES__</p>
+  <a class="play" href="game.html">Play</a>
+  <p>The game saves itself in this browser as you play. To carry it to another computer: <kbd>Esc</kbd>, <b>Save to a file</b>; on the other computer, <b>Load from a file</b>.</p>
+  <div class="rule"></div>
+  <h2>Keys</h2>
+  <dl>
+    <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk; <kbd>Shift</kbd> sprints, <kbd>Space</kbd> dashes, <kbd>C</kbd> sneaks</dd>
+    <dt><kbd>J</kbd> / left click</dt><dd>Swing what is in hand</dd>
+    <dt><kbd>K</kbd> / right click</dt><dd>Guard (a parry if just in time); with the bow, draw it</dd>
+    <dt><kbd>E</kbd></dt><dd>Use what you face: talk, take, open, sleep, board</dd>
+    <dt><kbd>1</kbd>&ndash;<kbd>6</kbd></dt><dd>Take a thing in hand or use it</dd>
+    <dt><kbd>Tab</kbd></dt><dd>Your gear, the bag and what you can make</dd>
+    <dt><kbd>B</kbd></dt><dd>Build, once you know how</dd>
+    <dt><kbd>L</kbd> <kbd>O</kbd> <kbd>M</kbd></dt><dd>The book, your own half of it, the map</dd>
+    <dt><kbd>Esc</kbd></dt><dd>The menu: the save, music and sound</dd>
+  </dl>
+  <div class="rule"></div>
+  <p class="small">An early test, made to be played and broken. Best on a computer with a keyboard and mouse, in Chrome or Edge.</p>
+</main>
+</body>
+</html>

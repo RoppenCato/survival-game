@@ -2005,7 +2005,8 @@ __COMBAT__
 
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
-  var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
+  var RELEASE = __RELEASE__;   /* the test build for friends (Robin, 2026-10-27): its version ("alpha 0.1") in release/game.html, null in dist/; no Admin, sandbox, sky board or test scenes */
+  var SCENE = RELEASE ? '' : (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
   var SAVE = SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : 'game.save'))), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
@@ -5028,8 +5029,9 @@ __COMBAT__
 
   /* ---------- Admin: cheats for testing, in the Escape menu (Robin, 2026-10-06). Toggles persist in game.admin ---------- */
   var ADMIN = { immortal: false, oneshot: false, free: false, fly: false, fullres: false, fps: false, triple: false, stroll: false }, adminOpen = false;
-  try { var ad0 = JSON.parse(localStorage.getItem('game.admin')); if (ad0) for (var ak in ADMIN) if (ad0[ak] != null) ADMIN[ak] = !!ad0[ak]; } catch (e) {}
+  if (!RELEASE) try { var ad0 = JSON.parse(localStorage.getItem('game.admin')); if (ad0) for (var ak in ADMIN) if (ad0[ak] != null) ADMIN[ak] = !!ad0[ak]; } catch (e) {}
   gaitSync();   // the walk at 60, or the kept jog if Admin's switch is on
+  if (RELEASE) ['newisle', 'tohome'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; });   /* the test build: no new island and no jump back to camp */
   fitCanvas();
   function saveAdmin() { try { localStorage.setItem('game.admin', JSON.stringify(ADMIN)); } catch (e) {} }
   var ADMIN_ROWS = [
@@ -5176,6 +5178,7 @@ __COMBAT__
     { id: 'music', name: 'Music', text: 'All the way left is silence.' },
     { id: 'amb', name: 'Sounds of the world', text: 'Wind, sea, birds, fire, your steps.' }
   ];
+  if (RELEASE) PAUSE = PAUSE.filter(function (p) { return p.id !== 'sandbox' && p.id !== 'admin' && p.id !== 'newisle'; });   /* the test build: only play, the save and the sound */
   var musicDrag = false, pauseArm = null, PAUSE_X = 92, PAUSE_W = 216;   // pauseArm: a row that throws the game away was clicked once; the second click within five seconds does it
   function pauseArmed(id) { return !!pauseArm && pauseArm.id === id && performance.now() - pauseArm.at < 5000; }
   function musicBar(x0, w0) { return { x: x0 + w0 - 70, y: 0, w: 56 }; }
@@ -5199,7 +5202,7 @@ __COMBAT__
   }
   function drawPause(c) {
     c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
-    panel(c, PAUSE_X, 50, PAUSE_W, 'Paused', 'The game saves itself as you play. Esc closes.', PAUSE.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
+    panel(c, PAUSE_X, 50, PAUSE_W, RELEASE ? 'Paused · ' + RELEASE : 'Paused', 'The game saves itself as you play. Esc closes.', PAUSE.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
       c.font = '600 8px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy + 1);
       var armed = pauseArmed(it.p.id); c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = armed ? '#ff9a8a' : 'rgba(255,255,255,0.65)'; c.fillText(armed ? 'Click again to do it: what you have built and gathered here is lost.' : it.p.text, x0 + 14, yy + 8);
       if (it.p.id === 'music' || it.p.id === 'amb') {           // the volume bars: the music, the sounds of the world
@@ -7565,7 +7568,7 @@ __COMBAT__
     if (e.code === 'KeyV' && !e.repeat && store) { fillFromStore(); return; }
     if (e.code === 'KeyN' && !e.repeat && !naming && !SCENE) { quickStack(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { if (bookOpen && !bookOwn(LB.tab)) bookOpen = false; else { if (bookOpen && lbHasAny()) bookTurn = performance.now(); lbOpen(); } } return; }
-    if (e.code === 'KeyH') { e.preventDefault(); if (!e.repeat && !pauseOpen) { if (scenePanel()) runePanel.folded = !runePanel.folded; else skyOpen = !skyOpen; } return; }   /* in a test scene H opens and shuts its board (Robin, 2026-10-24); the sky board is Admin's Season and Weather rows there */   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
+    if (e.code === 'KeyH' && !RELEASE) { e.preventDefault(); if (!e.repeat && !pauseOpen) { if (scenePanel()) runePanel.folded = !runePanel.folded; else skyOpen = !skyOpen; } return; }   /* in a test scene H opens and shuts its board (Robin, 2026-10-24); the sky board is Admin's Season and Weather rows there */   /* the sky board: the seasons, the weather, the hour and the wind, to try them (Robin, 2026-10-23) */
     if (altarOpen && (e.code === 'KeyE' || e.code === 'Escape') && !e.repeat) { e.preventDefault(); altarOpen = false; return; }
     if (ceremony && ceremony.phase === 'choose' && /^Digit[123]$/.test(e.code) && !e.repeat) { e.preventDefault(); ritePick(+e.code.slice(5) - 1); return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || altarOpen || musterOpen || mapOpen || skyOpen) { skyOpen = false; altarOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }

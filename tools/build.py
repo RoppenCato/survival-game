@@ -249,6 +249,7 @@ def lore_book():
             if e.get(k): o[k] = e[k]
     return json.dumps(out, ensure_ascii=False)
 SRC['__LOREBOOK__'] = lore_book()
+SRC['__RELEASE__'] = 'null'   # the work copy in dist/; the test build in release/ carries its version (RELEASE.json)
 
 # page name in dist/  ->  template in templates/
 PAGES = [
@@ -275,3 +276,14 @@ for page, template in PAGES:
     if '<script>' in html: html = html.replace('<script>', MUTE + '<script>', 1)
     write(os.path.join(ROOT, 'dist', page + '.html'), html)
 print('built ' + ', '.join(p for p, _ in PAGES) + ' in dist/')
+# The test build for friends (Robin, 2026-10-27): release/ holds the game alone and its own start page, the version from RELEASE.json
+# ("alpha 0.1"), no Admin, sandbox, sky board, test scenes or editors (the game reads RELEASE). Published by the stable branch's workflow.
+REL = json.load(open(os.path.join(ROOT, 'RELEASE.json'), encoding='utf-8'))
+SRC['__RELEASE__'] = json.dumps(REL['version'])
+for page, template in [('index', 'release'), ('game', 'game')]:
+    html = read('templates', template + '.html')
+    for mark, code in SRC.items(): html = html.replace(mark, code)
+    html = html.replace('__VERSION__', REL['version']).replace('__NOTES__', REL.get('notes', ''))
+    if '<script>' in html: html = html.replace('<script>', MUTE + '<script>', 1)
+    write(os.path.join(ROOT, 'release', page + '.html'), html)
+print('built the test build ' + REL['version'] + ' in release/')
