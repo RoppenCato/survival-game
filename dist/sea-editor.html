@@ -8376,6 +8376,7 @@ var TOOLS = [
   { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
 ];
 api.tools = TOOLS;
+api.die = function () { if (!P.dead) die(); };   /* a page's own death for the hero (drowning, 2026-10-27) */
 api.profiles = function () { return PROFILES; }; api.parryWindow = function () { return parryWindow(); }; api.meleeStep = function () { return stepData(P.atk); }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
 // The pace of a blow (2026-10-13, Robin: "the hero is hitting comically fast and crazy, it looks spasmic"): a sword blow is
 // now about 0.55 s from the press to the carry (it was 0.26), an axe 0.68, a club 0.78, the Dane axe 1.2; the windup is what
