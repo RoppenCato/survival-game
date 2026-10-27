@@ -58,7 +58,7 @@ the git history.
 **Summary.** You wake at the wreck with nothing. You learn to make tools and simple clothes, hunt and butcher, mend Arnor's house
 and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leave.
 
-**Status (2026-10-26): built** but for the "Cooking" tag on what is only for cooking and the glimpses (`CLAUDE.md`, "Chapter 0 as rebuilt"):
+**Status (2026-10-27): built** but for the glimpses (proposed in `docs/glimpses-chapter0.md`, waiting for Robin); the "Cooking" tag built 2026-10-27; played through by script on 2026-10-27 (`docs/playtest-2026-10-27.md`) (`CLAUDE.md`, "Chapter 0 as rebuilt"):
 the wooden sword (the strong stick renamed, a sword not a blunt weapon, very weak: Robin, 2026-10-26), leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
 quests in the book's Quests page, his house mended as a guided repair, the straw bed and waking by it, berries raw with their wait, no
 wolves, altar, cooking or free building, his boat mended overnight and given; the steading tidied of what a farm would not have.
