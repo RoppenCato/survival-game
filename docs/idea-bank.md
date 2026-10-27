@@ -1111,27 +1111,3 @@ every drawn piece on the menu, a village's ground only its fence or houses, the 
 to drag out as a ghost that fills as you pay, "Make it lived in", comfort by variety and a style bonus in place of today's checklist of
 seven, things that snap, porch and lean-to, the painted door); then alive (smoke, glowing windows, washing, hens in a yard, the hird
 using the house). Open questions for Robin are at the end of `docs/building-review.md`.
-
-## Playing parts of the game on the phone (Robin, 2026-10-27; ideas, not decided)
-
-Robin: the game is played on the PC, but certain parts could be played from the phone while away, on the train to work.
-
-Clive, GD's view (suggestions):
-- **The rule that keeps it healthy:** the phone gives something small, or a plan, never power the PC game needs. Nothing on
-  the phone runs out, rots or is missed while you are away (Robin's "reward, don't punish"), so nobody feels they must open it.
-- **Good fits, best first:**
-  1. **Send the hird out** (expeditions): pick fellows and an errand (fish the sound, trade at Old Aslak's village, scout a
-     water, hunt), they are gone for real hours, and they come back with goods, a wound, a rumour, a story told in Alistair,
-     LD's lines. It feeds the hird and the rumours, which have no way to surface yet.
-  2. **Fishing**: one self-contained round already (`src/fishing.js`, no drawing, no browser globals); the steering (W reels,
-     A and D turn its head) maps to a thumb on the water. The catch waits in a creel at home.
-  3. **Planning the home**: lay out houses, places and fences on a plan of your ground; the PC shows it as ghosts to build.
-  4. **The book and the chart**: read the Lore Book and the quests, name places, set marks, plan a course.
-  5. **The ship's look** and its name, sail and shields.
-- **Not on the phone:** fighting, raids, the rite, gathering: the game's heart stays where its controls are.
-- **What it takes:** the save is in the PC browser's storage (`file://`), so the phone cannot see it. A shared save means a
-  small server and a sign-in (the same thing `docs/release-and-coop.md` needs for playing with friends), or for a first trial a
-  phone page that keeps its own little save and hands its results to the PC as a code. The phone writes orders and results,
-  never the whole save: the PC applies them when it loads, so the two never fight over one save.
-- **A first trial, cheap:** the fishing round as a phone page on the game's own module and numbers, to feel whether it is fun
-  on a thumb before anything is synced.
