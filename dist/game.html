@@ -5777,7 +5777,7 @@ function make(kit, opts) {
     waters = [{ id: 'home', ring: 0, dir: null, cx: 0, cy: 0, r: WD.homeR, seed: s * 101 + 1, isles: [] }];
     ['north', 'south', 'east', 'west'].forEach(function (nm, wi) {
       var a = ANCHORS[wi].a + rndW(-WD.jitter, WD.jitter), rr = rndW(WD.ringR[0], WD.ringR[1]), d = WD.homeR + WD.crossing * rndW(WD.crossVar[0], WD.crossVar[1]) + rr;
-      waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });
+      if (WD.rings !== 0) waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });   /* (rings 0: home water alone, the test build's sea, 2026-10-27; the draws are made either way so home water's islands stay the same) */
     });
     isles = [];
     var placeAt = function (wt, cx, cy, r, role, slot, biome) { var rec = { x: cx, y: cy, r: r, gap: rndW(WD.inGap[0], WD.inGap[1]), biome: biome || 0, water: waters.indexOf(wt), ring: wt.ring, slot: !!slot, role: role || null, seed: wt.seed * 31 + isles.length * 17 }; isles.push(rec); wt.isles.push(isles.length - 1); return rec; };
@@ -16778,7 +16778,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
   var SHOW = { runes: true, book: true };      // runes: the arm ring (docs/arm-ring.md); book: the Lore Book (2026-10-22, docs/archive/talk-and-lore-book.md)
-  var OPTS = { music: 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
+  var OPTS = { music: null ? 0.2 : 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05); in the test build it starts at 20% (Robin, 2026-10-27)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) { return Music.SONGS[id] || (/^meadowDay/.test(id) ? Music.SONGS.meadowDay : null); }   /* (a season's day loop falls back to the day song) */   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
@@ -18935,13 +18935,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
   var RELEASE = null;   /* the test build for friends (Robin, 2026-10-27): its version ("alpha 0.1") in release/game.html, null in dist/; no Admin, sandbox, sky board or test scenes */
   var SCENE = RELEASE ? '' : (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
-  var SAVE = SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : 'game.save'))), gone = {}, saveT = 0;
+  var SAVE = RELEASE ? 'skargard.save' : SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : 'game.save'))), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
   // The battle test scene (2026-10-13, docs/archive/battle-plan.md): the starter island for the field, and a lowland island beside it for the town
   // (Village.plan gives the biggest lowland island a walled town, a church or a farm, and a place on the shore). No mountain: it is not needed here.
   var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
+  if (RELEASE) spec.waters = { rings: 0 };   /* the test build's sea: home water alone, the starter island, the big island and the islands round them (Robin, 2026-10-27) */
   if (SCENE === 'battle' || SCENE === 'ruin') { spec.waters = false; spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null;   /* (the two islands of the trials, not the sea as waters: under the waters the town found no room and every town row fell through; the cleanup of 2026-10-26) */ if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   /* The save keeps only what the player changed on the ground (2026-10-20: the whole painted field was 1.5 MB of a save, most of
@@ -19838,6 +19839,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function caveFloor(x, y) { var hc = here(); return !!hc && Cave.floor(hc, x, y); }
   function caveSetup() {                   // choose the mouth's place on the island and generate the inside
     cave = null; caveMouth = null; inCave = false; caves = []; cur = null; CAVE_X = WX + 4000;
+    if (RELEASE) return;   /* the test build has no troll's cave (Robin, 2026-10-27: chapter 1's cave is the wolves', not built) */
     var R = kit.rng(spec.seed * 31 + 9), tries, i, x, y, tx, ty, site = null;
     for (tries = 0; tries < 800 && !site; tries++) {
       var q1 = w.isles[1] || w.isles[0], a = R() * 6.283, d = R() * q1.r * 0.7 * T; x = q1.x * T + Math.cos(a) * d; y = q1.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);

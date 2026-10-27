@@ -4461,7 +4461,7 @@ function make(kit, opts) {
     waters = [{ id: 'home', ring: 0, dir: null, cx: 0, cy: 0, r: WD.homeR, seed: s * 101 + 1, isles: [] }];
     ['north', 'south', 'east', 'west'].forEach(function (nm, wi) {
       var a = ANCHORS[wi].a + rndW(-WD.jitter, WD.jitter), rr = rndW(WD.ringR[0], WD.ringR[1]), d = WD.homeR + WD.crossing * rndW(WD.crossVar[0], WD.crossVar[1]) + rr;
-      waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });
+      if (WD.rings !== 0) waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });   /* (rings 0: home water alone, the test build's sea, 2026-10-27; the draws are made either way so home water's islands stay the same) */
     });
     isles = [];
     var placeAt = function (wt, cx, cy, r, role, slot, biome) { var rec = { x: cx, y: cy, r: r, gap: rndW(WD.inGap[0], WD.inGap[1]), biome: biome || 0, water: waters.indexOf(wt), ring: wt.ring, slot: !!slot, role: role || null, seed: wt.seed * 31 + isles.length * 17 }; isles.push(rec); wt.isles.push(isles.length - 1); return rec; };
