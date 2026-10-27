@@ -302,7 +302,7 @@ __COMBAT__
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
   var SHOW = { runes: true, book: true };      // runes: the arm ring (docs/arm-ring.md); book: the Lore Book (2026-10-22, docs/archive/talk-and-lore-book.md)
-  var OPTS = { music: __RELEASE__ ? 0.2 : 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05); in the test build it starts at 20% (Robin, 2026-10-27)
+  var OPTS = { music: __RELEASE__ ? 0.2 : 0, amb: __RELEASE__ ? 0.2 : 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05); in the test build it and the world's sounds start at 20% (Robin, 2026-10-27)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) { return Music.SONGS[id] || (/^meadowDay/.test(id) ? Music.SONGS.meadowDay : null); }   /* (a season's day loop falls back to the day song) */   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)

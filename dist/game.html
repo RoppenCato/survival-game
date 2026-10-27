@@ -13916,6 +13916,7 @@ function mouse(x, y) { IN.mx = x; IN.my = y; }
 function handBusy() { return !!(api.handBusy && api.handBusy()); }   /* the page has the hand's buttons (a rod in hand: the right button charges the cast, the left casts, hooks and reels; Robin, 2026-10-25): no blow, no guard */
 
 // Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
+var FIST_GATHER = 0.5;   /* a punch's bite on a tree or a rock: a flint axe or pick bites about 1.7 (mine, 2026-10-27) */
 var TOOLS = [
   { id: 'axe', name: 'Axe', good: 'tree', dmg: 2 },
   { id: 'pick', name: 'Pickaxe', good: 'stone', dmg: 2 },
@@ -14800,6 +14801,11 @@ function updatePlayer(dt) {
       var ang = a.dir - half * sign + arc * sign * u;
       a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6, motion: sd.motion || 'swing', u: u };
       if (sd.motion === 'smash' && S.juice && u > 0.85 && !a.smashed) { a.smashed = true; dust(p.x + Math.cos(a.dir) * 18, p.y + Math.sin(a.dir) * 18, 5); sfx('slam'); }
+      if (p.mode === 'fight' && bareHanded() && api.harvest ) {   /* bare hands punch trees and rocks for a little (Robin, 2026-10-27: "you need to be able to punch trees (for little damage) and stones so you wont run out of wood and stone") */
+        var hvF = api.harvest, objsF = hvF.list(p.x, p.y, 60);
+        for (i = 0; i < objsF.length; i++) { var oF = objsF[i]; if (a.hit.indexOf(oF) >= 0 || oF.edge || oF.stake || oF.box || oF.vein || oF.gate || !(oF.kind === 'tree' || oF.kind === 'trunk' || oF.kind === 'stone')) continue;
+          var fx = oF.x - p.x, fy = oF.y - p.y; if (Math.hypot(fx, fy) <= sd.reach + (oF.r || 8) + 2 && Math.abs(wrap(Math.atan2(fy, fx) - a.dir)) <= half + 0.12) { a.hit.push(oF); var hrF = hvF.hit(oF, FIST_GATHER, true, oF.kind === 'stone' ? 'pick' : 'axe', 0) || {}; num(oF.x, oF.y, String(Math.max(1, Math.round(hrF.dealt != null ? hrF.dealt : FIST_GATHER))), '#d9d0c0', false, true); sfx(oF.kind === 'stone' ? 'clink' : 'chop', 0); break; } }
+      }
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
         var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
         var objs = hv && !(api.items && !ti) ? hv.list(p.x, p.y, 90) : [];   // no tool in the slot, nothing to swing
@@ -16778,7 +16784,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
   var SHOW = { runes: true, book: true };      // runes: the arm ring (docs/arm-ring.md); book: the Lore Book (2026-10-22, docs/archive/talk-and-lore-book.md)
-  var OPTS = { music: null ? 0.2 : 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05); in the test build it starts at 20% (Robin, 2026-10-27)
+  var OPTS = { music: null ? 0.2 : 0, amb: null ? 0.2 : 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05); in the test build it and the world's sounds start at 20% (Robin, 2026-10-27)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) { return Music.SONGS[id] || (/^meadowDay/.test(id) ? Music.SONGS.meadowDay : null); }   /* (a season's day loop falls back to the day song) */   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
