@@ -3576,6 +3576,7 @@ function updatePlayer(dt) {
   if (shoving) { IN.pressed.lmb = false; IN.pressed.KeyJ = false; if (p.shoveCd <= 0 && p.st >= CROWD.shoveSt) { if (!runeReady('guardBlow')) { ring(p.x, p.y, 0, 10, 0.15, '184,53,44', false, 1.2); logEv({ k: 'shove', hit: false, cold: true }); } else { var did = gbRune === 'charge' ? crowdCharge(p) : gbRune === 'warCry' ? crowdWarCry(p) : gbRune === 'riposte' ? crowdRiposte(p) : crowdShove(p); if (did) runeSpend('guardBlow', gbRune); } } }   /* (the ring not yet full of blood: nothing, and a red flicker) */
   if (!shoving && !p.axeAim && !W.axe && !(p.throwT > 0) && !handBusy() && (IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
+  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) p.digitQ = i;   /* a number pressed is kept until it can be done: through a hit's pause, a swing or a raised guard (the playtest of 2026-10-27: pressed in a hit's pause it was lost; Robin: "swap when the swing ends") */
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
     return;
@@ -3603,6 +3604,7 @@ function updatePlayer(dt) {
     if (p.mode === 'fight' && !api.barSlots) { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
     else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
   }
+  var dqBusy = a.ph === 'windup' || a.ph === 'active' || p.guard || (IN.keys.KeyK && !bow); if (p.digitQ && !dqBusy) { IN.pressed['Digit' + p.digitQ] = true; p.digitQ = 0; } else if (p.digitQ) for (i = 1; i <= 6; i++) IN.pressed['Digit' + i] = false;
   for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (api.barSelect && (p.mode === 'fight' || p.mode === 'gather')) { api.barSelect(i - 1); continue; } if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
   if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
   if (IN.pressed.KeyC && !p.dead) p.sneak = !p.sneak;   /* C: the sneak on and off (Robin, 2026-10-24) */
