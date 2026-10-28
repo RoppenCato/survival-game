@@ -54,13 +54,25 @@ function glowV(c, xl, yt, th, len, a) {
   c.save(); c.globalCompositeOperation = 'lighter'; halo(c, cx, cy, 16, a, '255,170,80');
   pool(c, xl, cy, y1 - y0, 22, 'w', a * 0.8, 'fire', true); pool(c, xl + th, cy, y1 - y0, 22, 'e', a * 0.8, 'fire', true); c.restore();
 }
+var POOLS = {};                                                                    // each pool's shape drawn once, blurred, into a small kept picture (Clive, GD, 2026-10-28: a filter on the game's canvas every frame took Robin to 40 fps; keep the runtime free of filter)
+function poolPic(w, len, dir, kind) {
+  var key = [Math.round(w), Math.round(len), dir, kind].join(':'); if (POOLS[key]) return POOLS[key];
+  var col = kind === 'fire' ? '255,176,90' : '255,228,170', k = kind === 'fire' ? 0.6 : 0.55, spread = kind === 'fire' ? 2.2 : 1.3, pad = 4;
+  var dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0, px = -dy, py = dx, ex = dx * len, ey = dy * len * 0.75;   // the floor is foreshortened north to south (K)
+  var pts = [[px * w / 2, py * w / 2], [ex + px * w * spread / 2, ey + py * w * spread / 2], [ex - px * w * spread / 2, ey - py * w * spread / 2], [-px * w / 2, -py * w / 2]];
+  var x0 = Math.min.apply(null, pts.map(function (q) { return q[0]; })) - pad, y0 = Math.min.apply(null, pts.map(function (q) { return q[1]; })) - pad, x1 = Math.max.apply(null, pts.map(function (q) { return q[0]; })) + pad, y1 = Math.max.apply(null, pts.map(function (q) { return q[1]; })) + pad;
+  var S = 2, cv = typeof document !== 'undefined' ? document.createElement('canvas') : (typeof __mk === 'function' ? __mk(1, 1) : null); if (!cv) return null;
+  cv.width = Math.ceil((x1 - x0) * S); cv.height = Math.ceil((y1 - y0) * S); var g = cv.getContext('2d'); g.scale(S, S); g.translate(-x0, -y0);
+  var gr = g.createLinearGradient(0, 0, ex, ey); gr.addColorStop(0, 'rgba(' + col + ',' + k + ')'); gr.addColorStop(0.55, 'rgba(' + col + ',' + (k * 0.45) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+  if (g.filter !== undefined) g.filter = 'blur(' + (1.5 * S) + 'px)';                 // the blur once, here, on the small picture
+  g.fillStyle = gr; g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < 4; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); g.fill();
+  return (POOLS[key] = { cv: cv, x0: x0, y0: y0, w: x1 - x0, h: y1 - y0 });
+}
 function pool(c, x, y, w, len, dir, a, kind, inLighter) {
-  if (!(a > 0)) return; var col = kind === 'fire' ? '255,176,90' : '255,228,170', k = kind === 'fire' ? 0.6 : 0.55, spread = kind === 'fire' ? 2.2 : 1.3;
+  if (!(a > 0)) return; var P = poolPic(w, len, dir, kind); if (!P) return;
   c.save(); if (!inLighter) c.globalCompositeOperation = kind === 'fire' ? 'lighter' : 'screen';
-  var dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0, px = -dy, py = dx, ex = x + dx * len, ey = y + dy * len * 0.75;   // the floor is foreshortened north to south (K)
-  var gr = c.createLinearGradient(x, y, ex, ey); gr.addColorStop(0, 'rgba(' + col + ',' + (k * a) + ')'); gr.addColorStop(0.55, 'rgba(' + col + ',' + (k * 0.45 * a) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
-  c.fillStyle = gr; c.beginPath(); c.moveTo(x + px * w / 2, y + py * w / 2); c.lineTo(ex + px * w * spread / 2, ey + py * w * spread / 2); c.lineTo(ex - px * w * spread / 2, ey - py * w * spread / 2); c.lineTo(x - px * w / 2, y - py * w / 2); c.closePath();
-  if (c.filter !== undefined) c.filter = 'blur(1.5px)'; c.fill(); c.restore();
+  for (var r = a; r > 0; r -= 1) { c.globalAlpha = Math.min(1, r); c.drawImage(P.cv, x + P.x0, y + P.y0, P.w, P.h); }   // a above 1 lays a second pass
+  c.restore();
 }
 return { h: h, v: v, glowH: glowH, glowV: glowV, pool: pool, geomH: geomH };
 })();
