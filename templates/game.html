@@ -635,11 +635,12 @@ __COMBAT__
     { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
     { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true, key: 'mason' },
     { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true, key: 'ironBar' },
-    { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
-    { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
-    { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 }, key: 'copper' },
-    { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 }, key: 'ironBar' },
-    { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 }, key: 'ironBar' },
+    /* The roof comes by itself over any closed room, in thatch (Robin's rule); these change a roofed room's material, the whole room at once (Robin, 2026-10-28: a roof that comes by itself and roof pieces to build did not make sense together) */
+    { id: 'roof', name: 'Re-roof: turf', m: 0, cost: { fiber: 2 } },
+    { id: 'roof', name: 'Re-roof: thatch', m: 1, cost: { fiber: 4 } },
+    { id: 'roof', name: 'Re-roof: shingle', m: 2, cost: { wood: 4 }, key: 'copper' },
+    { id: 'roof', name: 'Re-roof: tile', m: 3, cost: { stone: 3 }, key: 'ironBar' },
+    { id: 'roof', name: 'Re-roof: slate', m: 4, cost: { stone: 4 }, key: 'ironBar' },
     { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 8, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
@@ -1833,7 +1834,7 @@ __COMBAT__
       return { kind: 'stairs', tx: tx, ty: ty, piece: pc, ok: !far && inRoom && southIn && !hasS && !item && canAfford(pc.cost), why: far ? 'Too far' : L ? 'A house has one floor above' : !inRoom ? 'Build stairs inside a closed room' : hasS ? 'Stairs stand here already' : !southIn ? 'Stairs climb north: leave a free tile south of them' : item ? 'Something stands here already' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
     if (pc.id === 'roof') { var ri = R ? R.at(tx, ty) : -1; if (ri < 0 && R) { var ty3 = Math.floor((my + 42) / T); ri = R.at(tx, ty3); if (ri >= 0) ty = ty3; }   // pointing at the drawn roof counts too
       var room = ri >= 0 ? R.rooms[ri] : null, same = room && BB.roofs && BB.roofs[room.id] === pc.m, stair = room && room.up;
-      return { kind: 'roof', tx: tx, ty: ty, room: room, piece: pc, ok: !far && !!room && !same && !stair && canAfford(pc.cost), why: far ? 'Too far' : !room ? 'Point at a closed room' : stair ? 'The stairs lead to a floor above' : same ? 'Already that roof' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+      return { kind: 'roof', tx: tx, ty: ty, room: room, piece: pc, ok: !far && !!room && !same && !stair && canAfford(pc.cost), why: far ? 'Too far' : !room ? 'A roof comes by itself over a closed room: point at one to change it' : stair ? 'The stairs lead to a floor above' : same ? 'Already that roof' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
     var ed2 = Build.edgeAt(mouseW.x, my), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!BB[ed2.L][k2], clear2 = L ? floorBeside(ed2) : (spotClear(m.x, m.y) && edgeFell(ed2)), needPosts = false;
     var bpGap = houseGaps().some(function (g) { return g.d === ed2.L && g.x === ed2.x && g.y === ed2.y; }); if (!seen.freeBuild && !(!L && bpGap)) return { kind: 'edge', ed: ed2, piece: pc, ok: false, why: houseQuestOpen() ? 'Arnor’s house first: its gaps are marked' : 'Arnor teaches building later' };   /* until free building, a wall goes only in a gap of Arnor's house (the blueprint) */
     if (bpGap) clear2 = true;   /* (a gap of his house is always room for its wall) */
