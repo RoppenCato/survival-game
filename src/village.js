@@ -452,12 +452,18 @@ function make(seed, site, opts) {
       var nxt = cs[(k + 1) % 4], len = Math.hypot(nxt[0] - c[0], nxt[1] - c[1]), extra = len > 22 * T ? 2 : len > 10 * T ? 1 : 0, inward = k === 0 ? [0, 1] : k === 1 ? [-1, 0] : k === 2 ? [0, -1] : [1, 0];
       for (e = 1; e <= extra; e++) { var u = (e + (R() - 0.5) * 0.3) / (extra + 1), mx = c[0] + (nxt[0] - c[0]) * u, my = c[1] + (nxt[1] - c[1]) * u, d = jit(-4, 20); pts.push({ p: [mx + inward[0] * d, my + inward[1] * d], side: sides[k] }); }
     }
-    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null }, run = 0, i = 0, j;
+    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null, gates: [] }, run = 0, i = 0, j, gIn = null;
+    function gapClip(p, ux, uy, L) { var g2, best = null; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2], x0 = Math.min(g[0], g[2]) - 10, x1 = Math.max(g[0], g[2]) + 10, y0 = Math.min(g[1], g[3]) - 10, y1 = Math.max(g[1], g[3]) + 10, t0 = 0, t1 = L, ok = true;   // where a stretch enters and leaves a gap's box (the gate's posts)
+        [[ux, p[0], x0, x1], [uy, p[1], y0, y1]].forEach(function (q) { if (!ok) return; if (Math.abs(q[0]) < 1e-6) { if (q[1] < q[2] || q[1] > q[3]) ok = false; return; } var ta = (q[2] - q[1]) / q[0], tb = (q[3] - q[1]) / q[0]; t0 = Math.max(t0, Math.min(ta, tb)); t1 = Math.min(t1, Math.max(ta, tb)); });
+        if (ok && t1 - t0 > 2) best = [t0, t1]; } return best; }
     function inGap(px, py) { var g2; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2]; if (px > g[0] - 10 && px < g[2] + 10 && py > g[1] - 10 && py < g[3] + 10) return true; } return false; }
     for (j = 0; j < pts.length; j++) {
       var a = pts[j], b = pts[(j + 1) % pts.length]; if (openSide && a.side === openSide) { run++; continue; }
-      var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false;
-      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6; if (inGap(px, py) || (V.ruin && R() < 0.3)) { if (was) run++; was = false; continue; } prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); was = true; }
+      var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false, clip = uIndex == null || V.ruin ? null : gapClip(a.p, ux, uy, len2);
+      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6, gp = inGap(px, py);
+        if (gp || (V.ruin && R() < 0.3)) { if (gp && clip && !gIn) { gIn = [a.p[0] + ux * clip[0], a.p[1] + uy * clip[0]]; prop({ name: 'railPost', x: gIn[0], y: gIn[1], solid: 3, v: Math.floor(s2) % 3, fence: fi, run: run, i: i++, gatePost: 1 }); } if (was) run++; was = false; continue; }
+        if (gIn) { var gOut = clip ? [a.p[0] + ux * clip[1], a.p[1] + uy * clip[1]] : [a.p[0], a.p[1]]; prop({ name: 'railPost', x: gOut[0], y: gOut[1], solid: 3, v: Math.floor(s2 + 1) % 3, fence: fi, run: run, i: i++, gatePost: 1 }); F2.gates.push({ a: gIn, b: gOut, double: Math.hypot(gOut[0] - gIn[0], gOut[1] - gIn[1]) > 76 }); gIn = null; }
+        prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); was = true; }   // a farm's gap gets a gate (F2.gates, drawn with BuildGate.draw; double: two leaves meeting in the middle): its two posts where the run meets the gap, joined to the rails either side (the Art Director's out/gate, 2026-10-28)
     }
     V.fences.push(F2); return F2;
   }

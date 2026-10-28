@@ -6568,12 +6568,12 @@ function make(seed, site, opts) {
       var nxt = cs[(k + 1) % 4], len = Math.hypot(nxt[0] - c[0], nxt[1] - c[1]), extra = len > 22 * T ? 2 : len > 10 * T ? 1 : 0, inward = k === 0 ? [0, 1] : k === 1 ? [-1, 0] : k === 2 ? [0, -1] : [1, 0];
       for (e = 1; e <= extra; e++) { var u = (e + (R() - 0.5) * 0.3) / (extra + 1), mx = c[0] + (nxt[0] - c[0]) * u, my = c[1] + (nxt[1] - c[1]) * u, d = jit(-4, 20); pts.push({ p: [mx + inward[0] * d, my + inward[1] * d], side: sides[k] }); }
     }
-    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null }, run = 0, i = 0, j;
+    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null, gates: [] }, run = 0, i = 0, j, last = null, gapFrom = null;
     function inGap(px, py) { var g2; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2]; if (px > g[0] - 10 && px < g[2] + 10 && py > g[1] - 10 && py < g[3] + 10) return true; } return false; }
     for (j = 0; j < pts.length; j++) {
       var a = pts[j], b = pts[(j + 1) % pts.length]; if (openSide && a.side === openSide) { run++; continue; }
       var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false;
-      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6; if (inGap(px, py) || (V.ruin && R() < 0.3)) { if (was) run++; was = false; continue; } prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); was = true; }
+      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6, gp = inGap(px, py); if (gp || (V.ruin && R() < 0.3)) { if (was) run++; if (gp && was) gapFrom = last; was = false; continue; } if (gapFrom && !V.ruin && Math.hypot(px - gapFrom[0], py - gapFrom[1]) < 76) F2.gates.push({ a: gapFrom, b: [px, py] }); gapFrom = null; prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); last = [px, py]; was = true; }   // gates: a gap with a post either side within a gate's width gets a gate between them (F2.gates, for BuildGate.draw; the Art Director's out/gate, 2026-10-28)
     }
     V.fences.push(F2); return F2;
   }
