@@ -1221,7 +1221,7 @@ __COMBAT__
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
       if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ var abw = arnorBoatItem(); if (abw && abw.st === 'mending') { abw.st = 'ready'; arnorByBoat(abw); }   /* Arnor's boat is mended by the morning, he by her (Robin) */ var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
-      if (sleep.t >= 2.0 && !sleep.up) { sleep.up = true; if (sprHero) Sprites.play(sprHero, 'standup', null, 0.9); }   /* he gets up as the light comes (Robin, 2026-10-28: "it just poof suddenly day"; the kit's standup until Colin, AD's wake clip) */
+      if (sleep.t >= 2.0 && !sleep.up) { sleep.up = true; var Pw = hero(), wk = sleep.bd && sleep.bd.name === 'strawBed' && sprHero && sprHero.kit && sprHero.meta && sprHero.meta.anims && sprHero.meta.anims.wake; if (wk) { Pw.x = sleep.bd.x; Pw.y = sleep.bd.y; Pw.vx = Pw.vy = 0; Pw.face = Pw.faceVis = Math.PI / 2; } if (sprHero) Sprites.play(sprHero, wk ? 'wake' : 'standup', null, wk ? 0.95 : 0.9); }   /* he wakes and gets up out of the straw bed (Colin, AD's wake clip, 2026-10-28: from lying along it to the idle's stance, set on the bed's middle) */   /* he gets up as the light comes (Robin, 2026-10-28: "it just poof suddenly day"; the kit's standup until Colin, AD's wake clip) */
       if (sleep.t >= 3.4) sleep = null;
       return;
     }
@@ -1234,7 +1234,7 @@ __COMBAT__
     if (bv < 0 && !SCENE && !zoneAt(bd.x, bd.y, 'sleep')) return 'Mark a sleeping place round it';   /* on your own ground a bed answers inside a sleeping place (Robin, 2026-10-25); a village's beds are homes already */
     return null;
   }
-  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening() || bedWhy(bd)) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: sleepComfortAt(bd.x, bd.y), bd: bd }; seen.bedAt = { x: bd.x, y: bd.y }; invOpen = false; menu = null; }   /* (the bed last slept in: where a fall wakes him, toSpawn) */
+  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening() || bedWhy(bd)) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: sleepComfortAt(bd.x, bd.y), bd: bd }; if (sprHero && sprHero.kit && Sprites.peopleWarm) { var lkW = heroLook(Math.PI / 2); if (lkW) Sprites.peopleWarm(sprHero, lkW, ['wake', 'standup']); } seen.bedAt = { x: bd.x, y: bd.y }; invOpen = false; menu = null; }   /* (the bed last slept in: where a fall wakes him, toSpawn) */
 
   /* ---------- the night (Robin, 2026-10-06): dark, and the wolves come. Home, with its fire, is where you are safe ----------
      Wolves live nowhere by day. When the light has mostly gone a pack of three comes in from the edge of your view, on
