@@ -13916,7 +13916,7 @@ function mouse(x, y) { IN.mx = x; IN.my = y; }
 function handBusy() { return !!(api.handBusy && api.handBusy()); }   /* the page has the hand's buttons (a rod in hand: the right button charges the cast, the left casts, hooks and reels; Robin, 2026-10-25): no blow, no guard */
 
 // Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
-var FIST_GATHER = 0.5;   /* a punch's bite on a tree or a rock: a flint axe or pick bites about 1.7 (mine, 2026-10-27) */
+var FIST_GATHER = 0.5, FIST_AIM = { reach: 16, arc: 0.9 };   /* a punch's bite on a tree or a rock: a flint axe or pick bites about 1.7 (mine, 2026-10-27) */
 var TOOLS = [
   { id: 'axe', name: 'Axe', good: 'tree', dmg: 2 },
   { id: 'pick', name: 'Pickaxe', good: 'stone', dmg: 2 },
@@ -14588,6 +14588,7 @@ function startAttack() {
   if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
   a.riposte = false; a.ripRune = false; if (p.riposteT > 0 && p.mode === 'fight' && rune('guardBlow') !== 'riposte') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
+  if (p.mode === 'fight' && bareHanded() && api.harvest && !W.enemies.some(function (e) { return !e.dead && Math.hypot(e.x - p.x, e.y - p.y) < 80; })) { var hvA = api.harvest.list(p.x, p.y, 70), bestA = null, bdA = 1e9; for (var ia = 0; ia < hvA.length; ia++) { var oA = hvA[ia]; if (oA.edge || oA.stake || oA.box || oA.vein || oA.gate || !(oA.kind === 'tree' || oA.kind === 'trunk' || oA.kind === 'stone')) continue; var dA = Math.hypot(oA.x - p.x, oA.y - p.y), angA = Math.abs(wrap(Math.atan2(oA.y - p.y, oA.x - p.x) - a.dir)); if (dA < 34 + (oA.r || 8) + FIST_AIM.reach && angA < 1.8 && dA + angA * 20 < bdA) { bdA = dA + angA * 20; bestA = oA; } } if (bestA) { a.dir = Math.atan2(bestA.y - p.y, bestA.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a punch turns to the tree or rock you stand by (Robin, 2026-10-28: punching was very hard to aim) */
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
@@ -14804,7 +14805,7 @@ function updatePlayer(dt) {
       if (p.mode === 'fight' && bareHanded() && api.harvest ) {   /* bare hands punch trees and rocks for a little (Robin, 2026-10-27: "you need to be able to punch trees (for little damage) and stones so you wont run out of wood and stone") */
         var hvF = api.harvest, objsF = hvF.list(p.x, p.y, 60);
         for (i = 0; i < objsF.length; i++) { var oF = objsF[i]; if (a.hit.indexOf(oF) >= 0 || oF.edge || oF.stake || oF.box || oF.vein || oF.gate || !(oF.kind === 'tree' || oF.kind === 'trunk' || oF.kind === 'stone')) continue;
-          var fx = oF.x - p.x, fy = oF.y - p.y; if (Math.hypot(fx, fy) <= sd.reach + (oF.r || 8) + 2 && Math.abs(wrap(Math.atan2(fy, fx) - a.dir)) <= half + 0.12) { a.hit.push(oF); var hrF = hvF.hit(oF, FIST_GATHER, true, oF.kind === 'stone' ? 'pick' : 'axe', 0) || {}; num(oF.x, oF.y, String(Math.max(1, Math.round(hrF.dealt != null ? hrF.dealt : FIST_GATHER))), '#d9d0c0', false, true); sfx(oF.kind === 'stone' ? 'clink' : 'chop', 0); break; } }
+          var fx = oF.x - p.x, fy = oF.y - p.y; if (Math.hypot(fx, fy) <= sd.reach + (oF.r || 8) + FIST_AIM.reach && Math.abs(wrap(Math.atan2(fy, fx) - a.dir)) <= half + FIST_AIM.arc) {   /* (a wide reach and arc for a punch at a tree or a rock: Robin, 2026-10-28, "very hard to aim") */ a.hit.push(oF); var hrF = hvF.hit(oF, FIST_GATHER, true, oF.kind === 'stone' ? 'pick' : 'axe', 0) || {}; num(oF.x, oF.y, String(Math.max(1, Math.round(hrF.dealt != null ? hrF.dealt : FIST_GATHER))), '#d9d0c0', false, true); sfx(oF.kind === 'stone' ? 'clink' : 'chop', 0); break; } }
       }
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
         var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
@@ -17884,7 +17885,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return null;
   }
   function yearSay(id) { var sp = yearSpeaker(); if (!sp) return false; var L = yearLines(id, sp.tag); if (!L.length) return false; sp.say(L[Math.floor(Math.random() * L.length)]); return true; }
-  function yearTick(dt) { if (!yearDue() || year.said || inCave) return; year.sayT = (year.sayT || 0) + dt; if (year.sayT < 1) return; year.sayT = 0; if (yearSay('line.year.due.' + year.season)) { year.said = true; save(); } }
+  function yearTick(dt) { if (!yearDue() || year.said || inCave) return; if (!seen.villageBlot && !B.items.some(isRuneAltar)) return;   /* the season's word about the feast only once an altar has been met (2026-10-28: on the starter island Arnor spoke of the blót at random, an old line since the blót is the village's) */ year.sayT = (year.sayT || 0) + dt; if (year.sayT < 1) return; year.sayT = 0; if (yearSay('line.year.due.' + year.season)) { year.said = true; save(); } }
   function seasonTurn(name) {                 // the year turns: the ground bakes again in the season's look, every set piece is graded again as it is drawn
     var was = year.season; if (!YEAR.names[name] || name === was) return false;
     year.season = name; year.day = 0; year.said = false; if (was === 'winter') year.winters++;
@@ -18890,6 +18891,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.restore();
   }                 // what to say by the cursor, drawn on the HUD after the world
   function facing(name, rot) { var F = ['', '_e', '_n', '_w']; if (rot && (World.IMAGES[name + F[rot]] || World.IMAGES[name + F[rot] + '_1'])) return { n: name + F[rot], flip: false }; return { n: name, flip: !!(rot & 1) }; }   /* a thing turned with the wheel: its picture facing east, north or west where the studio has one (<name>_e, _n, _w; asked of Colin, AD, 2026-10-28), else mirrored as before */
+  function pieceThumb(c, prop, x, y, size) {   /* a set piece's own picture fitted in a cell, when the studio has no cell icon for it (Robin, 2026-10-28: the workbench's and the bed's old drawn icons did not fit) */
+    var im = prop && (World.IMAGES[prop] || World.IMAGES[prop + '_1']), src = im && (im.img || im.canvas || im); if (!src || !(src.width || src.naturalWidth)) return false; var wd = src.naturalWidth || src.width, ht = src.naturalHeight || src.height, k = size / Math.max(wd, ht); c.drawImage(src, x - wd * k / 2, y - ht * k / 2, wd * k, ht * k); return true; }
   function drawSpriteAt(c, sp, x, y, flip) {
     if (!flip) { c.drawImage(sp.cv, x + sp.l, y * K + sp.t, sp.w, sp.h); return; }
     c.save(); c.translate(x, 0); c.scale(-1, 1); c.drawImage(sp.cv, sp.l, y * K + sp.t, sp.w, sp.h); c.restore();   // turned: seen from the other side
@@ -19392,7 +19395,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.fillStyle = '#2b1c13'; c.beginPath(); c.arc(cx, cy, 17, 0, 7); c.fill(); c.strokeStyle = '#d8b062'; c.lineWidth = 1.6; c.stroke();
       c.save(); c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.clip();
       if (q.kind === 'make') hUnits(c, cx, cy, function () { var e0 = q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }; infoIcon(c, e0, 0, 0, e0.dish ? 0.7 : e0.r.out.item ? 0.66 : 0.75); });   /* its longest side about 90% of the ring, clipped to the socket (Colin, AD, 2026-10-26; measured: the icons fill 93 to 98% of their pictures, so no crop is needed) */
-      else { var pic = q.first.prop ? himg('pieces/' + q.first.prop) : null; if (pic) c.drawImage(pic, cx - 17, cy - 17, 34, 34); else hUnits(c, cx, cy, function () { if (q.first.icon) q.first.icon(c); else Build.icon(c, q.first.id, q.first.m); }); }
+      else { var pic = q.first.prop ? himg('pieces/' + q.first.prop) : null; if (pic) c.drawImage(pic, cx - 17, cy - 17, 34, 34); else if (!pieceThumb(c, q.first.prop, cx, cy, 32)) hUnits(c, cx, cy, function () { if (q.first.icon) q.first.icon(c); else Build.icon(c, q.first.id, q.first.m); }); }
       c.restore();
       var nm = q.kind === 'make' ? (q.first.out ? recipeName(q.first) : q.first.name || q.first.id) : q.first.name, line = nm.charAt(0).toUpperCase() + nm.slice(1) + (q.n > 1 ? ' and ' + (q.n - 1) + ' more' : '') + (q.kind === 'build' ? '  (B)' : '');
       hText(c, q.kind === 'make' ? 'NEW TO MAKE' : 'NEW TO BUILD', x + 50, y + 19, hf('bold', 10), '#e8c060'); c.font = hf('', 16); while (line.length > 8 && c.measureText(line).width > W - 64) line = line.slice(0, -2); hText(c, line, x + 50, y + 36, hf('', 16), '#f2e6c8');
@@ -21830,12 +21833,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* bottom right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
     var rowH = 10; menu.ly = menu.y + 18; menu.lw = 150 / 3; menu.lx = menu.x + 6;
     var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
-    var hand = menu.list, here = craftGroupsHere(), show = [], cats = CATS2.filter(function (ct) { return hand.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
+    var only = (menuFrom === 'E' || menuFrom === 'bench') && /^(hearth|bench|furnace|trapper)$/.test(opener) ? opener : null; menu.only = only; menu.title = only === 'hearth' ? 'Cooking' : only === 'furnace' ? 'Smelting' : only === 'trapper' ? 'Traps' : 'Crafting';   /* E at a station shows that station's work alone (Robin, 2026-10-28: "When you open the cook menu you get the normal crafting menu. It should only be cooking there"); Tab shows everything */
+    if (only) menu.list = [];
+    var hand = menu.list, here = craftGroupsHere().filter(function (g) { return !only || g.at === only; }), show = [], cats = CATS2.filter(function (ct) { return hand.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); hand.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
     else if (here.length && hand.length) show.push({ head: 'By hand' });
     hand.forEach(function (e) { if (!show.some(function (q) { return q.e === e; })) show.push({ e: e }); });
-    here.forEach(function (g) { show.push({ head: 'At the ' + STATION_NAMES[g.at] }); g.list.forEach(function (e) { show.push({ e: e }); }); menu.list = menu.list.concat(g.list); });
-    if (craftElsewhere()) teachList().filter(function (g2) { return !here.some(function (g) { return g.at === g2.at; }); }).forEach(function (g2) { show.push({ head: 'At the ' + STATION_NAMES[g2.at], dim: true }); g2.list.forEach(function (e) { show.push({ e: e, dim: true }); }); menu.list = menu.list.concat(g2.list); });
+    here.forEach(function (g) { if (!only) show.push({ head: 'At the ' + STATION_NAMES[g.at] }); g.list.forEach(function (e) { show.push({ e: e }); }); menu.list = menu.list.concat(g.list); });
+    if (!only && craftElsewhere()) teachList().filter(function (g2) { return !here.some(function (g) { return g.at === g2.at; }); }).forEach(function (g2) { show.push({ head: 'At the ' + STATION_NAMES[g2.at], dim: true }); g2.list.forEach(function (e) { show.push({ e: e, dim: true }); }); menu.list = menu.list.concat(g2.list); });
     show.forEach(function (q) { q.y = yy0; q.h = q.head ? 8 : rowH; yy0 += q.h; }); menu.show = show; menu.listTotal = yy0; menu.maxScroll = Math.max(0, yy0 - listH);
     var ids = show.filter(function (q) { return q.e && !q.dim; }).map(function (q) { return q.e.id; }), allIds = show.filter(function (q) { return q.e; }).map(function (q) { return q.e.id; }), opened = here.filter(function (g) { return g.at === opener; })[0];
     if (opened && opened.list.length) { menuSel.all = opened.list[0].id; var qy = show.filter(function (q) { return q.e === opened.list[0]; })[0]; if (qy) menu.scroll = Math.min(menu.maxScroll, Math.max(0, qy.y - 8)); }
@@ -21927,8 +21932,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
     hPx(c, X, Y, function () {
       hBoard(c, 453, 500);
-      hTitle(c, 'Crafting');
-      if (teachList().length) { var elw = craftElsewhere(), elt = 'Elsewhere: ' + (elw ? 'shown' : 'hidden'); c.font = hf('italic', 12); var elW = c.measureText(elt).width; menu.elsewhere = { x: X + (435 - elW - 4) / 3, y: Y + 30 / 3, w: (elW + 8) / 3, h: 20 / 3 }; hText(c, elt, 435, 44, hf('italic', 13), inR(menu.elsewhere) ? HC.gold : HC.under, 'right'); }   /* the switch: show or hide where the other things are made (Robin, 2026-10-26) */
+      hTitle(c, menu.title || 'Crafting');
+      if (!menu.only && teachList().length) { var elw = craftElsewhere(), elt = 'Elsewhere: ' + (elw ? 'shown' : 'hidden'); c.font = hf('italic', 12); var elW = c.measureText(elt).width; menu.elsewhere = { x: X + (435 - elW - 4) / 3, y: Y + 30 / 3, w: (elW + 8) / 3, h: 20 / 3 }; hText(c, elt, 435, 44, hf('italic', 13), inR(menu.elsewhere) ? HC.gold : HC.under, 'right'); }   /* the switch: show or hide where the other things are made (Robin, 2026-10-26) */
       // the list, in its dark well
       c.fillStyle = HC.well; c.fillRect(LX, LY, 150, 428);
       c.save(); c.beginPath(); c.rect(LX, LY, 150, wellH); c.clip();
@@ -22017,7 +22022,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var it = menu.items[i], p = it.piece, on = !P.wreck && PIECES[P.piece] === p && P.mode === 'build', cost = buildCost(p.cost || {}), ok = canAfford(cost), cx = (it.x - menu.x) * 3, cy = (it.y - menu.y) * 3, cw = it.w * 3, chh = it.h * 3;
         c.save(); if (!ok) c.globalAlpha = 0.45;   // a cell that cannot be paid, whole, at 45%
         if (!nine(c, 'build_cell', cx, cy, cw, chh, 10)) { c.fillStyle = '#2b1c13'; c.fillRect(cx, cy, cw, chh); }
-        var pic = p.prop ? himg('pieces/' + p.prop) : null; c.save(); c.beginPath(); c.rect(cx + 3, cy + 3, cw - 6, 67); c.clip(); if (pic) c.drawImage(pic, cx + (cw - 70) / 2, cy + 1, 70, 70); else hUnits(c, cx + cw / 2, cy + 36, function () { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); }); c.restore();   // the piece: the studio's cell icon for a set piece (assets/hud/pieces), else as the game draws it, in the upper 70
+        var pic = p.prop ? himg('pieces/' + p.prop) : null; c.save(); c.beginPath(); c.rect(cx + 3, cy + 3, cw - 6, 67); c.clip(); if (pic) c.drawImage(pic, cx + (cw - 70) / 2, cy + 1, 70, 70); else if (!pieceThumb(c, p.prop, cx + cw / 2, cy + 36, 64)) hUnits(c, cx + cw / 2, cy + 36, function () { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); }); c.restore();   // the piece: the studio's cell icon for a set piece (assets/hud/pieces), else as the game draws it, in the upper 70
         c.font = hf('', 13); var nl = wrapText(c, p.name, cw - 10).slice(0, 2); nl.forEach(function (ln, k) { hText(c, ln, cx + cw / 2, nl.length === 1 ? cy + 89 : cy + 80 + k * 15, hf('', 13), HC.cream, 'center'); });
         hCostRow(c, cost, cx + cw / 2, cy + 111);
         if (!lookedAt(pieceKey(p))) newMark(c, cx + cw - 12, cy + 12, 5);   /* new: until looked at, as the crafting list */

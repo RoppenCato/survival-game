@@ -2793,7 +2793,7 @@ function mouse(x, y) { IN.mx = x; IN.my = y; }
 function handBusy() { return !!(api.handBusy && api.handBusy()); }   /* the page has the hand's buttons (a rod in hand: the right button charges the cast, the left casts, hooks and reels; Robin, 2026-10-25): no blow, no guard */
 
 // Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
-var FIST_GATHER = 0.5;   /* a punch's bite on a tree or a rock: a flint axe or pick bites about 1.7 (mine, 2026-10-27) */
+var FIST_GATHER = 0.5, FIST_AIM = { reach: 16, arc: 0.9 };   /* a punch's bite on a tree or a rock: a flint axe or pick bites about 1.7 (mine, 2026-10-27) */
 var TOOLS = [
   { id: 'axe', name: 'Axe', good: 'tree', dmg: 2 },
   { id: 'pick', name: 'Pickaxe', good: 'stone', dmg: 2 },
@@ -3465,6 +3465,7 @@ function startAttack() {
   if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
   a.riposte = false; a.ripRune = false; if (p.riposteT > 0 && p.mode === 'fight' && rune('guardBlow') !== 'riposte') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
+  if (p.mode === 'fight' && bareHanded() && api.harvest && !W.enemies.some(function (e) { return !e.dead && Math.hypot(e.x - p.x, e.y - p.y) < 80; })) { var hvA = api.harvest.list(p.x, p.y, 70), bestA = null, bdA = 1e9; for (var ia = 0; ia < hvA.length; ia++) { var oA = hvA[ia]; if (oA.edge || oA.stake || oA.box || oA.vein || oA.gate || !(oA.kind === 'tree' || oA.kind === 'trunk' || oA.kind === 'stone')) continue; var dA = Math.hypot(oA.x - p.x, oA.y - p.y), angA = Math.abs(wrap(Math.atan2(oA.y - p.y, oA.x - p.x) - a.dir)); if (dA < 34 + (oA.r || 8) + FIST_AIM.reach && angA < 1.8 && dA + angA * 20 < bdA) { bdA = dA + angA * 20; bestA = oA; } } if (bestA) { a.dir = Math.atan2(bestA.y - p.y, bestA.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a punch turns to the tree or rock you stand by (Robin, 2026-10-28: punching was very hard to aim) */
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
@@ -3681,7 +3682,7 @@ function updatePlayer(dt) {
       if (p.mode === 'fight' && bareHanded() && api.harvest ) {   /* bare hands punch trees and rocks for a little (Robin, 2026-10-27: "you need to be able to punch trees (for little damage) and stones so you wont run out of wood and stone") */
         var hvF = api.harvest, objsF = hvF.list(p.x, p.y, 60);
         for (i = 0; i < objsF.length; i++) { var oF = objsF[i]; if (a.hit.indexOf(oF) >= 0 || oF.edge || oF.stake || oF.box || oF.vein || oF.gate || !(oF.kind === 'tree' || oF.kind === 'trunk' || oF.kind === 'stone')) continue;
-          var fx = oF.x - p.x, fy = oF.y - p.y; if (Math.hypot(fx, fy) <= sd.reach + (oF.r || 8) + 2 && Math.abs(wrap(Math.atan2(fy, fx) - a.dir)) <= half + 0.12) { a.hit.push(oF); var hrF = hvF.hit(oF, FIST_GATHER, true, oF.kind === 'stone' ? 'pick' : 'axe', 0) || {}; num(oF.x, oF.y, String(Math.max(1, Math.round(hrF.dealt != null ? hrF.dealt : FIST_GATHER))), '#d9d0c0', false, true); sfx(oF.kind === 'stone' ? 'clink' : 'chop', 0); break; } }
+          var fx = oF.x - p.x, fy = oF.y - p.y; if (Math.hypot(fx, fy) <= sd.reach + (oF.r || 8) + FIST_AIM.reach && Math.abs(wrap(Math.atan2(fy, fx) - a.dir)) <= half + FIST_AIM.arc) {   /* (a wide reach and arc for a punch at a tree or a rock: Robin, 2026-10-28, "very hard to aim") */ a.hit.push(oF); var hrF = hvF.hit(oF, FIST_GATHER, true, oF.kind === 'stone' ? 'pick' : 'axe', 0) || {}; num(oF.x, oF.y, String(Math.max(1, Math.round(hrF.dealt != null ? hrF.dealt : FIST_GATHER))), '#d9d0c0', false, true); sfx(oF.kind === 'stone' ? 'clink' : 'chop', 0); break; } }
       }
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
         var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
