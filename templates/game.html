@@ -631,6 +631,7 @@ __COMBAT__
     { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1' },
     { id: 'runRail', name: 'Rail fence', kind: 'run', run: 'rail', prop: 'railPost', cost: { wood: 1 }, yard: true },   /* the free fences (2026-10-28): a post a click, each stretch at any angle; the cost is a stretch's */
     { id: 'runStake', name: 'Stake fence', kind: 'run', run: 'stake', prop: 'stake', cost: { wood: 2 }, yard: true },
+    { id: 'runGate', name: 'Fence gate', kind: 'rungate', prop: 'farmGate_shut', cost: { wood: 2 }, yard: true },   /* a gate in a stretch of a free fence (Robin, 2026-10-28: "add a gate between posts"): placed on a stretch, opened and shut with E */
     { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true, hidden: true },   /* the grid fences, kept for what stands and for the villages, off the board since the free fences (2026-10-28) */
     { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true, hidden: true },
     { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true, key: 'copper', hidden: true },
@@ -1786,6 +1787,7 @@ __COMBAT__
     var L = lvl(), BB = Bl(L), R = RI(L), my = mouseW.y + (L ? UP / K : 0);   // upstairs everything is drawn a storey up, so the cursor points a storey lower
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(my / T), far = Math.hypot(mouseW.x - P.x, my - P.y) > 150, i, k;
     if (P.wreck && !L) { var rsW = runSegAt(mouseW.x, my); if (rsW) return { kind: 'runseg', seg: rsW, ok: !far, why: far ? 'Too far' : '' }; }   /* a free fence's stretch: F takes it down */
+    if (!P.wreck && pc.kind === 'rungate') { var sgG = L ? null : runSegAt(mouseW.x, my), lenG = sgG ? Math.hypot(sgG.b[0] - sgG.a[0], sgG.b[1] - sgG.a[1]) : 0, whyG = L ? 'Not up here' : far ? 'Too far' : !sgG ? 'Point at a stretch of a fence' : runGateAt(sgG.run, sgG.i) ? 'A gate hangs here already' : lenG > 56 ? 'Too wide for a gate: set a post between' : lenG < 14 ? 'Too narrow for a gate' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : ''; return { kind: 'rungate', seg: sgG, piece: pc, ok: !whyG, why: whyG }; }
     if (!P.wreck && pc.kind === 'run') { if (runDraft && (runDraft.kind !== pc.run || B.runs.indexOf(runDraft.run) < 0)) runDraft = null;
       var spR = runSnap(mouseW.x, my), fromR = runDraft ? runDraft.run.pts[runDraft.run.pts.length - 1] : null, aR = fromR ? { x: fromR[0], y: fromR[1] } : null, LR = aR ? Math.hypot(spR.x - aR.x, spR.y - aR.y) : 0, endR = aR && LR < 3;
       var whyR = L ? 'Not up here' : far ? 'Too far' : endR ? '' : !isLand(spR.x, spR.y) ? 'Not in the water' : aR && LR > RUN.maxSeg ? 'Too long a stretch: set a post between' : aR && LR < RUN.minSeg ? 'Too short a stretch' : aR && !runStretchClear(aR, spR) ? 'Something stands in the way' : aR && !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '';
@@ -1870,13 +1872,14 @@ __COMBAT__
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); if (t.item.zoneId) B.zones = (B.zones || []).filter(function (z) { return z.id !== t.item.zoneId; }); B.items.splice(t.idx, 1); }
       else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete BB[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
       else if (t.kind === 'post') { pay(pieceFor('post', 0).cost, 1); delete BB.posts[Build.key(t.cx, t.cy)]; }
-      else if (t.kind === 'runseg') { var sg = t.seg, rk = (RUN_KIND[sg.run.kind] || RUN_KIND.rail).cost; pay(rk, 1); var head = sg.run.pts.slice(0, sg.i + 1), tail = sg.run.pts.slice(sg.i + 1); B.runs.splice(sg.ri, 1); if (head.length > 1) B.runs.push({ kind: sg.run.kind, pts: head }); if (tail.length > 1) B.runs.push({ kind: sg.run.kind, pts: tail }); runDraft = null; runsBuild(); save(); return; }   /* a stretch taken down splits its run */
+      else if (t.kind === 'runseg') { var sg = t.seg, rk = (RUN_KIND[sg.run.kind] || RUN_KIND.rail).cost; pay(rk, 1); if (runGateAt(sg.run, sg.i)) pay(pieceFor('runGate').cost, 1); var gs = sg.run.gates || {}, gh = {}, gt = {}; Object.keys(gs).forEach(function (k) { k = +k; if (k < sg.i) gh[k] = gs[k]; else if (k > sg.i) gt[k - sg.i - 1] = gs[k]; }); var head = sg.run.pts.slice(0, sg.i + 1), tail = sg.run.pts.slice(sg.i + 1); B.runs.splice(sg.ri, 1); if (head.length > 1) B.runs.push({ kind: sg.run.kind, pts: head, gates: gh }); if (tail.length > 1) B.runs.push({ kind: sg.run.kind, pts: tail, gates: gt }); runDraft = null; runsBuild(); save(); return; }   /* a stretch taken down splits its run */
       else if (t.kind === 'stairs') { pay(pieceFor('stairs', 0).cost, 1); delete B.stairs[Build.key(t.tx, t.ty)]; }
       else { pay(costOfFloor(BB.floors[Build.key(t.tx, t.ty)]), 1); delete BB.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
     if (t.kind === 'mend') { var mid = t.ed.L + Build.key(t.ed.x, t.ed.y); if (!first && mid === lastPlaced) return; lastPlaced = mid; pay(t.cost); mendEdge(t.ed.L, Build.key(t.ed.x, t.ed.y)); sfx('build'); save(); return; }
     if (t.kind === 'raise') { if (!first) return; pay(t.cost); raiseRoof(t.room); sfx('build'); save(); return; }
+    if (t.kind === 'rungate') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); t.seg.run.gates = t.seg.run.gates || {}; t.seg.run.gates[t.seg.i] = { open: false }; runsBuild(); sfx('build'); save(); return; }
     if (t.kind === 'run') { if (!first) return; if (t.end) { runDraft = null; sfx('build'); return; }   /* a click on the run's last post ends it */
       if (!t.from) { var runN = { kind: t.piece.run, pts: [[t.x, t.y]] }; B.runs = B.runs || []; B.runs.push(runN); runDraft = { run: runN, kind: t.piece.run }; }
       else { pay(buildCost(t.piece.cost)); deed('built'); runDraft.run.pts.push([t.x, t.y]); }
@@ -1945,6 +1948,7 @@ __COMBAT__
   function drawRunGhost(c, t) {            // a free fence: the stretch from the last post to the cursor and the post there; F: the stretch that would go
     var col = t.ok ? '120,255,160' : '255,90,70'; c.save(); c.lineCap = 'round';
     if (t.kind === 'runseg') { var a = t.seg.a, b = t.seg.b; c.strokeStyle = t.ok ? 'rgba(255,214,80,0.9)' : 'rgba(255,90,70,0.8)'; c.lineWidth = 5; c.beginPath(); c.moveTo(a[0], a[1] * K); c.lineTo(b[0], b[1] * K); c.stroke(); ghostLabel = t.ok ? { text: 'Take down: +' + costText((RUN_KIND[t.seg.run.kind] || RUN_KIND.rail).cost), bad: false } : { text: t.why, bad: true }; c.restore(); return; }
+    if (t.kind === 'rungate') { if (t.seg) { c.globalAlpha = t.ok ? 0.75 : 0.35; drawRunGate(c, t.seg.a, t.seg.b, false); c.globalAlpha = 1; c.strokeStyle = 'rgba(' + col + ',0.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(t.seg.a[0], t.seg.a[1] * K); c.lineTo(t.seg.b[0], t.seg.b[1] * K); c.stroke(); } ghostLabel = t.ok ? { text: 'Fence gate (' + costText(t.piece.cost) + ')', bad: false } : { text: t.why, bad: true }; c.restore(); return; }
     var sp = sprite(t.piece.prop, 0); if (sp) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawSpriteAt(c, sp, t.x, t.y, false); c.globalAlpha = 1; }
     if (t.from) { c.setLineDash([5, 4]); c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(t.from.x, t.from.y * K); c.lineTo(t.x, t.y * K); c.stroke(); c.setLineDash([]); }
     c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(t.x, t.y * K, t.snapped ? 7 : 5, (t.snapped ? 7 : 5) * K, 0, 0, 7); c.stroke();
@@ -1961,7 +1965,7 @@ __COMBAT__
     var P = hero(); ghostLabel = null;
     if (P.mode === 'build' && zonesShow) drawZones(c);
     var t = buildTarget(); if (!t) return;
-    if (t.kind === 'run' || t.kind === 'runseg') { drawRunGhost(c, t); return; }
+    if (t.kind === 'run' || t.kind === 'runseg' || t.kind === 'rungate') { drawRunGhost(c, t); return; }
     if (t.kind === 'zone') { var Zg = ZONE[t.piece.zone] || ZONE.sleep, gc = t.ok || !t.drag ? Zg.col : '255,90,70'; c.save(); c.fillStyle = 'rgba(' + gc + ',0.16)'; c.strokeStyle = 'rgba(' + gc + ',0.95)'; c.lineWidth = 1.4; c.fillRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.strokeRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.fillStyle = 'rgba(' + gc + ',1)'; c.beginPath(); c.arc(t.px, t.py * K, 2.2, 0, 7); c.fill(); c.restore();
       ghostLabel = t.ok || (!t.drag && !t.why) ? { text: Zg.name + (t.drag ? '  ' + (t.r.x1 - t.r.x0) + ' by ' + (t.r.y1 - t.r.y0) : '  (press, and drag out its square)') + '  ' + costText(t.piece.cost), bad: false } : { text: t.why || 'Not here', bad: true }; return; }
     if (t.kind === 'mend' || t.kind === 'raise') {     // what would be mended, framed
@@ -3620,11 +3624,25 @@ __COMBAT__
       var post = function (x, y, name, v) { var key = Math.round(x / 3) + ',' + Math.round(y / 3); if (seen0[key]) return; seen0[key] = 1; var o = { name: name, x: x, y: y, s: 1, r: 0, v: v }; w.addProp(o); runProps.push(o); };
       for (i = 0; i < P2.length; i++) { if (run.kind === 'rail') post(P2[i][0], P2[i][1], 'railPost', Math.floor(R() * 3)); }
       for (i = 0; i + 1 < P2.length; i++) { var a = P2[i], b = P2[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (runGateAt(run, i)) { if (run.kind !== 'rail') { post(a[0], a[1], 'stake', Math.floor(R() * 6)); post(b[0], b[1], 'stake', Math.floor(R() * 6)); } continue; }   /* a gate's stretch: its posts only, the gate drawn between */
         if (run.kind === 'rail') RUNRAILS.push({ ax: a[0], ay: a[1], bx: b[0], by: b[1], v: 0, sag: 1 + R() * 1.5, miss: [R() < 0.04, R() < 0.08], hang: false });
         else { var n = Math.max(1, Math.round(L / RUN.stakeGap)); for (var k = 0; k <= n; k++) post(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'stake', Math.floor(R() * 6)); } } });
   }
+  function runGateAt(run, i) { return !!(run.gates && run.gates[i]); }
+  function runGateNear(P) { var best = null, bd = 30; runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i)) return; var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, d = Math.hypot(mx - P.x, my - P.y); if (d < bd) { bd = d; best = { run: run, i: i }; } }); return best; }
+  function runGateToggle(g) { g.run.gates[g.i].open = !g.run.gates[g.i].open; sfx('build'); save(); }
+  function drawRunGate(c, a, b, open) {    // a gate between two posts: a frame of two planks, slats and a brace; open, swung about its first post
+    var L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, gl = L - 4, ex, ey;
+    if (open) { var nx = -uy, ny = ux; if (ny < 0) { nx = -nx; ny = -ny; } ex = a[0] + 2 * ux + nx * gl * 0.85; ey = a[1] + 2 * uy + ny * gl * 0.85; } else { ex = a[0] + ux * (L - 2); ey = a[1] + uy * (L - 2); }
+    var sx = a[0] + ux * 2, sy = a[1] + uy * 2, H = 15, cols = [['#2a2018', 3.2], ['#7d634a', 2], ['#9a7d5c', 0.7]];
+    var line = function (x0, y0, x1, y1) { cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }); };
+    c.save(); c.lineCap = 'round'; var y0 = sy * K, y1 = ey * K;
+    line(sx, y0 - H * 0.28, ex, y1 - H * 0.28); line(sx, y0 - H * 0.82, ex, y1 - H * 0.82); line(sx, y0 - H * 0.28, ex, y1 - H * 0.82);
+    for (var k = 1; k < 4; k++) { var t = k / 4, x = sx + (ex - sx) * t, y = y0 + (y1 - y0) * t; line(x, y - H * 0.2, x, y - H * 0.9); }
+    line(ex, y1 - H * 0.15, ex, y1 - H * 0.95); c.restore();
+  }
   function runSegs(fn) { (B.runs || []).forEach(function (run, ri) { for (var i = 0; i + 1 < run.pts.length; i++) fn(run.pts[i], run.pts[i + 1], run, ri, i); }); }
-  function runPillars(P) { var out = []; runSegs(function (a, b) { if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
+  function runPillars(P) { var out = []; runSegs(function (a, b, run, ri, si) { if (runGateAt(run, si) && run.gates[si].open) return; if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
   function runSnap(x, y) { var best = null, bd = RUN.snap; (B.runs || []).forEach(function (run) { run.pts.forEach(function (q) { var d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = q; } }); }); return best ? { x: best[0], y: best[1], snapped: true } : { x: Math.round(x), y: Math.round(y), snapped: false }; }
   function runSegAt(x, y) { var best = null, bd = 10; runSegs(function (a, b, run, ri, i) { var dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2)), d = Math.hypot(a[0] + dx * u - x, a[1] + dy * u - y); if (d < bd) { bd = d; best = { run: run, ri: ri, i: i, a: a, b: b }; } }); return best; }
   function runStretchClear(a, b) { var L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 6)), ok = true, k; for (k = 0; k <= n && ok; k++) { var x = a.x + (b.x - a.x) * k / n, y = a.y + (b.y - a.y) * k / n, tx = Math.floor(x / T), ty = Math.floor(y / T); if (!isLand(x, y) || B.floors[Build.key(tx, ty)]) ok = false; else around(x, y, function (o) { if (o.r && runProps.indexOf(o) < 0 && Math.hypot(o.x - x, o.y - y) < o.r * (o.s || 1) + 3) ok = false; }); } return ok; }
@@ -3634,6 +3652,7 @@ __COMBAT__
       cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.lineCap = 'round'; c.beginPath(); c.moveTo(r.ax, y0 + q[2]); c.quadraticCurveTo(mx, my + q[2], r.bx, y1 + q[2]); c.stroke(); }); });
   }
   function pushRailsTowers(items, hw, hh) {
+    runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i) || Math.abs(a[0] - cam.x) > hw + 60 || Math.abs(a[1] * K - cam.y) > hh + 60) return; var op = run.gates[i].open; items.push({ y: Math.max(a[1], b[1]) + (op ? 6 : -0.5), f: function () { drawRunGate(ctx, a, b, op); } }); });   /* the free fences' gates */
     RAILS.concat(RUNRAILS).forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });   /* (the player's free fences' rails too) */
     TOWERS.forEach(function (tw) {
       var l = tw.l, cxw = ((l.door === 's' && l.dx != null ? l.dx : l.x + l.w / 2 - 0.5) + 0.5) * T, fy = (l.y + l.h) * T + T * 0.7; if (Math.abs(cxw - cam.x) > hw + 120 || Math.abs(fy * K - cam.y) > hh + 260 || !roomInfo) return;
@@ -4622,6 +4641,7 @@ __COMBAT__
 
     if (carrying && carrying.beast && butcherable(carrying.beast)) { var bt0 = butcherNear(P); if (bt0 && !bt0.laid && !bt0.cuts) return { say: 'Butcher the ' + (BEAST_WORD[carrying.beast.kind] || 'beast'), act: function () { butcherIt(bt0); } }; }   /* the butcher's table (Robin, 2026-10-26) */
     if (!carrying && !BUTCH) { var bt1 = butcherNear(P); if (bt1 && bt1.cuts) return { say: 'Take the meat and the hide', act: function () { butcherTake(bt1); } }; if (bt1 && bt1.laid) return { say: 'Butcher the ' + (BEAST_WORD[bt1.laid.kind] || 'beast'), act: function () { butcherStart(bt1); } }; }
+    var rgE = !carrying && !build ? runGateNear(P) : null; if (rgE) return { say: rgE.run.gates[rgE.i].open ? 'Shut the gate' : 'Open the gate', act: function () { runGateToggle(rgE); } };   /* a free fence's gate */
     if (carrying && carrying.beast) { var alt0 = altarNear(P); if (alt0 && !alt0.laid) return { say: 'Lay it on the altar', act: function () { layOnAltar(alt0); } }; return { say: 'Set it down', act: setDownBeast }; }   /* a beast out cold on your shoulders (the cudgel) */
     if (carrying) return rUse && !raft.aboard ? { say: carrying.man ? 'Lay him aboard' : 'Stow it aboard', act: stowHeavy } : { say: carrying.man ? 'Set him down' : 'Put it down', act: putDown };
     if (looking) return { say: 'Turn back', act: function () { looking = null; } };
