@@ -17528,7 +17528,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drops = []; bits = []; decals = []; gone = {}; book = {}; R2 = Runes2.start(); Combat.api.runeState = R2; ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(CHART_PX);
     raft = null; fleet = []; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
-    villageClear(); weirPlace(); caveSetup(); hamletClear(); cryptSetup(); cellarSetup(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
+    villageClear(); weirPlace(); caveSetup(); hamletClear(); cryptSetup(); cellarSetup(); villagePaint(); hamletDress(); runProps = []; RUNRAILS = []; runDraft = null; groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
   }
@@ -17563,10 +17563,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 }, key: 'mason' },
     { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1' },
-    { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
-    { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
-    { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true, key: 'copper' },
-    { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
+    { id: 'runRail', name: 'Rail fence', kind: 'run', run: 'rail', prop: 'railPost', cost: { wood: 1 }, yard: true },   /* the free fences (2026-10-28): a post a click, each stretch at any angle; the cost is a stretch's */
+    { id: 'runStake', name: 'Stake fence', kind: 'run', run: 'stake', prop: 'stake', cost: { wood: 2 }, yard: true },
+    { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true, hidden: true },   /* the grid fences, kept for what stands and for the villages, off the board since the free fences (2026-10-28) */
+    { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true, hidden: true },
+    { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true, key: 'copper', hidden: true },
+    { id: 'rail', name: 'Rail fence (grid)', m: 1, cost: { wood: 1 }, yard: true, hidden: true },
     { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true, key: 'mason' },
     { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true, key: 'ironBar' },
     /* The roof comes by itself over any closed room, in thatch (Robin's rule); these change a roofed room's material, the whole room at once (Robin, 2026-10-28: a roof that comes by itself and roof pieces to build did not make sense together) */
@@ -17646,7 +17648,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var STARTER_PIECES = { 'Workbench': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1 };   /* no free building on the starter island (Robin, 2026-10-26): the comfort pieces and the crafting bench; Arnor's house is mended a gap at a time; the boat is Arnor's, so no shipyard */   /* no altar and no trapper's bench on the starter island (Robin, 2026-10-26) */   /* (the list is mine) */
   function onStarter() { var P = hero(); return !SCENE && !!w && isleAt(P.x, P.y) === 0; }
   function houseQuestOpen() { var q = questOf('quest.arnor.house'); return !!(q && !q.done); }
-  function pieceKnown(p) { if (!seen.freeBuild && !STARTER_PIECES[p.name] && !(p.id === 'wall' && p.m === 1 && houseQuestOpen())) return false;   /* (the plank wall while Arnor's house is mended with the Building board's own tools, placed only on its gaps: Robin, 2026-10-27, "I like A") */   /* (and anywhere until Arnor teaches free building at your home, seen.freeBuild, chapter 1, not built: Robin, 2026-10-27) */ return !p.key || !!seen[p.key]; }   /* on the starter island, only what the house and the raft need (Robin, 2026-10-20) */   /* keys: a kind picked up, a thing built, Arnor's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
+  function pieceKnown(p) { if (p.hidden) return false; if (!seen.freeBuild && !STARTER_PIECES[p.name] && !(p.id === 'wall' && p.m === 1 && houseQuestOpen())) return false;   /* (the plank wall while Arnor's house is mended with the Building board's own tools, placed only on its gaps: Robin, 2026-10-27, "I like A") */   /* (and anywhere until Arnor teaches free building at your home, seen.freeBuild, chapter 1, not built: Robin, 2026-10-27) */ return !p.key || !!seen[p.key]; }   /* on the starter island, only what the house and the raft need (Robin, 2026-10-20) */   /* keys: a kind picked up, a thing built, Arnor's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
   function stepPiece(d) { var P = hero(), n = 0; do { P.piece = (P.piece + d + PIECES.length) % PIECES.length; } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }   // the next piece you know (it called itself until 2026-10-12: the wheel on a piece not yet known froze the game)
   function costText(cost) { var p = []; for (var k in cost) p.push(cost[k] + ' ' + (typeof NAMES !== 'undefined' && NAMES[k] ? NAMES[k].toLowerCase() : k)); return p.join(', '); }
   var buildSlots0 = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); } }; });
@@ -18717,6 +18719,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); if (!mouseW || P.mode !== 'build') return null;
     var L = lvl(), BB = Bl(L), R = RI(L), my = mouseW.y + (L ? UP / K : 0);   // upstairs everything is drawn a storey up, so the cursor points a storey lower
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(my / T), far = Math.hypot(mouseW.x - P.x, my - P.y) > 150, i, k;
+    if (P.wreck && !L) { var rsW = runSegAt(mouseW.x, my); if (rsW) return { kind: 'runseg', seg: rsW, ok: !far, why: far ? 'Too far' : '' }; }   /* a free fence's stretch: F takes it down */
+    if (!P.wreck && pc.kind === 'run') { if (runDraft && (runDraft.kind !== pc.run || B.runs.indexOf(runDraft.run) < 0)) runDraft = null;
+      var spR = runSnap(mouseW.x, my), fromR = runDraft ? runDraft.run.pts[runDraft.run.pts.length - 1] : null, aR = fromR ? { x: fromR[0], y: fromR[1] } : null, LR = aR ? Math.hypot(spR.x - aR.x, spR.y - aR.y) : 0, endR = aR && LR < 3;
+      var whyR = L ? 'Not up here' : far ? 'Too far' : endR ? '' : !isLand(spR.x, spR.y) ? 'Not in the water' : aR && LR > RUN.maxSeg ? 'Too long a stretch: set a post between' : aR && LR < RUN.minSeg ? 'Too short a stretch' : aR && !runStretchClear(aR, spR) ? 'Something stands in the way' : aR && !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '';
+      return { kind: 'run', x: spR.x, y: spR.y, snapped: spR.snapped, from: aR, end: endR, piece: pc, ok: !whyR, why: whyR }; }
     if (pc.id === 'brush' && !P.wreck) { var okB = !far && !inCave && !L && isLand(mouseW.x, my); return { kind: 'brush', x: mouseW.x, y: my, piece: pc, ok: okB, why: far ? 'Too far' : L ? 'Not up here' : 'Not on land' }; }   // the ground brush paints anywhere on land within reach
     if (P.wreck) {
       for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = (B.items[i].store && B.items[i].store.some(function (q) { return !!q; })) || (B.items[i].out && B.items[i].out.length) || (B.items[i].cooking && B.items[i].cooking.length) || !!B.items[i].burn; return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
@@ -18797,12 +18804,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); if (t.item.zoneId) B.zones = (B.zones || []).filter(function (z) { return z.id !== t.item.zoneId; }); B.items.splice(t.idx, 1); }
       else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete BB[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
       else if (t.kind === 'post') { pay(pieceFor('post', 0).cost, 1); delete BB.posts[Build.key(t.cx, t.cy)]; }
+      else if (t.kind === 'runseg') { var sg = t.seg, rk = (RUN_KIND[sg.run.kind] || RUN_KIND.rail).cost; pay(rk, 1); var head = sg.run.pts.slice(0, sg.i + 1), tail = sg.run.pts.slice(sg.i + 1); B.runs.splice(sg.ri, 1); if (head.length > 1) B.runs.push({ kind: sg.run.kind, pts: head }); if (tail.length > 1) B.runs.push({ kind: sg.run.kind, pts: tail }); runDraft = null; runsBuild(); save(); return; }   /* a stretch taken down splits its run */
       else if (t.kind === 'stairs') { pay(pieceFor('stairs', 0).cost, 1); delete B.stairs[Build.key(t.tx, t.ty)]; }
       else { pay(costOfFloor(BB.floors[Build.key(t.tx, t.ty)]), 1); delete BB.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
     if (t.kind === 'mend') { var mid = t.ed.L + Build.key(t.ed.x, t.ed.y); if (!first && mid === lastPlaced) return; lastPlaced = mid; pay(t.cost); mendEdge(t.ed.L, Build.key(t.ed.x, t.ed.y)); sfx('build'); save(); return; }
     if (t.kind === 'raise') { if (!first) return; pay(t.cost); raiseRoof(t.room); sfx('build'); save(); return; }
+    if (t.kind === 'run') { if (!first) return; if (t.end) { runDraft = null; sfx('build'); return; }   /* a click on the run's last post ends it */
+      if (!t.from) { var runN = { kind: t.piece.run, pts: [[t.x, t.y]] }; B.runs = B.runs || []; B.runs.push(runN); runDraft = { run: runN, kind: t.piece.run }; }
+      else { pay(buildCost(t.piece.cost)); deed('built'); runDraft.run.pts.push([t.x, t.y]); }
+      runsBuild(); sfx('build'); save(); return; }
     if (t.kind === 'zone') { if (first && !zoneDrag) zoneDrag = { tx: Math.floor(t.px / T), ty: Math.floor(t.py / T), x: t.px, y: t.py }; return; }   /* the press sets the post; the square follows the mouse until it is let go */
     if (t.kind === 'brush') { if (w.paintGround(t.x, t.y, BRUSH_R, t.piece.k)) { if (first) sfx('build'); groundDirtyT = clock; } return; }
     if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.prop || t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace, trapper: !!t.piece.trapper, altar: !!t.piece.altar }; if (nit.bench && !seen.freeBuild && !L) { seen.freeBuild = 1; }   /* the workbench opens building (Robin, 2026-10-28: as in Valheim; every piece then by its own key) */ if (t.nf) naustPlace(nit, t.nf.f, t.x, t.y); if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; if (villageAt(nit.x, nit.y) >= 0) noteSeen('mend'); var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = lineN('line.hird.stone', 0, 'I will keep this stone.'); kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
@@ -18863,7 +18875,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (t.kind === 'item') { var s = sprite(t.item.name, 0); return { x: t.item.x + s.l, y: t.item.y * K + s.t + dy, w: s.w, h: s.h }; }
     return { x: t.tx * T, y: t.ty * TS + dy, w: T, h: TS };
   }
-  var ghostLabel = null;                 // what to say by the cursor, drawn on the HUD after the world
+  var ghostLabel = null;
+  function drawRunGhost(c, t) {            // a free fence: the stretch from the last post to the cursor and the post there; F: the stretch that would go
+    var col = t.ok ? '120,255,160' : '255,90,70'; c.save(); c.lineCap = 'round';
+    if (t.kind === 'runseg') { var a = t.seg.a, b = t.seg.b; c.strokeStyle = t.ok ? 'rgba(255,214,80,0.9)' : 'rgba(255,90,70,0.8)'; c.lineWidth = 5; c.beginPath(); c.moveTo(a[0], a[1] * K); c.lineTo(b[0], b[1] * K); c.stroke(); ghostLabel = t.ok ? { text: 'Take down: +' + costText((RUN_KIND[t.seg.run.kind] || RUN_KIND.rail).cost), bad: false } : { text: t.why, bad: true }; c.restore(); return; }
+    var sp = sprite(t.piece.prop, 0); if (sp) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawSpriteAt(c, sp, t.x, t.y, false); c.globalAlpha = 1; }
+    if (t.from) { c.setLineDash([5, 4]); c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(t.from.x, t.from.y * K); c.lineTo(t.x, t.y * K); c.stroke(); c.setLineDash([]); }
+    c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(t.x, t.y * K, t.snapped ? 7 : 5, (t.snapped ? 7 : 5) * K, 0, 0, 7); c.stroke();
+    ghostLabel = !t.ok ? { text: t.why || 'Too far', bad: true } : t.end ? { text: 'Click: the run ends here', bad: false } : t.from ? { text: t.piece.name + ' (' + costText(t.piece.cost) + ')', bad: false } : { text: t.snapped ? 'A new run from this post' : 'Set the first post', bad: false };
+    c.restore();
+  }                 // what to say by the cursor, drawn on the HUD after the world
+  function facing(name, rot) { var F = ['', '_e', '_n', '_w']; if (rot && (World.IMAGES[name + F[rot]] || World.IMAGES[name + F[rot] + '_1'])) return { n: name + F[rot], flip: false }; return { n: name, flip: !!(rot & 1) }; }   /* a thing turned with the wheel: its picture facing east, north or west where the studio has one (<name>_e, _n, _w; asked of Colin, AD, 2026-10-28), else mirrored as before */
   function drawSpriteAt(c, sp, x, y, flip) {
     if (!flip) { c.drawImage(sp.cv, x + sp.l, y * K + sp.t, sp.w, sp.h); return; }
     c.save(); c.translate(x, 0); c.scale(-1, 1); c.drawImage(sp.cv, sp.l, y * K + sp.t, sp.w, sp.h); c.restore();   // turned: seen from the other side
@@ -18873,6 +18895,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); ghostLabel = null;
     if (P.mode === 'build' && zonesShow) drawZones(c);
     var t = buildTarget(); if (!t) return;
+    if (t.kind === 'run' || t.kind === 'runseg') { drawRunGhost(c, t); return; }
     if (t.kind === 'zone') { var Zg = ZONE[t.piece.zone] || ZONE.sleep, gc = t.ok || !t.drag ? Zg.col : '255,90,70'; c.save(); c.fillStyle = 'rgba(' + gc + ',0.16)'; c.strokeStyle = 'rgba(' + gc + ',0.95)'; c.lineWidth = 1.4; c.fillRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.strokeRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.fillStyle = 'rgba(' + gc + ',1)'; c.beginPath(); c.arc(t.px, t.py * K, 2.2, 0, 7); c.fill(); c.restore();
       ghostLabel = t.ok || (!t.drag && !t.why) ? { text: Zg.name + (t.drag ? '  ' + (t.r.x1 - t.r.x0) + ' by ' + (t.r.y1 - t.r.y0) : '  (press, and drag out its square)') + '  ' + costText(t.piece.cost), bad: false } : { text: t.why || 'Not here', bad: true }; return; }
     if (t.kind === 'mend' || t.kind === 'raise') {     // what would be mended, framed
@@ -18902,7 +18925,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.globalAlpha = t.ok ? 0.65 : 0.35;
       if (t.kind === 'brush') { c.fillStyle = t.piece.k === 1 ? 'rgba(150,138,118,0.5)' : t.piece.k === 2 ? 'rgba(126,98,62,0.5)' : t.piece.k === 3 ? 'rgba(92,128,70,0.55)' : 'rgba(95,138,68,0.5)'; c.beginPath(); c.ellipse(t.x, t.y * K, BRUSH_R, BRUSH_R * K, 0, 0, 7); c.fill(); }
       else if (t.kind === 'tile') c.drawImage(w.tile((Build.FLOORS[t.piece.m] || Build.FLOORS[0]).tile, t.tx, t.ty), t.tx * T, t.ty * TS, T, TS);
-      else if (t.kind === 'item') { var sp = sprite(t.prop || t.piece.prop, 0); drawSpriteAt(c, sp, t.x, t.y, t.prop ? 0 : buildRot & 1); }
+      else if (t.kind === 'item') { var fcG = t.prop ? { n: t.prop, flip: false } : facing(t.piece.prop, buildRot), sp = sprite(fcG.n, 0); drawSpriteAt(c, sp, t.x, t.y, fcG.flip); }
       else if (t.kind === 'post') Build.drawPost(c, t.cx, t.cy, { m: t.piece.m }, BCFG);
       else if (t.kind === 'stairs') Build.drawStairs(c, t.tx, t.ty, BCFG);
       else if (t.kind === 'roof') { if (t.room) Build.drawRoof(c, t.room, 0.7, Build.cfg({ roof: t.piece.m })); }
@@ -20518,13 +20541,34 @@ if (typeof module !== 'undefined') module.exports = Combat;
       for (j = 0; j + 1 < L.length; j++) { var a = L[j], b = L[j + 1]; if (b.i !== a.i + 1 || Math.hypot(b.x - a.x, b.y - a.y) > 60) continue; var R = kit.rng(Math.round(a.x * 7 + a.y * 13));
         RAILS.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, v: a.v || 0, sag: 1 + R() * 1.5, miss: [R() < 0.06, R() < 0.14], hang: R() < 0.04 }); } });
   }
+  /* Free fences (Robin, 2026-10-28, "do 1 and 2": fences and palisades as free runs, houses on the grid): a run is a line of posts set
+     anywhere, each stretch at any angle, a post snapping to one already standing near it (B.runs: { kind, pts }). A rail fence is the
+     studio's railPost at every point with the village fences' rails between (RUNRAILS, drawRail); a stake fence is the studio's
+     stakes close along every stretch. The posts and stakes are world props (runsBuild, again whenever a run changes and at load);
+     the stretches block walking with pillars along them (runPillars, with the world's solids each frame). Gaps are the ways
+     through. The numbers are mine. */
+  var RUN = { maxSeg: 72, minSeg: 10, snap: 14, stakeGap: 8, pillarGap: 6, pillarR: 8, reach: 180 }, RUN_KIND = { rail: { cost: { wood: 1 } }, stake: { cost: { wood: 2 } } }, RUNRAILS = [], runProps = [], runDraft = null;
+  function runsBuild() {
+    runProps.forEach(function (p) { w.removeProp(p); }); runProps = []; RUNRAILS = []; var seen0 = {};
+    (B.runs || []).forEach(function (run) { var P2 = run.pts, i, R = kit.rng(Math.round((P2[0] || [0, 0])[0] * 7 + (P2[0] || [0, 0])[1] * 3));
+      var post = function (x, y, name, v) { var key = Math.round(x / 3) + ',' + Math.round(y / 3); if (seen0[key]) return; seen0[key] = 1; var o = { name: name, x: x, y: y, s: 1, r: 0, v: v }; w.addProp(o); runProps.push(o); };
+      for (i = 0; i < P2.length; i++) { if (run.kind === 'rail') post(P2[i][0], P2[i][1], 'railPost', Math.floor(R() * 3)); }
+      for (i = 0; i + 1 < P2.length; i++) { var a = P2[i], b = P2[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (run.kind === 'rail') RUNRAILS.push({ ax: a[0], ay: a[1], bx: b[0], by: b[1], v: 0, sag: 1 + R() * 1.5, miss: [R() < 0.04, R() < 0.08], hang: false });
+        else { var n = Math.max(1, Math.round(L / RUN.stakeGap)); for (var k = 0; k <= n; k++) post(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n, 'stake', Math.floor(R() * 6)); } } });
+  }
+  function runSegs(fn) { (B.runs || []).forEach(function (run, ri) { for (var i = 0; i + 1 < run.pts.length; i++) fn(run.pts[i], run.pts[i + 1], run, ri, i); }); }
+  function runPillars(P) { var out = []; runSegs(function (a, b) { if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
+  function runSnap(x, y) { var best = null, bd = RUN.snap; (B.runs || []).forEach(function (run) { run.pts.forEach(function (q) { var d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = q; } }); }); return best ? { x: best[0], y: best[1], snapped: true } : { x: Math.round(x), y: Math.round(y), snapped: false }; }
+  function runSegAt(x, y) { var best = null, bd = 10; runSegs(function (a, b, run, ri, i) { var dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2)), d = Math.hypot(a[0] + dx * u - x, a[1] + dy * u - y); if (d < bd) { bd = d; best = { run: run, ri: ri, i: i, a: a, b: b }; } }); return best; }
+  function runStretchClear(a, b) { var L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 6)), ok = true, k; for (k = 0; k <= n && ok; k++) { var x = a.x + (b.x - a.x) * k / n, y = a.y + (b.y - a.y) * k / n, tx = Math.floor(x / T), ty = Math.floor(y / T); if (!isLand(x, y) || B.floors[Build.key(tx, ty)]) ok = false; else around(x, y, function (o) { if (o.r && runProps.indexOf(o) < 0 && Math.hypot(o.x - x, o.y - y) < o.r * (o.s || 1) + 3) ok = false; }); } return ok; }
   function drawRail(c, r) {
     var sp = sprite('railPost', r.v), h = sp ? Math.max(14, -sp.t * 0.92) : 20, cols = [['#2a2018', 3.4, 0], ['#7d634a', 2.2, 0], ['#55402e', 0.6, 0.6]];
     [0.42, 0.78].forEach(function (k, ri) { if (r.miss[ri]) return; var y0 = r.ay * K - h * k, y1 = r.hang && ri ? r.by * K - 3 : r.by * K - h * k, mx = (r.ax + r.bx) / 2, my = (y0 + y1) / 2 + r.sag * 2;
       cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.lineCap = 'round'; c.beginPath(); c.moveTo(r.ax, y0 + q[2]); c.quadraticCurveTo(mx, my + q[2], r.bx, y1 + q[2]); c.stroke(); }); });
   }
   function pushRailsTowers(items, hw, hh) {
-    RAILS.forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });
+    RAILS.concat(RUNRAILS).forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });   /* (the player's free fences' rails too) */
     TOWERS.forEach(function (tw) {
       var l = tw.l, cxw = ((l.door === 's' && l.dx != null ? l.dx : l.x + l.w / 2 - 0.5) + 0.5) * T, fy = (l.y + l.h) * T + T * 0.7; if (Math.abs(cxw - cam.x) > hw + 120 || Math.abs(fy * K - cam.y) > hh + 260 || !roomInfo) return;
       var ri = roomInfo.at(l.x, l.y), r = ri >= 0 ? roomInfo.rooms[ri] : null, cf = r ? roofCfg(r) : BCFG, thatch = cf.roof === 1, ov = cf.overhang + 1.5 + (thatch ? 2 : 0), bot = (l.y + l.h) * TS - Build.UP + ov * K, Wd = l.w * T + 2 * ov, rh = thatch ? Math.min(42, Wd * 0.58) : Math.min(34, Wd * 0.46), al = r && roofA[r.id] != null ? roofA[r.id] : 1;
@@ -24128,7 +24172,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       add(x, y, y * T + 0.5, lifted(function () { Build.drawPost(ctx, x, y, p, BCFG); }));
       if (up.posts[Build.key(x + 1, y)] && !up.H[kk]) add(x, y, y * T + 0.4, lifted(function () { Build.drawBeam(ctx, x, y, true, p, BCFG); }));
       if (up.posts[Build.key(x, y + 1)] && !up.V[kk]) add(x, y, (y + 1) * T - 0.9, lifted(function () { Build.drawBeam(ctx, x, y, false, p, BCFG); })); });
-    B.items.forEach(function (it) { if (!it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return; var s = sprite(it.name, 0); add(Math.floor(it.x / T), Math.floor(it.y / T), it.name === 'rug' ? it.y - 300 : it.y, lifted(function () { drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); })); });
+    B.items.forEach(function (it) { if (!it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return; var s = sprite(facing(it.name, it.rot).n, 0); add(Math.floor(it.x / T), Math.floor(it.y / T), it.name === 'rug' ? it.y - 300 : it.y, lifted(function () { drawSpriteAt(ctx, s, it.x, it.y, facing(spriteName(it), it.rot).flip); })); });
     if (roomInfo1) roomInfo1.rooms.forEach(function (r, ri) {
       var target = here1 === ri ? BCFG.seeThrough : 1; roofA1[r.id] += (target - roofA1[r.id]) * 0.18; var t0 = r.tiles[0];
       if (!roofInView(r, hw, hh)) return;
@@ -24254,7 +24298,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var cm = it.box ? 440 : 40;   /* (a naust's picture reaches some 300 units past its middle: it popped out of sight as you sailed off, Robin 2026-10-23) */
         if (it.lvl || Math.abs(it.x - cam.x) > hw + cm || Math.abs(it.y * K - cam.y) > hh + cm + 20) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : spriteName(it), 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w * (isRuneAltar(it) ? ALTAR_SCALE : 1)); if (isRuneAltar(it)) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.scale(ALTAR_SCALE, ALTAR_SCALE); drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); } else if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1);   /* (the altar at ALTAR_SCALE: Robin, 2026-10-23) */ if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : facing(spriteName(it), it.rot).n, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w * (isRuneAltar(it) ? ALTAR_SCALE : 1)); if (isRuneAltar(it)) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.scale(ALTAR_SCALE, ALTAR_SCALE); drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); } else if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, facing(spriteName(it), it.rot).flip);   /* (the altar at ALTAR_SCALE: Robin, 2026-10-23) */ if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       cryptOuts(items, hw, hh);   /* the churchyard's slab, once you have come up through it */
       altarItems(items); butcherItems(items);   /* the altar's ring of stones, the beast laid, the storm's three, the lightning (Runes2) */
@@ -24643,7 +24687,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; } markDead(); raidedLines(); markFreed();
       R2 = sv.runes2 && sv.runes2.lib ? Runes2.start(sv.runes2) : Runes2.start(); Combat.api.runeState = R2; ring = sv.ring && sv.ring.metal ? { metal: sv.ring.metal } : null; heroRingSync();   /* (an older save's ring keeps its metal; its old runes are gone with the old system, 2026-10-23) */
       (sv.drops || []).forEach(function (d) { if (d.kind === 'log' && !(d.n > 0)) return; drops.push({ kind: d.kind, tree: d.tree, n: d.n, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0, lie: d.lie ? 1 : 0, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : 0 }); });
-      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
+      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); runsBuild(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing' || o.weirNet || WEED_NAMES[o.name]) && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.groundDiff && typeof sv.groundDiff === 'object') groundApply(sv.groundDiff); else if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // what the player painted over the world's ground; an older save holds the whole field (and is saved as a diff from now on), the oldest its strokes alone
@@ -25797,8 +25841,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; craftJob = null; if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } menLive = {}; isleLive = {}; if (wakeAtSea && raft) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; wakeAtSea = null; carrying = null; toast('Your men dragged you aboard'); } else { toSpawn(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } } spawnBoars(); if (BT.on && BT.field) battleSet(BT.setup); }   // the raft drifts back to the camp shore; on a raid with his men standing he wakes aboard (raid step 3)     // R after falling: the engine made a new hero
     else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
     if (P.mode === 'build' && lastMode !== 'build') { menuFrom = 'B'; openMenu('build'); }   // B opens the Building board (what you make by hand is on C)
-    if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
-    D.W.pillars = nearSolids(P);
+    if (lastMode === 'build' && P.mode !== 'build') { menu = null; runDraft = null; } lastMode = P.mode;   /* (leaving build mode ends a fence run) */
+    D.W.pillars = nearSolids(P); if (B.runs && B.runs.length && !inCave) D.W.pillars = D.W.pillars.concat(runPillars(P));   /* the free fences' stretches block walking */
     if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); }), (hcv.dress || []).filter(function (q) { return q.r > 0; })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * (o.s || 1), hide: true }); });
       hcv.sets.forEach(function (st) { if (Math.abs(st.x - P.x) < 200 && Math.abs(st.y - P.y) < 200) D.W.pillars.push({ x: st.x - st.w / 2, y: st.y, r: 4, hide: true }, { x: st.x + st.w / 2, y: st.y, r: 4, hide: true }); });
       (hcv.gates || []).forEach(function (g) { if (g.state !== 'shut' || Math.abs(g.x - P.x) > 200 || Math.abs(g.y - P.y) > 200) return; var n = Math.max(3, Math.round(g.w / 12)), gi; for (gi = 0; gi < n; gi++) D.W.pillars.push({ x: g.x - g.w / 2 + (gi + 0.5) * g.w / n, y: g.y, r: g.w / n * 0.75, hide: true }); });   /* a shut gate is a wall */ if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
