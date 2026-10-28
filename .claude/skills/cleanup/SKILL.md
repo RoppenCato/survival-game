@@ -13,7 +13,7 @@ an archive; git keeps the rest.
 ## 0. Before starting
 
 - `git status`: commit or leave alone anything half done that is not yours; start from a clean tree.
-- Read `CLAUDE.md` whole, `docs/chapters.md` and the last cleanup's commit (`git log --grep="clean"`) so the cut follows the same lines.
+- Read `CLAUDE.md` and `docs/state/*.md` whole, `docs/chapters.md` and the last cleanup's commit (`git log --grep="clean"`) so the cut follows the same lines.
 - Note the date: every archived thing and every changed paragraph says when.
 
 ## 1. Archive what we no longer use
@@ -21,7 +21,7 @@ an archive; git keeps the rest.
 The places:
 - **`docs/archive/`**: finished docs (a plan whose steps are all built and played, a trial whose verdicts are taken in, a proposal
   Robin turned down or replaced). A doc still waiting for Robin stays in `docs/`. Move it with `git mv`, and rewrite every reference to
-  it (`grep -rn "<name>.md"` over `CLAUDE.md`, `docs/`, `templates/`, `src/`, `tools/`, `tests/`).
+  it (`grep -rn "<name>.md"` over `CLAUDE.md`, `docs/` (with `docs/state/`), `templates/`, `src/`, `tools/`, `tests/`).
 - **`archive/`** at the repo's root (not served by the pages, never inlined by the build): code, tools, tests and assets no page or
   script uses any more, kept by path (`archive/tools/visual/x.js`, `archive/assets/sprites/x/`). A short `archive/README.md` lists
   each with the date and why.
@@ -42,7 +42,7 @@ How to tell what is unused:
 
 ## 2. Bring the documentation up to date
 
-- **`CLAUDE.md` is the source of truth for how things stand now.** Read it section by section against the code: every function,
+- **`CLAUDE.md` and `docs/state/` are the source of truth for how things stand now** (each system's detail in its `docs/state` file since 2026-10-27). Read it section by section against the code: every function,
   variable, file, number and key it names must exist and mean that (grep each one you doubt). Where the game changed, rewrite the
   paragraph to say how it is now (no dated paragraph appended below an old one; the story goes in commit messages and
   `docs/notes-archive.md`). Robin's decisions keep their "Robin, date" marks; mine keep "mine". Remove what describes something gone.
@@ -52,11 +52,11 @@ How to tell what is unused:
   parts the game has overtaken.
 - **`tests/README.md`** lists every test that exists, what it prints and whether it is in `npm test`; `package.json`'s scripts match.
 - **`docs/for-robin.md`**: questions answered are taken out; open ones stay.
-- **The start page** (`templates/index.html`) and **`CLAUDE.md`'s Pages table** list exactly the pages and scenes that exist.
+- **The start page** (`templates/index.html`) and **`docs/state/pages.md`'s Pages table** list exactly the pages and scenes that exist.
 
 ## 3. The editors and test scenes, one by one
 
-The list (from `CLAUDE.md`'s Pages table; check it has not grown): the start page; the game's scenes (`?scene=battle`, `ruin`,
+The list (from `docs/state/pages.md`'s Pages table; check it has not grown): the start page; the game's scenes (`?scene=battle`, `ruin`,
 `mountain`, `models`, `dialogue`, `runes`); `combat-arena.html`; `art-editor.html` (Set pieces); `village-editor.html`;
 `sea-editor.html`; `rune-browser.html`; `world-monsters.html`.
 
