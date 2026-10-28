@@ -135,12 +135,13 @@ var WorldMap = (function () {
       }
       function smooth(p, it) { for (var k = 0; k < it; k++) { var q = [p[0]]; for (var i = 0; i < p.length - 1; i++) { var a = p[i], b = p[i + 1]; q.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } q.push(p[p.length - 1]); p = q; } return p; }
       function thin(p) { return p.filter(function (q, i) { return i === 0 || i === p.length - 1 || i % 2 === 0; }); }
-      var V = PL.villages.map(function (v) { var vx = v.tx + v.w / 2, vy = v.ty + v.h / 2, ends = (v.ends || []).slice(); if (!ends.length) ends.push([vx, vy]); return { ends: ends, isle: isleOf(vx, vy), jetty: v.jetty }; }), by = {};
+      var V = PL.villages.map(function (v) { var vx = v.tx + v.w / 2, vy = v.ty + v.h / 2, ends = (v.ends || []).slice(); if (!ends.length) ends.push([vx, vy]); return { ends: ends, isle: isleOf(vx, vy), jetty: v.jetty, trail: v.trail }; }), by = {};
       V.forEach(function (v) { (by[v.isle] = by[v.isle] || []).push(v); }); ROADS = [];
       Object.keys(by).forEach(function (isle) { var vs = by[isle], inT = [vs[0]], rest = vs.slice(1);
         while (rest.length) { var best = null; inT.forEach(function (a) { rest.forEach(function (b) { a.ends.forEach(function (ea) { b.ends.forEach(function (eb) { var dd = Math.hypot(ea[0] - eb[0], ea[1] - eb[1]); if (!best || dd < best.d) best = { d: dd, a: ea, b: eb, v: b }; }); }); }); });
           inT.push(best.v); rest.splice(rest.indexOf(best.v), 1); if (best.d < 12) continue; var p = astar(best.a, best.b); if (p) ROADS.push({ pts: smooth(thin(p), 3) }); } });
       V.forEach(function (v) { if (!v.jetty || !v.jetty.root) return; var r = v.jetty.root, best = null; v.ends.forEach(function (e) { var dd = Math.hypot(e[0] - r[0], e[1] - r[1]); if (!best || dd < best.d) best = { d: dd, e: e }; }); if (best && best.d > 8) { var p = astar(best.e, r); if (p) ROADS.push({ pts: smooth(thin(p), 3) }); } });
+      V.forEach(function (v) { if (!v.trail) return; var e = v.ends[0], p = Math.hypot(e[0] - v.trail[0], e[1] - v.trail[1]) > 8 ? astar(e, v.trail) : null; if (p) ROADS.push({ pts: smooth(thin(p), 3) }); });   /* the track from a village's gate to its shore (the game's v.trail) */
       CURV = ROADS.map(function (r) { var sp = simplify(r.pts, 7); return spline(sp.length > 2 ? sp : r.pts.filter(function (q, i) { return i % 6 === 0 || i === r.pts.length - 1; }), 10); });
     }
     function prepare(done) {   /* the chart read, the names, the tracks: once, in steps on timers so the game breathes between them */
@@ -157,7 +158,7 @@ var WorldMap = (function () {
       var E = new Float32Array(G.w * G.h); for (var i = 0; i < E.length; i++) if (G.GI[i] >= 0 && knowOf(G.GI[i]) === 2) E[i] = G.L[i];
       G.SB = blur(E, G.w, G.h, S.fogReach / 4 / 1.7, 3); return G.SB; }
     function fogVis(X, Y) { return Math.max(sm(0.002, 0.045, sampleG(fogField(), X, Y)), sm(0.25, 0.6, sampleG(G.TB, X, Y))); }
-    function dirtyAround(X, Y, Rw) { TILES.forEach(function (T) { var w = TILE / T.ppt, x0 = T.tx * w, y0 = T.ty * w; if (x0 < X + Rw && x0 + w > X - Rw && y0 < Y + Rw && y0 + w > Y - Rw) T.painted = null; }); dirty = true; }
+    function dirtyAround(X, Y, Rw) { TILES.forEach(function (T) { var w = TILE / T.ppt, x0 = T.tx * w, y0 = T.ty * w; if (x0 < X + Rw && x0 + w > X - Rw && y0 < Y + Rw && y0 + w > Y - Rw) T.painted = T.painted ? 'stale' : null; }); dirty = true; }   /* (stale: the old picture is drawn until the new one is painted; a tile set to nothing showed as a black box while an island faded in, Robin 2026-10-28) */
     function stampAt(X, Y) { var r = S.sailReach / 4, gx = X / 4, gy = Y / 4; for (var y = Math.floor(gy - r - 1); y <= gy + r + 1; y++) for (var x = Math.floor(gx - r - 1); x <= gx + r + 1; x++) { if (x < 0 || y < 0 || x >= G.w || y >= G.h) continue; var v = 1 - sm(r * 0.55, r, Math.hypot(x - gx, y - gy)), k = y * G.w + x; if (v > G.TR[k]) G.TR[k] = v; } }
     function replayTrail() { for (var i = 0; i + 1 < trailPts.length; i += 2) stampAt(trailPts[i], trailPts[i + 1]); G.TB = blur(G.TR, G.w, G.h, 2, 1); G.fogKey = null; }
 

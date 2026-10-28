@@ -883,7 +883,7 @@ __COMBAT__
     bDirty = true; save(); }
   function woodSwordSwap() { if (seen.woodSwordV) return; seen.woodSwordV = 1; var sw = function (q) { return q && q.kind === 'item' && q.item && q.item.kind === 'club' && q.item.mat === 'wood' ? Object.assign({}, q, { item: Items.make('sword', 'wood') }) : q; };   /* an older save's Strong Stick becomes the Wooden Sword (2026-10-26) */
     for (var i = 0; i < slots.length; i++) slots[i] = sw(slots[i]); B.items.forEach(function (it) { if (it.store) for (var j = 0; j < it.store.length; j++) it.store[j] = sw(it.store[j]); }); }
-  function butcherTableEnsure() { steadTidy(); woodSwordSwap(); if (!seen.freeBuild && !SCENE && B.items.some(function (it) { return it.bench && !it.lvl && villageAt(it.x, it.y) < 0 && !(village && Math.hypot(it.x - (village.tx + village.w / 2) * T, it.y - (village.ty + village.h / 2) * T) < 700); })) seen.freeBuild = 1;   /* (an older save with a workbench built has building open) */ if (!seen.quiverV) { seen.quiverV = 1; if (!equip.quiver && quiver.slots.some(function (q) { return q && q.n > 0; })) equip.quiver = Items.make('quiver', 'leather'); }   /* (an older save with arrows gets the quiver they were in, once) */ arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st === 'broken' && questDone('quest.arnor.house') && questDone('quest.arnor.meat')) abt.st = 'mending'; if (abt && abt.st === 'ready' && npc && !npc.shore && !npc.seq && !npc.joined) arnorByBoat(abt);   /* (after a load, or once he has walked home: back by the boat while she waits for you) */ if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
+  function butcherTableEnsure() { steadTidy(); woodSwordSwap(); if (!seen.freeBuild && !SCENE && B.items.some(function (it) { return it.bench && !it.lvl && villageAt(it.x, it.y) < 0 && !(village && Math.hypot(it.x - (village.tx + village.w / 2) * T, it.y - (village.ty + village.h / 2) * T) < 700); })) seen.freeBuild = 1;   /* (an older save with a workbench built has building open) */ if (!seen.quiverV) { seen.quiverV = 1; if (!equip.quiver && quiver.slots.some(function (q) { return q && q.n > 0; })) equip.quiver = Items.make('quiver', 'leather'); }   /* (an older save with arrows gets the quiver they were in, once) */ arnorBoatEnsure(); var abt = arnorBoatItem(); if (abt && abt.st === 'broken' && questDone('quest.arnor.house') && questDone('quest.arnor.meat') && seen.deerForArnor) abt.st = 'mending'; if (abt && abt.st === 'ready' && npc && !npc.shore && !npc.seq && !npc.joined) arnorByBoat(abt);   /* (after a load, or once he has walked home: back by the boat while she waits for you) */ if (village && !SCENE && !B.zArnorV) { B.zArnorV = 1; arnorZone(); } if (village && !SCENE && !B.strawV) { B.strawV = 1; var hx = village.tx + 14, hy = village.ty + 9; B.items.forEach(function (it) { var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T); if (it.bed && it.name === 'bed' && tx >= hx && tx < hx + 6 && ty >= hy && ty < hy + 6) { it.name = 'strawBed'; it.x = (village.tx + 15.5) * T; it.y = (village.ty + 10.5) * T; it.r = 10; } }); }   /* (an older save's bed in Arnor's house becomes the straw bed, once) */
     if (!village || SCENE || B.butcherV) return; B.butcherV = 1; if (!B.items.some(function (it) { return it.name === 'butcherTable'; })) B.items.push({ name: 'butcherTable', x: (village.tx + 5.5 + 0.5) * T, y: (village.ty + 11.2 + 0.5) * T, r: 12 }); }   /* (an older save's steading gets its table once) */
   function villageButchers() {             /* a butcher's table in every village the player may use (Robin, 2026-10-27: "One in each village"; none could be built, so a beast killed off the starter island gave nothing): on clear ground near its focus, out of its houses and off its other things; once a save */
     if (SCENE || B.vButchV || !villages.length) return; B.vButchV = 1;
@@ -935,7 +935,7 @@ __COMBAT__
   function seasonDusk(next) {               // the rite is done: the season waits for the morning; the day runs down to night and a word says to sleep (Robin, 2026-10-23: "the sun go down quicker than usual. Then you should be instructed to go to bed")
     year.pending = next; if (day.t < 1200) day.haste = DUSK_HASTE; toast('The sun goes down. Sleep, and the new season comes with the morning'); save();
   }
-  function dayHaste() { if (!day.haste) return 1; if (day.t >= 1200 || !year.pending) { day.haste = 0; return 1; } return day.haste; }
+  function dayHaste() { if (!day.haste) return 1; if (day.t >= 1200 || (!year.pending && !day.supper)) { day.supper = 0; day.haste = 0; return 1; } return day.haste; }
   function yearMonth() { return YEAR.months[year.season][Math.min(2, Math.floor(Math.min(year.day, YEAR.days - 1) / 2))]; }
   function yearNewDay() { year.day++; }
   /* The year's words (Alistair, LD's handoff 11, Robin's yes of 2026-10-23): line.year.opens, the board's line as a season opens, one
@@ -1213,14 +1213,16 @@ __COMBAT__
   function ringNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'fireRing' && Math.hypot(o.x - P.x, o.y - P.y) < 40 && (!best || Math.hypot(o.x - P.x, o.y - P.y) < Math.hypot(best.x - P.x, best.y - P.y))) best = o; }); return best; }
   var WEED_NAMES = { flower: 1, reeds: 1, dwarfBirch: 1 }, weeded = {};
   function isWeed(o) { return !o.r && (o.kind === 'bush' || WEED_NAMES[o.name]); }   /* the soft plants a floor or a room clears: bushes with no footprint, heather, juniper, tall grass, herbs, flowers, reeds, dwarf birch */
-  function weedTile(tx, ty) { var x0 = tx * T, y0 = ty * T, hit = []; around(x0 + T / 2, y0 + T / 2, function (o) { if (isWeed(o) && o.x >= x0 - 2 && o.x < x0 + T + 2 && o.y >= y0 - 2 && o.y < y0 + T + 2) hit.push(o); }); hit.forEach(function (o) { w.removeProp(o); gone[propKey(o)] = 1; }); return hit.length; }   /* (the building review of 2026-10-24: flowers, heather and a juniper grew through a flagstone floor and inside the walls) */
+  function weedTile(tx, ty) { var x0 = tx * T, y0 = ty * T, hit = []; around(x0 + T / 2, y0 + T / 2, function (o) { if ((isWeed(o) || o.kind === 'bush') && o.x >= x0 - 2 && o.x < x0 + T + 2 && o.y >= y0 - 2 && o.y < y0 + T + 2) hit.push(o); }); hit.forEach(function (o) { w.removeProp(o); gone[propKey(o)] = 1; }); return hit.length; }   /* (the building review of 2026-10-24: flowers, heather and a juniper grew through a flagstone floor and inside the walls) */
   function weedRooms() { if (!roomInfo) return; var n = 0; roomInfo.rooms.forEach(function (r) { if (weeded[r.id]) return; weeded[r.id] = 1; if (villageAt(r.tiles[0][0] * T, r.tiles[0][1] * T) >= 0) return; r.tiles.forEach(function (t) { n += weedTile(t[0], t[1]); }); }); if (n) save(); }   /* once for each room of yours when its walls close */
+  function weedEdge(ed) { var x0 = ed.x * T, y0 = ed.y * T, x1 = ed.L === 'H' ? x0 + T : x0, y1 = ed.L === 'H' ? y0 : y0 + T, hit = []; around((x0 + x1) / 2, (y0 + y1) / 2, function (o) { if (!(isWeed(o) || o.kind === 'bush')) return; var px = Math.max(x0, Math.min(x1, o.x)), py = Math.max(y0, Math.min(y1, o.y)); if (Math.hypot(o.x - px, o.y - py) < 12 + (o.r || 0)) hit.push(o); }); hit.forEach(function (o) { w.removeProp(o); gone[propKey(o)] = 1; }); }   /* a wall clears the plants it stands in (Robin, 2026-10-28: a bush clipped into the house) */
   function ringTake(o) { drop('charcoal', o.x, o.y + 6, 2); w.removeProp(o); gone[propKey(o)] = 1; sfx('pick'); save(); }
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
       if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; regrowTick(); morningEmbers(); yearNewDay(); if (year.pending) { var pn = year.pending; year.pending = null; day.haste = 0; seasonTurn(pn); }   /* the season called by the rite comes with the morning */ var abw = arnorBoatItem(); if (abw && abw.st === 'mending') { abw.st = 'ready'; arnorByBoat(abw); }   /* Arnor's boat is mended by the morning, he by her (Robin) */ var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = (runeHas('warmBelly') ? runeN('warmBelly', 'restK') || 1 : 1) * Math.max(120, sleep.comfort * 120) * (false ? 2 : 1); deed('slept'); } else toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
-      if (sleep.t >= 2.6) sleep = null;
+      if (sleep.t >= 2.0 && !sleep.up) { sleep.up = true; if (sprHero) Sprites.play(sprHero, 'standup', null, 0.9); }   /* he gets up as the light comes (Robin, 2026-10-28: "it just poof suddenly day"; the kit's standup until Colin, AD's wake clip) */
+      if (sleep.t >= 3.4) sleep = null;
       return;
     }
     day.t += dt * dayHaste(); if (day.t >= DAY_LEN) { day.t -= DAY_LEN; day.n++; if (day.n >= 10) regrowTick(); morningEmbers(); yearNewDay(); save(); }   /* (regrowth on a day that turns without sleep too, 2026-10-16: it ran only on waking) */
@@ -1600,7 +1602,7 @@ __COMBAT__
     }
     drawWindowGlow(c); drawMoths(c);
     drawEmbers(c); drawWolfEyes(c);
-    if (sleep) { var a = sleep.t < 1.4 ? Math.min(1, sleep.t / 1.2) : Math.max(0, 1 - (sleep.t - 1.4) / 1.2); c.fillStyle = 'rgba(8,6,10,' + a + ')'; c.fillRect(0, 0, 400, 250); }
+    if (sleep) { var a = sleep.t < 1.4 ? Math.min(1, sleep.t / 1.2) : sleep.t < 2.0 ? 1 : Math.max(0, 1 - (sleep.t - 2.0) / 1.4); a = a * a * (3 - 2 * a); c.fillStyle = 'rgba(8,6,10,' + a + ')'; c.fillRect(0, 0, 400, 250); }
   }
 
   /* ---------- crafting: recipes open when you have picked up every kind of thing they need ---------- */
@@ -1639,7 +1641,7 @@ __COMBAT__
     { id: 'trapPoison', cat: 'supply', out: { stack: ['trapPoison', 1] }, needs: { stone: 2, berries: 3, fiber: 1 }, at: 'trapper', key: 'trapper' },   /* (a clay pot of crushed troll-berries: Alistair, LD's thing.troll-berry-pot, handoff 12, Robin's yes of 2026-10-24) */
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
-    { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
+    { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, sinew: 1 }, at: 'hand', key: 'sinew' },   /* its string a boar's sinew (Robin, 2026-10-28) */
     { id: 'quiver', cat: 'armour', out: { item: ['quiver', 'leather'] }, needs: { leather: 1, fiber: 2 }, at: 'hand', key: 'leather' },   /* the quiver by hand from a hide and cord (mine, 2026-10-26): the arrows are carried in it, so the bow wants one */
     { id: 'woodArrows', cat: 'supply', out: { stack: ['arrow', 5] }, needs: { wood: 1, fiber: 1 }, at: 'hand', key: 'fiber' },   /* simple wooden arrows, five at a time (Robin, 2026-10-26: arrows made and used up; the numbers mine) */
     { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
@@ -1818,7 +1820,7 @@ __COMBAT__
       return { kind: 'zone', piece: pc, r: zr, px: a.x, py: a.y, drag: !!zoneDrag, ok: !farZ && postOk && !over && !small && canAfford(buildCost(pc.cost)), why: farZ ? 'Too far' : L ? 'Not up here' : !postOk ? 'Its post needs clear ground' : over ? 'Another ' + Zc.name.toLowerCase() + ' lies here' : small ? 'Drag it out at least ' + Zc.min + ' by ' + Zc.min : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.kind === 'item') {
-      var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(my / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
+      var ix = gridSnap && !pc.naust ? (Math.floor(mouseW.x / T) + 0.5) * T : Math.round(mouseW.x / 4) * 4, iy = gridSnap && !pc.naust ? (Math.floor(my / T) + 0.5) * T : Math.round(my / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
       if (!pc.flat) { var fit = fitItem(ix, iy, ft.hw, ft.hd, L); if (fit) { ix = fit.x; iy = fit.y; } else wallWhy = 'Too close to a wall'; }
       var clear = L ? upFloorAt(Math.floor(ix / T), Math.floor(iy / T)) : spotClear(ix, iy);
       var nearIt = null; for (i = 0; i < B.items.length; i++) { var oi = B.items[i]; if ((oi.lvl || 0) !== L || (pc.flat ? oi.name !== 'rug' : oi.name === 'rug')) continue; var gapI = pc.flat ? 24 : Math.max(6, (oi.r || 4) + (pc.r || 4) + 2); if (Math.hypot(oi.x - ix, oi.y - iy) < gapI) { clear = false; nearIt = oi; } }   /* a rug lies under furniture, so only rugs block rugs; furniture keeps the two things' own footprints apart, not a flat 24 units (the building review of 2026-10-24: a chair could not be drawn up to a table) */
@@ -1895,7 +1897,7 @@ __COMBAT__
     lastPlaced = id;
     if (t.kind === 'tile') { var old = BB.floors[Build.key(t.tx, t.ty)]; if (old != null) pay(costOfFloor(old), 1); pay(buildCost(t.piece.cost)); deed('built'); BB.floors[Build.key(t.tx, t.ty)] = t.piece.m; if (!L && !(Build.FLOORS[t.piece.m] || {}).water) weedTile(t.tx, t.ty); }   // a new floor over an old one gives the old one back; it clears the plants on its tile
     else if (t.kind === 'post') { pay(buildCost(t.piece.cost)); deed('built'); BB.posts[Build.key(t.cx, t.cy)] = { m: t.piece.m }; }
-    else { pay(buildCost(t.piece.cost)); deed('built'); BB[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; }
+    else { pay(buildCost(t.piece.cost)); deed('built'); BB[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; if (!lvl()) weedEdge(t.ed); }
     bDirty = true; sfx('build'); save();
   }
   function roomsOf(BB) {             // the closed rooms of a set of pieces. Only where there are pieces, and (2026-10-13) each cluster of them by itself: one stretch over everything was 164,000 tiles of sea and wood between the villages of two islands, searched again every time a wall changed (28 ms)
@@ -2063,9 +2065,9 @@ __COMBAT__
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
-  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
+  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, sinew: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'sinew', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
-  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', sinew: 'Sinew', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
@@ -2180,24 +2182,34 @@ __COMBAT__
   function linesOf(id, fb) { var e = LORE[id]; return e && e.lines && e.lines.length ? e.lines.map(function (x) { return x.replace(/^\([^)]*\)\s*/, ''); }) : fb; }
   if (!LORE['line.arnor.mending']) LORE['line.arnor.mending'] = { id: 'line.arnor.mending', mode: 'variants', speaker: 'person.arnor', lines: ['She will be ready by morning. Go and sleep.', 'Tar wants the night to set. Sleep, and she is yours at first light.'] };   /* LORE? placeholders: Arnor while he mends the boat, telling the player a night must pass (Robin, 2026-10-27: "Arnor says a line"); asked of Alistair, LD */
   if (!LORE['line.arnor.wait.meat']) LORE['line.arnor.wait.meat'] = { id: 'line.arnor.wait.meat', mode: 'variants', speaker: 'person.arnor', lines: ['A roof again. Now meat, if you can hunt. My table is in the yard.', 'Bring a boar to the table in the yard and we will both eat.'] };   /* LORE? placeholders until Alistair, LD's lines for Arnor waiting on the meat */
+  [['quest.shore', 'The shore', null, 'wreck.beach', 'The ship is in pieces on the skerries and the sea has gone quiet, as if it never meant it. Nobody else came ashore, not here. I should look around the shore. Smoke, a roof, anyone.', 'Up from the shore there was a steading, burnt, and one man left in it. Arnor, a smith.'],
+   ['quest.arnor.deer', 'A deer for Arnor', 'person.arnor', 'steading.yard', 'Arnor says boar\u2019s sinew makes a fair bowstring, and he wants a deer next. They won\u2019t wait for me to walk up to them. They come to the meadows at dusk, he says, and they hear you before you see them.', 'The deer is on Arnor\u2019s table. He said eat, then sleep, and that tomorrow he\u2019d see to the boat.'],
+   ['quest.sail-east', 'East', 'person.arnor', 'shore', 'Arnor\u2019s boat is mine. He pointed east, where the big island lies across the water. There\u2019s a village there, he says. People.', 'The boat came ashore on the big island. There\u2019s smoke over the trees, more than one fire.']].forEach(function (q) { if (!LOREBOOK[q[0]]) LOREBOOK[q[0]] = { kind: 'quest', title: q[1], giver: q[2] || undefined, place: q[3], book: q[4], book_more: q[5], book_more_after: 'done' }; });   /* LORE? Alistair, LD's proposed words of 2026-10-28, until Robin's yes */
+  if (!LORE['line.arnor.deer']) LORE['line.arnor.deer'] = { id: 'line.arnor.deer', mode: 'sequence', speaker: 'person.arnor', lines: ['Keep the sinew. Dried and twisted, it\u2019s a bowstring.', 'Bring me a deer. They don\u2019t wait for you to walk up.'] };   /* LORE? */
+  if (!LORE['line.arnor.supper']) LORE['line.arnor.supper'] = { id: 'line.arnor.supper', mode: 'variants', speaker: 'person.arnor', lines: ['Eat. Sleep. Tomorrow I\u2019ll see to the boat.'] };   /* LORE? */
+  if (!LORE['line.arnor.evening']) LORE['line.arnor.evening'] = { id: 'line.arnor.evening', mode: 'variants', speaker: 'person.arnor', lines: ['Sit, if you like. The fire doesn\u2019t mind company.', 'Smoke going straight up. Fair weather tomorrow.', 'Two winters I\u2019ve kept this fire. It\u2019s never been this warm.'] };   /* LORE? */
   function loreLines(id, fallback) { var e = LORE[id]; return e && e.lines && e.lines.length ? e.lines : (fallback || ['']); }
   /* Arnor, the village smith, the one Ormr Midgardbane left alive to tell it (the lore's person.arnor, Robin 2026-10-16; he was
      Arnor the dwarf until then). He tells the story once, names what your home still lacks, and when it is a home (Comfort 4)
      teaches you a boat (seen.raft, saved: the rowboat at a shipyard, docs/ships-rework.md). Every word he says is the canon's (line.arnor.*). */
-  function arnorState() { if (seen.raft) return 'taught'; if (!seen.met) return 'meet'; if (!(questDone('quest.arnor.house') && questDone('quest.arnor.meat'))) return 'wait'; var ab = arnorBoatItem(); return ab && ab.st !== 'ready' ? 'mending' : 'teach'; }   /* (mending: both done, his boat mended through the night you sleep; Robin, 2026-10-26: "you sleep a night, then the boat is fixed the morning after. And Arnor is by the boat.") */   // the story always comes first; his boat once the house is mended and the meat brought (Robin, 2026-10-26)
+  function arnorState() { if (seen.raft) return 'taught'; if (!seen.met) return 'meet'; if (!(questDone('quest.arnor.house') && questDone('quest.arnor.meat'))) return 'wait'; if (!seen.deerForArnor && boatWaits()) return 'deer'; var ab = arnorBoatItem(); return ab && ab.st !== 'ready' ? 'mending' : 'teach'; }   /* (mending: both done, his boat mended through the night you sleep; Robin, 2026-10-26: "you sleep a night, then the boat is fixed the morning after. And Arnor is by the boat.") */   // the story always comes first; his boat once the house is mended and the meat brought (Robin, 2026-10-26)
   /* Quests (Robin, 2026-10-26: "a basic quest system ... it shouldnt become a massive list of a checklist"; Alistair, LD's words, handoff 17): a quest is given and done by the game's own events (QUEST_WHEN, mine); its words are the lore's book and book_more, kept in the book's own half (the Quests tab); given or done, a quiet note and a red mark on the tab until it is read. */
   var QUEST_WHEN = {
     'quest.arnor.house': { give: function () { return !!seen.met; }, done: function () { return arnorHouseMended(); } },
-    'quest.arnor.meat': { give: function () { return questDone('quest.arnor.house') || (seen.met && day.n >= 2); }, done: function () { return !!seen.meatForArnor; } }
+    'quest.arnor.meat': { give: function () { return questDone('quest.arnor.house') || (seen.met && day.n >= 2); }, done: function () { return !!seen.meatForArnor; } },
+    'quest.shore': { give: function () { return !seen.met && !naming; }, done: function () { return !!seen.met; } },   /* the first, at the wreck: the book shows where to go (Robin, 2026-10-28) */
+    'quest.arnor.deer': { give: function () { return !!seen.meatForArnor && boatWaits(); }, done: function () { return !!seen.deerForArnor; } },   /* a deer with the bow, after the boar (Robin, 2026-10-28) */
+    'quest.sail-east': { give: function () { return !!seen.raft; }, done: function () { var P = hero(), bi = isleAt(P.x, P.y), q = w.isles[bi]; return !!(q && q.role === 'big' && w.isLand(P.x, P.y) && !(raft && raft.aboard)); } }
   };
+  function boatWaits() { var ab = arnorBoatItem(); return !seen.raft && (!ab || ab.st === 'broken'); }   /* (an older save whose boat was mended before the deer came in keeps it) */
   function questOf(id) { return (seen.quests || {})[id]; }
   function questDone(id) { var q = questOf(id); return !!(q && q.done); }
   function questTick() {
     if (npc && !seen.homeSaid && questDone('quest.arnor.house') && Math.hypot(hero().x - npc.x, hero().y - npc.y) < HEAR) { seen.homeSaid = 1; npc.say = loreLines('line.arnor.teach')[0]; npc.sayT = 6; }   /* "That's a home again" as the house is mended (Robin, 2026-10-27; it was said at the boat the next morning): the teach story then starts at its second line */
     if (SCENE || !village) return; seen.quests = seen.quests || {}; var ch = false;
     Object.keys(QUEST_WHEN).forEach(function (id) { var W2 = QUEST_WHEN[id], q = seen.quests[id];
-      if (!q && W2.give()) { seen.quests[id] = { given: day.n, fresh: 1 }; ch = true; note('A new line in your book'); }
-      else if (q && !q.done && W2.done()) { q.done = day.n; q.fresh = 1; ch = true; note('A line in your book is closed'); } });
+      if (!q && W2.give()) { if (W2.done()) { seen.quests[id] = { given: day.n, done: day.n }; return; } seen.quests[id] = { given: day.n, fresh: 1 }; ch = true; NEWQ.push({ kind: 'quest', id: id, t: 0 }); }
+      else if (q && !q.done && W2.done()) { q.done = day.n; q.fresh = 1; ch = true; NEWQ.push({ kind: 'quest', id: id, done: 1, t: 0 }); } });   /* the oak plaque, as for something new to make (Robin's pick of 2026-10-28: it was not obvious a quest was done, nor where to see it) */
     if (ch) save();
   }
   /* Arnor's house mended with the Building board (Robin, 2026-10-26: no free building in chapter 0; 2026-10-27, "I like A": with the board's own tools, not E): the gaps in its walls marked on the ground, the board's plank wall placed only in them (pieceKnown, buildTarget0); the roof comes by itself once it is closed (as every room's); mended once closed, roofed and with a fire burning by its door. */
@@ -2208,7 +2220,7 @@ __COMBAT__
     return out; }
   function gapMid(g) { return g.d === 'H' ? { x: (g.x + 0.5) * T, y: g.y * T } : { x: g.x * T, y: (g.y + 0.5) * T }; }
   function gapNear(P) { var q = questOf('quest.arnor.house'); if (!q || q.done) return null; var best = null, bd = 30; houseGaps().forEach(function (g) { var m = gapMid(g), d = Math.hypot(m.x - P.x, m.y - P.y); if (d < bd) { bd = d; best = g; } }); return best; }
-  function arnorHouseMended() { var h = arnorHouse(); if (!h || houseGaps().length) return false; var bd = B.items.filter(function (it) { return it.bed && Math.floor(it.x / T) >= h.x0 && Math.floor(it.x / T) < h.x0 + h.w && Math.floor(it.y / T) >= h.y0 && Math.floor(it.y / T) < h.y0 + h.h; })[0]; return !!bd && benchRoofed(bd) && fireNear(h.door.x, h.door.y, FIRE_YARD + 30); }
+  function arnorHouseMended() { var h = arnorHouse(); if (!h || houseGaps().length) return false; var bd = B.items.filter(function (it) { return it.bed && Math.floor(it.x / T) >= h.x0 && Math.floor(it.x / T) < h.x0 + h.w && Math.floor(it.y / T) >= h.y0 && Math.floor(it.y / T) < h.y0 + h.h; })[0]; return !!bd && benchRoofed(bd); }   /* (no fire by its door: the steading has its campfire, Robin, 2026-10-28) */
   function drawHouseGaps(c) {                // the gaps marked on the ground while the quest is open: a pale dashed line where a wall goes, a stake at each end
     var q = questOf('quest.arnor.house'); if (!q || q.done) return; var P = hero(), h = arnorHouse(); if (!h || Math.hypot(P.x - (h.x0 + 3) * T, P.y - (h.y0 + 3) * T) > 700) return;
     c.save(); c.lineCap = 'round'; houseGaps().forEach(function (g) { var x0 = g.x * T, y0 = g.y * TS, x1 = g.d === 'H' ? x0 + T : x0, y1 = g.d === 'H' ? y0 : y0 + TS, near = gapNear(P) === g;
@@ -2232,9 +2244,11 @@ __COMBAT__
     if (best) { var sp = raftSpot(best.x, best.y) || best, from = it || arnorShore() || best; raft = addShip({ x: sp.x, y: sp.y, h: launchHeading(from, sp), kind: 'rowboat', name: shipNameRoll('rowboat') }); raftFit(); save(); } }   /* her bow to the open water and a name from the lore's pool (the playtest of 2026-10-27: she lay with her bow on the sand, so W did nothing, and was called Rowboat) */
   function arnorLineId(st) {               // the lore entry a state speaks from (its mode says how: a sequence is a story told once, line by line; variants are remarks, one a talk)
     if (st === 'meet') return 'line.arnor.meet';
-    if (st === 'wait') { var hq = arnorHouse(); return 'line.arnor.wait.' + (questDone('quest.arnor.house') || !hq ? 'meat' : houseGaps().length ? 'no-walls' : !fireNear(hq.door.x, hq.door.y, FIRE_YARD + 30) ? 'no-hearth' : 'meat'); }   /* his wait follows his quests (2026-10-26: it still asked for your own home's bed, roof, fire, bench and rug from before chapter 0's rebuild, and said the rug line whatever lay on the floor): his house's walls, then a fire by its door, then his meat */
+    if (st === 'wait') { var hq = arnorHouse(); return 'line.arnor.wait.' + (questDone('quest.arnor.house') || !hq ? 'meat' : houseGaps().length ? 'no-walls' : 'meat'); }   /* his wait follows his quests (2026-10-26: it still asked for your own home's bed, roof, fire, bench and rug from before chapter 0's rebuild, and said the rug line whatever lay on the floor): his house's walls, then a fire by its door, then his meat */
     if (st === 'teach') return 'line.arnor.teach';
-    if (st === 'mending') return 'line.arnor.mending';
+    if (st === 'deer') return 'line.arnor.deer';
+    if (npc && npc.sitting && (st === 'mending' || st === 'taught' || st === 'deer' && npc.line >= loreLines('line.arnor.deer').length)) return 'line.arnor.evening';   /* by the fire of an evening (LORE?) */
+    if (st === 'mending') return 'line.arnor.supper';   /* (the supper line says the boat comes with the morning: Alistair, LD's question of 2026-10-28) */
     return 'line.arnor.taught';
   }
   function villageSite() {               // a flat stretch of grass 22 by 16 tiles (14 by 12 until 2026-10-13: its houses were huts), far from the camp (1500 to 2400 units since 2026-10-14, 900 to 1600 before: a wander first; nearer only if the island has no room), from the island seed
@@ -2295,8 +2309,8 @@ __COMBAT__
   function feastEat(it) { it.eaten = day.n; eat('feast', true); toast('Their feast is yours'); theftSeen(it); deed('feast'); }
   function spriteName(o) {               // a prop's picture by what it is: the graves are mounds (Thorgunna's a standing stone), a hacked stake a stump (the Art Director's steading and fence pieces, 2026-10-20)
     if (o.name === 'graveStone') return o.grave === 'thorgunna' ? 'graveThorgunna' : 'graveMound';
-    if (o.name === 'arnorBoat') return 'arnorBoat_' + (o.st === 'mending' ? 'mending' : 'broken');
-    if (o.name === 'strawBed' && sleep && sleep.bd === o && World.IMAGES.strawBed_sleeper) return 'strawBed_sleeper';   /* asleep in the straw bed: the blanket drawn up over him, Colin, AD's (2026-10-26), in place of the hero */
+    if (o.name === 'arnorBoat') return 'arnorBoat_' + (o.st === 'mending' || o.st === 'ready' ? o.st : 'broken');   /* (ready drew as broken: Robin, 2026-10-28, "he says he fixed it and it suddenly fixed") */
+    if (o.name === 'strawBed' && sleep && !sleep.up && sleep.bd === o && World.IMAGES.strawBed_sleeper) return 'strawBed_sleeper';   /* asleep in the straw bed: the blanket drawn up over him, Colin, AD's (2026-10-26), in place of the hero */
     if (o.name === 'stake' && o.cut) return 'stake_stump';
     if (o.name === 'stake' && o.mended) return 'stake_new';   /* (a mended run of the ring: pale new wood, the polygon rings, 2026-10-21) */
     return o.name;
@@ -2459,9 +2473,11 @@ __COMBAT__
       c.strokeStyle = 'rgba(232,192,96,0.7)'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(x + 3.5, y + 3.5, W - 7, H - 7, 20); c.stroke();
       c.fillStyle = '#2b1c13'; c.beginPath(); c.arc(cx, cy, 17, 0, 7); c.fill(); c.strokeStyle = '#d8b062'; c.lineWidth = 1.6; c.stroke();
       c.save(); c.beginPath(); c.arc(cx, cy, 16, 0, 7); c.clip();
-      if (q.kind === 'make') hUnits(c, cx, cy, function () { var e0 = q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }; infoIcon(c, e0, 0, 0, e0.dish ? 0.7 : e0.r.out.item ? 0.66 : 0.75); });   /* its longest side about 90% of the ring, clipped to the socket (Colin, AD, 2026-10-26; measured: the icons fill 93 to 98% of their pictures, so no crop is needed) */
+      if (q.kind === 'quest') { var qp = himg(q.done ? 'book/quest_seal' : 'book/quest_thread'); if (qp) { var qs = 28 / Math.max(qp.width, qp.height); c.drawImage(qp, cx - qp.width * qs / 2, cy - qp.height * qs / 2, qp.width * qs, qp.height * qs); } }
+      else if (q.kind === 'make') hUnits(c, cx, cy, function () { var e0 = q.first.out ? { id: q.first.id, r: q.first } : { id: q.first.id, dish: q.first }; infoIcon(c, e0, 0, 0, e0.dish ? 0.7 : e0.r.out.item ? 0.66 : 0.75); });   /* its longest side about 90% of the ring, clipped to the socket (Colin, AD, 2026-10-26; measured: the icons fill 93 to 98% of their pictures, so no crop is needed) */
       else { var pic = q.first.prop ? himg('pieces/' + q.first.prop) : null; if (pic) c.drawImage(pic, cx - 17, cy - 17, 34, 34); else if (!pieceThumb(c, q.first.prop, cx, cy, 32)) hUnits(c, cx, cy, function () { if (q.first.icon) q.first.icon(c); else Build.icon(c, q.first.id, q.first.m); }); }
       c.restore();
+      if (q.kind === 'quest') { var qt = ((LOREBOOK[q.id] || {}).title || 'A quest') + '  (O)'; hText(c, q.done ? 'DONE' : 'NEW IN YOUR BOOK', x + 50, y + 19, hf('bold', 10), '#e8c060'); c.font = hf('', 16); while (qt.length > 8 && c.measureText(qt).width > W - 64) qt = qt.slice(0, -2); hText(c, qt, x + 50, y + 36, hf('', 16), '#f2e6c8'); c.restore(); return; }
       var nm = q.kind === 'make' ? (q.first.out ? recipeName(q.first) : q.first.name || q.first.id) : q.first.name, line = nm.charAt(0).toUpperCase() + nm.slice(1) + (q.n > 1 ? ' and ' + (q.n - 1) + ' more' : '') + (q.kind === 'build' ? '  (B)' : '');
       hText(c, q.kind === 'make' ? 'NEW TO MAKE' : 'NEW TO BUILD', x + 50, y + 19, hf('bold', 10), '#e8c060'); c.font = hf('', 16); while (line.length > 8 && c.measureText(line).width > W - 64) line = line.slice(0, -2); hText(c, line, x + 50, y + 36, hf('', 16), '#f2e6c8');
       c.restore(); }); });
@@ -2553,7 +2569,7 @@ __COMBAT__
   var MINI_SOFT = null;
   function miniSoft(sx, sy, sw, sh) {       // the chart's window enlarged with a light blur, so no square pixels show (the chart is about four times enlarged in the round): a small canvas, made again each frame
     var n = 132; if (!MINI_SOFT) { MINI_SOFT = document.createElement('canvas'); MINI_SOFT.width = MINI_SOFT.height = n; }
-    var g = MINI_SOFT.getContext('2d'), b = 6; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.filter = 'blur(2.2px)'; var mxs = sw * b / n, mys = sh * b / n, step0 = Math.max(1, Math.ceil(GW / CHART_PX)), wm = wmap(), mw0 = wm && !BT.on ? wm.miniWindow((sx - mxs) * step0, (sy - mys) * step0, (sw + 2 * mxs) * step0, (sh + 2 * mys) * step0, mapOpen) : null;   /* the world map's painted tiles when they are ready (Colin, AD's restyle, 2026-10-25: the vellum, the sea's wash, the greens, the fog, lifted for the small size), the old chart until then */
+    var g = MINI_SOFT.getContext('2d'), b = 6; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.filter = 'none'; var mxs = sw * b / n, mys = sh * b / n, step0 = Math.max(1, Math.ceil(GW / CHART_PX)), wm = wmap(), mw0 = wm && !BT.on ? wm.miniWindow((sx - mxs) * step0, (sy - mys) * step0, (sw + 2 * mxs) * step0, (sh + 2 * mys) * step0, mapOpen) : null;   /* the world map's painted tiles when they are ready (Colin, AD's restyle, 2026-10-25: the vellum, the sea's wash, the greens, the fog, lifted for the small size), the old chart until then */
     if (mw0) { g.fillStyle = '#e7d39d'; g.fillRect(0, 0, n, n); g.drawImage(mw0, 0, 0, mw0.width, mw0.height, -b, -b, n + 2 * b, n + 2 * b); } else g.drawImage(mini, sx - mxs, sy - mys, sw + 2 * mxs, sh + 2 * mys, -b, -b, n + 2 * b, n + 2 * b); g.filter = 'none'; return MINI_SOFT;   /* (a margin round it, the same in the chart and in the canvas, so the blur has no dark edge and the marks still fall true) */
   }
   function hudBarsA(c, P, mst) {
@@ -3580,6 +3596,11 @@ __COMBAT__
     for (k in loot || {}) { var kind = k === 'coin' ? 'silver' : k; if (!ok[kind] || n >= 12) continue; var left = loot[k]; while (left > 0 && n < 12) { var take = Math.min(25, left); slots[n++] = { kind: kind, n: take }; left -= take; } }
     return slots;
   }
+  var FLOORD = new Map();
+  function floorDetail(kind, tx, ty) {     /* a floor tile with Colin, AD's details (Build.detail.floor), twelve made once a tile picture and kept (2026-10-28, Robin: big houses melt into one plain surface) */
+    var im = w.tile(kind, tx, ty); if (kind !== 'plank' && kind !== 'dirt') return im; var v = Math.floor(World.hash(tx, ty, 31) * 12), list = FLOORD.get(im); if (!list) FLOORD.set(im, list = []); if (list[v]) return list[v];
+    var cv = document.createElement('canvas'), sc = 3; cv.width = Math.ceil(T * sc); cv.height = Math.ceil(TS * sc); var g = cv.getContext('2d'); g.drawImage(im, 0, 0, cv.width, cv.height); g.setTransform(sc, 0, 0, sc, 0, 0); Build.detail.floor(g, kind, 0, 0, T, TS, v * 97 + 13); return (list[v] = cv);
+  }
   function layRoad(pts, r, clear) {      // a wandering earth road through world points (Catmull-Rom), laid with the ground brush; clears trees and bushes from its line
     var R = kit.rng(Math.round(pts[0][0] * 3 + pts[0][1])), samples = [], i, k, ph0 = R() * 6.28, sAlong = 0;
     function P(i) { return pts[Math.max(0, Math.min(pts.length - 1, i))]; }
@@ -3645,7 +3666,8 @@ __COMBAT__
   }
   function runSegs(fn) { (B.runs || []).forEach(function (run, ri) { for (var i = 0; i + 1 < run.pts.length; i++) fn(run.pts[i], run.pts[i + 1], run, ri, i); }); }
   function runPillars(P) { var out = []; runSegs(function (a, b, run, ri, si) { if (runGateAt(run, si) && run.gates[si].open) return; if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
-  function runSnap(x, y) { var best = null, bd = RUN.snap; (B.runs || []).forEach(function (run) { run.pts.forEach(function (q) { var d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = q; } }); }); return best ? { x: best[0], y: best[1], snapped: true } : { x: Math.round(x), y: Math.round(y), snapped: false }; }
+  var gridSnap = false; try { gridSnap = localStorage.getItem('game.gridSnap') === '1'; } catch (eG) {}
+  function runSnap(x, y) { if (gridSnap) { var gq = null, gd = RUN.snap; (B.runs || []).forEach(function (run) { run.pts.forEach(function (q) { var d = Math.hypot(q[0] - x, q[1] - y); if (d < gd) { gd = d; gq = q; } }); }); if (gq) return { x: gq[0], y: gq[1], snapped: true }; return { x: Math.round(x / T) * T, y: Math.round(y / T) * T, snapped: true }; } var best = null, bd = RUN.snap; (B.runs || []).forEach(function (run) { run.pts.forEach(function (q) { var d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = q; } }); }); return best ? { x: best[0], y: best[1], snapped: true } : { x: Math.round(x), y: Math.round(y), snapped: false }; }
   function runSegAt(x, y) { var best = null, bd = 10; runSegs(function (a, b, run, ri, i) { var dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1, u = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / L2)), d = Math.hypot(a[0] + dx * u - x, a[1] + dy * u - y); if (d < bd) { bd = d; best = { run: run, ri: ri, i: i, a: a, b: b }; } }); return best; }
   function runStretchClear(a, b) { var L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 6)), ok = true, k; for (k = 0; k <= n && ok; k++) { var x = a.x + (b.x - a.x) * k / n, y = a.y + (b.y - a.y) * k / n, tx = Math.floor(x / T), ty = Math.floor(y / T); if (!isLand(x, y) || B.floors[Build.key(tx, ty)]) ok = false; else around(x, y, function (o) { if (o.r && runProps.indexOf(o) < 0 && Math.hypot(o.x - x, o.y - y) < o.r * (o.s || 1) + 3) ok = false; }); } return ok; }
   function drawRail(c, r) {
@@ -3689,6 +3711,11 @@ __COMBAT__
         if (kit.PROPS.dryingRack) w.addProp({ name: 'dryingRack', x: (rt[0] + 0.5) * T - J.dir[1] * 16, y: (rt[1] + 0.5) * T + J.dir[0] * 16 + 2, s: 1, r: 6, v: 0 });
         var fr = V2.roadEnds ? V2.roadEnds.front : vCentre(v), root = [(rt[0] + 0.5) * T, (rt[1] + 0.5) * T], mid = [(fr[0] + root[0]) / 2 + (root[1] - fr[1]) * 0.18, (fr[1] + root[1]) / 2 - (root[0] - fr[0]) * 0.18];
         if (Math.hypot(fr[0] - root[0], fr[1] - root[1]) > 40) layRoad([fr, mid, root], 7, true);
+      }
+      else if (V2.roadEnds && V2.roadEnds.front) {                               // no jetty: a track from the front gate down to the nearest shore, so the way in shows from the beach and on the chart (Robin, 2026-10-28: "hard to find an entrance")
+        var f0 = V2.roadEnds.front, best = null, a2, r2; for (a2 = 0; a2 < 6.283; a2 += 0.1) for (r2 = 120; r2 < 3000; r2 += 30) { var sx = f0[0] + Math.cos(a2) * r2, sy = f0[1] + Math.sin(a2) * r2; if (villageAt(sx, sy) >= 0 && villageAt(sx, sy) !== villages.indexOf(v)) break; if (!isLand(sx, sy)) { if (!best || r2 < best.r) best = { a: a2, r: r2 }; break; } }
+        if (best && best.r > 200) { var rr2 = best.r - 60, end = [f0[0] + Math.cos(best.a) * rr2, f0[1] + Math.sin(best.a) * rr2], wob = (kit.rng(Math.round(f0[0] + f0[1]))() - 0.5) * 0.35, m3 = [f0[0] + Math.cos(best.a + wob) * rr2 * 0.5, f0[1] + Math.sin(best.a + wob) * rr2 * 0.5]; v.trail = end;
+          if (layRoad([f0, m3, end], 7, true) && kit.PROPS.trailStone) w.addProp({ name: 'trailStone', x: end[0] + 10, y: end[1] + 4, s: 1, r: 4, v: 0 }); }
       }
     });
     // a road between two villages on the same island, now and then (Robin: uncommon)
@@ -3946,7 +3973,7 @@ __COMBAT__
     if (WMAP || typeof WorldMap === 'undefined' || !w || !w.isles || BT.on) return WMAP;
     WMAP = WorldMap.create({ chart: function () { return w.chart(GW); }, TW: GW, TH: GH,
       isles: w.isles.map(function (q) { return { x: q.x, y: q.y, r: q.r, water: q.water }; }), waters: w.waters || [],
-      villages: villages.map(function (v) { var e = v.roadEnds || {}; return { tx: v.tx, ty: v.ty, w: v.w, h: v.h, arch: v.arch, name: v.name, ends: [e.front, e.back].filter(Boolean).map(function (p) { return [p[0] / T, p[1] / T]; }), jetty: v.jetty }; }),
+      villages: villages.map(function (v) { var e = v.roadEnds || {}; return { tx: v.tx, ty: v.ty, w: v.w, h: v.h, arch: v.arch, name: v.name, ends: [e.front, e.back].filter(Boolean).map(function (p) { return [p[0] / T, p[1] / T]; }), jetty: v.jetty, trail: v.trail ? [v.trail[0] / T, v.trail[1] / T] : null }; }),
       caves: caves.filter(function (cv) { return cv.kind === 'troll' || cv.kind === 'crypt'; }).map(function (cv) { return { kind: cv.kind, x: cv.mouth.x / T, y: cv.mouth.y / T }; }),
       home: { x: home.x / T, y: home.y / T }, steading: village ? { x: village.tx + village.w / 2, y: village.ty + village.h / 2 } : null,
       shelters: w.mt ? w.mt.shelters.map(function (sh) { return [sh.x / T, sh.y / T]; }) : [],
@@ -4070,6 +4097,7 @@ __COMBAT__
     if (d <= sp) { npc.x = q.x; npc.y = q.y; npc.route.shift(); } else { npc.x += dx / d * sp; npc.y += dy / d * sp; npc.face = Math.atan2(dy, dx); }
     npc.moving = true; npc.ph += dt * 7; npc.job = null; return true;
   }
+  function arnorFire() { var best = null, bd = 420; B.items.forEach(function (it) { if (!/^(campfire|stoneHearth|firePit|hearth)$/.test(it.name) || it.cold) return; var d = Math.hypot(it.x - npc.hub.x, it.y - npc.hub.y); if (d < bd) { bd = d; best = it; } }); return best; }
   function arnorHome() { var to = npc.work[Math.floor(Math.random() * npc.work.length)]; npc.x = to.x; npc.y = to.y; npc.at = to; npc.route = null; npc.goal = null; npc.shore = false; npc.job = { kind: to.job, t: 0 }; npc.workT = 6; }
   function arnorWork(dt, P, d) {
     npc.moving = false;
@@ -4080,7 +4108,13 @@ __COMBAT__
       if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = Math.max(2.4, Math.min(6, 1.6 + Lg[npc.seq.i].length * 0.055)); }   /* (each line as long as it takes to read: handoff 14 cut them to one grave a line, 2026-10-25) */ else { seen.graves = 1; npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
       return;
     }
-    if (npc.shore) { npc.job = null; if (d > 1600) arnorHome(); else if (d < 300) npc.face = Math.atan2(P.y - npc.y, P.x - npc.x); return; }
+    if (npc.shore) { npc.sitting = false; npc.job = null; if (d > 1600) arnorHome(); else if (d < 300) npc.face = Math.atan2(P.y - npc.y, P.x - npc.x); return; }
+    var fr = day.t >= DUSK_AT && day.t < 1620 && !npc.joined ? arnorFire() : null;   /* of an evening he sits by the steading's fire (Robin, 2026-10-28) */
+    if (!fr && npc.sitting) { npc.sitting = false; npc.at = null; }
+    if (fr) { var fs = npc.fireSpot && npc.fireSpot.f === fr ? npc.fireSpot : null; if (!fs) { var hx = npc.hub.x - fr.x, hy = npc.hub.y - fr.y, hl = Math.hypot(hx, hy) || 1; fs = npc.fireSpot = { x: fr.x + hx / hl * 34, y: fr.y + hy / hl * 24, job: 'fire', f: fr }; }
+      if (Math.hypot(npc.x - fs.x, npc.y - fs.y) < 2) { npc.route = null; npc.goal = null; npc.job = null; npc.at = fs; npc.sitting = true; npc.face = Math.atan2(fr.y - npc.y, fr.x - npc.x); return; }
+      if (npc.goal !== fs) { npc.route = arnorRoute(fs); npc.goal = fs; npc.job = null; }
+      if (!arnorStep(dt)) { npc.x = fs.x; npc.y = fs.y; } return; }
     if (d < 160 || npc.sayT > 0) { npc.job = null; return; }   // he watches you (the turn is done in npcTick)
     if (npc.route && npc.route.length) { arnorStep(dt); if (!npc.route.length && npc.goal) { npc.at = npc.goal; npc.goal = null; npc.job = { kind: npc.at.job, t: 0 }; npc.workT = 8 + Math.random() * 8; npc.face = npc.at.job === 'scavenge' ? Math.PI / 2 : Math.atan2(npc.hub.y - npc.y, npc.hub.x - npc.x) + Math.PI; } return; }
     if (npc.job) { npc.job.t += dt; if ((npc.workT -= dt) <= 0) { npc.job = null; arnorNext(); } return; }
@@ -4152,7 +4186,7 @@ __COMBAT__
   function talkOpen(who, fn) {              // a Talk: the line is said, in the window when he has a portrait
     fn(); var id = speakerId(who); if (id) lbMeet(id);
     if (!SHOW_TALK || !id || !PORTRAITS[id] || !who.say || who.sayT <= 0) return;
-    talkWin = { who: who, id: id, line: who.say, more: fn, hp: hero().hp }; portraitImg(id);
+    talkWin = { who: who, id: id, line: who.say, more: fn, hp: hero().hp }; portraitImg(id); signs = signs.filter(function (q) { return q.name !== who.name; });
   }
   function talkMore(w) { return w.who === npc ? arnorMore() : w.who.aslak ? aslakMore() : false; }
   function talkNext() { var w = talkWin; if (!w) return; if (talkMore(w)) { w.more(); w.line = w.who.say; } else talkClose(); }
@@ -4328,7 +4362,7 @@ __COMBAT__
   function drawSpeech(c) {
     var P = hero(), best = null, bd = 1e9, i;
     signs = signs.filter(function (q) { q.sayT = q.until - clock; return q.sayT > 0 && Math.hypot(q.x - P.x, q.y - P.y) <= HEAR; }); signs.forEach(function (q) { speakers.push(q); });   /* (read and walked off: gone) */
-    if (!speakers.length) return;
+    if (!speakers.length || talkWin) { speakers.length = 0; return; }   /* (the window open, nothing behind it: Robin, 2026-10-28, an old line showed behind) */
     for (i = 0; i < speakers.length; i++) { var q = speakers[i], d = Math.hypot(q.x - P.x, q.y - P.y); if (talkWin && q === talkWin.who) continue; if (d < bd) { bd = d; best = q; } }
     speakers.length = 0; if (!best || bd > HEAR) return;   /* (was 260: a line hung on the board long after you had walked off; Robin 2026-10-22) */
     var text = best.say || '', a = Math.min(1, best.sayT / 0.35) * Math.min(1, (best.sayDur || 5) - best.sayT + 0.35 > 0 ? 1 : 1);
@@ -4641,7 +4675,7 @@ __COMBAT__
     if (talkWin) return { say: null, act: talkNext };   /* (the talk window: E gives the next line) */
     var rUse = raftUsable(), cargo = cargoHome() && rUse && !raft.aboard, build = P.mode === 'build';
 
-    if (carrying && carrying.beast && butcherable(carrying.beast)) { var bt0 = butcherNear(P); if (bt0 && !bt0.laid && !bt0.cuts) return { say: 'Butcher the ' + (BEAST_WORD[carrying.beast.kind] || 'beast'), act: function () { butcherIt(bt0); } }; }   /* the butcher's table (Robin, 2026-10-26) */
+    if (carrying && carrying.beast && butcherable(carrying.beast)) { var bt0 = butcherNear(P); if (bt0 && !bt0.laid && !bt0.cuts) return { say: 'Lay the ' + (BEAST_WORD[carrying.beast.kind] || 'beast') + ' on the table', act: function () { butcherIt(bt0); } }; }   /* the butcher's table (Robin, 2026-10-26) */
     if (!carrying && !BUTCH) { var bt1 = butcherNear(P); if (bt1 && bt1.cuts) return { say: 'Take the meat and the hide', act: function () { butcherTake(bt1); } }; if (bt1 && bt1.laid) return { say: 'Butcher the ' + (BEAST_WORD[bt1.laid.kind] || 'beast'), act: function () { butcherStart(bt1); } }; }
     var rgE = !carrying && !build ? runGateNear(P) : null; if (rgE) return { say: rgE.run.gates[rgE.i].open ? 'Shut the gate' : 'Open the gate', act: function () { runGateToggle(rgE); } };   /* a free fence's gate */
     if (carrying && carrying.beast) { var alt0 = altarNear(P); if (alt0 && !alt0.laid) return { say: 'Lay it on the altar', act: function () { layOnAltar(alt0); } }; return { say: 'Set it down', act: setDownBeast }; }   /* a beast out cold on your shoulders (the cudgel) */
@@ -4702,7 +4736,7 @@ __COMBAT__
     if (wp) add(wp, HD.jobs[jobOf(wp)].name + ': ' + fo.name, function () { if (!hirdAssign(P) && wp === st && !st.fallen) muster(); }, -6);   // a follower and a place to work: the work comes before the muster
     var hm = hirdNear(P); if (hm) add(hm, hm.sayT > 0 ? null : hm.follow ? 'Stay' : (hm === npc && !seen.raft ? 'Talk' : 'Follow me'), function () { if (hm === npc && !seen.raft) talkOpen(npc, talk); else hirdTalk(hm); });   /* (while he mends the boat he tells you to sleep, 2026-10-27) */
     if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock)) add(npc, npc.sayT > 0 && !arnorMore() ? null : 'Talk', function () { talkOpen(npc, talk); });   /* (a story with lines left keeps its Talk while he speaks: Robin, 2026-10-22) */   /* (quiet after a remark: talking above) */
-    var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { talkOpen(fk, function () { folkTalk(fk); }); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
+    var fk = folkNear(P); if (fk && fk.bound) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { talkOpen(fk, function () { folkTalk(fk); }); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
     var bb = seasonGives('berries') && berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });   /* (not in a season that gives none: SEASON_GIVES) */
@@ -4898,7 +4932,7 @@ __COMBAT__
     menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* bottom right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
     var rowH = 10; menu.ly = menu.y + 18; menu.lw = 150 / 3; menu.lx = menu.x + 6;
     var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
-    var only = (menuFrom === 'E' || menuFrom === 'bench') && /^(hearth|bench|furnace|trapper)$/.test(opener) ? opener : null; menu.only = only; menu.title = only === 'hearth' ? 'Cooking' : only === 'furnace' ? 'Smelting' : only === 'trapper' ? 'Traps' : 'Crafting';   /* E at a station shows that station's work alone (Robin, 2026-10-28: "When you open the cook menu you get the normal crafting menu. It should only be cooking there"); Tab shows everything */
+    var only = (menuFrom === 'E' || menuFrom === 'bench') && /^(hearth|furnace|trapper)$/.test(opener) ? opener : null;   /* (the workbench shows the hand's things with its own: Robin, 2026-10-28, it showed only arrows) */ menu.only = only; menu.title = only === 'hearth' ? 'Cooking' : only === 'furnace' ? 'Smelting' : only === 'trapper' ? 'Traps' : 'Crafting';   /* E at a station shows that station's work alone (Robin, 2026-10-28: "When you open the cook menu you get the normal crafting menu. It should only be cooking there"); Tab shows everything */
     if (only) menu.list = [];
     var hand = menu.list, here = craftGroupsHere().filter(function (g) { return !only || g.at === only; }), show = [], cats = CATS2.filter(function (ct) { return hand.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); hand.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
@@ -4921,7 +4955,7 @@ __COMBAT__
     else drawDropIcon(c, e.r.out.stack ? e.r.out.stack[0] : (e.r.out.raft ? 'raft' : 'arrow'), 0, 0, 1.3);
     c.restore();
   }
-  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone and flint. Knapped it takes an edge; stacked it holds a fire.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
+  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone and flint. Knapped it takes an edge; stacked it holds a fire.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', sinew: 'From along a boar\u2019s back. Dried and twisted, it makes a bowstring.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
   function infoText(e) {                    // the tale: a dish's line, a thing's own description
     if (e.dish) return e.dish.text + '.';
     if (e.r.out.item) return Items.make(e.r.out.item[0], e.r.out.item[1]).desc;
@@ -5955,7 +5989,7 @@ __COMBAT__
     var W2 = Combat.dbg().W, P = hero(); if (!W2.stuck || !W2.stuck.length) return;
     for (var i = W2.stuck.length - 1; i >= 0; i--) { var st = W2.stuck[i]; if (st.on || st.drop || st.surf === 'stone' || st.reflected || st.t < 0.6) continue; if (Math.hypot(st.x - P.x, st.y - P.y) > 16) continue; if (quiverAdd('arrow', 1) > 0) continue; W2.stuck.splice(i, 1); sfx('pick'); save(); }
   }
-  var hdSleep = Combat.api.heroSprite; if (hdSleep) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (sleep && sleep.bd && sleep.bd.name === 'strawBed' && World.IMAGES.strawBed_sleeper) return; hdSleep(c, x, y, face, an, dashing); };   /* (he is the shape under the blanket while he sleeps in the straw bed) */
+  var hdSleep = Combat.api.heroSprite; if (hdSleep) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (sleep && !sleep.up && sleep.bd && sleep.bd.name === 'strawBed' && World.IMAGES.strawBed_sleeper) return; hdSleep(c, x, y, face, an, dashing); };   /* (he is the shape under the blanket while he sleeps in the straw bed) */
   Combat.api.drawFireArrow = function (c, pr) {   /* in flight: the loop at 12 fps, pointing along +x, turned to the flight angle as drawProj turns the drawn one */
     if (!World.IMAGES.fireArrow_0) return false; var sp = sprite('fireArrow_' + (Math.floor(clock * 12) % 6)); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
@@ -6131,7 +6165,9 @@ __COMBAT__
   function questWhere(id) {                /* where a quest points, in tiles, and the word by the pencil ring */
     if (!village) return null; var vx = village.tx, vy = village.ty;
     if (id === 'quest.arnor.house') return { x: vx + 17, y: vy + 12, word: 'his house, the plank house by the well' };
-    if (id === 'quest.arnor.meat') { var tb = B.items.filter(function (it) { return it.name === 'butcherTable'; })[0]; return tb ? { x: tb.x / T, y: tb.y / T, word: 'the butcher’s table, in the yard by the woodpile' } : null; }
+    if (id === 'quest.shore') return { x: home.x / T, y: home.y / T, word: 'the wreck on the shore' };
+    if (id === 'quest.sail-east') { var bq = w.isles.filter(function (q) { return q.role === 'big'; })[0]; return bq ? { x: bq.x, y: bq.y, word: 'the big island, east across the water' } : null; }
+    if (id === 'quest.arnor.meat' || id === 'quest.arnor.deer') { var tb = B.items.filter(function (it) { return it.name === 'butcherTable'; })[0]; return tb ? { x: tb.x / T, y: tb.y / T, word: 'the butcher’s table, in the yard by the woodpile' } : null; }
     return null;
   }
   var QMAP = {};
@@ -6221,7 +6257,8 @@ __COMBAT__
   var BEAST_WORD = { boar: 'boar', deer: 'deer', wolf: 'wolf', snake: 'adder', bear: 'bear', moose: 'moose', hen: 'hen', goat: 'goat', sheep: 'sheep', cow: 'cow' };
   function beastWord(e) { return BEAST_WORD[e.stock || e.kind] || 'beast'; }
   /* Butchering (Robin, 2026-10-26: "Killing a big animal out in the field gives nothing until butchered"; the first table at Arnor's, no fire needed): a big animal's body lies BODY_LIE s to be carried to a butcher's table, and gives there much more than a kill gave (mine: a kill gave a boar 1 meat and 1 leather, a deer 1 and 2). Adders as they were (Robin). A young boar gives half. */
-  var BUTCHER = { boar: { meat: 3, leather: 2 }, deer: { meat: 3, leather: 3 }, wolf: { meat: 2, leather: 2 }, moose: { meat: 6, leather: 4, antler: 1 }, bear: { meat: 6, leather: 4 } }, BODY_LIE = 300;
+  var BUTCHER = { boar: { meat: 3, leather: 2, sinew: 2 }, deer: { meat: 3, leather: 2, antler: 1 },   /* the boar gives the bow's sinew, the deer an antler (Robin, 2026-10-28: "boar and deer need to drop different things"; the numbers mine) */
+    wolf: { meat: 2, leather: 2 }, moose: { meat: 6, leather: 4, antler: 1 }, bear: { meat: 6, leather: 4 } }, BODY_LIE = 300;
   function butcherable(e) { return !!(e && BUTCHER[e.kind] && !e.tame && !e.human); }
   function bodyLie(e) { return butcherable(e) ? BODY_LIE : DEAD_LIE; }
   function butcherNear(P) { var best = null, bd = 46; B.items.forEach(function (it) { if (it.name !== 'butcherTable') return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd) { bd = d; best = it; } }); return best; }
@@ -6230,13 +6267,14 @@ __COMBAT__
   function butcherLay(tb) { var im = World.IMAGES.butcherTable; return im && im.lay ? { x: (im.lay.x - im.ax) * im.upp, y: (im.lay.y - im.ay) * im.upp / K } : { x: 0, y: -6 }; }
   function butcherStand(tb) { var im = World.IMAGES.butcherTable, st = im && im.work && im.work.stand; return { x: tb.x + (st ? st.x : 0), y: tb.y + (st ? st.y : -10.1) / K }; }
   function butcherIt(tb) { if (!carrying || !carrying.beast || !tb || tb.laid || tb.cuts) return; var e = carrying.beast; if (!BUTCHER[e.kind]) return; e.dead = true; e.hidden = true; e.away = true; e.deadT = 1e9; carrying = null;
-    tb.laid = { kind: e.kind, r: e.r, sizeK: e.sizeK || 1, face: Math.PI, seed: e.seed || 0 }; butcherStart(tb); }
+    tb.laid = { kind: e.kind, r: e.r, sizeK: e.sizeK || 1, face: Math.PI, seed: e.seed || 0 }; sfx('altar_lay'); save(); }   /* laid first, butchered with a second E (Robin, 2026-10-28) */
   function butcherStart(tb) { var P = hero(), sp = butcherStand(tb); BUTCH = { it: tb, t: 0, swing: 0 }; P.x = sp.x; P.y = sp.y; P.vx = P.vy = 0; P.face = Math.PI / 2; P.faceVis = P.face; sfx('altar_lay'); }
   function butcherTick(dt) {
     if (!BUTCH) return; var C = BUTCH, P = hero(); if (P.dead || P.hurtT > 0) { BUTCH = null; return; }   /* (a blow breaks the work off; E at the table takes it up again) */
     C.t += dt; P.face = Math.PI / 2; if ((C.swing -= dt) <= 0) { C.swing = BUTCH_SWING; if (sprHero) Sprites.play(sprHero, 'mine', null, BUTCH_SWING); if (C.t > 0.3) sfx('hit'); }
     if (C.t < BUTCH_T) return; var tb = C.it, L = tb.laid, g = L && BUTCHER[L.kind]; BUTCH = null; if (!g) { tb.laid = null; return; }
-    var k2 = (L.sizeK || 1) < 0.95 ? 0.5 : 1, forArnor = !!(questOf('quest.arnor.meat') && !questDone('quest.arnor.meat') && !seen.meatForArnor); if (forArnor) seen.meatForArnor = 1;   /* the meat Arnor asked for: the first beast butchered at the table once he has asked; he keeps one piece */
+    var k2 = (L.sizeK || 1) < 0.95 ? 0.5 : 1, forArnor = !!(questOf('quest.arnor.meat') && !questDone('quest.arnor.meat') && !seen.meatForArnor), forDeer = !forArnor && L.kind === 'deer' && !!(questOf('quest.arnor.deer') && !seen.deerForArnor); if (forArnor) seen.meatForArnor = 1;
+    if (forDeer) { seen.deerForArnor = 1; forArnor = true; day.haste = DUSK_HASTE; day.supper = 1; if (npc) { npc.say = loreLines('line.arnor.supper')[0]; npc.sayT = 5; } }   /* the deer brought: the day runs down to night, to sleep, and the boat in the morning (Robin, 2026-10-28) */   /* the meat Arnor asked for: the first beast butchered at the table once he has asked; he keeps one piece */
     var cuts = {}; for (var k in g) { var n = Math.max(1, Math.round(g[k] * k2)) - (forArnor && k === 'meat' ? 1 : 0); if (n > 0) cuts[k] = n; }
     tb.laid = null; tb.cuts = cuts; tb.blood = 1; seen.butchered = (seen.butchered || 0) + 1; sfx('chop'); save();
   }
@@ -7059,14 +7097,16 @@ __COMBAT__
     if (any) { bDirty = true; navStale = true; }
   }
   // the pictures kept: a wall that has given (its stumps and its rubble are many strokes) and what a fallen roof left on a tile are drawn once
-  function edgeSprite(L, x, y, e, k, side) {
-    var more = L === 'V' && !!B.V[Build.key(x, y + 1)], id = L + k, sig = (e.burnt ? 'b' : '') + e.t + e.m + ':' + (BCFG.lean || 0) + (side || 0) + (more ? 'm' : ''), sp = edgeCache[id]; if (sp && sp.sig === sig) return sp;
-    var h = Math.max(BCFG.wallH, 36) + 6, x0 = L === 'H' ? x * T - 14 : x * T - 26, y0 = y * TS - h - 4, w2 = L === 'H' ? T + 28 : 52, h2 = L === 'H' ? h + 24 : h + TS + 16, cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
-    var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -x0 * 2, -y0 * 2); c2.lineCap = 'round'; c2.lineJoin = 'round';
-    if (L === 'H') Build.drawH(c2, x, y, e, false, false, BCFG); else Build.drawV(c2, x, y, e, false, more ? B.V[Build.key(x, y + 1)] : false, BCFG, side);
+  var edgeN = 0;
+  function edgeSprite(L, x, y, e, k, side, low, open, fx) {
+    var more = L === 'V' && !!B.V[Build.key(x, y + 1)], mv = more ? B.V[Build.key(x, y + 1)] : false, id = L + k, sc = (Combat.api.pixelScale || 2) * cam.z > 2.3 ? 3 : 2, sig = JSON.stringify(e) + ':' + (BCFG.lean || 0) + (side || 0) + (more ? 'm' + mv.t : '') + (low ? 'l' : '') + (open ? 'o' : '') + (fx ? fx.x0 + '-' + fx.x1 : '') + 's' + sc, sp = edgeCache[id]; if (sp && sp.sig === sig) return sp;
+    if (!sp && ++edgeN > 900) { edgeCache = {}; edgeN = 1; }   /* (a bound on the pictures kept as you walk from place to place) */
+    var h = Math.max(BCFG.wallH, 36) + 6, x0 = L === 'H' ? x * T - 14 : x * T - 26, y0 = y * TS - h - 4, w2 = L === 'H' ? T + 28 : 52, h2 = L === 'H' ? h + 24 : h + TS + 16, cv = sp && sp.cv.width === w2 * sc ? sp.cv : document.createElement('canvas'); cv.width = w2 * sc; cv.height = h2 * sc;
+    var c2 = cv.getContext('2d'); c2.setTransform(sc, 0, 0, sc, -x0 * sc, -y0 * sc); c2.lineCap = 'round'; c2.lineJoin = 'round';
+    if (L === 'H') Build.drawH(c2, x, y, e, !!low, !!open, BCFG, fx); else Build.drawV(c2, x, y, e, !!open, mv, BCFG, side);
     return (edgeCache[id] = { cv: cv, x: x0, y: y0, w: w2, h: h2, sig: sig });
   }
-  function drawEdgeKept(c, L, x, y, e, k, side) { var sp = edgeSprite(L, x, y, e, k, side); c.drawImage(sp.cv, sp.x, sp.y, sp.w, sp.h); }
+  function drawEdgeKept(c, L, x, y, e, k, side, low, open, fx) { var sp = edgeSprite(L, x, y, e, k, side, low, open, fx); c.drawImage(sp.cv, sp.x, sp.y, sp.w, sp.h); }   /* every wall a picture drawn once and kept until it changes (2026-10-28: the walls' planks, logs and wattle were some 5000 strokes a frame in a village, Robin's 40 fps) */
   function behindRoof(r, P) { var bb = r.bb || (r.bb = roofBox(r)); return P.x > bb.x0 * T - 12 && P.x < (bb.x1 + 1) * T + 12 && P.y < bb.y0 * T + 2 && P.y > bb.y0 * T - 58; }   // right behind a house, where its roof stands before you: it thins so that you see yourself and its back wall
   function vSide(x, y) { return roomInfo && roomInfo.at(x - 1, y) >= 0 && roomInfo.at(x, y) < 0 ? 1 : -1; }   // which way a north-south wall's outer face looks: east when it is the east wall of a room, else west
   function drawDebrisAll(c, hw, hh) {
@@ -7303,7 +7343,7 @@ __COMBAT__
       // floors you have laid
       for (var fk in B.floors) { var fp = fk.split(','), fx = fp[0] * T, fy = fp[1] * TS; if (fx + T < cam.x - hw || fx > cam.x + hw || fy + TS < cam.y - hh || fy > cam.y + hh) continue; var fm = Build.FLOORS[B.floors[fk]] || Build.FLOORS[0];
         if (fm.path) { drawPath(c, +fp[0], +fp[1], fm); continue; }
-        c.drawImage(w.tile(fm.tile, +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4);
+        c.drawImage(floorDetail(fm.tile, +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4);
         if (fm.water) { var dtx = +fp[0], dty = +fp[1]; c.fillStyle = '#5a3f2a'; if (!dockAt(dtx, dty + 1) && code(dtx, dty + 1) === 0) { c.fillRect(fx, fy + TS - 2.5, T, 3); c.fillRect(fx + 2, fy + TS - 1, 3.5, 6); c.fillRect(fx + T - 5.5, fy + TS - 1, 3.5, 6); } if (!dockAt(dtx - 1, dty) && code(dtx - 1, dty) === 0) c.fillRect(fx - 1, fy, 2.5, TS); if (!dockAt(dtx + 1, dty) && code(dtx + 1, dty) === 0) c.fillRect(fx + T - 1.5, fy, 2.5, TS); c.strokeStyle = 'rgba(20,14,26,0.4)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(fx, fy + TS / 2); c.lineTo(fx + T, fy + TS / 2); c.stroke(); }
         else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
       if (B.ruin) drawDebrisAll(c, hw, hh);     // what a fallen or a burnt roof left on the floor
@@ -7360,7 +7400,7 @@ __COMBAT__
       Object.keys(B.H).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
-        items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG, SOUTHF[kk]); if (fa < 1) ctx.restore(); } });
+        items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else if (e.hidden) {} else drawEdgeKept(ctx, 'H', x, y, e, kk, 0, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, SOUTHF[kk]); if (fa < 1) ctx.restore(); } });
       });
       pushRailsTowers(items, hw, hh);   /* the fences' rails and the churches' towers (the village look plan, 2026-10-22) */
       if (World.IMAGES.townGate_whole) villages.forEach(function (v) {   /* a walled town's front gate wears the studio's face by its state (the Art Director's settle pieces, 2026-10-22, Robin's yes): broken, barred (locked), open (as the gate opens: somebody near and it not locked) or whole */
@@ -7372,7 +7412,7 @@ __COMBAT__
       Object.keys(B.V).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var under = underMe(x - 1, y) || underMe(x, y);
-        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { var sd = BCFG.lean ? vSide(x, y) : -1, fa = fadeOf(x * T, (y + 0.5) * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'V', x, y, e, kk, sd); else Build.drawV(ctx, x, y, e, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken, B.V[Build.key(x, y + 1)] || false, BCFG, sd); if (fa < 1) ctx.restore(); } });
+        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { var sd = BCFG.lean ? vSide(x, y) : -1, fa = fadeOf(x * T, (y + 0.5) * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'V', x, y, e, kk, sd); else if (e.hidden) {} else drawEdgeKept(ctx, 'V', x, y, e, kk, sd, false, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken); if (fa < 1) ctx.restore(); } });
       });
       Object.keys(B.posts).forEach(function (kk) {       // the frame: posts, and beams between neighbouring posts with no wall between
         var q = kk.split(','), x = +q[0], y = +q[1], p = B.posts[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
@@ -7387,6 +7427,7 @@ __COMBAT__
       B.items.forEach(function (it) {
         var cm = it.box ? 440 : 40;   /* (a naust's picture reaches some 300 units past its middle: it popped out of sight as you sailed off, Robin 2026-10-23) */
         if (it.lvl || Math.abs(it.x - cam.x) > hw + cm || Math.abs(it.y * K - cam.y) > hh + cm + 20) return;
+        if (it.zoneId && hero().mode !== 'build') return;   /* a place's post is seen only while building (Robin, 2026-10-28: it should be invisible) */
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
         var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : facing(spriteName(it), it.rot).n, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w * (isRuneAltar(it) ? ALTAR_SCALE : 1)); if (isRuneAltar(it)) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.scale(ALTAR_SCALE, ALTAR_SCALE); drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); } else if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, facing(spriteName(it), it.rot).flip);   /* (the altar at ALTAR_SCALE: Robin, 2026-10-23) */ if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
@@ -7570,6 +7611,7 @@ __COMBAT__
     else if (kind === 'fishSoup') { c.fillStyle = '#6b4a30'; c.beginPath(); c.ellipse(0, 1.5, 5.5, 3, 0, 0, 7); c.fill(); c.lineWidth = 1.1; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#d8a060'; c.beginPath(); c.ellipse(0, 0.2, 4.4, 2, 0, 0, 7); c.fill(); c.fillStyle = '#b8c4cc'; c.beginPath(); c.ellipse(-1, 0, 2, 0.8, -0.3, 0, 7); c.fill(); }
     else if (kind === 'meat') { c.beginPath(); c.ellipse(0, 0, 4.6, 3.2, -0.4, 0, 7); c.fillStyle = '#d9636a'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#f6c9b6'; c.beginPath(); c.ellipse(-1.2, -0.6, 1.6, 1, -0.4, 0, 7); c.fill(); }
     else if (kind === 'arrow') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(4, -2); c.stroke(); c.strokeStyle = '#b98a5a'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(6, -3); c.lineTo(3.2, -1.2); c.lineTo(4.3, -3.4); c.closePath(); c.fill(); c.strokeStyle = '#eef3fb'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(-6, 0.5); c.moveTo(-5, 2.5); c.lineTo(-4, 4.5); c.stroke(); }
+    else if (kind === 'sinew') { c.strokeStyle = '#d9c7a0'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-5, 4); c.bezierCurveTo(-2, -6, 2, 6, 5, -4); c.stroke(); c.strokeStyle = '#8a6a48'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(-4.5, 3); c.bezierCurveTo(-1.5, -5, 1.5, 5, 4.5, -3); c.stroke(); }
     else if (kind === 'antler') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.8; c.beginPath(); c.moveTo(-1, 5); c.lineTo(-1, -2); c.lineTo(-5, -5); c.moveTo(-1, -1); c.lineTo(3, -5); c.moveTo(-1, 2); c.lineTo(4, 0); c.stroke(); c.strokeStyle = '#d9c9a6'; c.lineWidth = 1.4; c.stroke(); }
     else if (kind === 'hide') { c.beginPath(); c.moveTo(-5, -3); c.quadraticCurveTo(-2, -6, 0, -4); c.quadraticCurveTo(2, -6, 5, -3); c.quadraticCurveTo(6, 0, 4.5, 4); c.quadraticCurveTo(0, 5.5, -4.5, 4); c.quadraticCurveTo(-6, 0, -5, -3); c.closePath(); c.fillStyle = '#9a6a44'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = 'rgba(60,35,20,0.5)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(-3, -1); c.lineTo(3, 1); c.moveTo(-2, 2); c.lineTo(2, -1); c.stroke(); }
     else if (kind === 'leather') { c.beginPath(); c.moveTo(-5, -3); c.lineTo(4, -4); c.lineTo(5.5, 2); c.lineTo(-3, 4); c.closePath(); c.fillStyle = '#b07a48'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = 'rgba(255,225,170,0.6)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-3.5, -1.8); c.lineTo(3.2, -2.6); c.stroke(); c.setLineDash([1.2, 1.2]); c.strokeStyle = 'rgba(60,35,20,0.7)'; c.beginPath(); c.moveTo(-3, 2.4); c.lineTo(4, 1.2); c.stroke(); c.setLineDash([]); }
@@ -7631,6 +7673,7 @@ __COMBAT__
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
     if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { var ew = eWhat(hero()); if (ew && ew.act) ew.act(); } return; }   // (what E does: eWhat)
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
+    if (e.code === 'KeyX' && hero().mode === 'build') { e.preventDefault(); if (!e.repeat) { gridSnap = !gridSnap; try { localStorage.setItem('game.gridSnap', gridSnap ? '1' : ''); } catch (eS) {} note(gridSnap ? 'Snap to the grid: on' : 'Snap to the grid: off'); } return; }   /* X while building: things set on the tiles' middles, fence posts on their corners (Robin, 2026-10-28) */
     if (e.code === 'KeyX') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) drawToggle(); return; }   // draw your weapon, or put it away
     if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !altarOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here

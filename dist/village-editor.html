@@ -4348,6 +4348,62 @@ var CFG = { wallH: 40, thick: 5, overhang: 10, roof: 1, seeThrough: 0.12, gable:
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
 var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor above (or the roof) sits, in screen units
+/* the walls' and floors' small details, Colin, AD's out/walldetail (2026-10-28), as delivered (assets/walldetail): */
+  /* build_detail.js: variety on big houses' walls and floors (Colin, AD, 2026-10-28; Robin's playtest: big houses melt into one plain surface).
+     Two calls the build code makes after it has painted a surface, each drawing small, sparse details picked by a hash of the place, so no two
+     walls or floors read alike and nothing repeats across a long wall:
+       BuildDetail.face(c, m, x, y, w, h, seed, vertical)   after Build's face(), inside its clip: m.tex 'planks' | 'logs' | 'wattle'
+       BuildDetail.floor(c, tile, x, y, w, h, seed)          after a floor tile is painted: tile 'plank' | 'dirt'
+     Planks: a weathered darker board, a knot, a batten nailed across a mend, a split. Logs: a darker log, a knot, a check along the grain,
+     moss on the lowest course. Wattle: a patch of daub (the mud plaster over the weave), a broken withy. Plank floors: a knot, a darker
+     board, a mended board, nail heads. Earth floors: pebbles, strewn straw, a damp patch, a trodden pale patch. All in the house's own ink. */
+  var BuildDetail = (function () {
+  'use strict';
+  function hs(a, b) { var h = (a * 374761393 + b * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
+  var INK = 'rgba(35,26,22,0.75)', FAINT = 'rgba(35,26,22,0.35)', LIT = 'rgba(255,240,210,0.28)';
+  function line(c, pts, col, lw) { c.strokeStyle = col; c.lineWidth = lw; c.lineCap = 'round'; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.stroke(); }
+  function knot(c, x, y, r) { c.fillStyle = 'rgba(60,40,26,0.55)'; c.beginPath(); c.ellipse(x, y, r * 1.4, r, 0, 0, 7); c.fill(); c.strokeStyle = INK; c.lineWidth = 0.45; c.stroke(); c.fillStyle = 'rgba(30,20,14,0.7)'; c.beginPath(); c.ellipse(x, y, r * 0.55, r * 0.4, 0, 0, 7); c.fill(); }
+  function nail(c, x, y) { c.fillStyle = 'rgba(40,36,34,0.9)'; c.beginPath(); c.arc(x, y, 0.45, 0, 7); c.fill(); }
+  function face(c, m, x, y, w, h, seed, vertical) {
+    var i, s;
+    if (m.tex === 'planks') {
+      var pw = 6.4, np = Math.ceil(w / pw);
+      for (i = 0; i < np; i++) { var px = x + i * pw; s = hs(seed + 101, i);
+        if (s < 0.18) { c.fillStyle = 'rgba(40,26,14,0.2)'; c.fillRect(px + 0.4, y, pw - 0.8, h); }                                           // a weathered darker board
+        else if (s < 0.3) knot(c, px + pw / 2, y + h * (0.25 + 0.5 * hs(seed + 7, i)), 0.9);                                                // a knot
+        else if (s < 0.38 && !vertical && i < np - 1) { var by = y + h * (0.3 + 0.4 * hs(seed + 9, i)); c.fillStyle = '#9c7e5c'; c.fillRect(px + 1, by, pw * 1.6, 2.2); c.strokeStyle = INK; c.lineWidth = 0.4; c.strokeRect(px + 1, by, pw * 1.6, 2.2); c.fillStyle = LIT; c.fillRect(px + 1.2, by + 0.2, pw * 1.6 - 0.4, 0.5); nail(c, px + 2.2, by + 1.1); nail(c, px + pw * 1.6, by + 1.1); }   // a batten nailed across a mend
+        else if (s < 0.46) { var sy = y + h * hs(seed + 11, i) * 0.4; line(c, [[px + pw * 0.4, sy], [px + pw * 0.45, sy + h * 0.35], [px + pw * 0.38, sy + h * 0.5]], FAINT, 0.5); } }   // a split
+    } else if (m.tex === 'logs') {
+      var lh = 5.4, n = Math.ceil(h / lh);
+      for (i = 0; i < n; i++) { var ly = y + h - (i + 1) * lh; s = hs(seed + 201, i);
+        if (s < 0.16) { c.fillStyle = 'rgba(30,20,12,0.18)'; c.fillRect(x, ly + 0.4, w, lh - 0.8); }                                           // a darker log
+        else if (s < 0.3) knot(c, x + w * (0.2 + 0.6 * hs(seed + 5, i)), ly + lh / 2, 0.85);                                                // a knot
+        else if (s < 0.4) { var cx = x + w * hs(seed + 13, i) * 0.5; line(c, [[cx, ly + lh * 0.45], [cx + w * 0.35, ly + lh * 0.5]], FAINT, 0.45); }   // a check along the grain
+        if (i === 0 && hs(seed + 17, 0) < 0.45) { c.fillStyle = 'rgba(104,132,66,0.85)'; for (var k = 0; k < 4; k++) { c.beginPath(); c.ellipse(x + w * hs(seed + 19, k), ly + lh * 0.45, 1.8 + hs(seed + 21, k), 1.1, 0, 0, 7); c.fill(); } } }   // moss on the lowest course
+    } else if (m.tex === 'wattle') {
+      s = hs(seed + 301, 0);
+      if (s < 0.4) { var dx = x + w * (0.15 + 0.5 * hs(seed + 23, 1)), dy = y + h * (0.25 + 0.45 * hs(seed + 25, 1)), rx = 4 + 4 * hs(seed + 27, 1), ry = 3 + 4 * hs(seed + 29, 1);   // daub over the weave
+        c.fillStyle = '#ab9374'; c.beginPath(); for (var t = 0; t <= 14; t++) { var a = t / 14 * 6.283, r = 1 + 0.18 * Math.sin(a * 3 + seed); c.lineTo(dx + Math.cos(a) * rx * r, dy + Math.sin(a) * ry * r); } c.closePath(); c.fill(); c.strokeStyle = 'rgba(70,56,40,0.55)'; c.lineWidth = 0.45; c.stroke();
+        c.fillStyle = 'rgba(255,240,215,0.25)'; c.beginPath(); c.ellipse(dx - rx * 0.25, dy - ry * 0.3, rx * 0.45, ry * 0.25, 0, 0, 7); c.fill(); }
+      else if (s < 0.52) { var gx = x + w * hs(seed + 31, 2), gy = y + h * (0.3 + 0.3 * hs(seed + 33, 2)); c.fillStyle = 'rgba(28,20,14,0.6)'; c.fillRect(gx, gy, 3.5, 2.2); line(c, [[gx - 0.5, gy - 0.4], [gx + 2, gy - 1.6]], INK, 0.6); }   // a broken withy and the gap behind it
+    }
+  }
+  function floor(c, tile, x, y, w, h, seed) {
+    var s = hs(seed + 401, 0), i;
+    if (tile === 'plank') {
+      if (s < 0.14) knot(c, x + w * (0.2 + 0.6 * hs(seed, 1)), y + h * (0.2 + 0.6 * hs(seed, 2)), 0.9);
+      else if (s < 0.26) { var bh = h / 4, by = y + Math.floor(hs(seed, 3) * 4) * bh; c.fillStyle = 'rgba(40,26,14,0.26)'; c.fillRect(x, by + 0.3, w, bh - 0.6); }   // a darker board
+      else if (s < 0.34) { var mh = h / 4, my = y + Math.floor(hs(seed, 4) * 4) * mh, mx = x + w * hs(seed, 5) * 0.5; c.fillStyle = 'rgba(214,180,130,0.35)'; c.fillRect(mx, my + 0.3, w * 0.45, mh - 0.6); line(c, [[mx, my + 0.3], [mx, my + mh - 0.3]], INK, 0.45); nail(c, mx + 1.2, my + mh / 2); }   // a mended board
+      else if (s < 0.5) for (i = 0; i < 4; i++) nail(c, x + w * (0.1 + 0.8 * hs(seed, 6 + i)), y + (Math.floor(hs(seed, 10 + i) * 4) + 0.5) * h / 4);   // nail heads
+    } else if (tile === 'dirt') {
+      if (s < 0.22) for (i = 0; i < 4; i++) { var px = x + w * hs(seed, 20 + i), py = y + h * hs(seed, 30 + i), pr = 0.8 + 0.7 * hs(seed, 40 + i); c.fillStyle = '#8c8478'; c.beginPath(); c.ellipse(px, py, pr * 1.3, pr, 0, 0, 7); c.fill(); c.fillStyle = 'rgba(255,250,236,0.35)'; c.beginPath(); c.ellipse(px - pr * 0.3, py - pr * 0.3, pr * 0.5, pr * 0.3, 0, 0, 7); c.fill(); }   // pebbles
+      else if (s < 0.4) for (i = 0; i < 6; i++) { var sx = x + w * hs(seed, 50 + i), sy = y + h * hs(seed, 60 + i), a = hs(seed, 70 + i) * 3.1; line(c, [[sx, sy], [sx + Math.cos(a) * 3, sy + Math.sin(a) * 1.6]], 'rgba(214,186,110,0.8)', 0.6); }   // strewn straw
+      else if (s < 0.52) { c.fillStyle = 'rgba(50,34,20,0.07)'; for (i = 0; i < 4; i++) { c.beginPath(); c.ellipse(x + w * (0.3 + 0.4 * hs(seed, 81 + i)), y + h * (0.35 + 0.3 * hs(seed, 85 + i)), w * (0.12 + 0.1 * hs(seed, 89 + i)), h * (0.1 + 0.08 * hs(seed, 93 + i)), 0, 0, 7); c.fill(); } }   // a damp patch
+      else if (s < 0.62) { c.fillStyle = 'rgba(255,240,210,0.12)'; c.beginPath(); c.ellipse(x + w * 0.5, y + h * 0.55, w * 0.4, h * 0.28, 0, 0, 7); c.fill(); }   // trodden pale
+    }
+  }
+  return { face: face, floor: floor, hs: hs };
+  })();
 var FENCE_H = 12, PALISADE_H = 30, TOWNWALL_H = 34;
 function key(x, y) { return x + ',' + y; }
 function cfg(c) { var o = {}, k; for (k in CFG) o[k] = CFG[k]; for (k in c || {}) if (c[k] != null) o[k] = c[k]; return o; }
@@ -4759,7 +4815,7 @@ function drawH(c, x, y, e, low, open, C, fx) {   // fx: the room's south face th
   }
   if (e.t === 'door') { ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); return; }
   var d = ink(c, rect(x0, yb - h, T, h), m.face, { wob: 0.7, seed: seed, noLine: true, flat: true });
-  face(c, m, x0, yb - h, T, h, seed);
+  face(c, m, x0, yb - h, T, h, seed); BuildDetail.face(c, m, x0, yb - h, T, h, seed, false);
   cap(c, m, x0, yb - h - cp, T, cp, seed, true);
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
@@ -4798,7 +4854,7 @@ function drawV(c, x, y, e, open, more, C, side) {
     if (!more) { if (lean) endFace({ tex: m.tex, face: m.dark, top: m.top, dark: m.dark }, 1); else ink(c, rect(xl, yt + TS, th, h), m.dark, { wob: 0.4, seed: seed + 3, lw: 0.7, heavy: 1.3 }); }
     return;
   }
-  if (!more) { if (lean) endFace(m, 1); else { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); } }
+  if (!more) { if (lean) endFace(m, 1); else { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); BuildDetail.face(c, m, xl, yt + TS, th, h, seed + 1, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); } }
   cap(c, m, xl, yt, th, TS, seed, false);
   if (e.t === 'window') { ink(c, rect(xl + 0.8, yt + 6, th - 1.6, TS - 12), '#241a14', { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
   if (e.st && !lean) { var gi; for (gi = 0; gi < (e.st >= 2 ? 3 : 1); gi++) ink(c, rect(xl + 0.4, yt + 4 + hs(seed + 61, gi) * (TS - 9), th - 0.8, 1.6 + hs(seed + 63, gi) * 1.8), m.burnt ? '#0e0b0a' : (FRESH[m.tex] || '#3a3028'), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }   // notches hacked into its top (with a lean the marks are on its face)
@@ -4953,9 +5009,20 @@ function drawRoof(c, room, a, C, dy) {
   var kind = C.roof, ov = C.overhang + 1.5 + (kind === 1 ? 2 : 0), up = C.wallH + C.thick * K + 1, wm = WALLS[C.wallM] || WALLS[1];   /* (thatch stands proud of the wall: 2026-10-22) */
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
-  roofRects(room.tiles).forEach(function (rc) {
+  var RR = roofRects(room.tiles);
+  if (RR.length > 1) {                      // a room of more than one block (an L, a T): the biggest is the main roof, every block hipped (no gables), each wing run in under the main roof to its ridge and drawn first, so it tucks under (Robin, 2026-10-28: "One hipped roof over the whole")
+    var mi = 0; RR.forEach(function (q, i) { if ((q.x1 - q.x0 + 1) * (q.y1 - q.y0 + 1) > (RR[mi].x1 - RR[mi].x0 + 1) * (RR[mi].y1 - RR[mi].y0 + 1)) mi = i; });
+    var M = RR[mi], my = Math.floor((M.y0 + M.y1) / 2), mx = Math.floor((M.x0 + M.x1) / 2);
+    RR = RR.map(function (q, i) { var o = { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1, hip: true }; if (i === mi) return o;
+      var ox = o.x1 >= M.x0 && o.x0 <= M.x1, oy = o.y1 >= M.y0 && o.y0 <= M.y1;
+      if (ox && o.y0 === M.y1 + 1) o.y0 = Math.max(M.y0, my); else if (ox && o.y1 === M.y0 - 1) o.y1 = Math.min(M.y1, my + 1);
+      else if (oy && o.x0 === M.x1 + 1) o.x0 = Math.max(M.x0, mx); else if (oy && o.x1 === M.x0 - 1) o.x1 = Math.min(M.x1, mx + 1);
+      return o; });
+    var main = RR.splice(mi, 1)[0]; RR.push(main);
+  }
+  RR.forEach(function (rc) {
     var top = rc.y0 * TS - up - ov * K, bot = (rc.y1 + 1) * TS - up + ov * K, left = rc.x0 * T - ov, right = (rc.x1 + 1) * T + ov, D = bot - top, Wd = right - left;
-    var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
+    var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = !rc.hip && (C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT));   // the ridge along the long side: a gable facing south when the room is deep
     var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
     // the shadow the eaves cast on the walls below, and down the right side
     var EV = DEPTH.eave, sh0 = bot + (kind === 1 ? EV.thatch : EV.other), sg = c.createLinearGradient(0, sh0, 0, sh0 + EV.h); sg.addColorStop(0, 'rgba(22,28,50,' + EV.a + ')'); sg.addColorStop(1, 'rgba(22,28,50,0)'); c.fillStyle = sg; c.fillRect(left + ov, sh0, Wd - 2 * ov, EV.h);   /* (3) the eave's shadow on the wall, over the wall only (the depth board, 2026-10-22) */   /* (deeper and longer under thatch) */
@@ -5091,7 +5158,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { detail: BuildDetail, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 
@@ -5619,7 +5686,7 @@ function make(seed, site, opts) {
     });
     return best;
   }
-  function placeUnit(U, c) { U.x = c.x; U.y = c.y; U.front = c.front; U.index = V.units.length; var L = U.kind === 'plot' ? plotUnit(U) : ringUnit(U); if (!L) return null; var u = stamp(L, U); if (U.fence) unitFence(u, U.fence, U.fence === 'drystone' ? 3 : 2); if (U.lych) prop({ name: 'lychGate', x: u.gapC[0], y: u.gapC[1] }); else if (U.fence && !u.plot && (U.fence === 'rail' || U.fence === 'fence')) prop({ name: R() < 0.7 ? 'farmGate_shut' : 'farmGate_open', x: u.gapC[0], y: u.gapC[1], solid: 0, face: true, gate: u.index }); if (u.plot && U.fence && R() < 0.35) { var bc = u.front === 's' ? [u.x, u.y + u.h] : u.front === 'n' ? [u.x, u.y] : u.front === 'e' ? [u.x + u.w, u.y] : [u.x, u.y]; prop({ name: 'boundaryStone_' + (1 + Math.floor(R() * 3)), x: bc[0] * T + 6, y: bc[1] * T + 6, solid: 2 }); } hugRects.push({ x: u.x, y: u.y, w: u.w, h: u.h }); return u; }   /* (the farm gate over the fence's gap and a boundary stone at a plot's corner: the Art Director's pieces, Robin's yes of 2026-10-22; skipped until they exist) */
+  function placeUnit(U, c) { U.x = c.x; U.y = c.y; U.front = c.front; U.index = V.units.length; var L = U.kind === 'plot' ? plotUnit(U) : ringUnit(U); if (!L) return null; var u = stamp(L, U); if (U.fence) unitFence(u, U.fence, U.fence === 'drystone' ? 3 : 2); if (U.lych) prop({ name: 'lychGate', x: u.gapC[0], y: u.gapC[1] }); else if (U.fence && !u.plot && (U.fence === 'rail' || U.fence === 'fence')) R();   /* (no loose gate in a farm's gap: it stood out of line with the drawn run, Robin 2026-10-28; the draw kept so the stream stays) */ if (u.plot && U.fence && R() < 0.35) { var bc = u.front === 's' ? [u.x, u.y + u.h] : u.front === 'n' ? [u.x, u.y] : u.front === 'e' ? [u.x + u.w, u.y] : [u.x, u.y]; prop({ name: 'boundaryStone_' + (1 + Math.floor(R() * 3)), x: bc[0] * T + 6, y: bc[1] * T + 6, solid: 2 }); } hugRects.push({ x: u.x, y: u.y, w: u.w, h: u.h }); return u; }   /* (the farm gate over the fence's gap and a boundary stone at a plot's corner: the Art Director's pieces, Robin's yes of 2026-10-22; skipped until they exist) */
   function extendStreet() {                           // the street grows at the end with the most room (the village grew, so the street grew)
     var pl = V.spine.filter(function (q) { return q.cls === 'main' && q.pts.length >= 2 && Math.abs(q.pts[q.pts.length - 1][0] - q.pts[0][0]) > Math.abs(q.pts[q.pts.length - 1][1] - q.pts[0][1]); })[0]; if (!pl) return false;
     var first = pl.pts[0], last = pl.pts[pl.pts.length - 1], roomE = tx + w - 3 - Math.max(first[0], last[0]), roomW = Math.min(first[0], last[0]) - (tx + 3);

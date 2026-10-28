@@ -143,7 +143,7 @@ Object.keys(PROFILES).forEach(function (k) { PROFILES[k].wu = k === 'greataxe' |
 function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
-var BOW = { full: 1.5, dmgMin: 0.4, speedMin: 0.8 }; api.bowSpec = BOW;
+var BOW = { full: 1.5, dmgMin: 0.22, speedMin: 0.7 };   /* (the snap shot lower, Robin, 2026-10-28: spamming paid better than the draw; 0.4 and 0.8 before) */ api.bowSpec = BOW;
 var SNEAK = { speed: 0.5, hear: 0.5 }; api.sneakSpec = SNEAK;   /* sneaking (Robin, 2026-10-24: "when we introduce sneaking (on ctrl i think) we probably put standard on 50%", then, asked, "Sneak toggles on C"): C turns it on and off, a sneak at speed of the walk, seen and heard from hear of the distance; a sprint, a dash or a fall ends it; Ctrl targets as before; the Cat's Hush changes both numbers */
 var TRAP = { range: 230, r: 14, fly: 0.5, life: 120, max: 1, st: 8, cd: 1.2 }; api.trapSpec = TRAP;   /* the Trapper's traps (Robin's trial of 2026-10-24): thrown up to range, sprung by a foe within r, in the air fly seconds, gone unsprung after life, st stamina a throw and cd between throws (mine); one out at a time, a new throw losing the old (Robin, asked the same day); each from the bag where the page keeps them (api.trapHave, api.trapUse: made at the trapper's bench), free where it keeps none (the arena) */
 var TRAP_KINDS = [{ id: 'tripper', name: 'Tripper' }, { id: 'poison', name: 'Poison' }];
@@ -897,7 +897,7 @@ function updatePlayer(dt) {
     if (p.mode === 'fight' && !api.barSlots) { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
     else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
   }
-  var dqBusy = a.ph === 'windup' || a.ph === 'active' || p.guard || (IN.keys.KeyK && !bow); if (p.digitQ && !dqBusy) { IN.pressed['Digit' + p.digitQ] = true; p.digitQ = 0; } else if (p.digitQ) for (i = 1; i <= 6; i++) IN.pressed['Digit' + i] = false;
+  var dqBusy = a.ph === 'windup' || a.ph === 'active';   /* (not the guard: a number pressed with the shield up waited for K to be let go, and the bow seemed not to come out, Robin 2026-10-28) */ if (p.digitQ && !dqBusy) { IN.pressed['Digit' + p.digitQ] = true; p.digitQ = 0; } else if (p.digitQ) for (i = 1; i <= 6; i++) IN.pressed['Digit' + i] = false;
   for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (api.barSelect && (p.mode === 'fight' || p.mode === 'gather')) { api.barSelect(i - 1); continue; } if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
   if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
   if (IN.pressed.KeyC && !p.dead) p.sneak = !p.sneak;   /* C: the sneak on and off (Robin, 2026-10-24) */
