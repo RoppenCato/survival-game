@@ -452,19 +452,23 @@ function make(seed, site, opts) {
       var nxt = cs[(k + 1) % 4], len = Math.hypot(nxt[0] - c[0], nxt[1] - c[1]), extra = len > 22 * T ? 2 : len > 10 * T ? 1 : 0, inward = k === 0 ? [0, 1] : k === 1 ? [-1, 0] : k === 2 ? [0, -1] : [1, 0];
       for (e = 1; e <= extra; e++) { var u = (e + (R() - 0.5) * 0.3) / (extra + 1), mx = c[0] + (nxt[0] - c[0]) * u, my = c[1] + (nxt[1] - c[1]) * u, d = jit(-4, 20); pts.push({ p: [mx + inward[0] * d, my + inward[1] * d], side: sides[k] }); }
     }
-    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null, gates: [] }, run = 0, i = 0, j, gIn = null;
-    function gapClip(p, ux, uy, L) { var g2, best = null; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2], x0 = Math.min(g[0], g[2]) - 10, x1 = Math.max(g[0], g[2]) + 10, y0 = Math.min(g[1], g[3]) - 10, y1 = Math.max(g[1], g[3]) + 10, t0 = 0, t1 = L, ok = true;   // where a stretch enters and leaves a gap's box (the gate's posts)
-        [[ux, p[0], x0, x1], [uy, p[1], y0, y1]].forEach(function (q) { if (!ok) return; if (Math.abs(q[0]) < 1e-6) { if (q[1] < q[2] || q[1] > q[3]) ok = false; return; } var ta = (q[2] - q[1]) / q[0], tb = (q[3] - q[1]) / q[0]; t0 = Math.max(t0, Math.min(ta, tb)); t1 = Math.min(t1, Math.max(ta, tb)); });
-        if (ok && t1 - t0 > 2) best = [t0, t1]; } return best; }
+    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null, gates: [] }, run = 0, i = 0, j, mine = [];
     function inGap(px, py) { var g2; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2]; if (px > g[0] - 10 && px < g[2] + 10 && py > g[1] - 10 && py < g[3] + 10) return true; } return false; }
     for (j = 0; j < pts.length; j++) {
       var a = pts[j], b = pts[(j + 1) % pts.length]; if (openSide && a.side === openSide) { run++; continue; }
-      var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false, clip = uIndex == null || V.ruin ? null : gapClip(a.p, ux, uy, len2);
-      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6, gp = inGap(px, py);
-        if (gp || (V.ruin && R() < 0.3)) { if (gp && clip && !gIn) { gIn = [a.p[0] + ux * clip[0], a.p[1] + uy * clip[0]]; prop({ name: 'railPost', x: gIn[0], y: gIn[1], solid: 3, v: Math.floor(s2) % 3, fence: fi, run: run, i: i++, gatePost: 1 }); } if (was) run++; was = false; continue; }
-        if (gIn) { var gOut = clip ? [a.p[0] + ux * clip[1], a.p[1] + uy * clip[1]] : [a.p[0], a.p[1]]; prop({ name: 'railPost', x: gOut[0], y: gOut[1], solid: 3, v: Math.floor(s2 + 1) % 3, fence: fi, run: run, i: i++, gatePost: 1 }); F2.gates.push({ a: gIn, b: gOut, double: Math.hypot(gOut[0] - gIn[0], gOut[1] - gIn[1]) > 76 }); gIn = null; }
-        prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); was = true; }   // a farm's gap gets a gate (F2.gates, drawn with BuildGate.draw; double: two leaves meeting in the middle): its two posts where the run meets the gap, joined to the rails either side (the Art Director's out/gate, 2026-10-28)
+      var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false;
+      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6; if (inGap(px, py) || (V.ruin && R() < 0.3)) { if (was) run++; was = false; continue; } mine.push(prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ })); was = true; }
     }
+    if (uIndex != null && !V.ruin) F2.gaps.forEach(function (g) {      // a farm's gap gets a gate (F2.gates, drawn with BuildGate.draw; double, two leaves meeting in the middle, when wider than one leaf; the Art Director's out/gate, 2026-10-28): the posts standing in the gap (the run wanders off the box) are taken out, as the gateway's clearing would, and the gate hung between the posts either side
+      var x0 = Math.min(g[0], g[2]) - 16, x1 = Math.max(g[0], g[2]) + 16, y0 = Math.min(g[1], g[3]) - 26, y1 = Math.max(g[1], g[3]) + 26, n = mine.length, ins = [], k;
+      if (g[1] !== g[3]) { x0 -= 10; x1 += 10; y0 += 10; y1 -= 10; }   // a gap on a west or east side: the box the other way round
+      for (k = 0; k < n; k++) if (mine[k].x > x0 && mine[k].x < x1 && mine[k].y > y0 && mine[k].y < y1) ins.push(k);
+      var pa, pb;
+      if (ins.length) { if (ins.indexOf(0) >= 0 && ins.indexOf(n - 1) >= 0) return; pa = mine[(ins[0] - 1 + n) % n]; pb = mine[(ins[ins.length - 1] + 1) % n]; }
+      else { var gx = (g[0] + g[2]) / 2, gy = (g[1] + g[3]) / 2, bd = 60; for (k = 0; k < n; k++) { var p = mine[k], q = mine[(k + 1) % n], d = Math.hypot((p.x + q.x) / 2 - gx, (p.y + q.y) / 2 - gy); if (q.run !== p.run && d < bd) { bd = d; pa = p; pb = q; } } if (!pa) return; }
+      var L = Math.hypot(pb.x - pa.x, pb.y - pa.y); if (L > 240 || pa === pb) return;
+      ins.forEach(function (k2) { var at = C.props.indexOf(mine[k2]); if (at >= 0) C.props.splice(at, 1); });
+      pa.gatePost = pb.gatePost = 1; F2.gates.push({ a: [pa.x, pa.y], b: [pb.x, pb.y], double: L > 76 }); });
     V.fences.push(F2); return F2;
   }
   function unitFence(u, kind, m) {
@@ -915,10 +919,12 @@ function make(seed, site, opts) {
   // ---- doorways, gates and the units' gaps kept clear: nothing solid within a tile and a half of them ----
   var keep = [];
   V.lots.forEach(function (l) { if (l.dx == null && l.dy == null) return; (l.door === 's' ? [[l.dx, l.y + l.h], [l.dx, l.y + l.h + 1]] : l.door === 'n' ? [[l.dx, l.y - 1], [l.dx, l.y - 2]] : l.door === 'e' ? [[l.x + l.w, l.dy], [l.x + l.w + 1, l.dy]] : [[l.x - 1, l.dy], [l.x - 2, l.dy]]).forEach(function (q) { keep.push(q); }); });
+  var nDoor = keep.length;
   if (V.fence && !V.fence.round) { var Fk = V.fence, gk; if (Fk.gate != null) for (gk = 0; gk < (Fk.gateW || 1); gk++) keep.push([Fk.gate + gk, Fk.y1 - 1], [Fk.gate + gk, Fk.y1]); for (gk = Fk.x0; gk < Fk.x1; gk++) if (V.H[key(gk, Fk.y0)] && V.H[key(gk, Fk.y0)].t === 'gate') keep.push([gk, Fk.y0 - 1], [gk, Fk.y0]); }
   V.units.forEach(function (u) { if (u.plot) return; var gx2 = Math.floor(u.gapC[0] / T), gy2 = Math.floor(u.gapC[1] / T); keep.push([gx2, gy2], [gx2, gy2 + (u.front === 's' ? 1 : u.front === 'n' ? -1 : 0)], [gx2 + (u.front === 'e' ? 1 : u.front === 'w' ? -1 : 0), gy2]); });
-  function inWay(o, r) { if (!(r > 0)) return false; for (var i = 0; i < keep.length; i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * 1.5) return true; return false; }
-  V.props = V.props.filter(function (o) { return !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });
+  function inWay(o, r, upto, reach) { if (!(r > 0)) return false; for (var i = 0; i < (upto == null ? keep.length : upto); i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * (reach || 1.5)) return true; return false; }
+  V.props = V.props.filter(function (o) { return o.gatePost ? !inWay(o, 3, nDoor, 0.9) : !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });   // (a gate's own posts stay, unless before a door: out/gate, 2026-10-28)
+  V.fences.forEach(function (F) { if (F.gates) F.gates = F.gates.filter(function (g) { return [g.a, g.b].every(function (q) { return V.props.some(function (o) { return o.gatePost && o.x === q[0] && o.y === q[1]; }); }); }); });   // a gate that lost a post to a door goes
   V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
   if (V.fence && V.fence.poly) V.props = V.props.filter(function (pr) { if (pr.name !== 'stake') return true; for (var ni = 0; ni < V.nature.length; ni++) { var nq = V.nature[ni]; if (nq.r >= 6 && Math.hypot(nq.x - pr.x, nq.y - pr.y) < nq.r + 9) return false; } return true; });   // the ring stops a stake short of a kept rock or tree (the polygon rings, 2026-10-21)
   // ---- the layer for exploring and raiding (settlements-plan.md section 5): nodes, zones, the ways in, the secrets ----

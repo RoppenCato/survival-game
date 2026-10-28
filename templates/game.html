@@ -1961,7 +1961,7 @@ __COMBAT__
   function drawRunGhost(c, t) {            // a free fence: the stretch from the last post to the cursor and the post there; F: the stretch that would go
     var col = t.ok ? '120,255,160' : '255,90,70'; c.save(); c.lineCap = 'round';
     if (t.kind === 'runseg') { var a = t.seg.a, b = t.seg.b; c.strokeStyle = t.ok ? 'rgba(255,214,80,0.9)' : 'rgba(255,90,70,0.8)'; c.lineWidth = 5; c.beginPath(); c.moveTo(a[0], a[1] * K); c.lineTo(b[0], b[1] * K); c.stroke(); ghostLabel = t.ok ? { text: 'Take down: +' + costText((RUN_KIND[t.seg.run.kind] || RUN_KIND.rail).cost), bad: false } : { text: t.why, bad: true }; c.restore(); return; }
-    if (t.kind === 'rungate') { if (t.seg) { c.globalAlpha = t.ok ? 0.75 : 0.35; drawRunGate(c, t.seg.a, t.seg.b, false); c.globalAlpha = 1; c.strokeStyle = 'rgba(' + col + ',0.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(t.seg.a[0], t.seg.a[1] * K); c.lineTo(t.seg.b[0], t.seg.b[1] * K); c.stroke(); } ghostLabel = t.ok ? { text: 'Fence gate (' + costText(t.piece.cost) + ')', bad: false } : { text: t.why, bad: true }; c.restore(); return; }
+    if (t.kind === 'rungate') { if (t.seg) { c.globalAlpha = t.ok ? 0.75 : 0.35; drawRunGate(c, t.seg.a, t.seg.b, 0, t.seg.run && t.seg.run.kind); c.globalAlpha = 1; c.strokeStyle = 'rgba(' + col + ',0.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(t.seg.a[0], t.seg.a[1] * K); c.lineTo(t.seg.b[0], t.seg.b[1] * K); c.stroke(); } ghostLabel = t.ok ? { text: 'Fence gate (' + costText(t.piece.cost) + ')', bad: false } : { text: t.why, bad: true }; c.restore(); return; }
     var sp = sprite(t.piece.prop, 0); if (sp) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawSpriteAt(c, sp, t.x, t.y, false); c.globalAlpha = 1; }
     if (t.from) { c.setLineDash([5, 4]); c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(t.from.x, t.from.y * K); c.lineTo(t.x, t.y * K); c.stroke(); c.setLineDash([]); }
     c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(t.x, t.y * K, t.snapped ? 7 : 5, (t.snapped ? 7 : 5) * K, 0, 0, 7); c.stroke();
@@ -3665,16 +3665,11 @@ __COMBAT__
   function runGateAt(run, i) { return !!(run.gates && run.gates[i]); }
   function runGateNear(P) { var best = null, bd = 30; runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i)) return; var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, d = Math.hypot(mx - P.x, my - P.y); if (d < bd) { bd = d; best = { run: run, i: i }; } }); return best; }
   function runGateToggle(g) { g.run.gates[g.i].open = !g.run.gates[g.i].open; sfx('build'); save(); }
-  function drawRunGate(c, a, b, open) {    // a gate between two posts: a frame of two planks, slats and a brace; open, swung about its first post
-    var L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, gl = L - 4, ex, ey;
-    if (open) { var nx = -uy, ny = ux; if (ny < 0) { nx = -nx; ny = -ny; } ex = a[0] + 2 * ux + nx * gl * 0.85; ey = a[1] + 2 * uy + ny * gl * 0.85; } else { ex = a[0] + ux * (L - 2); ey = a[1] + uy * (L - 2); }
-    var sx = a[0] + ux * 2, sy = a[1] + uy * 2, H = 15, cols = [['#2a2018', 3.2], ['#7d634a', 2], ['#9a7d5c', 0.7]];
-    var line = function (x0, y0, x1, y1) { cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }); };
-    c.save(); c.lineCap = 'round'; var y0 = sy * K, y1 = ey * K;
-    line(sx, y0 - H * 0.28, ex, y1 - H * 0.28); line(sx, y0 - H * 0.82, ex, y1 - H * 0.82); line(sx, y0 - H * 0.28, ex, y1 - H * 0.82);
-    for (var k = 1; k < 4; k++) { var t = k / 4, x = sx + (ex - sx) * t, y = y0 + (y1 - y0) * t; line(x, y - H * 0.2, x, y - H * 0.9); }
-    line(ex, y1 - H * 0.15, ex, y1 - H * 0.95); c.restore();
-  }
+  function drawRunGate(c, a, b, open, kind, seed) { Build.gate.draw(c, a, b, open, { K: K, kind: kind === 'stake' ? 'stake' : 'rail', seed: seed || Math.round(a[0] + a[1]) }); }   /* Colin, AD's gate for any angle (out/gate, 2026-10-28): open is 0 to 1, swung about a toward the viewer */
+  function gateEase(g, dt) { g.k = g.k == null ? (g.open ? 1 : 0) : g.k + ((g.open ? 1 : 0) - g.k) * Math.min(1, dt * 7); return g.k; }
+  var VGATES = [];   /* the villages' farm gates (Colin, AD's F.gates in src/village.js): open by day as a farm's would stand (mine), E shuts and opens them, solid when shut; not saved */
+  function vgateNear(P) { var best = null, bd = 34; VGATES.forEach(function (g) { var d = Math.hypot((g.a[0] + g.b[0]) / 2 - P.x, (g.a[1] + g.b[1]) / 2 - P.y); if (d < bd) { bd = d; best = g; } }); return best; }
+  function vgatePillars(P, out) { VGATES.forEach(function (g) { if (g.open || Math.abs(g.a[0] - P.x) > 300 || Math.abs(g.a[1] - P.y) > 300) return; var L = Math.hypot(g.b[0] - g.a[0], g.b[1] - g.a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 1; k < n; k++) out.push({ x: g.a[0] + (g.b[0] - g.a[0]) * k / n, y: g.a[1] + (g.b[1] - g.a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
   function runSegs(fn) { (B.runs || []).forEach(function (run, ri) { for (var i = 0; i + 1 < run.pts.length; i++) fn(run.pts[i], run.pts[i + 1], run, ri, i); }); }
   function runPillars(P) { var out = []; runSegs(function (a, b, run, ri, si) { if (runGateAt(run, si) && run.gates[si].open) return; if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
   var gridSnap = false; try { gridSnap = localStorage.getItem('game.gridSnap') === '1'; } catch (eG) {}
@@ -3687,7 +3682,8 @@ __COMBAT__
       cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.lineCap = 'round'; c.beginPath(); c.moveTo(r.ax, y0 + q[2]); c.quadraticCurveTo(mx, my + q[2], r.bx, y1 + q[2]); c.stroke(); }); });
   }
   function pushRailsTowers(items, hw, hh) {
-    runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i) || Math.abs(a[0] - cam.x) > hw + 60 || Math.abs(a[1] * K - cam.y) > hh + 60) return; var op = run.gates[i].open; items.push({ y: Math.max(a[1], b[1]) + (op ? 6 : -0.5), f: function () { drawRunGate(ctx, a, b, op); } }); });   /* the free fences' gates */
+    runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i) || Math.abs(a[0] - cam.x) > hw + 60 || Math.abs(a[1] * K - cam.y) > hh + 60) return; var g = run.gates[i], k = gateEase(g, 1 / 60); items.push({ y: Math.max(a[1], b[1]) + (k > 0.5 ? 6 : -0.5), f: function () { drawRunGate(ctx, a, b, k, run.kind, i * 7); } }); });
+    VGATES.forEach(function (g) { if (Math.abs(g.a[0] - cam.x) > hw + 80 || Math.abs(g.a[1] * K - cam.y) > hh + 80) return; var k = gateEase(g, 1 / 60), mid = [(g.a[0] + g.b[0]) / 2, (g.a[1] + g.b[1]) / 2]; items.push({ y: Math.max(g.a[1], g.b[1]) + (k > 0.5 ? 6 : -0.5), f: function () { if (g.double) { drawRunGate(ctx, g.a, mid, k, 'rail', 3); drawRunGate(ctx, g.b, mid, k, 'rail', 5); } else drawRunGate(ctx, g.a, g.b, k, 'rail', 3); } }); });   /* the villages' farm gates, a double gate as two leaves meeting in the middle */   /* the free fences' gates */
     RAILS.concat(RUNRAILS).forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });   /* (the player's free fences' rails too) */
     TOWERS.forEach(function (tw) {
       var l = tw.l, cxw = ((l.door === 's' && l.dx != null ? l.dx : l.x + l.w / 2 - 0.5) + 0.5) * T, fy = (l.y + l.h) * T + T * 0.7; if (Math.abs(cxw - cam.x) > hw + 120 || Math.abs(fy * K - cam.y) > hh + 260 || !roomInfo) return;
@@ -3696,9 +3692,9 @@ __COMBAT__
     });
   }
   function hamletDress() {               /* every village's ground painted, its props and its own trees planted, its doorways and gates kept clear, the roads laid and cleared (at every start, 2026-10-20: these stood in the world at a fresh start only, so a loaded game had lost them, and the save keeps only what the player painted over this ground) */
-    TOWERS = []; RAILS = [];
-    villages.forEach(function (v) {
-      var V2 = v.V; if (!V2) return;
+    TOWERS = []; RAILS = []; VGATES = [];
+    villages.forEach(function (v, vgi) {
+      var V2 = v.V; if (!V2) return; (V2.fences || []).forEach(function (F) { (F.gates || []).forEach(function (g) { VGATES.push({ a: g.a, b: g.b, double: !!g.double, open: true, vi: vgi }); }); });
       V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
       w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
       var chL = V2.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chL) TOWERS.push({ v: v, l: chL });   /* the church's tower, drawn in code (the depth board's item 8), in place of the old bell tower piece */
@@ -4688,7 +4684,8 @@ __COMBAT__
 
     if (carrying && carrying.beast && butcherable(carrying.beast)) { var bt0 = butcherNear(P); if (bt0 && !bt0.laid && !bt0.cuts) return { say: 'Lay the ' + (BEAST_WORD[carrying.beast.kind] || 'beast') + ' on the table', act: function () { butcherIt(bt0); } }; }   /* the butcher's table (Robin, 2026-10-26) */
     if (!carrying && !BUTCH) { var bt1 = butcherNear(P); if (bt1 && bt1.cuts) return { say: 'Take the meat and the hide', act: function () { butcherTake(bt1); } }; if (bt1 && bt1.laid) return { say: 'Butcher the ' + (BEAST_WORD[bt1.laid.kind] || 'beast'), act: function () { butcherStart(bt1); } }; }
-    var rgE = !carrying && !build ? runGateNear(P) : null; if (rgE) return { say: rgE.run.gates[rgE.i].open ? 'Shut the gate' : 'Open the gate', act: function () { runGateToggle(rgE); } };   /* a free fence's gate */
+    var rgE = !carrying && !build ? runGateNear(P) : null; if (rgE) return { say: rgE.run.gates[rgE.i].open ? 'Shut the gate' : 'Open the gate', act: function () { runGateToggle(rgE); } };
+    var vgE = !carrying && !build ? vgateNear(P) : null; if (vgE) return { say: vgE.open ? 'Shut the gate' : 'Open the gate', act: function () { vgE.open = !vgE.open; sfx('build'); } };   /* a farm's gate in a village */   /* a free fence's gate */
     if (carrying && carrying.beast) { var alt0 = altarNear(P); if (alt0 && !alt0.laid) return { say: 'Lay it on the altar', act: function () { layOnAltar(alt0); } }; return { say: 'Set it down', act: setDownBeast }; }   /* a beast out cold on your shoulders (the cudgel) */
     if (carrying) return rUse && !raft.aboard ? { say: carrying.man ? 'Lay him aboard' : 'Stow it aboard', act: stowHeavy } : { say: carrying.man ? 'Set him down' : 'Put it down', act: putDown };
     if (looking) return { say: 'Turn back', act: function () { looking = null; } };
@@ -8986,7 +8983,7 @@ __COMBAT__
     else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
     if (P.mode === 'build' && lastMode !== 'build') { menuFrom = 'B'; openMenu('build'); }   // B opens the Building board (what you make by hand is on C)
     if (lastMode === 'build' && P.mode !== 'build') { menu = null; runDraft = null; } lastMode = P.mode;   /* (leaving build mode ends a fence run) */
-    D.W.pillars = nearSolids(P); if (B.runs && B.runs.length && !inCave) D.W.pillars = D.W.pillars.concat(runPillars(P));   /* the free fences' stretches block walking */
+    D.W.pillars = nearSolids(P); if (B.runs && B.runs.length && !inCave) D.W.pillars = D.W.pillars.concat(runPillars(P)); if (VGATES.length && !inCave) vgatePillars(P, D.W.pillars);   /* the free fences' stretches block walking */
     if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); }), (hcv.dress || []).filter(function (q) { return q.r > 0; })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * (o.s || 1), hide: true }); });
       hcv.sets.forEach(function (st) { if (Math.abs(st.x - P.x) < 200 && Math.abs(st.y - P.y) < 200) D.W.pillars.push({ x: st.x - st.w / 2, y: st.y, r: 4, hide: true }, { x: st.x + st.w / 2, y: st.y, r: 4, hide: true }); });
       (hcv.gates || []).forEach(function (g) { if (g.state !== 'shut' || Math.abs(g.x - P.x) > 200 || Math.abs(g.y - P.y) > 200) return; var n = Math.max(3, Math.round(g.w / 12)), gi; for (gi = 0; gi < n; gi++) D.W.pillars.push({ x: g.x - g.w / 2 + (gi + 0.5) * g.w / n, y: g.y, r: g.w / n * 0.75, hide: true }); });   /* a shut gate is a wall */ if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
