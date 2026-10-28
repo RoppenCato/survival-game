@@ -1526,9 +1526,9 @@ __COMBAT__
   function drawWindowDay(c) {              // inside a room by day, the sun coming in through its windows onto the floor (Colin, AD's pool 'day', 2026-10-28: Robin, "if theres daylight outside it glows inside")
     var L = light(); WDAY = { L: L, ri: -9, n: 0 }; if (L > 0.7 || !roomInfo) return; var P = hero(), ri = P.lvl ? -1 : roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)); WDAY.ri = ri; if (ri < 0) return;
     c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y);
-    roomOpenings(ri, function (ax, ay, bx, by, e, hor, south) { if (e.t !== 'window') return; var a = 1 - L; WDAY.n++; for (var pk = 0; pk < 2; pk++)
+    roomOpenings(ri, function (ax, ay, bx, by, e, hor, south) { if (e.t !== 'window') return; var a = (1 - L) * 1.6; WDAY.n++;
       { if (hor) { var g = Build.window.geomH(ax, ay * K, BCFG.wallH); Build.window.pool(c, g.x + g.w / 2, ay * K + (south ? -2 : 2), g.w + 2, 46, south ? 'n' : 's', a, 'day'); }
-      else Build.window.pool(c, ax, (ay + T / 2) * K, T * 0.44, 40, south ? 'w' : 'e', a, 'day'); } });   /* (twice: once was too faint on pale planks) */
+      else Build.window.pool(c, ax, (ay + T / 2) * K, T * 0.44, 40, south ? 'w' : 'e', a, 'day'); } });   /* (at 1.6, Colin, AD's number: once at 1 was too faint on pale planks) */
     c.restore();
   }
   function drawWindowGlow(c) {             // the windows of a room with a fire in it, seen from outside: lit from within

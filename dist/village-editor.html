@@ -4461,13 +4461,20 @@ var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor
     c.save(); c.globalCompositeOperation = 'lighter'; halo(c, cx, cy, 16, a, '255,170,80');
     pool(c, xl, cy, y1 - y0, 22, 'w', a * 0.8, 'fire', true); pool(c, xl + th, cy, y1 - y0, 22, 'e', a * 0.8, 'fire', true); c.restore();
   }
-  function pool(c, x, y, w, len, dir, a, kind, inLighter) {
-    if (!(a > 0)) return; var col = kind === 'fire' ? '255,176,90' : '255,228,170', k = kind === 'fire' ? 0.6 : 0.55, spread = kind === 'fire' ? 2.2 : 1.3;
-    c.save(); if (!inLighter) c.globalCompositeOperation = kind === 'fire' ? 'lighter' : 'screen';
+  var POOLS = {};   /* (Clive, GD, 2026-10-28: each pool drawn once, blurred, into a small kept picture and laid on with its alpha; a blur filter on the game's canvas every frame cost Robin 20 frames a second inside a house) */
+  function poolShape(g, x, y, w, len, dir, a, kind) {
+    var col = kind === 'fire' ? '255,176,90' : '255,228,170', k = kind === 'fire' ? 0.6 : 0.55, spread = kind === 'fire' ? 2.2 : 1.3;
     var dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0, px = -dy, py = dx, ex = x + dx * len, ey = y + dy * len * 0.75;   // the floor is foreshortened north to south (K)
-    var gr = c.createLinearGradient(x, y, ex, ey); gr.addColorStop(0, 'rgba(' + col + ',' + (k * a) + ')'); gr.addColorStop(0.55, 'rgba(' + col + ',' + (k * 0.45 * a) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
-    c.fillStyle = gr; c.beginPath(); c.moveTo(x + px * w / 2, y + py * w / 2); c.lineTo(ex + px * w * spread / 2, ey + py * w * spread / 2); c.lineTo(ex - px * w * spread / 2, ey - py * w * spread / 2); c.lineTo(x - px * w / 2, y - py * w / 2); c.closePath();
-    if (c.filter !== undefined) c.filter = 'blur(1.5px)'; c.fill(); c.restore();
+    var gr = g.createLinearGradient(x, y, ex, ey); gr.addColorStop(0, 'rgba(' + col + ',' + (k * a) + ')'); gr.addColorStop(0.55, 'rgba(' + col + ',' + (k * 0.45 * a) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+    g.fillStyle = gr; g.beginPath(); g.moveTo(x + px * w / 2, y + py * w / 2); g.lineTo(ex + px * w * spread / 2, ey + py * w * spread / 2); g.lineTo(ex - px * w * spread / 2, ey - py * w * spread / 2); g.lineTo(x - px * w / 2, y - py * w / 2); g.closePath(); g.fill();
+    return { r: Math.max(len, w * spread) + 6 };
+  }
+  function pool(c, x, y, w, len, dir, a, kind, inLighter) {
+    if (!(a > 0)) return;
+    if (typeof document === 'undefined') { c.save(); if (!inLighter) c.globalCompositeOperation = kind === 'fire' ? 'lighter' : 'screen'; poolShape(c, x, y, w, len, dir, a, kind); c.restore(); return; }
+    var key = [Math.round(w), Math.round(len), dir, kind].join(':'), sp = POOLS[key];
+    if (!sp) { var r = Math.max(len, w * (kind === 'fire' ? 2.2 : 1.3)) + 6, sc = 3, cv = document.createElement('canvas'); cv.width = cv.height = Math.ceil(r * 2 * sc); var g = cv.getContext('2d'); g.filter = 'blur(' + (1.5 * sc / 2) + 'px)'; g.setTransform(sc, 0, 0, sc, r * sc, r * sc); poolShape(g, 0, 0, w, len, dir, 1, kind); sp = POOLS[key] = { cv: cv, r: r }; }
+    c.save(); if (!inLighter) c.globalCompositeOperation = kind === 'fire' ? 'lighter' : 'screen'; c.globalAlpha *= Math.min(1, a); c.drawImage(sp.cv, x - sp.r, y - sp.r, sp.r * 2, sp.r * 2); if (a > 1) { c.globalAlpha = Math.min(1, a - 1); c.drawImage(sp.cv, x - sp.r, y - sp.r, sp.r * 2, sp.r * 2); } c.restore();
   }
   return { h: h, v: v, glowH: glowH, glowV: glowV, pool: pool, geomH: geomH };
   })();
