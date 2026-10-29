@@ -3015,7 +3015,7 @@ __COMBAT__
     if (inFace && World.IMAGES.caveMouth && World.IMAGES.caveMouth_front) { caveMouth.pic = true; caveMouth.foot = inFace.y; w.mt.noPaintMouth = true; mouthArmed = true; }   /* the studio's rendered mouth (MOUTH, below) */
     cave = Cave.make(spec.seed, { x: CAVE_X, y: CAVE_Y, rockHp: World.HP.rock });   // the inside: src/cave.js
     caves.push({ kind: 'troll', cave: cave, mouth: caveMouth });
-    if (CAVE_WOLVES) { cave.veins = []; cave.ores.forEach(function (o) { o.ore = false; }); caveMushrooms(cave); }   /* chapter 1's cave: no copper (Robin), mushrooms to pick */
+    if (CAVE_WOLVES) { cave.veins = []; cave.ores.forEach(function (o) { o.ore = false; }); caveMushrooms(cave); caveTraces(cave); }   /* chapter 1's cave: no copper (Robin), mushrooms to pick, the troll's traces */
     if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 2400], ['sea', w.mt.seaCave, 'sea_mouth', 4000]]   /* (below the troll's cave, 1920 tall since 2026-10-22) */.forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
       if (!q[1]) return; var m = { name: World.IMAGES[q[2]] ? q[2] : 'cave_mouth', x: q[1].x, y: q[1].y + 2, s: 1, r: 0, v: 0, inFace: true }, nr = [];
       w.eachProp(function (o) { if (!o.peak && !o.shelter && Math.abs(o.x - m.x) < 120 && o.y > m.y - 80 && o.y < m.y + 140) nr.push(o); }); nr.forEach(function (o) { w.removeProp(o); });
@@ -3240,6 +3240,12 @@ __COMBAT__
     P.vx = P.vy = 0; save();
   }
   var CAVE_WOLVES = !SCENE;   /* the game's cave is chapter 1's: no troll and no young, wolves met one or two at a time (Robin, 2026-10-29); the Mountain test keeps the troll */
+  function caveTraces(cv) {                /* the troll long gone (Colin, AD's out/trolltrace, 2026-10-29): his old bed in place of his living one, his fire a cold ring, gnawed bones and claw marks */
+    cv.dress = cv.dress || []; cv.dress.forEach(function (o) { if (o.name === 'trollBed') o.name = 'trollBedOld'; });
+    (cv.fires || []).forEach(function (fi) { cv.dress.push({ name: 'coldHearth', x: fi.x, y: fi.y, r: 16, v: 0 }); }); cv.fires = [];
+    var spot = function (q, dx, dy) { if (!q) return null; var x = q.x + dx, y = q.y + dy; return Cave.floor(cv, x, y) ? { x: x, y: y } : null; };
+    [[cv.lair, 70, 30, 'gnawedBones', 0, 0], [cv.pit || cv.gallery, -40, 20, 'gnawedBones', 1, 0], [cv.hall, 30, 40, 'clawMarks_floor', 0, 1], [cv.lair, -60, 40, 'clawMarks_floor', 0, 1], [cv.poolC, 50, -10, 'clawMarks_floor', 0, 1]].forEach(function (q) { var p = spot(q[0], q[1], q[2]); if (p) cv.dress.push({ name: q[3], x: p.x, y: p.y, r: 0, v: q[4], flat: !!q[5] }); });
+  }
   function caveMushrooms(cv) {             // the pale mushrooms in the cave's dark, a find each, grown again two days after they are picked
     var R = kit.rng(spec.seed * 53 + 11), spots = [cv.hall, cv.gallery, cv.poolC, cv.lair, cv.fern].filter(Boolean), n = 0, t;
     for (t = 0; t < 400 && n < 9; t++) { var q = spots[t % spots.length], x = q.x + (R() - 0.5) * 260, y = q.y + (R() - 0.5) * 150; if (!Cave.floor(cv, x, y) || Math.hypot(x - cv.entrance.x, y - cv.entrance.y) < 120) continue; cv.finds.push({ id: 'mush' + n, prop: 'caveMushroom', x: x, y: y, s: 1, v: n % 3, r: 0, say: 'Pick the mushrooms', give: { mushroom: 2 }, mush: true }); n++; }
@@ -3288,7 +3294,7 @@ __COMBAT__
     hc.sets.forEach(function (st) { if (Math.abs(st.x - cam.x) > 300 || Math.abs(st.y * K - cam.y) > 220) return; items.push({ y: st.y, f: function () { Cave.drawSet(ctx, st); } }); });   // the mine's timber: you walk under its caps
     (hc.dress || []).forEach(function (o) {             /* Colin, AD's dressing (assets/props/cavekit, cryptkit, cellarkit; 2026-10-22): columns, dripstone, fungus, bones, the troll's bed, candles, the bridges; a bridge or the planks lie under everyone */
       if (Math.abs(o.x - cam.x) > 320 || Math.abs(o.y * K - cam.y) > 260) return;
-      var s = sprite(o.name, o.v, o), flat = o.name === 'ropeBridge' || o.name === 'plankBridge', P = hero();
+      var s = sprite(o.name, o.v, o), flat = o.flat || o.name === 'ropeBridge' || o.name === 'plankBridge', P = hero();   /* (the claw marks lie flat under everyone too) */
       items.push({ y: flat ? -1e9 : o.y, f: function () { ctx.drawImage(s.cv, o.x + s.l, o.y * K + s.t, s.w, s.h); } });
     });
     (hc.fires || []).forEach(function (fi) { if (Math.abs(fi.x - cam.x) > 320 || Math.abs(fi.y * K - cam.y) > 260) return; var it = fi.it || (fi.it = { name: 'firePit', x: fi.x, y: fi.y }); items.push({ y: fi.y, f: function () { drawFire(ctx, it); } }); });   /* the troll's fire by his bed (its light is Cave.dark's) */
