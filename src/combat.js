@@ -398,6 +398,7 @@ function crowdFear(e) {                   // the finishing blow's fear: the men 
 }
 function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23: "you should be able to bash all the time, but if it doesnt hit a block, it just does low damage"): the man before you with his guard up has it broken, is thrown back and staggers, and the one he lands on staggers with him; one with his guard down takes a low blow and a push; without a shield the shoulder does it (CROWD)
   var best = null, bd = 1e9, i, face = P.inAng !== null ? P.inAng : P.face, hasShield = !!(S.shield && api.shield && api.shield());
+  if (api.torchBash && api.torchBash(p, face)) { p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; p.bashT = CROWD.bashT; logEv({ k: 'shove', hit: false, torch: true }); return true; }   /* a torch in the off hand: the bash sets fire (the page's api.torchBash; Robin, 2026-10-29) */
   for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
     var d = Math.hypot(o.x - p.x, o.y - p.y) - o.r - p.r; if (d > CROWD.shoveReach) continue; if (Math.abs(wrap(Math.atan2(o.y - p.y, o.x - p.x) - face)) > 1.0) continue; if (d < bd) { bd = d; best = o; } }
   p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; p.bashT = CROWD.bashT; sfx('block', 0.6);

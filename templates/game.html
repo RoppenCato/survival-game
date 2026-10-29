@@ -392,7 +392,7 @@ __COMBAT__
   function code(tx, ty) { return w.code(tx, ty); }
   /* A thing with no picture and no drawn prop stands in as the nearest thing that has one (2026-10-22: the villages' insides place
      looms, stools, shelves and cupboards, which have no pictures yet, and every frame with one in view threw); asked of the studio. */
-  var STAND_IN = { stool: 'chair', shelf: 'crate', cupboard: 'chest', loom: 'table', trapperBench: 'workbench', butcherTable: 'table' };   /* (the butcher's table as the table where its picture has not loaded) */   /* (the trapper's bench as the workbench until Colin, AD draws it) */
+  var STAND_IN = { caveMushroom: 'mushrooms', angelica: 'flower', stool: 'chair', shelf: 'crate', cupboard: 'chest', loom: 'table', trapperBench: 'workbench', butcherTable: 'table' };   /* (the butcher's table as the table where its picture has not loaded) */   /* (the trapper's bench as the workbench until Colin, AD draws it) */
   function sprite(name, v, o) { if (!World.IMAGES[name] && !World.IMAGES[name + '_1'] && !kit.PROPS[name]) name = STAND_IN[name] || 'crate'; return w.sprite(name, v, o); }
   function around(x, y, fn) { w.around(x, y, fn); }
   function nearSolids(P) { return w.nearSolids(P); }
@@ -407,7 +407,7 @@ __COMBAT__
   function handLayers(face) {              // the thing in the hand as layers over the body (2026-10-09): its wood, and its metal tinted by the material; and the shield on the other arm
     var P = hero(), M = sprHero && sprHero.meta, out = ['body']; if (!M) return out;
     if (riteKnife || BUTCH) { if (M.layers.indexOf('knifeWood') >= 0) out.push('knifeWood'); if (M.layers.indexOf('knifeMetal') >= 0) out.push({ layer: 'knifeMetal', tint: Items.MATS.iron.face }); return out; }   /* the sacrifice's knife */
-    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
+    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || (P.mode === 'fight' && !armsOut)) { var cl = carryLayer(); if (cl && M.layers.indexOf(cl) >= 0) out.push(cl); return out; }   /* (in a place at peace the weapon is away until it is used; a beast out cold is Colin, AD's layer on the carry clips) */
     if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
     var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && it.kind === 'sword' && it.mat === 'wood' && M.layers.indexOf('ashSword') >= 0) { out.push('ashSword'); lk = null; }   /* the Wooden Sword: Colin, AD's ash sword in place of the sword's wood and metal, untinted (2026-10-26) */
@@ -458,12 +458,13 @@ __COMBAT__
     L.push({ l: 'beardA', t: HERO_LOOK.hair }); L.push({ l: hd && hd[0] !== 'hoodC' ? 'hairHatA' : 'hairA', t: HERO_LOOK.hair });
     if (hd) L.push(hd[1] ? { l: hd[0], t: hd[1] } : { l: hd[0] });
     if (berserkNow()) L.push({ l: 'berserk' });   /* Berserk: Colin, AD's face layer over the hair, the beard and the headgear, the eyes glowing through a helm's holes (2026-10-24) */
-    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
+    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || (P.mode === 'fight' && !armsOut);   /* (the torch no longer takes the weapon's hand: it is in the shield's, Robin 2026-10-29) */   /* (in a place at peace the weapon is away until it is used) */
     if (riteKnife || BUTCH) { it = null; away = true; if (has('knifeWood')) L.push({ l: 'knifeWood', hand: 1 }); if (has('knifeMetal')) L.push({ l: 'knifeMetal', t: bladeTint('iron'), metal: 1, hand: 1 }); }
     var hk = it && it.kind, ash = it && it.kind === 'sword' && it.mat === 'wood' && has('ashSword');   /* the Wooden Sword: Colin, AD's ashSword, no tint */
     if (!away && ash) L.push({ l: 'ashSword', hand: 1 });
     if (!away && it && !ash && has(hk + 'Wood')) L.push({ l: hk + 'Wood', hand: 1 });
     if (!away && it && !ash && has(it.kind + 'Metal') && !(it.kind === 'rod' && it.mat === 'wood')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
+    if (!carrying && torchHeld() && has('torchHeld')) { L.push({ l: 'torchHeld' }); L.push({ l: 'torchFlame' }); }   /* the torch in the left hand, Colin, AD's layers (out/torch, 2026-10-29) */
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
     var cl = carryLayer(); if (cl) L.push({ l: cl });
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
@@ -590,7 +591,7 @@ __COMBAT__
     w = World.make(kit, spec); WLD = w; w.meadowLook = grassLook;
     w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty], ru = B.ruin && B.ruin[tx + ',' + ty]; return (f != null && f !== 4 && f !== 5 && f !== 6) || !!(ru && ru.k === 'burnt'); };   // no grass grows through a laid floor, nor in the ash of a burnt room (2026-10-16) (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
-    w.plant(); (function () { var gone2 = []; w.eachProp(function (o) { if (isleAt(o.x, o.y) !== 0) return; if (o.name === 'fireRing') gone2.push(o); else if (o.name === 'struckTree') o.name = 'birch'; }); gone2.forEach(function (o) { w.removeProp(o); }); })();   /* (no charcoal on the starter island: no old fire rings, no lightning-struck trees; Robin 2026-10-20) */ if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
+    w.plant(); angelicaPlant(); (function () { var gone2 = []; w.eachProp(function (o) { if (isleAt(o.x, o.y) !== 0) return; if (o.name === 'fireRing') gone2.push(o); else if (o.name === 'struckTree') o.name = 'birch'; }); gone2.forEach(function (o) { w.removeProp(o); }); })();   /* (no charcoal on the starter island: no old fire rings, no lightning-struck trees; Robin 2026-10-20) */ if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; R2 = Runes2.start(); Combat.api.runeState = R2; ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(CHART_PX);
     raft = null; fleet = []; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
@@ -657,7 +658,7 @@ __COMBAT__
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
     // the shipyard (docs/ships-rework.md; Robin, 2026-10-22): one piece on any shore of your land, as many as you like, in place of the raft bench, the boat bench and the shipwright's yard; E opens the panel by the water (spOpen). Its picture is the raft bench's until Colin, AD's slipway and shed come
-    { id: 'ship1', name: 'Shipyard', kind: 'item', prop: 'naust_s', ship: 1, naust: 1, r: 0, cost: { wood: 16, fiber: 6, stone: 4 }, key: 'raft', gives: 'ship1' },
+    { id: 'ship1', name: 'Shipyard', kind: 'item', prop: 'naust_s', ship: 1, naust: 1, r: 0, cost: { wood: 16, fiber: 6, stone: 4 }, key: 'shipwright', gives: 'ship1' },   /* (Old Aslak's craft, Robin, 2026-10-29; it was Arnor's boat, key raft) */
     { id: 'mason', name: 'Mason’s bench', kind: 'item', prop: 'masonBench', r: 5, cost: { wood: 6, copper: 3, stone: 4 }, key: 'copper', gives: 'mason' },   // building in stone begins here (2026-10-08, Robin)
     { id: 'signpost', name: 'Wooden sign', kind: 'item', prop: 'signPost', r: 2, sign: true, cost: { wood: 3, charcoal: 1 }, key: 'charcoal' },   // E writes on it in charcoal
     { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, key: 'mason', icon: function (c) {
@@ -1260,6 +1261,12 @@ __COMBAT__
         var a = Math.atan2(e.y - nf.y, e.x - nf.x); e.x += Math.cos(a) * 110 * dt; e.y += Math.sin(a) * 110 * dt; e.face = a; e.awake = false; e.heard = 0; e.aggro = 1; e.state = 'idle'; e.t = 0;
         if (e.wander) { e.wander.tx = null; e.wander.wait = 0; }
       }
+      if (!safe && !inFire && (torchHeld() || e.scaredT > 0)) {   /* a torch in your hand (Robin, 2026-10-29: "the wolves fear fire and will keep a distance when you have a torch up"): it keeps off, circling, and does not give up */
+        var dT = Math.hypot(e.x - P.x, e.y - P.y), TORCH_R = 150; e.awake = false; e.heard = 0; e.aggro = 1; if (e.scaredT > 0) e.scaredT -= dt;
+        if (dT < TORCH_R) { var aT = Math.atan2(e.y - P.y, e.x - P.x); e.x += Math.cos(aT) * 120 * dt; e.y += Math.sin(aT) * 120 * dt; e.face = aT; e.state = 'idle'; e.t = 0; }
+        if (!e.ringT || e.ringT <= 0) { var raT = Math.random() * 6.283; e.wander.x0 = P.x + Math.cos(raT) * (TORCH_R + 40); e.wander.y0 = P.y + Math.sin(raT) * (TORCH_R + 40); e.wander.r = 30; e.wander.tx = null; e.wander.wait = 0; e.ringT = 1.5 + Math.random() * 2; }
+        e.ringT -= dt; return;
+      }
       if (safe) {                           // you are by a fire: it prowls the ring round you instead of coming in
         e.awake = false; e.heard = 0; e.aggro = 1; e.prowl = (e.prowl || 0) + dt;
         if (!e.ringT || e.ringT <= 0) { var ra = Math.random() * 6.283; e.wander.x0 = P.x + Math.cos(ra) * (FIRE_R + 60); e.wander.y0 = P.y + Math.sin(ra) * (FIRE_R + 60); e.wander.r = 40; e.wander.tx = null; e.wander.wait = 0; e.ringT = 2 + Math.random() * 3; }
@@ -1271,7 +1278,7 @@ __COMBAT__
       nightSpawned = true;
       var isle = isleAt(P.x, P.y), first = null; if (isle < 0 || isle === 0) return;   /* no wolves on the starter island (Robin, 2026-10-26) */
       placeIsle = isle;
-      for (i = 0; i < 3; i++) { var e = placeAnimal('wolf', 380, first ? { x: first.wander.x0, y: first.wander.y0 } : null, false); if (!e) continue; if (!first) first = e; e.isle = isle; e.night = true; e.wander.r = 260; nightWolves.push(e); }
+      var packN = 3 + (Math.random() < 0.5 ? 1 : 0); for (i = 0; i < packN; i++) { var e = placeAnimal('wolf', 380, first ? { x: first.wander.x0, y: first.wander.y0 } : null, false); if (!e) continue; if (!first) first = e; e.isle = isle; e.night = true; e.wander.r = 260; nightWolves.push(e); }
       placeIsle = null;
       if (first) sfx('howl');
     }
@@ -1325,7 +1332,7 @@ __COMBAT__
     if (nfT === clock) return nfL; nfT = clock; nfL = []; var P = hero(), i;
     function add(f, torch) { if (Math.abs(f.x - cam.x) > 200 / cam.z + 260 || Math.abs(f.y * K - cam.y) > 125 / cam.z + 260) return; var fl = flick(nfL.length); nfL.push({ src: f, x: f.x, y: f.y, r: (f.lamp ? 58 : torch ? 170 : 145), lamp: !!f.lamp, torch: !!torch, lvl: f.lvl || 0, fl: fl }); }
     if (hearth) add(hearth); for (i = 0; i < B.items.length; i++) if ((isHearth(B.items[i]) || B.items[i].light) && !(B.items[i].lamp && B.items[i].name === 'lantern' && day.t > 1470 && day.t < 1740)) add(B.items[i]);   /* (a house's lantern goes out at midnight; the hall's torch, the gate's and the watch's burn on: the dark a raid wants, the Art Director's note of 2026-10-20) */
-    if (torchOn) add({ x: P.x, y: P.y, lvl: P.lvl || 0 }, true);
+    if (torchHeld()) add({ x: P.x, y: P.y, lvl: P.lvl || 0 }, true);
     if (light() > 0.3) Combat.dbg().W.enemies.forEach(function (e) { if (e.watch && !e.dead && !e.asleep && e.awake === false) add(e.watch === 'walk' ? { x: e.x, y: e.y, lvl: 0 } : { x: e.x + 10, y: e.y, lvl: 0, lamp: true }, e.watch === 'walk'); });   /* (a watchman's torch; the gate watch's lantern) */
     blazeLights(function (q) { var n0 = nfL.length; add(q); if (nfL.length > n0) { nfL[n0].blaze = true; nfL[n0].big = q.big; } });   // a house on fire
     return nfL;
@@ -1652,6 +1659,13 @@ __COMBAT__
     { id: 'trapPoison', cat: 'supply', out: { stack: ['trapPoison', 1] }, needs: { stone: 2, berries: 3, fiber: 1 }, at: 'trapper', key: 'trapper' },   /* (a clay pot of crushed troll-berries: Alistair, LD's thing.troll-berry-pot, handoff 12, Robin's yes of 2026-10-24) */
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber' },   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
+    { id: 'flintSpear', cat: 'weapon', out: { item: ['spear', 'flint'] }, needs: { wood: 4, stone: 2, fiber: 2 }, at: 'hand', key: 'stone' },   /* (chapter 1's one new weapon, long in the reach, for the wolves; the cost mine) */
+    { id: 'learnShipwright', cat: 'lesson', out: { learn: 'shipwright', name: 'The shipwright\u2019s craft', icon: 'wood', text: 'A shipyard on your own shore, and the rowboat built in it' }, needs: { wood: 10, fiber: 6, leather: 2, sinew: 1 }, at: 'aslak' },   /* Old Aslak's lessons (Robin, 2026-10-29: "trade materials to learn shipwright, and some customizations with other materials ... Not much"; what each costs mine) */
+    { id: 'learnSail', cat: 'lesson', out: { learn: 'sailBoat', name: 'A sail', icon: 'fiber', text: 'The small karve, with a mast and a square sail: the boat that leaves home water' }, needs: { fiber: 12, leather: 3, antler: 1 }, at: 'aslak', taught: 'shipwright' },
+    { id: 'learnDyes', cat: 'lesson', out: { learn: 'lookDyes', name: 'Dyes for the sail', icon: 'berries', text: 'Every colour for the sail, from berries and the cave\u2019s mushrooms' }, needs: { berries: 8, mushroom: 2 }, at: 'aslak', taught: 'shipwright' },
+    { id: 'learnPatterns', cat: 'lesson', out: { learn: 'lookPatterns', name: 'The sail\u2019s patterns', icon: 'fiber', text: 'Checks and a border on the sail' }, needs: { fiber: 6, angelica: 2 }, at: 'aslak', taught: 'shipwright' },
+    { id: 'learnPaints', cat: 'lesson', out: { learn: 'lookPaints', name: 'Shield paints', icon: 'berries', text: 'Every colour for the shields on the rail' }, needs: { berries: 4, wolfPelt: 1 }, at: 'aslak', taught: 'shipwright' },
+    { id: 'learnHeads', cat: 'lesson', out: { learn: 'lookHeads', name: 'Carved stem heads', icon: 'antler', text: 'A dragon, a snake or a bear for the stem' }, needs: { wood: 6, antler: 2 }, at: 'aslak', taught: 'shipwright' },
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, sinew: 1 }, at: 'hand', key: 'sinew' },   /* its string a boar's sinew (Robin, 2026-10-28) */
     { id: 'quiver', cat: 'armour', out: { item: ['quiver', 'leather'] }, needs: { leather: 1, fiber: 2 }, at: 'hand', key: 'leather' },   /* the quiver by hand from a hide and cord (mine, 2026-10-26): the arrows are carried in it, so the bow wants one */
     { id: 'woodArrows', cat: 'supply', out: { stack: ['arrow', 5] }, needs: { wood: 1, fiber: 1 }, at: 'hand', key: 'fiber' },   /* simple wooden arrows, five at a time (Robin, 2026-10-26: arrows made and used up; the numbers mine) */
@@ -1667,17 +1681,18 @@ __COMBAT__
   ];
   // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
   // bow, leather for armour); until then it is not shown at all. Taught recipes (the raft) wait for the teaching.
-  var STARTER_HIDE = { flintKnife: 1, flintSword: 1, leatherHelmet: 1, leatherCloak: 1 };   /* (2026-10-26, Robin: the flint sword goes; the outfit only a shirt, trousers and leather shoes) */   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
-  function known(r) { if (STARTER_HIDE[r.id] && onStarter()) return false; if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
-  function dishKnown(d) { if (onStarter() && d.id !== 'cookedMeat') return false; if (d.taught && !seen[d.taught]) return false;   /* on the starter island only roast meat (Robin, 2026-10-28: meat is food from the start; the better dishes are the village's) */ for (var k in d.needs) if (!seen[k]) return false; return true; }
-  function recipeName(r) { return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? (r.out.stack[0] === 'torch' ? r.out.stack[1] + ' torches' : NAMES[r.out.stack[0]]) : r.out.arrows + ' wood arrows')); }
+  var STARTER_HIDE = { flintKnife: 1, flintSword: 1, leatherHelmet: 1, leatherCloak: 1, flintSpear: 1 };   /* (2026-10-26, Robin: the flint sword goes; the outfit only a shirt, trousers and leather shoes) */   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
+  function known(r) { if (r.out && r.out.learn) return !seen[r.out.learn] && (!r.taught || !!seen[r.taught]); if (STARTER_HIDE[r.id] && onStarter()) return false; if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
+  var STARTER_DISH = { cookedMeat: 1, roastBoar: 1, roastVenison: 1 };
+  function dishKnown(d) { if (onStarter() && !STARTER_DISH[d.id]) return false; if (d.taught && !seen[d.taught]) return false; if (d.learn && !(seen.dishes && seen.dishes[d.id])) return false;   /* (a dish learnt at a village's pot: Robin, 2026-10-29) */   /* on the starter island only roast meat (Robin, 2026-10-28: meat is food from the start; the better dishes are the village's) */ for (var k in d.needs) if (!seen[k]) return false; return true; }
+  function recipeName(r) { if (r.out.learn) return r.out.name; return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? (r.out.stack[0] === 'torch' ? r.out.stack[1] + ' torches' : NAMES[r.out.stack[0]]) : r.out.arrows + ' wood arrows')); }
   /* Crafting as in Valheim (Robin, 2026-10-21): one thing at a time, no queue. A press pays and the Craft button turns into Cancel,
      filling as the thing is made; the board cannot be left until it is made or cancelled (every key but Shift is held, the hero
      stands, a click anywhere but Cancel does nothing); a blow taken breaks the work off and gives the materials back. With Shift
      held the button reads Craft x5: five times the materials, in half the time five would take one by one (CRAFT_BATCH). What is
      made goes into the bag (a workbench no longer keeps it). Cooking and smelting keep to their station's queue in the background. */
   function craft(r, n) {
-    n = r.out.raft ? 1 : (n || 1); if (craftJob || !known(r)) return false; var need = {}, k; for (k in r.needs) need[k] = r.needs[k] * n; if (!canAfford(need)) return false;
+    n = r.out.raft || r.out.learn ? 1 : (n || 1); if (craftJob || !known(r)) return false; var need = {}, k; for (k in r.needs) need[k] = r.needs[k] * n; if (!canAfford(need)) return false;
     pay(need); var one = (CRAFT_T[r.at] || 2) * (false ? 0.5 : 1);
     craftJob = { r: r, n: n, t: 0, dur: n > 1 ? one * n * CRAFT_BATCH : one, need: need, hp: hero().hp }; sfx('pick'); return true;
   }
@@ -1703,6 +1718,7 @@ __COMBAT__
     st.out.splice(i, 1); recount(); sfx('pick'); save();
   }
   function craftGive(r, station, quiet) {
+    if (r.out.learn) { seen[r.out.learn] = 1; note('Old Aslak taught you: ' + r.out.name); sfx('craft'); save(); if (menu && menu.info) openInfo(); return; }   /* a lesson: knowledge, nothing in the bag */
     if (r.out.item && station) { stationPut(station, { item: Items.make(r.out.item[0], r.out.item[1]), n: 1 }); sfx('craft'); save(); return; }
     if (r.out.item) {
       var made = Items.make(r.out.item[0], r.out.item[1]), where = TOOL_SLOT[made.kind];
@@ -2062,6 +2078,11 @@ __COMBAT__
   var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
   if (RELEASE) spec.waters = { rings: 0 };   /* the test build's sea: home water alone, the starter island, the big island and the islands round them (Robin, 2026-10-27) */
   if (SCENE === 'battle' || SCENE === 'ruin') { spec.waters = false; spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null;   /* (the two islands of the trials, not the sea as waters: under the waters the town found no room and every town row fell through; the cleanup of 2026-10-26) */ if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
+  function angelicaPlant() {               /* angelica (kvann) on the meadows of every island but the starter one (Robin, 2026-10-29: "some type of edible flower (found outside starter island)"; how many mine) */
+    if (SCENE && SCENE !== 'mountain') return; (w.isles || []).forEach(function (q, i) { if (i === 0) return; var R = kit.rng(spec.seed * 61 + i * 7), n = Math.round(q.r * 0.35), t, k = 0;
+      for (t = 0; t < n * 12 && k < n; t++) { var a = R() * 6.283, d = Math.sqrt(R()) * q.r * 0.85 * T, x = q.x * T + Math.cos(a) * d, y = q.y * T + Math.sin(a) * d, cd = code(Math.floor(x / T), Math.floor(y / T)); if (cd < 2 || cd === 5 || cd === 255 || !w.isLand(x, y)) continue; w.addProp({ name: 'angelica', kind: 'herb', x: x, y: y, s: 1, r: 0, v: k % 3, herb: 1 }); k++; } });
+  }
+  function angelicaNear(P) { var best = null, bd = 34; around(P.x, P.y, function (o) { if (o.name !== 'angelica') return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < bd) { bd = d; best = o; } }); return best; }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   /* The save keeps only what the player changed on the ground (2026-10-20: the whole painted field was 1.5 MB of a save, most of
      the browser's room; the bigger sea would not have fit). groundBase is the field as the world paints it at every start
@@ -2072,13 +2093,13 @@ __COMBAT__
   var GDIFF = { rev: -1, g: null, b: null, d: null };   /* the diff kept until the ground is painted again (2026-10-21: worked out on every save it walked every painted cell of the sea twice, 120 ms every ten seconds, a hitch Robin could feel) */
   function groundDiffOf() { if (GDIFF.d && GDIFF.rev === w.groundRev && GDIFF.g === w.ground && GDIFF.b === groundBase) return GDIFF.d; var d = {}, k, b = groundBase || {}; for (k in w.ground) if (w.ground[k] !== b[k]) d[k] = w.ground[k]; for (k in b) if (w.ground[k] == null) d[k] = 0; GDIFF.rev = w.groundRev; GDIFF.g = w.ground; GDIFF.b = groundBase; GDIFF.d = d; return d; }
   function groundApply(d) { var k; for (k in d) { if (d[k]) w.ground[k] = d[k]; else delete w.ground[k]; } w.groundRev++; }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, wmap: wmState(), fishLog: fishLog, carrying: carrying && carrying.heavy && !carrying.beast ? carrying : null, carryBeast: carrying && carrying.beast ? { kind: carrying.beast.kind, young: !!carrying.beast.young, ko: !carrying.beast.dead } : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, year: year, pins: pins, craftN: craftN, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.filter(function (cv) { return !!cv.cave && cv.kind !== 'cellar'; }).map(function (cv) { return { kind: cv.kind, vi: cv.vi, hoardN: cv.cave.hoard ? cv.cave.hoard.n : null, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }), gates: cv.cave.gates && cv.cave.gates.length ? cv.cave.gates.map(function (g) { return g.state; }) : undefined, opened: cv.opened && Object.keys(cv.opened).length ? cv.opened : undefined }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard || !!m.asMan, hungry: !!m.hungry, lost: m.lost || null, freed: !!m.freed, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: null, fleet: fleet.map(function (v) { return { id: v.id, x: Math.round(v.x), y: Math.round(v.y), h: v.h, aboard: !!v.aboard, kind: v.kind, parts: v.parts, cargo: v.cargo || [], chest: v.chest || null, name: v.name, look: v.look, fit: v.fit, stowed: !!v.stowed }; }), raftI: fleet.indexOf(raft), slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes2: R2, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' || d.n > 1 ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, wmap: wmState(), fishLog: fishLog, carrying: carrying && carrying.heavy && !carrying.beast ? carrying : null, carryBeast: carrying && carrying.beast ? { kind: carrying.beast.kind, young: !!carrying.beast.young, ko: !carrying.beast.dead } : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, year: year, pins: pins, craftN: craftN, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.filter(function (cv) { return !!cv.cave && cv.kind !== 'cellar'; }).map(function (cv) { return { kind: cv.kind, vi: cv.vi, hoardN: cv.cave.hoard ? cv.cave.hoard.n : null, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }), gates: cv.cave.gates && cv.cave.gates.length ? cv.cave.gates.map(function (g) { return g.state; }) : undefined, opened: cv.opened && Object.keys(cv.opened).length ? cv.opened : undefined }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard || !!m.asMan, hungry: !!m.hungry, lost: m.lost || null, freed: !!m.freed, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft), shield: torchShield }, raft: null, fleet: fleet.map(function (v) { return { id: v.id, x: Math.round(v.x), y: Math.round(v.y), h: v.h, aboard: !!v.aboard, kind: v.kind, parts: v.parts, cargo: v.cargo || [], chest: v.chest || null, name: v.name, look: v.look, fit: v.fit, stowed: !!v.stowed }; }), raftI: fleet.indexOf(raft), slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes2: R2, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' || d.n > 1 ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
-  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, sinew: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'sinew', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
+  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, sinew: 0, boarMeat: 0, venison: 0, wolfPelt: 0, mushroom: 0, angelica: 0, hogniAdze: 0, roastBoar: 0, roastVenison: 0, boarStew: 0, venisonBerries: 0, angelicaBroth: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'sinew', 'wolfPelt', 'hogniAdze', 'berries', 'mushroom', 'angelica', 'boarMeat', 'venison', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
-  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', sinew: 'Sinew', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', sinew: 'Sinew', boarMeat: 'Boar meat', venison: 'Venison', wolfPelt: 'Wolf pelt', mushroom: 'Mushroom', angelica: 'Angelica', hogniAdze: 'Hogni\u2019s adze', roastBoar: 'Spit-roast boar', roastVenison: 'Venison on the spit', boarStew: 'Boar and mushroom stew', venisonBerries: 'Venison with berries', angelicaBroth: 'Angelica broth', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
@@ -2120,7 +2141,7 @@ __COMBAT__
     if (slots[i] && slots[i].kind === 'item') shieldWithIt(slots[i].item);
   }
   function shieldWithIt(it) {            // a one-handed weapon in hand: a shield from the bag goes on the arm if the slot is empty
-    var K2 = Items.KINDS[it.kind]; if (equip.shield || !K2 || !K2.melee || it.kind === 'greataxe') return;
+    var K2 = Items.KINDS[it.kind]; if (equip.shield || torchOn || !K2 || !K2.melee || it.kind === 'greataxe') return;
     for (var k = BAG0; k < SLOTS; k++) { var q = slots[k]; if (q && q.kind === 'item' && q.item.kind === 'shield') { equip.shield = q.item; slots[k] = null; toast(q.item.name + ': on your arm'); recount(); return; } }
   }
   function bestTool(kind) { var best = null; slots.forEach(function (s) { if (s && s.kind === 'item' && s.item.kind === kind && (!best || Items.stats(s.item).power > Items.stats(best).power)) best = s.item; }); return best; }
@@ -2195,9 +2216,18 @@ __COMBAT__
   if (!LORE['line.arnor.wait.meat']) LORE['line.arnor.wait.meat'] = { id: 'line.arnor.wait.meat', mode: 'variants', speaker: 'person.arnor', lines: ['A roof again. Now meat, if you can hunt. My table is in the yard.', 'Bring a boar to the table in the yard and we will both eat.'] };   /* LORE? placeholders until Alistair, LD's lines for Arnor waiting on the meat */
   [['quest.shore', 'The shore', null, 'wreck.beach', 'The ship is in pieces on the skerries and the sea has gone quiet, as if it never meant it. Nobody else came ashore, not here. I should look around the shore. Smoke, a roof, anyone.', 'Up from the shore there was a steading, burnt, and one man left in it. Arnor, a smith.'],
    ['quest.arnor.deer', 'A deer for Arnor', 'person.arnor', 'steading.yard', 'Arnor says boar\u2019s sinew makes a fair bowstring, and he wants a deer next. They won\u2019t wait for me to walk up to them. They come to the meadows at dusk, he says, and they hear you before you see them.', 'The deer is on Arnor\u2019s table. He said eat, then sleep, and that tomorrow he\u2019d see to the boat.'],
+   ['quest.aslak.brother', 'Old Aslak\u2019s brother', null, 'aslak', 'Old Aslak\u2019s brother Hogni went up the mountain after a crooked oak, and hasn\u2019t come back. The wolves have the old troll cave up there now. Aslak says his knees won\u2019t take him that far. Mine will.', 'I found Hogni deep in the cave, sitting as if he\u2019d stopped to rest. Aslak held the adze a long time. Then he said he\u2019d teach me what the two of them knew.'],
    ['quest.sail-east', 'East', 'person.arnor', 'shore', 'Arnor\u2019s boat is mine. He pointed east, where the big island lies across the water. There\u2019s a village there, he says. People.', 'The boat came ashore on the big island. There\u2019s smoke over the trees, more than one fire.']].forEach(function (q) { if (!LOREBOOK[q[0]]) LOREBOOK[q[0]] = { kind: 'quest', title: q[1], giver: q[2] || undefined, place: q[3], book: q[4], book_more: q[5], book_more_after: 'done' }; });   /* LORE? Alistair, LD's proposed words of 2026-10-28, until Robin's yes */
   if (!LORE['line.arnor.deer']) LORE['line.arnor.deer'] = { id: 'line.arnor.deer', mode: 'sequence', speaker: 'person.arnor', lines: ['Keep the sinew. Dried and twisted, it\u2019s a bowstring.', 'Bring me a deer. They don\u2019t wait for you to walk up.'] };   /* LORE? */
   if (!LORE['line.arnor.supper']) LORE['line.arnor.supper'] = { id: 'line.arnor.supper', mode: 'variants', speaker: 'person.arnor', lines: ['Eat. Sleep. Tomorrow I\u2019ll see to the boat.'] };   /* LORE? */
+  [['line.aslak.brother', 'sequence', ['Hogni went up the mountain three days back. After a crooked oak.', 'He knows every tree up there. He doesn’t know the wolves have the old cave.', 'These knees won’t take me up there. Yours would.']],
+   ['line.aslak.wait', 'variants', ['Anything? … No. Go on, then.', 'He’s stubborn. He’d have found shelter. He’d have found somewhere.', 'The wolves sleep by day. Mostly.']],
+   ['line.aslak.found', 'sequence', ['That’s his adze. … I put that haft on it, the winter our father died.', 'He found it, then. The oak. He’d not have stopped till he had.', 'There’s no one left to build with. Unless you’d learn.', 'Bring me what a ship’s made of. I’ll show you what the two of us knew.']],
+   ['line.aslak.craft', 'variants', ['Hogni did the keels. I did the rest. Now I do both, slowly.', 'A ship’s a tree that learned to swim. Bring me trees.', 'He’d have argued over every board you brought. I won’t. Much.']],
+   ['line.hogni.found', 'sequence', ['An old man, sitting against the rock as if he’d stopped to rest.', 'An adze by his hand, the haft worn to the shape of it.', 'Scratched low on the rock beside him: “Tell Aslak I found his oak.”']],
+   ['line.folk.wolves', 'variants', ['Don’t be out after dark. They hunt in threes and fours now.', 'One wolf you can shout at. Four, you climb something.', 'They’ve taken the old troll cave. Wolves don’t mind the smell.', 'In the cave they come at you one at a time. Out here, all at once.']],
+   ['line.cave.traces', 'sequence', ['A bed of heather and moss, pressed flat by something the size of a cart.', 'Great bones, split for the marrow. Whatever ate here ate well, and long ago.', 'Claw marks in the rock, higher than a man can reach.']],
+   ['line.folk.pot', 'variants', ['Stir it. Don’t stare at it.', 'Whatever the woods give. Taste.', 'My mother’s way. Yours now, I suppose.', 'Angelica for the broth. It grows by the stream.']]].forEach(function (q) { if (!LORE[q[0]]) LORE[q[0]] = { id: q[0], mode: q[1], lines: q[2] }; });   /* LORE? Alistair, LD's chapter 1 lines of 2026-10-29, proposed, until Robin's yes and the handoff */
   if (!LORE['line.arnor.evening']) LORE['line.arnor.evening'] = { id: 'line.arnor.evening', mode: 'variants', speaker: 'person.arnor', lines: ['Sit, if you like. The fire doesn\u2019t mind company.', 'Smoke going straight up. Fair weather tomorrow.', 'Two winters I\u2019ve kept this fire. It\u2019s never been this warm.'] };   /* LORE? */
   function loreLines(id, fallback) { var e = LORE[id]; return e && e.lines && e.lines.length ? e.lines : (fallback || ['']); }
   /* Arnor, the village smith, the one Ormr Midgardbane left alive to tell it (the lore's person.arnor, Robin 2026-10-16; he was
@@ -2210,6 +2240,7 @@ __COMBAT__
     'quest.arnor.meat': { give: function () { return questDone('quest.arnor.house') || (seen.met && day.n >= 2); }, done: function () { return !!seen.meatForArnor; } },
     'quest.shore': { give: function () { return !seen.met && !naming; }, done: function () { return !!seen.met; } },   /* the first, at the wreck: the book shows where to go (Robin, 2026-10-28) */
     'quest.arnor.deer': { give: function () { return !!seen.meatForArnor && boatWaits(); }, done: function () { return !!seen.deerForArnor; } },   /* a deer with the bow, after the boar (Robin, 2026-10-28) */
+    'quest.aslak.brother': { give: function () { return CAVE_WOLVES && (seen.aslakB || 0) >= 1; }, done: function () { return !!seen.aslakShop; } },   /* find Old Aslak's brother (Robin, 2026-10-26; Alistair, LD's words, LORE?) */
     'quest.sail-east': { give: function () { return !!seen.raft; }, done: function () { var P = hero(), bi = isleAt(P.x, P.y), q = w.isles[bi]; return !!(q && q.role === 'big' && w.isLand(P.x, P.y) && !(raft && raft.aboard)); } }
   };
   function boatWaits() { var ab = arnorBoatItem(); return !seen.raft && (!ab || ab.st === 'broken'); }   /* (an older save whose boat was mended before the deer came in keeps it) */
@@ -2969,7 +3000,6 @@ __COMBAT__
   function caveFloor(x, y) { var hc = here(); return !!hc && Cave.floor(hc, x, y); }
   function caveSetup() {                   // choose the mouth's place on the island and generate the inside
     cave = null; caveMouth = null; inCave = false; caves = []; cur = null; CAVE_X = WX + 4000;
-    if (RELEASE) return;   /* the test build has no troll's cave (Robin, 2026-10-27: chapter 1's cave is the wolves', not built) */
     var R = kit.rng(spec.seed * 31 + 9), tries, i, x, y, tx, ty, site = null;
     for (tries = 0; tries < 800 && !site; tries++) {
       var q1 = w.isles[1] || w.isles[0], a = R() * 6.283, d = R() * q1.r * 0.7 * T; x = q1.x * T + Math.cos(a) * d; y = q1.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
@@ -2985,6 +3015,7 @@ __COMBAT__
     if (inFace && World.IMAGES.caveMouth && World.IMAGES.caveMouth_front) { caveMouth.pic = true; caveMouth.foot = inFace.y; w.mt.noPaintMouth = true; mouthArmed = true; }   /* the studio's rendered mouth (MOUTH, below) */
     cave = Cave.make(spec.seed, { x: CAVE_X, y: CAVE_Y, rockHp: World.HP.rock });   // the inside: src/cave.js
     caves.push({ kind: 'troll', cave: cave, mouth: caveMouth });
+    if (CAVE_WOLVES) { cave.veins = []; cave.ores.forEach(function (o) { o.ore = false; }); caveMushrooms(cave); }   /* chapter 1's cave: no copper (Robin), mushrooms to pick */
     if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 2400], ['sea', w.mt.seaCave, 'sea_mouth', 4000]]   /* (below the troll's cave, 1920 tall since 2026-10-22) */.forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
       if (!q[1]) return; var m = { name: World.IMAGES[q[2]] ? q[2] : 'cave_mouth', x: q[1].x, y: q[1].y + 2, s: 1, r: 0, v: 0, inFace: true }, nr = [];
       w.eachProp(function (o) { if (!o.peak && !o.shelter && Math.abs(o.x - m.x) < 120 && o.y > m.y - 80 && o.y < m.y + 140) nr.push(o); }); nr.forEach(function (o) { w.removeProp(o); });
@@ -2997,7 +3028,7 @@ __COMBAT__
   function findNear(P) { if (!inCave || !cur) return null; var best = null, bd = 46; cur.cave.finds.forEach(function (f) { if (f.taken) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < bd) { bd = d; best = f; } }); return best; }
   function findTake(f) {
     if (cur && cur.kind === 'cellar' && f.id === 'store') { var hd = cellarDoor(cur); if (hd && hd.store) { store = hd; invOpen = true; bookOpen = false; clothOpen = false; sfx('pick'); } return; }   /* (the stores' chest: the hatch's store, opened as any chest) */
-    var k, P = hero(); f.taken = true; sfx('pick');
+    var k, P = hero(); f.taken = true; sfx('pick'); if (f.mush) { seen.mushDay = seen.mushDay || {}; seen.mushDay[f.id] = day.n; }
     if (f.coffin) { seen.coffins = (seen.coffins || 0) + 1; if (f.ring) { drop('silver', f.x, f.y + 12, f.ring); note('A silver ring among the bones'); } else note('Only bones'); save(); return; }   /* (the catacombs' coffins, 2026-10-22: the reputation a grave costs waits for a reputation) */
     if (f.give) for (k in f.give) drop(k, f.x, f.y + 8, f.give[k]);
     if (f.thing) { var th = Items.make(f.thing.kind, f.thing.mat); dropThing(th, f.x + 12, f.y + 10); }
@@ -3208,6 +3239,23 @@ __COMBAT__
     }
     P.vx = P.vy = 0; save();
   }
+  var CAVE_WOLVES = !SCENE;   /* the game's cave is chapter 1's: no troll and no young, wolves met one or two at a time (Robin, 2026-10-29); the Mountain test keeps the troll */
+  function caveMushrooms(cv) {             // the pale mushrooms in the cave's dark, a find each, grown again two days after they are picked
+    var R = kit.rng(spec.seed * 53 + 11), spots = [cv.hall, cv.gallery, cv.poolC, cv.lair, cv.fern].filter(Boolean), n = 0, t;
+    for (t = 0; t < 400 && n < 9; t++) { var q = spots[t % spots.length], x = q.x + (R() - 0.5) * 260, y = q.y + (R() - 0.5) * 150; if (!Cave.floor(cv, x, y) || Math.hypot(x - cv.entrance.x, y - cv.entrance.y) < 120) continue; cv.finds.push({ id: 'mush' + n, prop: 'caveMushroom', x: x, y: y, s: 1, v: n % 3, r: 0, say: 'Pick the mushrooms', give: { mushroom: 2 }, mush: true, gone: true }); n++; }
+  }
+  var cwolves = [], cwolfDay = -1, CWOLF = [['hall', 1], ['gallery', 2], ['poolC', 1], ['lair', 2]];   /* the cave's wolves: by twos and ones at most (Robin), back each dawn while you are out (mine) */
+  function caveWolfTick() {
+    if (!cave || !CAVE_WOLVES) return; var W = Combat.dbg().W, here0 = inCave && here() === cave;
+    cwolves = cwolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
+    if (cwolfDay !== day.n && !here0) { cwolfDay = day.n; seen.mushDay = seen.mushDay || {}; cave.finds.forEach(function (f) { if (f.mush && f.taken && day.n - (seen.mushDay[f.id] || 0) >= 2) f.taken = false; });
+      CWOLF.forEach(function (g, gi) { var at = cave[g[0]]; if (!at) return; var have = cwolves.filter(function (e) { return e.cgroup === gi; }).length, k;
+        for (k = have; k < g[1]; k++) { var x = at.x + (Math.random() - 0.5) * 80, y = at.y + (Math.random() - 0.5) * 50; if (!Cave.floor(cave, x, y)) { x = at.x; y = at.y; } wantKind = 'wolf'; var e = Combat.spawn('beast'); wantKind = 'boar'; e.x = x; e.y = y; e.face = Math.random() * 6.283; e.wander = { x0: x, y0: y, r: 60, wait: Math.random() * 3 }; e.cgroup = gi; e.cave = true; cwolves.push(e); } }); }
+  }
+  function caveTraceTick() {
+    if (!inCave || here() !== cave) return; var P = hero(), L = linesOf('line.cave.traces', ['A bed of heather and moss, pressed flat by something the size of a cart.', 'Great bones, split for the marrow.', 'Claw marks in the rock, higher than a man can reach.']); seen.traces = seen.traces || {};
+    [[cave.lair, 0, 'An old bed'], [cave.pit || cave.gallery, 1, 'Bones'], [cave.hall, 2, 'The rock']].forEach(function (q) { if (!q[0] || seen.traces[q[1]] || Math.hypot(P.x - q[0].x, P.y - q[0].y) > 120) return; seen.traces[q[1]] = 1; sayAt(q[0].x, q[0].y, q[2], L[q[1]] || '', 7); });
+  }
   function caveUse() { if (inCave) caveSwap(false); else caveSwap(true, caveAtHand()); }
   function caveHear(o) { if (here() !== cave) return; cave.noiseT = 14; }   // mining is loud (the troll no longer comes at every blow: by a chance with every ore, ungeOre, 2026-10-16)
   function drawCaveFloor(c, hw, hh) { Cave.drawFloor(c, here(), cam, hw, hh, clock); }
@@ -3244,10 +3292,10 @@ __COMBAT__
       items.push({ y: flat ? -1e9 : o.y, f: function () { ctx.drawImage(s.cv, o.x + s.l, o.y * K + s.t, s.w, s.h); } });
     });
     (hc.fires || []).forEach(function (fi) { if (Math.abs(fi.x - cam.x) > 320 || Math.abs(fi.y * K - cam.y) > 260) return; var it = fi.it || (fi.it = { name: 'firePit', x: fi.x, y: fi.y }); items.push({ y: fi.y, f: function () { drawFire(ctx, it); } }); });   /* the troll's fire by his bed (its light is Cave.dark's) */
-    hc.ores.concat(hc.props, trolls && cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
+    hc.ores.concat(hc.props, trolls && cave.body && (CAVE_WOLVES || !seen.ring) ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
       if (Math.abs(o.x - cam.x) > 260 || Math.abs(o.y * K - cam.y) > 200) return;
       var s = sprite(spriteName(o), o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, ww = s.w * sS, hh = s.h * sS, P = hero();   /* (a set piece, the trees since 2026-10-20, at its own size) */
-      items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); if (o === cave.body) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(o.x - 15, o.y * K - 6 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
+      items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); if (o === cave.body && !(CAVE_WOLVES && seen.hogni)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(o.x - 15, o.y * K - 6 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
     });
   }
   function drawCaveDark(c, P) {            // the dark and the light in it (Cave.dark: your own circle, the tunnel's daylight, the holes in the roof by the sun, the copper), then the troll's eyes
@@ -3285,7 +3333,7 @@ __COMBAT__
     wantKind = 'troll'; var e = Combat.spawn('beast'); wantKind = 'boar';
     e.x = cave.lair.x; e.y = cave.lair.y; e.face = Math.PI; e.wander = { x0: e.x, y0: e.y, r: 150, wait: Math.random() * 3 }; e.stoneT = null; e.lightCd = 0; e.place = 'in'; troll = e; return e;
   }
-  function trollReset() { troll = null; trollOutNight = 0; if (cave && day.n - trollDeadDay >= 3) trollMoveIn(); }
+  function trollReset() { troll = null; trollOutNight = 0; if (CAVE_WOLVES) return; if (cave && day.n - trollDeadDay >= 3) trollMoveIn(); }
   function trollStone(e) { e.stoneT = 0; e.hold = true; e.state = 'idle'; e.skin = lib.makeCreature(lib.animalSpec('trollStone')); e.name = 'TROLL STONE'; toast('Dawn: the troll turns to stone'); }
   function trollCrack(e) {
     var W = Combat.dbg().W, i = W.enemies.indexOf(e); if (i >= 0) W.enemies.splice(i, 1);
@@ -3310,6 +3358,7 @@ __COMBAT__
     if (P.sprinting) lim *= 1.6; if (torchOn) lim *= 1.5; if (runeHas('catFoot')) lim *= 0.6; return d < lim;
   }
   function trollTick(dt) {
+    if (CAVE_WOLVES) { troll = null; return; }   /* (chapter 1: the trolls have gone north) */
     var L = light(), W = Combat.dbg().W;
     if (cave && cave.noiseT > 0) cave.noiseT -= dt;
     if (troll && (troll.dead || W.enemies.indexOf(troll) < 0)) { troll = null; trollDeadDay = day.n; }
@@ -3378,7 +3427,7 @@ __COMBAT__
   }
   function ungeReset() {                   // a new world or a load: the young that are left, at home in the cave
     var W = Combat.dbg().W; unges.forEach(function (e) { var i = W.enemies.indexOf(e); if (i >= 0) W.enemies.splice(i, 1); }); unges = [];
-    if (!cave) return; for (var i = 0; i < UNGE.n - ungeSense.dead; i++) ungeSpawn();
+    if (!cave || CAVE_WOLVES) return; for (var i = 0; i < UNGE.n - ungeSense.dead; i++) ungeSpawn();
   }
   function ungeAlarm(e, killed) {          // a young struck or killed: he and every other that can see him turn on you; the troll feels it
     e.awake = true; e.job = null;
@@ -3433,6 +3482,7 @@ __COMBAT__
     e.wander = { x0: e.x, y0: e.y, r: 70, wait: 0 }; e.jobT = 6 + Math.random() * 8;
   }
   function ungeTick(dt) {
+    if (CAVE_WOLVES) { caveWolfTick(); caveTraceTick(); return; }
     if (!cave) return;
     if (!ungeInit) { ungeInit = true; ungeReset(); }
     var W = Combat.dbg().W, P = hero(), here0 = inCave && here() === cave, i, e;
@@ -3462,17 +3512,20 @@ __COMBAT__
      Two torches from 1 wood and 2 fiber at the Crafting tab. T takes one from the bag and lights it for 6 minutes; T
      again puts it out and keeps what is left. It is a light only: it does not frighten the troll (only a hearth or a
      brazier does that). */
-  var torchOn = false, torchLeft = 0, TORCH_TIME = 360;
+  var torchOn = false, torchLeft = 0, TORCH_TIME = 360, torchShield = null;
+  function torchRestore() { if (!torchShield) return; if (!equip.shield) equip.shield = torchShield; else if (!addThing(torchShield)) dropThing(torchShield, hero().x, hero().y + 10); torchShield = null; }
+  function torchHeld() { if (!torchOn) return false; var it = handItem('fight'); return !(it && TWO_HANDS[it.kind]); }   /* (a two-handed weapon in hand: the torch is not held, its light and its fear wait) */
   function torchToggle() {
     var P = hero(); if (P.dead || sleep) return;
-    if (torchOn) { torchOn = false; toast('Torch put out'); save(); return; }
+    if (torchOn) { torchOn = false; torchRestore(); toast('Torch put out'); save(); return; }
     if (torchLeft <= 0) { if (!(inv.torch > 0)) { toast('No torch: one is made by hand (Tab)'); return; } takeItem('torch', 1); torchLeft = TORCH_TIME * (false ? 2 : 1); }
+    if (equip.shield) { torchShield = equip.shield; equip.shield = null; }   /* (the shield set aside while the torch is in that hand) */
     torchOn = true; seen.torch = 1; sfx('craft'); toast('Torch lit'); save();
   }
   function torchTick(dt) {
     if (!torchOn) return;
     torchLeft -= dt; if (torchLeft < 30 && Math.floor(torchLeft) % 10 === 0 && Math.floor(torchLeft) !== torchTick.last) { torchTick.last = Math.floor(torchLeft); if (torchLeft > 0) toast('The torch is burning low'); }
-    if (torchLeft <= 0) { torchLeft = 0; torchOn = false; toast('The torch burnt out'); save(); }
+    if (torchLeft <= 0) { torchLeft = 0; torchOn = false; torchRestore(); toast('The torch burnt out'); save(); }
   }
   function drawTorchHeld(c) {              // a stick and a flame in the hand, flickering
     var P = hero(), dir = Math.cos(P.face) >= 0 ? 1 : -1, x = P.x + dir * 8, y = P.y * K - 12, fl = Math.sin(clock * 17) * 0.8 + Math.sin(clock * 29) * 0.5;
@@ -3557,6 +3610,7 @@ __COMBAT__
     ['There is a troll in the hill cave. We leave it be and it leaves us be.', 'Do not mine there at night.']
   ];
   (function () { var g = linesOf('line.folk.greeting', null); if (g && g.length >= 2) { FOLK_LINES.length = 0; for (var j = 0; j + 1 < g.length; j += 2) FOLK_LINES.push([g[j], g[j + 1]]); } })();   /* the villagers' greetings, in pairs (the register's line.folk.greeting) */
+  (function () { if (!CAVE_WOLVES) return; var wl = loreLines('line.folk.wolves', []), tn = ['The trolls went north, my grandmother said. For the cold, and nights that don’t end.', 'Sun’s too kind here for trolls. They like it where it never comes up in winter.']; for (var i = 0; i + 1 < wl.length; i += 2) FOLK_LINES.push([wl[i], wl[i + 1]]); FOLK_LINES.push(tn); })();   /* chapter 1: the wolves and the trolls gone north (Alistair, LD's line.folk.wolves and rumour.trolls.north, proposed, LORE?) */
   (function () { var o = loreLines('line.folk.ormr', []); for (var i = 0; i + 1 < o.length; i += 2) FOLK_LINES.push([o[i], o[i + 1]]); })();   /* the folk on Ormr Midgardbane, in pairs (the canon's line.folk.ormr) */
   // The hamlet is grown by Village (src/village.js, docs/villages.md, 2026-10-07): the archetype, the wealth and the seed come
   // from the island's seed; the site is a flat stretch of grass of the size the archetype needs, away from the cave; a shore to
@@ -3767,9 +3821,15 @@ __COMBAT__
     if (!npc) return false; var st = arnorState(), id = arnorLineId(st), e = LORE[id];
     return (!e || e.mode === 'sequence') && npc.st === st && npc.line > 0 && npc.line < loreLines(id).length;
   }
-  function aslakMore() { return !!(ring && ring.metal === 'bronze' && !seen.aslakRing && (seen.aslakRingI || 0) > 0) || (!seen.ring && (seen.aslakI || 0) > 0 && (seen.aslakI || 0) < loreLines('line.aslak.story').length); }   // the same for Old Aslak's story of his brother
-  function aslakTalk(f) {                 // his brother's story, a line a talk; with the bronze ring on your arm, what he says then
+  function aslakMore() { if (CAVE_WOLVES) return (!seen.hogni && !(inv.hogniAdze > 0) && (seen.aslakB || 0) > 0 && (seen.aslakB || 0) < loreLines('line.aslak.brother').length) || ((seen.hogni || inv.hogniAdze > 0) && !seen.aslakShop && (seen.aslakF || 0) > 0); return !!(ring && ring.metal === 'bronze' && !seen.aslakRing && (seen.aslakRingI || 0) > 0) || (!seen.ring && (seen.aslakI || 0) > 0 && (seen.aslakI || 0) < loreLines('line.aslak.story').length); }   // the same for Old Aslak's story of his brother
+  function aslakTalk(f) {                 // chapter 1 (Robin, 2026-10-29; Alistair, LD's lines, LORE?): his brother gone to the cave; the adze brought back; then his craft
     var L, k;
+    if (CAVE_WOLVES) {
+      if (!seen.hogni && !(inv.hogniAdze > 0)) { L = loreLines('line.aslak.brother', ['Hogni went up the mountain three days back. After a crooked oak.']); k = seen.aslakB || 0; if (k < L.length) { f.say = L[k]; seen.aslakB = k + 1; } else { var W2 = loreLines('line.aslak.wait', ['Anything? No. Go on, then.']); f.say = W2[f.line % W2.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; } }
+      else if (!seen.aslakShop) { L = loreLines('line.aslak.found', ['That\u2019s his adze.']); k = seen.aslakF || 0; if (k === 0 && inv.hogniAdze > 0) { takeItem('hogniAdze', 1); recount(); } f.say = L[Math.min(k, L.length - 1)]; seen.aslakF = k + 1; if (k + 1 >= L.length) seen.aslakShop = 1; }
+      else { var W3 = loreLines('line.aslak.craft', ['A ship\u2019s a tree that learned to swim. Bring me trees.']); f.say = W3[f.line % W3.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; }
+      f.sayT = 6; save(); return;
+    }
     if (ring && ring.metal === 'bronze' && !seen.aslakRing) { L = loreLines('line.aslak.ring'); k = seen.aslakRingI || 0; f.say = L[k] || ''; seen.aslakRingI = k + 1; if (k + 1 >= L.length) seen.aslakRing = 1; }
     else if (!seen.ring && (seen.aslakI || 0) < (L = loreLines('line.aslak.story')).length) { k = seen.aslakI || 0; f.say = L[k]; seen.aslakI = k + 1; }
     else { f.say = f.lines[f.line % f.lines.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; }   /* (his story told: remarks, then quiet) */
@@ -4170,6 +4230,7 @@ __COMBAT__
   }
   function nameClick() { if (!naming || !naming.btns || !mouseS) return; naming.btns.forEach(function (b) { if (mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h) { if (b.id === 'roll') nameRoll(); else nameDone(); } }); }
   var signs = [];                          // words that are not a person's (2026-10-16): what is scratched or carved, shown on the speech board a while
+  function sayChain(x, y, name, L) { var at = clock; L.forEach(function (ln) { var d = Math.max(3, Math.min(7, 1.6 + ln.length * 0.055)); signs.push({ x: x, y: y, name: name, say: ln, at: at, until: at + d, sayDur: d }); at += d; }); }
   function sayAt(x, y, name, text, t) { signs = signs.filter(function (q) { return q.say !== text; }); signs.push({ x: x, y: y, name: name, say: text, until: clock + (t || 7), sayDur: t || 7 }); }
   /* The talk window (docs/archive/talk-and-lore-book.md; Robin, 2026-10-22: "yes for your decisions 1-9"): Talk with a person who has a
      portrait (Colin, AD's, assets/portraits/<lore id>.png; in chapter 1 Arnor alone) opens a board low on the screen with his bust
@@ -4240,7 +4301,15 @@ __COMBAT__
      Voyager), the cost, Build. YOUR SHIPS: every ship you have built, where it lies, Summon (it comes to this yard's water: never lost)
      and Refit (its look, name and fitting changed here; a new fitting is paid). E or Esc closes it, and so does walking off. */
   var shipPanel = null, SPB = { x: 746, y: 120, w: 430, h: 610 }, spRects = [];
-  function spModelKnown(m) { return !!seen[m.key]; }
+  function lookOf(kind) {                  // the looks a shipyard offers: the plain ones, and the rest once Old Aslak has taught them (Robin, 2026-10-29)
+    var L = Yard.LOOK[kind]; if (SCENE) return L;
+    if (kind === 'sail') return seen.lookDyes ? L : L.slice(0, 2);
+    if (kind === 'pattern') return seen.lookPatterns ? L : L.slice(0, 2);
+    if (kind === 'shield') return seen.lookPaints ? L : [L[0], L[3]];
+    if (kind === 'head') return seen.lookHeads ? L : L.slice(0, 1);
+    return L; }
+  function spModelKnown(m) { return m.id === 'rowboat' ? !!(seen.shipwright || seen.raftYard) : m.id === 'karve' ? !!(seen.copper || seen.sailBoat) : !!seen[m.key]; }
+  function spSizeOk(z) { return z !== 'karve8' && z !== 'karve' || !!seen.copper; }   /* (the small karve by Old Aslak's sail; the bigger ones want copper, chapter 2) */
   function shipNameRoll(model, not) {      // a name from the lore's pool for the model (names.ships.<model>, Alistair, LD's handoff 9), one no ship of yours has; no ship is ever called the Serpent
     var L = LORE['names.ships.' + model], list = (L && L.list) || [], free = list.filter(function (n) { return n !== not && !fleet.some(function (v) { return v.name === n; }); }), pool = free.length ? free : list;
     return pool.length ? pool[Math.floor(Math.random() * pool.length)] : Yard.HULLS[(Yard.MODELS.filter(function (m) { return m.id === model; })[0] || { sizes: ['rowboat'] }).sizes[0]].name;
@@ -4330,18 +4399,18 @@ __COMBAT__
       y = 112; label('Model', y + 18);
       Yard.MODELS.filter(spModelKnown).forEach(function (m, k) { btn(100 + k * 104, y, 98, 26, m.name, sp.model === m.id, function () { if (sp.refit) return; var wasModel = sp.model; sp.model = m.id; sp.kind = m.sizes[0]; if (sp.autoName && wasModel !== m.id) sp.name = shipNameRoll(m.id); spPrev(); }, !!sp.refit && sp.model !== m.id); });   /* (a name the dice gave changes with the model; one you typed stays) */
       y += 34; label('Size', y + 18);
-      var M = Yard.MODELS.filter(function (m) { return m.id === sp.model; })[0]; M.sizes.forEach(function (z, k) { btn(100 + k * 104, y, 98, 26, Yard.HULLS[z].size, sp.kind === z, function () { if (sp.refit) return; sp.kind = z; spPrev(); }, !!sp.refit && sp.kind !== z); });
+      var M = Yard.MODELS.filter(function (m) { return m.id === sp.model; })[0]; M.sizes.forEach(function (z, k) { btn(100 + k * 104, y, 98, 26, Yard.HULLS[z].size, sp.kind === z, function () { if (sp.refit || !spSizeOk(z)) return; sp.kind = z; spPrev(); }, (!!sp.refit && sp.kind !== z) || !spSizeOk(z)); });
       if (!sp.name && sp.tab === 'new' && !sp.refit) { sp.name = shipNameRoll(sp.model); sp.autoName = true; }
       y += 36; label('Name', y + 19); c.save(); hVellum(c, 100, y, 246, 28); c.restore(); hText(c, (sp.name || '') + (sp.typing && Math.floor(clock * 2) % 2 ? '|' : ''), 110, y + 20, hf('bold', 15), HC.ink); spRects.push({ x: 100, y: y, w: 246, h: 28, act: function () { sp.typing = true; } });
       btn(352, y, 54, 28, 'Roll', false, function () { sp.name = shipNameRoll(sp.model, sp.name); sp.autoName = true; sp.typing = false; spPrev(); });   /* (the dice: another of the lore's names for the model) */
       y += 40;
       if (rig) {
-        label('Sail', y + 16); Yard.LOOK.sail.forEach(function (col, k) { sw(100 + k * 38, y, col, L.sailA === col, function () { L.sailA = col; spPrev(); }); }); y += 30;
-        sketch('pattern', y + 16); Yard.LOOK.pattern.forEach(function (q, k) { btn(100 + k * 77, y, 72, 24, q[1], L.pattern === q[0], function () { L.pattern = q[0]; spPrev(); }); }); y += 30;
-        if (L.pattern !== 'plain') { Yard.LOOK.sail.forEach(function (col, k) { sw(100 + k * 38, y, col, L.sailB === col, function () { L.sailB = col; spPrev(); }); }); y += 30; }
-        label('Shields', y + 16); Yard.LOOK.shield.forEach(function (col, k) { sw(100 + k * 38, y, col, L.shield === col, function () { L.shield = col; spPrev(); }); }); y += 28;
-        Yard.LOOK.shield.forEach(function (col, k) { sw(100 + k * 38, y, col, L.shield2 === col, function () { L.shield2 = col; spPrev(); }); }); y += 32;
-        label('Stem', y + 16); Yard.LOOK.head.forEach(function (q, k) { btn(100 + k * 77, y, 72, 24, q[1].replace(/^A (.)/, function (m0, ch) { return ch.toUpperCase(); }), L.head === q[0], function () { L.head = q[0]; spPrev(); }); }); y += 32;
+        label('Sail', y + 16); lookOf('sail').forEach(function (col, k) { sw(100 + k * 38, y, col, L.sailA === col, function () { L.sailA = col; spPrev(); }); }); y += 30;
+        sketch('pattern', y + 16); lookOf('pattern').forEach(function (q, k) { btn(100 + k * 77, y, 72, 24, q[1], L.pattern === q[0], function () { L.pattern = q[0]; spPrev(); }); }); y += 30;
+        if (L.pattern !== 'plain') { lookOf('sail').forEach(function (col, k) { sw(100 + k * 38, y, col, L.sailB === col, function () { L.sailB = col; spPrev(); }); }); y += 30; }
+        label('Shields', y + 16); lookOf('shield').forEach(function (col, k) { sw(100 + k * 38, y, col, L.shield === col, function () { L.shield = col; spPrev(); }); }); y += 28;
+        lookOf('shield').forEach(function (col, k) { sw(100 + k * 38, y, col, L.shield2 === col, function () { L.shield2 = col; spPrev(); }); }); y += 32;
+        label('Stem', y + 16); lookOf('head').forEach(function (q, k) { btn(100 + k * 77, y, 72, 24, q[1].replace(/^A (.)/, function (m0, ch) { return ch.toUpperCase(); }), L.head === q[0], function () { L.head = q[0]; spPrev(); }); }); y += 32;
       }
       label('Hull', y + 16); Yard.LOOK.tar.forEach(function (col, k) { sw(100 + k * 38, y, col, L.tar === col, function () { L.tar = col; spPrev(); }); }); y += 30;
       label('Trim', y + 16); Yard.LOOK.trim.forEach(function (col, k) { sw(100 + k * 38, y, col, L.trim === col, function () { L.trim = col; spPrev(); }); }); y += 34;
@@ -4368,7 +4437,7 @@ __COMBAT__
   }
   function drawSpeech(c) {
     var P = hero(), best = null, bd = 1e9, i;
-    signs = signs.filter(function (q) { q.sayT = q.until - clock; return q.sayT > 0 && Math.hypot(q.x - P.x, q.y - P.y) <= HEAR; }); signs.forEach(function (q) { speakers.push(q); });   /* (read and walked off: gone) */
+    signs = signs.filter(function (q) { q.sayT = q.until - clock; return q.sayT > 0 && Math.hypot(q.x - P.x, q.y - P.y) <= HEAR; }); signs.forEach(function (q) { if (!(q.at > clock)) speakers.push(q); });   /* (read and walked off: gone) */
     if (!speakers.length || talkWin) { speakers.length = 0; return; }   /* (the window open, nothing behind it: Robin, 2026-10-28, an old line showed behind) */
     for (i = 0; i < speakers.length; i++) { var q = speakers[i], d = Math.hypot(q.x - P.x, q.y - P.y); if (talkWin && q === talkWin.who) continue; if (d < bd) { bd = d; best = q; } }
     speakers.length = 0; if (!best || bd > HEAR) return;   /* (was 260: a line hung on the board long after you had walked off; Robin 2026-10-22) */
@@ -4427,7 +4496,7 @@ __COMBAT__
   }
   Combat.api.armor = function () { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor;  return Math.min(0.6, a); };
   function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
-    var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind];
+    var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind]; if (where === 'shield' && torchOn) { torchOn = false; torchShield = null; toast('Torch put out'); }   /* (a shield into that hand puts the torch out) */
     if (!where) {                          // a weapon or tool: to a free slot of its bar, or swapped with the thing in that bar's hand
       if (!BAR_OF[s.item.kind] || i < BAG0) return;
       var spec = s.item; slots[i] = null;
@@ -4656,14 +4725,19 @@ __COMBAT__
      a meal keeps your health coming back and your top health raised for a while. Nothing happens if you do not eat. ---------- */
   var RECIPES = [
     { id: 'roastBerries', needs: { berries: 3 }, text: 'Berries warmed on a flat stone: a little strength' },
+    { id: 'roastBoar', needs: { boarMeat: 1 }, text: 'Boar turned on the spit over the fire' },
+    { id: 'roastVenison', needs: { venison: 1 }, text: 'Venison seared over the fire' },
     { id: 'cookedMeat', needs: { meat: 1 }, text: 'Meat roasted over the fire' },
-    { id: 'stew', needs: { meat: 1, berries: 2 }, text: 'Meat and berries stewed together: the best meal on the island' },
+    { id: 'stew', needs: { meat: 1, berries: 2 }, learn: 1, text: 'Meat and berries stewed together' },
+    { id: 'boarStew', needs: { boarMeat: 1, mushroom: 1, berries: 2 }, learn: 1, text: 'Boar, cave mushrooms and berries, stewed slowly: a long, strong meal' },
+    { id: 'venisonBerries', needs: { venison: 1, berries: 3 }, learn: 1, text: 'Venison with a sauce of berries: wind for a long run' },
+    { id: 'angelicaBroth', needs: { mushroom: 2, angelica: 2 }, learn: 1, text: 'Mushrooms and angelica in broth: it mends you as you go' },
     { id: 'grilledFish', needs: { fish: 1 }, text: 'A fish grilled on a flat stone by the fire' },
     { id: 'fishSoup', needs: { fish: 2, berries: 2 }, taught: 'fishTaught', text: 'Two fish boiled with berries: the fisherman\u2019s soup' },
     { id: 'smokedFish', needs: { fish: 3, charcoal: 1 }, taught: 'fishTaught', text: 'Three fish hung in charcoal smoke until they keep' }
   ];
   // heal: at once. For time seconds: bonus on top health, regen health a second, stam on top stamina, stamRegen on how fast it returns
-  var FOOD = { feast: { heal: 60, regen: 2.5, time: 720, bonus: 30, stam: 35, stamRegen: 1.4 }, eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 600, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 600, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 900, bonus: 25, stam: 30, stamRegen: 1.35 }, grilledFish: { heal: 28, regen: 1, time: 600, bonus: 12, stam: 15, stamRegen: 1.15 }, fishSoup: { heal: 45, regen: 1.8, time: 900, bonus: 22, stam: 28, stamRegen: 1.3 }, smokedFish: { heal: 22, regen: 0.8, time: 1200, bonus: 15, stam: 20, stamRegen: 1.2 } };   // a meal lasts ten minutes at least (Robin, 2026-10-08)
+  var FOOD = { roastBoar: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, roastVenison: { heal: 28, regen: 1, time: 720, bonus: 10, stam: 22, stamRegen: 1.2 }, boarStew: { heal: 55, regen: 2, time: 900, bonus: 28, stam: 30, stamRegen: 1.35 }, venisonBerries: { heal: 45, regen: 1.5, time: 900, bonus: 15, stam: 42, stamRegen: 1.5 }, angelicaBroth: { heal: 40, regen: 2.8, time: 900, bonus: 20, stam: 20, stamRegen: 1.25 }, mushroom: { heal: 5, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, angelica: { heal: 8, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, feast: { heal: 60, regen: 2.5, time: 720, bonus: 30, stam: 35, stamRegen: 1.4 }, eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 600, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 600, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 900, bonus: 25, stam: 30, stamRegen: 1.35 }, grilledFish: { heal: 28, regen: 1, time: 600, bonus: 12, stam: 15, stamRegen: 1.15 }, fishSoup: { heal: 45, regen: 1.8, time: 900, bonus: 22, stam: 28, stamRegen: 1.3 }, smokedFish: { heal: 22, regen: 0.8, time: 1200, bonus: 15, stam: 20, stamRegen: 1.2 } };   // a meal lasts ten minutes at least (Robin, 2026-10-08)
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
   // Which station E means when a fire and a workbench both stand close: the one you look at counts as nearer
   // (facingScore). While a board is open its station is kept, so turning does not swap it.
@@ -4698,7 +4772,7 @@ __COMBAT__
     if (raft && raft.aboard) { var cb = caveAtHand(); return cb ? { say: 'Enter ' + CAVE_NAME[cb.kind][0], act: caveUse } : (rUse && shoreInReach() ? { say: 'Step ashore', act: raftUse } : null); }
     var C = [];
     function add(o, say, act, bias) { if (o && (say || act)) C.push({ say: say || null, act: act || null, sc: facingScore(P, o.x, o.y) + (bias || 0) }); }
-    var fa = fireAtHand(P); if (fa) add(fa, fa.what === 'roof' ? 'Set the roof alight' : 'Set it alight', function () { lighting = { fa: fa, t: 0, x: P.x, y: P.y }; }, 5);
+
     var hv = heavyNear(P); if (hv && hv.locked && runeHas('lockBreaker') && runeN('lockBreaker', 'knife') && handItem() && handItem().kind === 'knife') add(hv, 'Open the lock with the knife', function () { hv.locked = false; sfx('tele'); toast('The lock gives to the knife'); save(); });   /* the Lock-breaker III */
     else if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
     var dn = downNear(P, 36); if (dn) add(dn, 'Lift ' + (dn.name || 'him'), function () { liftMan(dn); });      // one of yours who is down: carried, he lives
@@ -4711,7 +4785,7 @@ __COMBAT__
     if (rUse) add(hullNearPt(P), cargo ? 'Unload the silver' : (raft.name && raft.name !== Yard.nameOf(raft.kind) ? 'Board ' + raft.name : 'Board the ' + Yard.nameOf(raft.kind).toLowerCase()), cargo ? unloadCargo : raftUse, -8);   /* (before the shipyard she lies by, unless you face the yard; a ship you named by her name; faced at the point of her keel nearest you, not her middle: a long ship's middle lies far off, and the shipyard by her won) */
     var syd = !(raft && raft.aboard) ? shipNear(P) : null; if (syd) add(syd, 'Shipyard', function () { spOpen(syd); });   /* (the shipyard's panel: docs/ships-rework.md) */
     var cv = caveAtHand(); if (cv) add(inCave ? cv.cave.exitAt : { x: cv.mouth.x, y: cv.mouth.y + 28 }, (inCave ? 'Leave ' : 'Enter ') + CAVE_NAME[cv.kind][0], caveUse);
-    if (bodyNear(P)) add(cave.body, 'Take the arm ring', function () { takeRing(); });
+    if (bodyNear(P)) add(cave.body, CAVE_WOLVES ? 'Take his adze' : 'Take the arm ring', function () { if (CAVE_WOLVES) hogniFound(); else takeRing(); });
     var gn = graveNear(P); if (gn) add(gn, 'Read', function () { lbMeet('person.thorgunna'); sayAt(gn.x, gn.y, 'Carved in the stone', 'Arnor raised this stone for Thorgunna. She did not pay.', 7); });
     var ft = feastNear(P); if (ft) add(ft, 'Eat at their table', function () { feastEat(ft); }, -40);   /* (the prompts are scored by distance and facing: the feast wins over the bench's Sit beside it) */   /* (raid step 7: they are at their meal, so you eat well) */   /* (the lore's person.thorgunna) */
     if (hoardNear(P)) add(cave.hoard, 'Take from the hoard', hoardTake);
@@ -4744,9 +4818,12 @@ __COMBAT__
     if (wp) add(wp, HD.jobs[jobOf(wp)].name + ': ' + fo.name, function () { if (!hirdAssign(P) && wp === st && !st.fallen) muster(); }, -6);   // a follower and a place to work: the work comes before the muster
     var hm = hirdNear(P); if (hm) add(hm, hm.sayT > 0 ? null : hm.follow ? 'Stay' : (hm === npc && !seen.raft ? 'Talk' : 'Follow me'), function () { if (hm === npc && !seen.raft) talkOpen(npc, talk); else hirdTalk(hm); });   /* (while he mends the boat he tells you to sleep, 2026-10-27) */
     if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock)) add(npc, npc.sayT > 0 && !arnorMore() ? null : 'Talk', function () { talkOpen(npc, talk); });   /* (a story with lines left keeps its Talk while he speaks: Robin, 2026-10-22) */   /* (quiet after a remark: talking above) */
+    var asE = aslakShopNear(P); if (asE && !aslakMore()) add(asE, 'Trade', function () { if (!(asE.sayT > 0)) aslakTalk(asE); invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('aslak'); }, -9);   /* Old Aslak's craft: the crafting board at him (Robin, 2026-10-29) */
+    var potE = potNear(P); if (potE) add(potE, 'Look in the pot', function () { potLook(potE); }, -6);   /* a village's pot teaches a dish (Robin, 2026-10-29) */
     var fk = folkNear(P); if (fk && fk.bound) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { talkOpen(fk, function () { folkTalk(fk); }); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
+    var agE = angelicaNear(P); if (agE) add(agE, 'Pick the angelica', function () { addItem('angelica', 2); recount(); w.removeProp(agE); gone[propKey(agE)] = 1; sfx('pick'); save(); });
     var bb = seasonGives('berries') && berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });   /* (not in a season that gives none: SEASON_GIVES) */
     var gb = !bb && seasonGives('grass') && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
     var kb = kickable(P); if (kb) add(kb, 'Kick it open', function () { kickBox(kb); });
@@ -4792,7 +4869,7 @@ __COMBAT__
     });
     cookFires = cookFires.filter(function (h) { return h.cooking && h.cooking.length; });
   }
-  var CRAFT_T = { hand: 1, bench: 1.5, ship: 1.5, trapper: 1.5 }, CRAFT_BATCH = 0.5, craftJob = null, shiftK = false;   // a craft's seconds (halved 2026-10-22, Robin: "Craftiing time needs to be reduced by at least half"; they were 2, 3 and 3); five at once take half of five times one
+  var CRAFT_T = { hand: 1, bench: 1.5, ship: 1.5, trapper: 1.5, aslak: 1.5 }, CRAFT_BATCH = 0.5, craftJob = null, shiftK = false;   // a craft's seconds (halved 2026-10-22, Robin: "Craftiing time needs to be reduced by at least half"; they were 2, 3 and 3); five at once take half of five times one
   var HEAL = { fire: 0.6, comfort: 0.15, shelter: 0.2, max: 1.5 };   // health a second: by a fire, and a comfort's worth more in a home of yours (mine)
   function craftTick(dt) {
     var j = craftJob; if (!j) return; var P = hero();
@@ -4814,7 +4891,15 @@ __COMBAT__
     c.translate(x - 23, y); c.scale(0.55, 0.55); if (kind) drawDropIcon(c, kind, 0, 0, 1.3); else if (r && r.out.item) Items.icon(c, Items.make(r.out.item[0], r.out.item[1]), 14); else if (r) drawDropIcon(c, r.out.stack ? r.out.stack[0] : 'arrow', 0, 0, 1.3); c.restore();
     if (n > 1) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText('x' + n, x + 18, y + 2); c.fillStyle = '#fff'; c.fillText('x' + n, x + 18, y + 2); }
   }
+  var MEATS = ['boarMeat', 'venison', 'meat'];
   var BERRY_CD = 120, berryAt = -1e9;   /* berries eaten raw: a little health, then a 2-minute wait (Robin, 2026-10-26: "No food on the starter island. Instead the berries can be eaten for a little health but has 2 min cooldown") */
+  function potDish(it) {                    // what a village's pot teaches: one of the dishes learnt so, by the hearth's place, so each house has its own
+    var L = RECIPES.filter(function (d) { return d.learn; }); return L[Math.floor(World.hash(Math.round(it.x), Math.round(it.y), 77) * L.length) % L.length]; }
+  function potNear(P) { if (onStarter()) return null; var best = null, bd = 50; B.items.forEach(function (it) { if (!isHearth(it) || it.cold || !sameLvl(it)) return; var vi = villageAt(it.x, it.y); if (vi < 0 || villageHeld(vi)) return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd && canReach(P, it)) { bd = d; best = it; } }); return best; }
+  function potLook(it) { var d = potDish(it); if (!d) return; seen.dishes = seen.dishes || {}; var nm = (NAMES[d.id] || d.id).toLowerCase();
+    if (seen.dishes[d.id]) toast('You already know how to cook ' + nm); else { seen.dishes[d.id] = 1; note('You learnt how to cook ' + nm); sfx('craft'); }
+    var who = folk.filter(function (f) { return !f.dead && !f.gone && Math.hypot(f.x - it.x, f.y - it.y) < 140; })[0], PL0 = linesOf('line.folk.pot', ['Stir it. Don\u2019t stare at it.']); if (who && !(who.sayT > 0)) { who.say = PL0[Math.floor(Math.random() * PL0.length)]; who.sayT = 4; }   /* (the lore's, LORE? until Robin's yes) */
+    save(); }
   function eat(kind, free) {
     var f = FOOD[kind], P = hero(); if (!f || (!free && !(inv[kind] > 0)) || P.dead) return;
     if (kind === 'berries') { var bl = BERRY_CD - (clock - berryAt); if (bl > 0) { toast('You have had your fill of berries for now'); return; } berryAt = clock; }
@@ -4861,6 +4946,7 @@ __COMBAT__
     if (menuTab === 'hearth' && !nearHearth(hero())) menuTab = 'hand';
     if (menuTab === 'furnace' && !furnaceAt(hero())) menuTab = 'hand';
     if (menuTab === 'trapper' && !trapperAt(hero())) menuTab = 'hand';
+    if (menuTab === 'aslak' && !aslakShopNear(hero())) menuTab = 'hand';
     if (menuTab !== 'build') { openInfo(); return; }
     /* The Building board (2026-10-12, the UI review; Robin: all of it): a tab a category and a screen each, no scrolling;
        every piece with its name under it and what it costs, faint where you cannot pay. It was sixty small pictures in one
@@ -4882,7 +4968,7 @@ __COMBAT__
      recipe shows as a small vellum slip bottom left while the boards are shut and no fight is on, its materials as
      have/need), and the hand board teaching the stations (faint groups of what a hearth, workbench or furnace the hero has
      stood at would make). Where a material comes from waits for the lore book (Robin: no). The pins and the counts are saved. */
-  var pins = [], craftN = {}, btnHold = null, fightT = 0, slipT = 0, slipPins = [], STATION_NAMES = { hearth: 'hearth', bench: 'workbench', furnace: 'furnace', trapper: 'trapper\u2019s bench' };
+  var pins = [], craftN = {}, btnHold = null, fightT = 0, slipT = 0, slipPins = [], STATION_NAMES = { hearth: 'hearth', bench: 'workbench', furnace: 'furnace', trapper: 'trapper\u2019s bench' , aslak: 'shipwright' };
   function recipeById(id) { var i; for (i = 0; i < RECIPES2.length; i++) if (RECIPES2[i].id === id) return { id: id, r: RECIPES2[i] }; for (i = 0; i < RECIPES.length; i++) if (RECIPES[i].id === id) return { id: id, dish: RECIPES[i] }; return null; }
   function hitS(r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; }
   function pinToggle(id) { var i = pins.indexOf(id); if (i >= 0) pins.splice(i, 1); else { pins.push(id); while (pins.length > 3) pins.shift(); } sfx('pick'); save(); }   // up to three; a fourth lets the oldest go
@@ -4931,8 +5017,9 @@ __COMBAT__
   function craftGroupsHere() { var P = hero(), out = [], rl = function (at) { return RECIPES2.filter(function (r) { return r.at === at && known(r); }).map(function (r) { return { id: r.id, r: r }; }); };
     if (benchNear(P)) out.push({ at: 'bench', list: rl('bench') });
     if (nearHearth(P)) out.push({ at: 'hearth', list: RECIPES.filter(dishKnown).map(function (d) { return { id: d.id, dish: d }; }) });
-    if (furnaceAt(P)) out.push({ at: 'furnace', list: rl('furnace') }); if (trapperAt(P)) out.push({ at: 'trapper', list: rl('trapper') });
+    if (furnaceAt(P)) out.push({ at: 'furnace', list: rl('furnace') }); if (trapperAt(P)) out.push({ at: 'trapper', list: rl('trapper') }); if (aslakShopNear(P)) out.push({ at: 'aslak', list: rl('aslak') });
     return out.filter(function (g) { return g.list.length; }); }
+  function aslakShopNear(P) { if (!seen.aslakShop) return null; var f = folk.filter(function (q) { return q.aslak && !q.dead && !q.gone; })[0]; return f && Math.hypot(f.x - P.x, f.y - P.y) < 70 ? f : null; }
   function infoList() { return RECIPES2.filter(function (r) { return r.at === 'hand' && known(r); }).map(function (r) { return { id: r.id, r: r }; }); }
   function openInfo() {
     var opener = menuFrom === 'bench' ? 'bench' : menuTab; menuStation = opener === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (opener === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (opener === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : (opener === 'trapper' ? { kind: 'trapper', it: trapperAt(hero()) } : null))); if (menuStation && !menuStation.it) menuStation = null;
@@ -4940,7 +5027,7 @@ __COMBAT__
     menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* bottom right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
     var rowH = 10; menu.ly = menu.y + 18; menu.lw = 150 / 3; menu.lx = menu.x + 6;
     var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
-    var only = (menuFrom === 'E' || menuFrom === 'bench') && /^(hearth|furnace|trapper)$/.test(opener) ? opener : null;   /* (the workbench shows the hand's things with its own: Robin, 2026-10-28, it showed only arrows) */ menu.only = only; menu.title = only === 'hearth' ? 'Cooking' : only === 'furnace' ? 'Smelting' : only === 'trapper' ? 'Traps' : 'Crafting';   /* E at a station shows that station's work alone (Robin, 2026-10-28: "When you open the cook menu you get the normal crafting menu. It should only be cooking there"); Tab shows everything */
+    var only = (menuFrom === 'E' || menuFrom === 'bench') && /^(hearth|furnace|trapper|aslak)$/.test(opener) ? opener : null;   /* (the workbench shows the hand's things with its own: Robin, 2026-10-28, it showed only arrows) */ menu.only = only; menu.title = only === 'hearth' ? 'Cooking' : only === 'furnace' ? 'Smelting' : only === 'trapper' ? 'Traps' : only === 'aslak' ? 'Old Aslak\u2019s craft' : 'Crafting';   /* E at a station shows that station's work alone (Robin, 2026-10-28: "When you open the cook menu you get the normal crafting menu. It should only be cooking there"); Tab shows everything */
     if (only) menu.list = [];
     var hand = menu.list, here = craftGroupsHere().filter(function (g) { return !only || g.at === only; }), show = [], cats = CATS2.filter(function (ct) { return hand.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); hand.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
@@ -4960,11 +5047,12 @@ __COMBAT__
     c.save(); c.translate(x, y); c.scale(sc, sc);
     if (e.dish) drawDropIcon(c, e.dish.id, 0, 0, 1.4);
     else if (e.r.out.item) Items.icon(c, Items.make(e.r.out.item[0], e.r.out.item[1]), 16);
-    else drawDropIcon(c, e.r.out.stack ? e.r.out.stack[0] : (e.r.out.raft ? 'raft' : 'arrow'), 0, 0, 1.3);
+    else drawDropIcon(c, e.r.out.icon || (e.r.out.stack ? e.r.out.stack[0] : (e.r.out.raft ? 'raft' : 'arrow')), 0, 0, 1.3);
     c.restore();
   }
-  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone and flint. Knapped it takes an edge; stacked it holds a fire.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', sinew: 'From along a boar\u2019s back. Dried and twisted, it makes a bowstring.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
+  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone and flint. Knapped it takes an edge; stacked it holds a fire.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', sinew: 'From along a boar\u2019s back. Dried and twisted, it makes a bowstring.', boarMeat: 'Dark and fat-rimmed. Good on the spit, better in a pot.', venison: 'Lean meat from the deer. It wants something sweet beside it.', wolfPelt: 'A grey pelt, thick for the winter.', mushroom: 'Pale caps from the cave\u2019s dark. They grow where nothing else will.', angelica: 'Kvann, the tall green umbel. Its stalks are eaten and its leaves go in the broth.', hogniAdze: 'A shipwright\u2019s adze, the haft worn to the shape of a hand.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
   function infoText(e) {                    // the tale: a dish's line, a thing's own description
+    if (e.r && e.r.out.learn) return e.r.out.text || '';
     if (e.dish) return e.dish.text + '.';
     if (e.r.out.item) return Items.make(e.r.out.item[0], e.r.out.item[1]).desc;
     if (e.r.out.stack) return STACK_TALE[e.r.out.stack[0]] || '';
@@ -5011,7 +5099,7 @@ __COMBAT__
     return craftJob && craftJob.r === (e.dish || e.r) ? { f: craftJob.t / craftJob.dur, n: craftJob.n } : null;
   }
   function infoCan(e, n) { if (e.dim) return false; var P = hero(); if (e.r && e.r.at === 'bench') { var b = benchNear(P); if (!b || !benchRoofed(b)) return false; } if (e.dish && !hearthAt(P)) return false; if (e.r && e.r.at === 'furnace' && !furnaceAt(P)) return false; if (e.r && e.r.at === 'trapper' && !trapperAt(P)) return false; var nd = infoNeeds(e), m = n || 1, k, need = {}; for (k in nd) need[k] = nd[k] * m; return canAfford(need); }
-  function infoShiftN(e) { return shiftK && e && !e.dim && !(e.r && e.r.out.raft) ? 5 : 1; }   // Shift held: five at once
+  function infoShiftN(e) { return shiftK && e && !e.dim && !(e.r && (e.r.out.raft || e.r.out.learn)) ? 5 : 1; }   // Shift held: five at once
   function refund(needs, at) { if (ADMIN.free) return; var P = hero(); for (var k in needs) { var left = addItem(k, needs[k]); if (left) drop(k, at ? at.x : P.x, (at ? at.y : P.y) + 12, left); } }
   function infoCancel(e) {                  // the last queued one of this thing is taken off the queue and its materials come back
     if (!e) return; var P = hero(), q, i;
@@ -5029,7 +5117,7 @@ __COMBAT__
     if (e.dish) return 'a dish, cooked at the fire';
     var o = e.r.out;
     if (o.item) { var K = Items.KINDS[o.item[0]]; if (K.gear) return { head: 'worn on the head', chest: 'worn on the body', legs: 'worn on the legs', feet: 'worn on the feet', cloak: 'worn on the back', shield: 'carried on the arm' }[K.gear] || 'worn'; if (K.tool && K.melee) return 'a tool, and a weapon at need'; if (K.tool) return 'a tool'; if (K.ranged) return 'a weapon for a distance'; return 'a weapon'; }
-    if (o.raft) return 'a vessel'; if (o.arrows) return 'for the bow'; if (o.stack && o.stack[0] === 'torch') return 'a light for the dark'; if (e.r.at === 'furnace') return 'smelted in the furnace';
+    if (o.learn) return 'a lesson from Old Aslak'; if (o.raft) return 'a vessel'; if (o.arrows) return 'for the bow'; if (o.stack && o.stack[0] === 'torch') return 'a light for the dark'; if (e.r.at === 'furnace') return 'smelted in the furnace';
     return 'a supply';
   }
   function bigSc(e) { return e.dish || !e.r.out.item ? 1.6 : (Items.KINDS[e.r.out.item[0]].gear ? 1.5 : 1.45); }   // the picture about 96 canvas pixels   // the thing's picture on the card, about 116 canvas pixels
@@ -5101,7 +5189,7 @@ __COMBAT__
       // the button row: Craft (Craft x5 with Shift), which turns into Cancel and fills while the thing is made; at a fire or a furnace Cook or Smelt with Cancel beside while something is queued; a dim row says where its thing is made instead
       if (sel.dim) { hText(c, 'Made at the ' + STATION_NAMES[sel.at], cx0 + cw / 2, 428 + 32, hf('italic', 14), HC.rubric, 'center'); }
       else {
-        var verb = sel.dish ? 'Cook' : (sel.r.at === 'furnace' ? 'Smelt' : 'Craft'), job = craftJob && craftJob.r === (sel.dish || sel.r) ? craftJob : null, bx0 = cx0 + 16, bw = cw - 32, x5 = shN > 1 ? ' \u00d75' : '';
+        var verb = sel.dish ? 'Cook' : (sel.r.at === 'furnace' ? 'Smelt' : sel.r.out.learn ? 'Learn' : 'Craft'), job = craftJob && craftJob.r === (sel.dish || sel.r) ? craftJob : null, bx0 = cx0 + 16, bw = cw - 32, x5 = shN > 1 ? ' \u00d75' : '';
         menu.btn = { x: X + bx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
         if (job) hButton(c, bx0, 428, bw, 52, job.n > 1 ? 'Cancel \u00d7' + job.n : 'Cancel', true, inR(menu.btn), job.t / job.dur, 22);   /* the button turned into Cancel, filling as the thing is made (Robin, 2026-10-21; cooking and smelting the same since 2026-10-22) */
         else hButton(c, bx0, 428, bw, 52, verb + x5, infoCan(sel, shN) && !craftJob, inR(menu.btn), 0, 22);
@@ -5612,11 +5700,12 @@ __COMBAT__
         var worn = s.ringSlot ? ring : equip[s.id];
         if (worn && s.ringSlot) hUnits(c, s.px, s.py, function () { c.strokeStyle = (RING_METALS[ring.metal] || RING_METALS.bronze).col; c.lineWidth = 1.6; c.beginPath(); c.arc(0, 0.4, 4.6, 0.4, 5.9); c.stroke(); c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 0.6; c.beginPath(); c.arc(0, 0.4, 4.6, 0.4, 5.9); c.stroke(); });   /* (the arm ring worn: its metal's coil; the runes are not on it, 2026-10-23) */
         else if (worn) hUnits(c, s.px, s.py, function () { itemIcon(c, worn, 10.9, 6.2); });
+        else if (s.id === 'shield' && torchOn) hUnits(c, s.px, s.py, function () { drawDropIcon(c, 'torch', 0, 0, 1.1); });   /* the torch in the shield's hand */
         else { var sk = himg('sketch_light_' + SKETCH[s.id]) || himg('sketch_' + SKETCH[s.id]); if (sk) c.drawImage(sk, s.px - 20, s.py - 20, 40, 40); else hUnits(c, s.px, s.py, function () { glyph(c, s.id, 0, 0); }); }
       });
       // under the window: what you wear turns aside, or what the slot you point at holds
       var txt = '';   /* (no status line under the window: the Stats tab has it, Robin's update) */
-      if (hov) { var txt = hov.ringSlot ? (ring ? RING_METALS[ring.metal].name + ' arm ring' : 'Arm ring: none') : (equip[hov.id] ? equip[hov.id].name + (hov.id === 'quiver' ? ', ' + quiverCount() + ' arrows' : '') + '  (right click: take off)' : hov.name + ': empty'); }
+      if (hov) { var txt = hov.ringSlot ? (ring ? RING_METALS[ring.metal].name + ' arm ring' : 'Arm ring: none') : (equip[hov.id] ? equip[hov.id].name + (hov.id === 'quiver' ? ', ' + quiverCount() + ' arrows' : '') + '  (right click: take off)' : hov.id === 'shield' && torchOn ? 'A burning torch  (T: put it out)' : hov.name + ': empty'); }
       if (txt) { c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center'); }
     });
     if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
@@ -5826,7 +5915,8 @@ __COMBAT__
     if (!quiet) { rite = { ring: true, t: 0 }; sfx('craft'); if (cave && cave.body) sayAt(cave.body.x, cave.body.y, 'Scratched in the rock', 'Hogni. Tell Aslak to run faster.', 8); }   /* (the lore's: the scratch by Hogni) */
     save();
   }
-  function bodyNear(P) { return inCave && here() === cave && cave && cave.body && !seen.ring && Math.hypot(P.x - cave.body.x, P.y - cave.body.y) < 44; }
+  function hogniFound() { seen.hogni = 1; addItem('hogniAdze', 1); recount(); sfx('pick'); var L = linesOf('line.hogni.found', ['An old man, sitting against the rock as if he\u2019d stopped to rest.']); sayChain(cave.body.x, cave.body.y, 'Hogni', L); save(); }   /* (the lore's, LORE?) */
+  function bodyNear(P) { return inCave && here() === cave && cave && cave.body && (CAVE_WOLVES ? !seen.hogni : !seen.ring) && Math.hypot(P.x - cave.body.x, P.y - cave.body.y) < 44; }
   // the note of a rune met, grown, or the ring taken: a dim, the stone over the hero, its name; drawn on the HUD
   function drawRite(c) {
     if (!rite) return; var P = hero(), t = rite.t, a = Math.min(1, t * 2) * Math.min(1, Math.max(0, (2.8 - t) / 0.6));
@@ -6173,6 +6263,7 @@ __COMBAT__
   function questWhere(id) {                /* where a quest points, in tiles, and the word by the pencil ring */
     if (!village) return null; var vx = village.tx, vy = village.ty;
     if (id === 'quest.arnor.house') return { x: vx + 17, y: vy + 12, word: 'his house, the plank house by the well' };
+    if (id === 'quest.aslak.brother') return caveMouth ? { x: caveMouth.x / T, y: caveMouth.y / T, word: 'the old troll cave on the mountain' } : null;
     if (id === 'quest.shore') return { x: home.x / T, y: home.y / T, word: 'the wreck on the shore' };
     if (id === 'quest.sail-east') { var bq = w.isles.filter(function (q) { return q.role === 'big'; })[0]; return bq ? { x: bq.x, y: bq.y, word: 'the big island, east across the water' } : null; }
     if (id === 'quest.arnor.meat' || id === 'quest.arnor.deer') { var tb = B.items.filter(function (it) { return it.name === 'butcherTable'; })[0]; return tb ? { x: tb.x / T, y: tb.y / T, word: 'the butcher’s table, in the yard by the woodpile' } : null; }
@@ -6265,8 +6356,8 @@ __COMBAT__
   var BEAST_WORD = { boar: 'boar', deer: 'deer', wolf: 'wolf', snake: 'adder', bear: 'bear', moose: 'moose', hen: 'hen', goat: 'goat', sheep: 'sheep', cow: 'cow' };
   function beastWord(e) { return BEAST_WORD[e.stock || e.kind] || 'beast'; }
   /* Butchering (Robin, 2026-10-26: "Killing a big animal out in the field gives nothing until butchered"; the first table at Arnor's, no fire needed): a big animal's body lies BODY_LIE s to be carried to a butcher's table, and gives there much more than a kill gave (mine: a kill gave a boar 1 meat and 1 leather, a deer 1 and 2). Adders as they were (Robin). A young boar gives half. */
-  var BUTCHER = { boar: { meat: 3, leather: 2, sinew: 2 }, deer: { meat: 3, leather: 2, antler: 1 },   /* the boar gives the bow's sinew, the deer an antler (Robin, 2026-10-28: "boar and deer need to drop different things"; the numbers mine) */
-    wolf: { meat: 2, leather: 2 }, moose: { meat: 6, leather: 4, antler: 1 }, bear: { meat: 6, leather: 4 } }, BODY_LIE = 300;
+  var BUTCHER = { boar: { boarMeat: 3, leather: 2, sinew: 2 }, deer: { venison: 3, leather: 2, antler: 1 },   /* the boar gives the bow's sinew, the deer an antler (Robin, 2026-10-28: "boar and deer need to drop different things"; the numbers mine) */
+    wolf: { wolfPelt: 1, leather: 1 }, moose: { meat: 6, leather: 4, antler: 1 }, bear: { meat: 6, leather: 4 } }, BODY_LIE = 300;
   function butcherable(e) { return !!(e && BUTCHER[e.kind] && !e.tame && !e.human); }
   function bodyLie(e) { return butcherable(e) ? BODY_LIE : DEAD_LIE; }
   function butcherNear(P) { var best = null, bd = 46; B.items.forEach(function (it) { if (it.name !== 'butcherTable') return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd) { bd = d; best = it; } }); return best; }
@@ -6283,7 +6374,7 @@ __COMBAT__
     if (C.t < BUTCH_T) return; var tb = C.it, L = tb.laid, g = L && BUTCHER[L.kind]; BUTCH = null; if (!g) { tb.laid = null; return; }
     var k2 = (L.sizeK || 1) < 0.95 ? 0.5 : 1, forArnor = !!(questOf('quest.arnor.meat') && !questDone('quest.arnor.meat') && !seen.meatForArnor), forDeer = !forArnor && L.kind === 'deer' && !!(questOf('quest.arnor.deer') && !seen.deerForArnor); if (forArnor) seen.meatForArnor = 1;
     if (forDeer) { seen.deerForArnor = 1; forArnor = true; day.haste = DUSK_HASTE; day.supper = 1; if (npc) { npc.say = loreLines('line.arnor.supper')[0]; npc.sayT = 5; } }   /* the deer brought: the day runs down to night, to sleep, and the boat in the morning (Robin, 2026-10-28) */   /* the meat Arnor asked for: the first beast butchered at the table once he has asked; he keeps one piece */
-    var cuts = {}; for (var k in g) { var n = Math.max(1, Math.round(g[k] * k2)) - (forArnor && k === 'meat' ? 1 : 0); if (n > 0) cuts[k] = n; }
+    var cuts = {}; for (var k in g) { var n = Math.max(1, Math.round(g[k] * k2)) - (forArnor && k === MEATS.filter(function (m) { return g[m]; })[0] ? 1 : 0); if (n > 0) cuts[k] = n; }
     tb.laid = null; tb.cuts = cuts; tb.blood = 1; seen.butchered = (seen.butchered || 0) + 1; sfx('chop'); save();
   }
   function butcherTake(tb) { if (!tb || !tb.cuts) return; var left = {}; for (var k in tb.cuts) { var r = addItem(k, tb.cuts[k]); if (r > 0) left[k] = r; } tb.cuts = Object.keys(left).length ? left : null; if (tb.cuts) toast('The bag is full'); sfx('pick'); recount(); save(); }
@@ -6983,6 +7074,13 @@ __COMBAT__
     var rs = edgeRooms(q.L, q.tx, q.ty).filter(function (r) { return Ruin.burnsRoof(RUIN, B, r, BCFG.roof) && !roofBurning(r); });
     return rs.length ? { x: q.x, y: q.y, q: q, what: 'roof', room: rs[0] } : null;
   }
+  Combat.api.torchBash = function (p, face) {   /* the bash with a torch in the shield's hand: what is before it catches (a wall or roof not yours), a beast before it shies off; sparks either way */
+    if (!torchHeld()) return false; var P = hero(), fx = P.x + Math.cos(face) * 22, fy = P.y + Math.sin(face) * 22, fa = fireAtHand({ x: P.x, y: P.y, face: face, mode: 'fight', lvl: P.lvl }, true);
+    if (fa) lightFire(fa);
+    Combat.dbg().W.enemies.forEach(function (e) { if (e.dead || e.type !== 'beast' || e.human) return; if (Math.hypot(e.x - fx, e.y - fy) < 30 + (e.r || 8)) { e.scaredT = 4; e.awake = false; e.state = 'idle'; } });
+    for (var i = 0; i < 8; i++) chip(fx, fy - 10, 1, i % 2 ? '#ffb347' : '#ffd34d', 2, 60); sfx('swish');
+    return true;
+  };
   function lightingTick(dt) {
     if (!lighting) return; var P = hero();
     if (P.dead || !torchOn || Math.hypot(P.x - lighting.x, P.y - lighting.y) > 10) { lighting = null; return; }
@@ -7371,7 +7469,7 @@ __COMBAT__
     },
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z, P = hero(), i;
-      if (torchOn) items.push({ y: P.y + 1, f: function () { drawTorchHeld(ctx); } }); if (SCENE === 'dialogue') dlgItems(items);
+      if (torchHeld() && !(sprHero && sprHero.kit && sprHero.meta && sprHero.meta.layers.indexOf('torchHeld') >= 0)) items.push({ y: P.y + 1, f: function () { drawTorchHeld(ctx); } });   /* (the drawn stick only where the kit has no torch layer) */ if (SCENE === 'dialogue') dlgItems(items);
       for (i = 0; i < fxs.length; i++) (function (q) { items.push({ y: q.y + 4, f: function () { drawFx(ctx, q); } }); })(fxs[i]);   /* the rune effects, over what stands at their foot */
       for (i = 0; i < fireArrows.length; i++) (function (fa) { if (Math.abs(fa.x - cam.x) < hw + 20 && Math.abs(fa.y * K - cam.y) < hh + 30) items.push({ y: fa.y + 2, f: function () { drawFireArrowStuck(ctx, fa); } }); })(fireArrows[i]);   /* the burning arrows stuck in walls and turf */
       if (sprHero && P.dead) items.push({ y: P.y, f: function () { Sprites.drawDead(ctx, sprHero, P.x, P.y * K - Combat.api.scene.heroLift(), P.faceVis, P.anim, P, { scale: Sprites.scaleOf(localStorage), shadow: false, stepData: Combat.api.stepData }); } });   // the fallen sprite hero (the engine draws no hero when dead)
@@ -7841,7 +7939,7 @@ __COMBAT__
       if (w.mt && sv.cliffVeins && sv.cliffVeins.length === w.mt.veins.length) sv.cliffVeins.forEach(function (lf, vi) { w.mt.veins[vi].left = lf; }); if (cave && cave.hoard && sv.hoard) { cave.hoard.n = sv.hoard.n; cave.hoard.day = sv.hoard.day; }
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; fishLog = sv.fishLog || {}; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
       var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || w.isWade(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
-      torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
+      torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0; torchShield = sv.torch && sv.torch.shield ? sv.torch.shield : null; if (!torchOn) torchRestore();
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
       if (sv.carryBeast && ANIMALS[sv.carryBeast.kind]) carryPending = sv.carryBeast;   /* a beast on his shoulders comes back on them (Robin, 2026-10-27: "Save it") */
       fleet = (sv.fleet && sv.fleet.length ? sv.fleet : sv.raft && sv.raft.x != null ? [sv.raft] : []).map(shipOf); raft = fleet[sv.fleet ? sv.raftI : 0] || fleet[0] || null;   /* (the fleet, or an older save's one vessel: docs/ships-rework.md) */
