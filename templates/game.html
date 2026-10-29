@@ -3242,7 +3242,7 @@ __COMBAT__
   var CAVE_WOLVES = !SCENE;   /* the game's cave is chapter 1's: no troll and no young, wolves met one or two at a time (Robin, 2026-10-29); the Mountain test keeps the troll */
   function caveMushrooms(cv) {             // the pale mushrooms in the cave's dark, a find each, grown again two days after they are picked
     var R = kit.rng(spec.seed * 53 + 11), spots = [cv.hall, cv.gallery, cv.poolC, cv.lair, cv.fern].filter(Boolean), n = 0, t;
-    for (t = 0; t < 400 && n < 9; t++) { var q = spots[t % spots.length], x = q.x + (R() - 0.5) * 260, y = q.y + (R() - 0.5) * 150; if (!Cave.floor(cv, x, y) || Math.hypot(x - cv.entrance.x, y - cv.entrance.y) < 120) continue; cv.finds.push({ id: 'mush' + n, prop: 'caveMushroom', x: x, y: y, s: 1, v: n % 3, r: 0, say: 'Pick the mushrooms', give: { mushroom: 2 }, mush: true, gone: true }); n++; }
+    for (t = 0; t < 400 && n < 9; t++) { var q = spots[t % spots.length], x = q.x + (R() - 0.5) * 260, y = q.y + (R() - 0.5) * 150; if (!Cave.floor(cv, x, y) || Math.hypot(x - cv.entrance.x, y - cv.entrance.y) < 120) continue; cv.finds.push({ id: 'mush' + n, prop: 'caveMushroom', x: x, y: y, s: 1, v: n % 3, r: 0, say: 'Pick the mushrooms', give: { mushroom: 2 }, mush: true }); n++; }
   }
   var cwolves = [], cwolfDay = -1, CWOLF = [['hall', 1], ['gallery', 2], ['poolC', 1], ['lair', 2]];   /* the cave's wolves: by twos and ones at most (Robin), back each dawn while you are out (mine) */
   function caveWolfTick() {
@@ -3281,7 +3281,7 @@ __COMBAT__
     hc.finds.forEach(function (f) {                       // what lies there to be taken, a glint on it until it is
       if ((f.taken && f.gone) || Math.abs(f.x - cam.x) > 260 || Math.abs(f.y * K - cam.y) > 200) return;
       if (f.prop === 'drift') { items.push({ y: f.y, f: function () { Cave.drawDrift(ctx, f); } }); return; }
-      var opn = !!(f.coffin && f.taken && World.IMAGES[f.prop + '_open']), s = sprite(opn ? f.prop + '_open' : f.prop, f.v);   /* (an opened coffin: Colin, AD's coffinStone_open and coffinWood_open, on the closed one's foot) */
+      var opn = !!(f.coffin && f.taken && World.IMAGES[f.prop + '_open']), s = sprite(opn ? f.prop + '_open' : f.mush && f.taken ? f.prop + '_picked' : f.prop, f.v);   /* (a picked patch of mushrooms: Colin, AD's caveMushroom_picked) */   /* (an opened coffin: Colin, AD's coffinStone_open and coffinWood_open, on the closed one's foot) */
       items.push({ y: f.y, f: function () { ctx.drawImage(s.cv, f.x + s.l * f.s, f.y * K + s.t * f.s, s.w * f.s, s.h * f.s); if (f.coffin && f.taken && !opn) drawOpenCoffin(ctx, f, s); if (!f.taken && !f.gone) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(f.x - 10, f.y * K - 8 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
     });
     (hc.gates || []).forEach(function (g) { if (Math.abs(g.x - cam.x) > 300 || Math.abs(g.y * K - cam.y) > 220) return; items.push({ y: g.y, f: function () { Cave.drawGate(ctx, g); } }); });   /* the catacombs' iron gates */
@@ -4823,7 +4823,7 @@ __COMBAT__
     var fk = folkNear(P); if (fk && fk.bound) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { talkOpen(fk, function () { folkTalk(fk); }); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
-    var agE = angelicaNear(P); if (agE) add(agE, 'Pick the angelica', function () { addItem('angelica', 2); recount(); w.removeProp(agE); gone[propKey(agE)] = 1; sfx('pick'); save(); });
+    var agE = angelicaNear(P); if (agE) add(agE, 'Pick the angelica', function () { addItem('angelica', 2); recount(); agE.name = 'angelica_picked'; gone[propKey(agE)] = 1; sfx('pick'); save(); });   /* (cut at the knee: Colin, AD's angelica_picked; after a load it is gone) */
     var bb = seasonGives('berries') && berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });   /* (not in a season that gives none: SEASON_GIVES) */
     var gb = !bb && seasonGives('grass') && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
     var kb = kickable(P); if (kb) add(kb, 'Kick it open', function () { kickBox(kb); });
