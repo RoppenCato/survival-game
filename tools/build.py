@@ -88,6 +88,14 @@ def sea_art():
         out[n] = { 'src': '../assets/sea/' + n + '.png?v=' + hashlib.md5(open(pp, 'rb').read()).hexdigest()[:8], 'origin': j['origin'], 'water': j.get('water', [])[::6], 'ppm': j.get('ppm', 65) }
     return json.dumps(out)
 SRC['__SEA__'] = sea_art()
+SRC['__CUTSCENE__'] = read('src', 'cutscene.js') + '\n' + read('src', 'cutscene_editor.js')   # the cut-scenes (Colin, AD, 2026-10-29)
+def scenes():
+    d = os.path.join(ROOT, 'scenes'); out = {}
+    if os.path.isdir(d):
+        for f in sorted(os.listdir(d)):
+            if f.endswith('.json'): out[f[:-5]] = json.load(open(os.path.join(d, f), encoding='utf-8'))
+    return json.dumps(out, separators=(',', ':'))
+SRC['__SCENES__'] = scenes()
 def ship_models():
     """the ship models (Colin, AD's sheets, docs/ships-rework.md step 12, 2026-10-22): assets/ships/<kind>/<kind>.json (its frames,
     marks and layers) with each layer's picture tagged by its bytes"""
