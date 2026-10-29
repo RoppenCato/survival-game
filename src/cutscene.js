@@ -61,7 +61,8 @@ function start(scene, env, opts) {
     return { x: base.x + (p.dx || 0), y: base.y + (p.dy || 0) };
   }
   function faceOf(h, f) { if (f == null) return null; if (typeof f === 'number') return f * D2R; if (typeof f === 'string') { if (DIRS[f] != null) return DIRS[f] * D2R; var o = who(f); return o ? Math.atan2(o.y - h.y, o.x - h.x) : null; } var q = pos(f); return Math.atan2(q.y - h.y, q.x - h.x); }
-  function lines(s) { var L = s.lore ? env.lore(s.lore) : null; if (L && L.length && L.join('').trim()) return L; return s.lines || (s.text != null ? [s.text] : ['']); }   // the lore's words when it has them, else the scene's own (a stand-in until the lore is written)
+  function lines(s) { var L = s.lore ? env.lore(s.lore) : null; if (L && L.length && L.join('').trim()) return s.line != null ? [L[s.line] || ''] : L;   // line: one line of a lore entry said a beat (a sequence entry, Alistair, LD's way)
+    return s.lines || (s.text != null ? [s.text] : ['']); }   // the lore's words when it has them, else the scene's own (a stand-in until the lore is written)
   // ---- a step becomes a task: { tick(dt) -> true when done, finish() to end it at once }
   function task(s) {
     var k = s.do, T = 0, dur = s.s != null ? +s.s : 0;
