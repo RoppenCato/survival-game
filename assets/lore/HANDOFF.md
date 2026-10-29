@@ -1,19 +1,19 @@
-# Lore handoff 19: Old Aslak's old lines retired (2026-10-29)
+# Lore handoff 20: the quest book (2026-10-29)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-18.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-19.md`.
 
-## Retired
+Robin, 2026-10-29: "Yes" to the seven quest book texts. Every one now carries `book` (when given), `book_more` (when done)
+and `book_more_after: done` in `lore.json`. They replace your LORE? placeholders.
 
-- `line.aslak.story` and `line.aslak.ring` are now `retired`, with `replaced-by: line.aslak.brother`. Robin set the troll and
-  the ring aside on 2026-10-26, and Old Aslak now speaks only his new lines (Clive, GD, 2026-10-29). They are gone from
-  `lore.json` (142 entries).
+## New in canon
 
-## New places in the register
+- `quest.shore`, `quest.arnor.deer`, `quest.sail-east`, `quest.aslak.brother`, `quest.village.blot`: were in-game or proposed,
+  now `canon` with their book words.
 
-- `village.altar` (the village's altar stones) and `isle.fisher` (the fisherman's island) join `places`.
+## Changed
 
-## Proposed, not delivered
+- `quest.arnor.house`: `book` no longer asks for a fire ("…it wants walls and a roof that keeps the weather out…").
+  `book_more` unchanged.
+- `quest.arnor.meat`: `book` is the boar and the sinew; `book_more` ends with the bowstring.
 
-Chapter 1's words wait on Robin: `quest.aslak.brother`, `line.aslak.*`, `line.hogni.found`, `line.cave.traces`,
-`line.folk.wolves`, `line.folk.pot`, `rumour.trolls.north`, `names.dishes`; `person.hallveig`, `quest.village.blot`,
-`line.blot.*`, `line.fisherman.*`, `line.arnor.arrive/.settle/.home`.
+lore.json: 157 entries.
