@@ -1111,3 +1111,26 @@ every drawn piece on the menu, a village's ground only its fence or houses, the 
 to drag out as a ghost that fills as you pay, "Make it lived in", comfort by variety and a style bonus in place of today's checklist of
 seven, things that snap, porch and lean-to, the painted door); then alive (smoke, glowing windows, washing, hens in a yard, the hird
 using the house). Open questions for Robin are at the end of `docs/building-review.md`.
+
+## The next game in an engine, probably 3D (Robin, 2026-10-29; not decided)
+
+Robin: "for my next game i make, i want to do it in an engine, like godot, unity or unreal ... I would then try a similar game
+but 3D probably." It came from the test build lagging on his work computer: this game draws everything with the browser's 2D
+canvas (thousands of separate draws a frame, a dozen full-screen blend passes, big sprite sheets, one thread), where an engine
+batches the work on the graphics card.
+
+Clive, GD's recommendation: **Godot 4**, with Unity a close second, not Unreal.
+- **Godot 4:** scenes (`.tscn`), scripts (GDScript or C#) and settings are plain text, so the studios (Claude sessions) can read
+  and write them as they do this repo; free, no royalties, light; imports glTF from Blender well, so Colin, AD's pipeline carries
+  over; enough 3D for a stylized, painted look (toon shaders, good lighting). Weaker: a smaller asset store, and a big open world
+  needs its own streaming in chunks.
+- **Unity:** Valheim's engine, the biggest asset store (terrain, water, foliage) and mature 3D tools; C# is fine for Claude, but
+  scenes and prefabs are huge machine-written files and much is done by clicking in the editor; free until real revenue (its
+  2023 pricing scare cost it trust).
+- **Unreal:** the best visuals, but made for teams: C++ and Blueprints (visual graphs) are hard for Claude to work with, the
+  editor is heavy, and a painted, stylized game made by one person with AI help fits it badly.
+
+What would carry over to a 3D version: the design (chapters, raids, runes, the hird, building), the Blender characters, the
+studio way of working. The code would not: a 3D game is a rewrite. Start small, as here: one island, the hero moving and
+fighting, day and night, then a chapter at a time. Offered: a tiny Godot test project (one island, the hero walking, the camera
+following) to try it in an afternoon.
