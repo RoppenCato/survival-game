@@ -1134,3 +1134,8 @@ What would carry over to a 3D version: the design (chapters, raids, runes, the h
 studio way of working. The code would not: a 3D game is a rewrite. Start small, as here: one island, the hero moving and
 fighting, day and night, then a chapter at a time. Offered: a tiny Godot test project (one island, the hero walking, the camera
 following) to try it in an afternoon.
+
+## Pier pieces and the small shipyard (Robin, 2026-10-30; Colin, AD's three drafts asked for, waiting for Robin's pick)
+
+The shipyard becomes a smaller thing built into a pier, with pier pieces to build from. **Robin's rule: pier pieces are limited by the water, so that you have to build at the beach** ("some sort of limitations when building, like with the shallow and deep water").
+Mine, to settle when it is built: a pier starts from a beach (a first piece touching sand, not rock or a cliff's foot), each next piece joins the pier and stands in the shallows (`w.isWade`), and none stands in deep water, except perhaps a last end piece one step past the wading line, so a ship can lie alongside. Today's Dock floor goes on any water beside land or another dock, so this rule is new. It has to fit the wade band's varying width (about 1.5 to 4 tiles) and the villages' jetties, which are generated and keep their own rule.
