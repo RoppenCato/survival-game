@@ -49,7 +49,7 @@ wrong with the rest.
 | 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Built |
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Built |
 | 2b.3 | The quiver and wooden arrows: made, carried, used up. | Built |
-| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** | Built (changed 2026-10-30) |
+| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** **A tree falls with a creak, a bending crown and a bounce.** | Built (changed 2026-10-30) |
 | 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. | Built |
 | **2c** | **Menus and crafting** | |
 | 2c.1 | Tab: the panel, the bag, and what you can make where you stand. | Built |

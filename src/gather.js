@@ -80,7 +80,7 @@ function tick(G, o, dt, ctx) {
   var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.4 : 0.3);
   if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
-    if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
+    if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) { ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70); ev.chip(o.x + dir * len * 0.75, o.y + 2, 3, '#6fb84f', 8, 60); ev.chip(o.x + dir * len * 0.4, o.y + 2, 6, '#b59a72', 12, 55); }   /* (leaves and dust along where it lands) */
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
     else if ((o.runeLogs || (ev.fellRuneLogs && ev.fellRuneLogs(o))) && ev.log) { for (var li = 0; li < G.logsPerTrunk; li++) ev.log(o.name, o.x + dir * len * (0.3 + 0.6 * li / Math.max(1, G.logsPerTrunk - 1)), o.y + 2, Math.max(1, Math.round(wood / G.logsPerTrunk)), dir); }   /* Thor's fell at tier III: the logs come off by themselves (Runes2) */
@@ -122,10 +122,14 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
   c.save();
   if (behind) c.globalAlpha = 0.45;
   if (o.kind === 'tree') {
-    var u = o.dying != null ? Math.min(1, o.dying / 0.95) : 0, ang = (o.leanDir || 1) * (Math.max(0, dmg) * 0.1 + u * u * 1.5), spL = G && G.spotLook === 3 && o.dying == null ? spot(G, o, t) : null;
+    var fd = o.leanDir || 1, ang = fd * Math.max(0, dmg) * 0.1, bend = 0, sq = 1, d = o.dying, spL = G && G.spotLook === 3 && d == null ? spot(G, o, t) : null;
+    if (d != null) {                                     // the fall (Robin, 2026-10-30: one stiff turn looked wrong): a creak, a fall that gathers speed with the crown lagging, a bounce and a whip on the ground; it lands at 0.95 as before
+      if (d < 0.22) { var hz = d / 0.22; ang = fd * (0.1 + 0.08 * hz * hz + 0.028 * Math.sin(d * 45) * (1 - hz)); }
+      else if (d < 0.95) { var pz = (d - 0.22) / 0.73, ez = Math.pow(pz, 2.3); ang = fd * (0.16 + 1.36 * ez); bend = fd * 0.17 * Math.sin(Math.PI * Math.min(1, pz * 1.15)); }
+      else { var qz = Math.min(1, (d - 0.95) / 0.35); ang = fd * (1.52 - 0.09 * Math.sin(Math.PI * Math.min(1, qz * 1.6)) * (1 - qz)); bend = -fd * 0.2 * Math.exp(-qz * 5) * Math.cos(qz * 16); sq = 1 - 0.07 * Math.exp(-qz * 8); c.globalAlpha *= Math.max(0, 1 - qz * 1.4); }
+    }
     if (spL) ang += spL.side * 0.07;
-    if (o.dying != null && o.dying > 0.95) c.globalAlpha *= Math.max(0, 1 - (o.dying - 0.95) / 0.35);
-    c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
+    c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (bend) c.transform(1, 0, bend, 1, 0, 0); if (sq !== 1) c.scale(1, sq); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
   } else if (o.kind === 'stone') {
     var sh = o.dying != null ? Math.max(0, 1 - o.dying / 0.4) : 1, sc = (1 - 0.18 * dmg) * sh;
