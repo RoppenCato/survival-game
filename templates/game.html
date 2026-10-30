@@ -115,6 +115,7 @@ __GATHER__
 __FISHING__
 __MUSIC__
 __CUTSCENE__
+__PIER__
 __SPRITES_JS__
 __SFX__
 __COMBAT__
@@ -559,6 +560,7 @@ __COMBAT__
   }
   Combat.api.enemySprite = function (c, e) { if (e.hidden && e.carried) return true;   /* (a beast out cold on the hero's shoulders: drawn as a layer of his carry clip, not where it lay) */
     var mdk = !inCave && !e.human && caveMouth && caveMouth.pic ? mouthDark(e.x, e.y) : 1; if (mdk < 1) { c.save(); c.filter = 'brightness(' + mdk.toFixed(3) + ')'; var r0 = beastSpriteOf(c, e); c.restore(); return r0; } return beastSpriteOf(c, e); };   /* (in the troll cave's mouth, dark with depth: MOUTH) */
+  var enemySprite0 = Combat.api.enemySprite; Combat.api.enemySprite = function (c, e) { var lf = e.deck ? pierLiftOf(e) : 0; if (!lf) return enemySprite0(c, e); c.save(); c.translate(0, -lf); var r1 = enemySprite0(c, e); c.restore(); return r1; };   /* (someone on a pier's deck stands up on it) */
   function beastSpriteOf(c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind];
     if (!Sprites.beastReady(BH)) { Sprites.warm(BH); if (e.dead) return true; c.save(); c.translate(e.x, e.y * K); c.fillStyle = 'rgba(24,18,14,0.22)'; c.beginPath(); c.ellipse(0, e.r * 0.25, e.r * 1.25, e.r * 0.5, 0, 0, 7); c.fill(); c.restore(); return true; }   /* its sheets on their way: a soft shadow where it stands */
     var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: e.human ? bo.deadFor : Math.max(bo.deadFor || 0, bodyLie(e)) };   /* a killed beast lies DEAD_LIE s, to be taken up (Robin, 2026-10-23) */
@@ -631,7 +633,7 @@ __COMBAT__
     { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 }, key: 'mason' },
-    { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1' },
+    { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1', hidden: true },   /* (the pier's pieces in its place, Robin 2026-10-30; a village's jetty still lays it) */
     { id: 'runRail', name: 'Rail fence', kind: 'run', run: 'rail', prop: 'railPost', cost: { wood: 1 }, yard: true },   /* the free fences (2026-10-28): a post a click, each stretch at any angle; the cost is a stretch's */
     { id: 'runStake', name: 'Stake fence', kind: 'run', run: 'stake', prop: 'stake', cost: { wood: 2 }, yard: true },
     { id: 'runGate', name: 'Fence gate', kind: 'rungate', prop: 'farmGate_shut', cost: { wood: 2 }, yard: true },   /* a gate in a stretch of a free fence (Robin, 2026-10-28: "add a gate between posts"): placed on a stretch, opened and shut with E */
@@ -660,7 +662,14 @@ __COMBAT__
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
     // the shipyard (docs/ships-rework.md; Robin, 2026-10-22): one piece on any shore of your land, as many as you like, in place of the raft bench, the boat bench and the shipwright's yard; E opens the panel by the water (spOpen). Its picture is the raft bench's until Colin, AD's slipway and shed come
-    { id: 'ship1', name: 'Shipyard', kind: 'item', prop: 'naust_s', ship: 1, naust: 1, r: 0, cost: { wood: 16, fiber: 6, stone: 4 }, key: 'shipwright', gives: 'ship1' },   /* (Old Aslak's craft, Robin, 2026-10-29; it was Arnor's boat, key raft) */
+    { id: 'pier', name: 'Pier', cat: 'pier', kind: 'pier', pk: 'run', prop: 'pier_straight', cost: { wood: 6 } },
+    { id: 'pierNet', name: 'Climbing net', cat: 'pier', kind: 'pier', pk: 'net', prop: 'pier_net', cost: { fiber: 6, wood: 1 } },
+    { id: 'pierMooring', name: 'Mooring post', cat: 'pier', kind: 'item', prop: 'pier_mooring', deckOnly: 1, r: 0, cost: { wood: 2 } },
+    { id: 'pierCoil', name: 'Rope coil', cat: 'pier', kind: 'item', prop: 'pier_coil', deckOnly: 1, r: 0, cost: { fiber: 3 } },
+    { id: 'pierBarrels', name: 'Barrels', cat: 'pier', kind: 'item', prop: 'pier_barrels', deckOnly: 1, r: 0, cost: { wood: 4 } },
+    { id: 'pierRack', name: 'Fish rack', cat: 'pier', kind: 'item', prop: 'pier_fish_rack', deckOnly: 1, r: 0, cost: { wood: 3, fiber: 1 } },
+    { id: 'pierBench', name: 'Pier bench', cat: 'pier', kind: 'item', prop: 'pier_bench', deckOnly: 1, r: 0, cost: { wood: 3 } },
+    { id: 'ship1', name: 'Shipyard', cat: 'pier', kind: 'pier', pk: 'head', prop: 'pier_head', cost: { wood: 16, fiber: 6, stone: 4 }, key: 'shipwright', gives: 'ship1' },   /* the small yard at a pier's end (Robin, 2026-10-30, Colin, AD's C3; the naust of older saves still stands and works) */   /* (Old Aslak's craft, Robin, 2026-10-29; it was Arnor's boat, key raft) */
     { id: 'mason', name: 'Mason’s bench', kind: 'item', prop: 'masonBench', r: 5, cost: { wood: 6, copper: 3, stone: 4 }, key: 'copper', gives: 'mason' },   // building in stone begins here (2026-10-08, Robin)
     { id: 'signpost', name: 'Wooden sign', kind: 'item', prop: 'signPost', r: 2, sign: true, cost: { wood: 3, charcoal: 1 }, key: 'charcoal' },   // E writes on it in charcoal
     { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, key: 'mason', icon: function (c) {
@@ -704,14 +713,15 @@ __COMBAT__
   var ICON_SCALE = { bellTower: 0.17, altar: 0.5, graveStone: 0.7, wayCross: 0.4, stall: 0.36, firePit: 0.34, logSeat: 0.55, furnace: 0.36, carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
   PIECES.push({ id: 'mend', name: 'Mend', cost: {}, key: 'mend', icon: function (c) { c.save(); c.rotate(-0.6); c.fillStyle = '#8a6a48'; c.fillRect(-1, -2, 2, 9); c.fillStyle = '#b08e62'; c.fillRect(-4.5, -6, 9, 5); c.strokeStyle = 'rgba(42,30,22,0.9)'; c.lineWidth = 0.9; c.strokeRect(-4.5, -6, 9, 5); c.strokeRect(-1, -1, 2, 8); c.restore(); } });   // (2026-10-13: a damaged wall whole again, a fallen roof raised: in a place you hold)
-  var BCATS = [['zone', 'Places'], ['frame', 'Walls'], ['floor', 'Floors and roofs'], ['path', 'Ground'], ['yard', 'Yard'], ['home', 'Furniture'], ['work', 'Work'], ['out', 'Outdoors']];   // the Building board's tabs (Work, 2026-10-12: the benches, the furnace, the clamp, the rack; they were scattered through Furniture and Outdoors)
+  var BCATS = [['pier', 'Piers'], ['zone', 'Places'], ['frame', 'Walls'], ['floor', 'Floors and roofs'], ['path', 'Ground'], ['yard', 'Yard'], ['home', 'Furniture'], ['work', 'Work'], ['out', 'Outdoors']];   // the Building board's tabs (Work, 2026-10-12: the benches, the furnace, the clamp, the rack; they were scattered through Furniture and Outdoors)
   var HOME_IDS = { bed: 1, hearth: 1, fireplace: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 }, WORK_IDS = { bench: 1, carver: 1, mason: 1, ship1: 1, ship: 1, ship3: 1, furnace: 1, charcoal: 1, rack: 1 };
-  PIECES.forEach(function (p) { p.cat = p.kind === 'zone' ? 'zone' : p.yard ? 'yard' : p.id === 'brush' ? 'path' : (p.id === 'floor' && (Build.FLOORS[p.m] || {}).path) ? 'path' : (p.id === 'floor' || p.id === 'roof') ? 'floor' : p.kind === 'item' ? (WORK_IDS[p.id] ? 'work' : HOME_IDS[p.id] ? 'home' : 'out') : 'frame'; });
+  PIECES.forEach(function (p) { p.cat = p.kind === 'pier' || p.deckOnly ? 'pier' : p.kind === 'zone' ? 'zone' : p.yard ? 'yard' : p.id === 'brush' ? 'path' : (p.id === 'floor' && (Build.FLOORS[p.m] || {}).path) ? 'path' : (p.id === 'floor' || p.id === 'roof') ? 'floor' : p.kind === 'item' ? (WORK_IDS[p.id] ? 'work' : HOME_IDS[p.id] ? 'home' : 'out') : 'frame'; });
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = Math.min(18 / s.w, 18 / s.h, 1.5);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
   }
   PIECES.forEach(function (p) { if (p.kind === 'item' && !p.icon) p.icon = function (c) { propIcon(c, p.prop); }; });
+  PIECES.forEach(function (p) { if (p.kind === 'pier') p.icon = function () {}; });   /* (their icons are the studio's, in hud/pieces) */
   // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
   // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Arnor's raft). 2026-10-08, Robin: the
   // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
@@ -1074,7 +1084,7 @@ __COMBAT__
     var w8 = wgW8(), env = wgEnvS(); G.frostGoal = (year.season === 'spring' || year.season === 'autumn') && day.t < 150 && w8.rain < 0.05 ? 1 : 0;
     Weather.ground.tick(G, dt, env, w8);
     var pud = wgPuddlesNear(env), i; if (w8.rain > 0.05 && G.wet > 0.1) for (i = 0; i < pud.length; i++) if (G.R() < w8.rain * dt * 3 * Math.min(1, G.wet * 2)) { var q = env.toScreen(pud[i].x + (G.R() - 0.5) * pud[i].r / env.zoom, pud[i].y); G.fx.push({ kind: 'ring', x: q[0], y: q[1], t: 0, life: 0.6 }); }   /* (the rain's rings in the puddles in view) */
-    if (WG.lx != null && !(raft && raft.aboard) && !swim.on) { WG.odo += Math.hypot(P.x - WG.lx, P.y - WG.ly); if (WG.odo >= 24) { WG.odo = 0; WG.side = -WG.side; var ang = Math.atan2(P.y - WG.ly, P.x - WG.lx), fx = P.x + Math.cos(ang + Math.PI / 2) * 4 * WG.side, fy = P.y + 3 + Math.sin(ang + Math.PI / 2) * 3 * WG.side, n0 = G.fx.length;
+    if (WG.lx != null && !P.deck && !(raft && raft.aboard) && !swim.on) { WG.odo += Math.hypot(P.x - WG.lx, P.y - WG.ly); if (WG.odo >= 24) { WG.odo = 0; WG.side = -WG.side; var ang = Math.atan2(P.y - WG.ly, P.x - WG.lx), fx = P.x + Math.cos(ang + Math.PI / 2) * 4 * WG.side, fy = P.y + 3 + Math.sin(ang + Math.PI / 2) * 3 * WG.side, n0 = G.fx.length;
       Weather.ground.step(G, fx, fy, ang, WG.side, { kind: wgKindAt }, w8);   /* (no shore test: the sand takes a print anywhere on the beach, Robin, 2026-10-23: he saw none) */ var lp = G.prints[G.prints.length - 1]; if (lp && lp.t === 0 && lp.x === fx) weatherStep(lp.kind, fx, fy); else if (G.wet > 0.3 && pud.some(function (q) { return Math.hypot(q.x - fx, (q.y - fy) * 2.2) < q.r; })) weatherSplash();   /* (the step's sound where a print shows; a splash through a puddle) */
       for (i = n0; i < G.fx.length; i++) { var sp = env.toScreen(G.fx[i].x, G.fx[i].y); G.fx[i].x = sp[0]; G.fx[i].y = sp[1]; } } }   /* (a footfall every 24 units, the feet by turns; the kicked snow, made at a world point, put on the screen) */
     WG.lx = P.x; WG.ly = P.y;
@@ -1194,8 +1204,8 @@ __COMBAT__
   var SWIM = { speed: 0.5, st: 7, stStill: 3, wadeSt: 2, wade: 0.55, spent: 0.3, drown: 7 }, swim = { on: false, spent: false, said: false, ripT: 0, drowning: false }, wade = { on: false };   /* the water (Robin, 2026-10-24): the shallows are waded at wade of the walk, sunk to the waist, the stamina draining wadeSt a second; the deep water is swum at speed, draining st a second (stStill still); spent in deep water the health drains at drown a second until he is back in the shallows, or dead; the numbers mine */
   function swimSt() { return SWIM.st / (runeHas('sealSkin') ? runeN('sealSkin', 'swimK') || 1 : 1); }   /* the Seal-skin: twice as far */
   function swimSpeed() { return runeHas('sealSkin') ? Math.max(SWIM.speed, runeN('sealSkin', 'speed') || SWIM.speed) : SWIM.speed; }
-  function swimAt(x, y) { return !inCave && !(raft && raft.aboard) && w.isWater(x, y) && !w.isWade(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }
-  function wadeAt(x, y) { return !inCave && !(raft && raft.aboard) && w.isWater(x, y) && w.isWade(x, y) && !w.isLand(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }   /* the shallows, waist deep */
+  function swimAt(x, y) { return !inCave && !hero().deck && !(raft && raft.aboard) && w.isWater(x, y) && !w.isWade(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }
+  function wadeAt(x, y) { return !inCave && !hero().deck && !(raft && raft.aboard) && w.isWater(x, y) && w.isWade(x, y) && !w.isLand(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)); }   /* the shallows, waist deep */
   function canSwimTo(x, y) { var P = hero(); if (carrying && carrying.heavy) return false; if (!swim.spent) return true; return w.elevAt(x, y) >= w.elevAt(P.x, P.y) - 0.02; }   /* (spent: only toward the shore) */
   function swimTick(dt) {
     var P = hero(), on = swimAt(P.x, P.y); swim.on = on; wade.on = !on && wadeAt(P.x, P.y);
@@ -1277,7 +1287,7 @@ __COMBAT__
   var BEAST_EDGE = -0.8;
   function beastBound(e) { return !!e && e !== hero() && !e.human && (e.type === 'beast' || e.type === 'brute'); }
   function beastGround(x, y, e) { return isLand(x, y) || (w.isWade(x, y) && ((e.awake && !e.flee) || w.elevAt(x, y) > BEAST_EDGE)); }   /* one that is hunting you follows through the shallows, never into the deep (Robin, 2026-10-30); calm or fleeing it keeps to the edge */
-  function beastShoreTick(dt) { if (inCave || SCENE) return; var P = hero(); Combat.dbg().W.enemies.forEach(function (e) { if (!beastBound(e) || e.dead || e.carried || e.hidden || Math.abs(e.x - P.x) > 1500 || Math.abs(e.y - P.y) > 1500 || beastGround(e.x, e.y, e)) return; var best = null, a, r; for (r = 16; r <= 640 && !best; r += 32) for (a = 0; a < 16; a++) { var x = e.x + Math.cos(a * 0.3927) * r, y = e.y + Math.sin(a * 0.3927) * r; if (beastGround(x, y, e)) { best = { x: x, y: y }; break; } } if (!best) return; var d = Math.hypot(best.x - e.x, best.y - e.y) || 1, st = Math.min(d, 110 * dt); e.x += (best.x - e.x) / d * st; e.y += (best.y - e.y) / d * st; e.face = Math.atan2(best.y - e.y, best.x - e.x); }); }
+  function beastShoreTick(dt) { if (inCave || SCENE) return; var P = hero(); Combat.dbg().W.enemies.forEach(function (e) { if (!beastBound(e) || e.dead || e.carried || e.hidden || Math.abs(e.x - P.x) > 1500 || Math.abs(e.y - P.y) > 1500 || e.deck || beastGround(e.x, e.y, e)) return; var best = null, a, r; for (r = 16; r <= 640 && !best; r += 32) for (a = 0; a < 16; a++) { var x = e.x + Math.cos(a * 0.3927) * r, y = e.y + Math.sin(a * 0.3927) * r; if (beastGround(x, y, e)) { best = { x: x, y: y }; break; } } if (!best) return; var d = Math.hypot(best.x - e.x, best.y - e.y) || 1, st = Math.min(d, 110 * dt); e.x += (best.x - e.x) / d * st; e.y += (best.y - e.y) / d * st; e.face = Math.atan2(best.y - e.y, best.x - e.x); }); }
   var WOLF_HUNT = { far: 1400, gap: 480, close: 300, back: 220 };   /* a pack gives up when you are far from where its hunt began, or have outrun one that had got close, or are at sea (mine, 2026-10-30) */
   function packGivesUp(P) { nightWolves.forEach(function (e) { if (e.gone || e.dead) return; e.gone = true; e.grudgeT = 0; e.heard = 0; e.awake = false; e.state = 'idle'; e.t = 0; var ga = Math.atan2(e.y - P.y, e.x - P.x); if (e.wander) { e.wander.x0 = e.x + Math.cos(ga) * 700; e.wander.y0 = e.y + Math.sin(ga) * 700; e.wander.r = 60; e.wander.tx = null; e.wander.wait = 0; } }); }
   function nightTick(dt) {
@@ -1774,7 +1784,7 @@ __COMBAT__
     deed('crafted'); if (!quiet) toast('Made ' + recipeName(r).toLowerCase()); sfx('craft'); save();
   }
   function nearWater(tx, ty, r) { for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) if (code(tx + dx, ty + dy) === 0) return true; return false; }
-  function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && sameLvl(it) && (it.door ? Math.hypot(P.x - it.door.x, P.y - it.door.y) < 70 : Math.hypot(P.x - it.x, P.y - it.y) < 70)) return it; } return null; }   /* (a naust at its open end) */
+  function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && sameLvl(it) && (it.door ? Math.hypot(P.x - it.door.x, P.y - it.door.y) < 70 : Math.hypot(P.x - it.x, P.y - it.y) < 70)) return it; } return pierHeadNear(P); }   /* (a naust at its open end; the small yard from its deck) */
   function edgeMid(ed) { return ed.L === 'H' ? { x: (ed.x + 0.5) * T, y: ed.y * T } : { x: ed.x * T, y: (ed.y + 0.5) * T }; }
   // A path tile is a rounded patch in the middle of its tile with a bar out to every neighbouring path (any kind), so a
   // line of them reads as one trail and a lone one as a patch; the bars reach a little past the edge so no seam shows.
@@ -1821,6 +1831,63 @@ __COMBAT__
     return false;
   }
   function floorAtCornerIn(set, cx, cy) { return set[Build.key(cx, cy)] || set[Build.key(cx - 1, cy)] || set[Build.key(cx, cy - 1)] || set[Build.key(cx - 1, cy - 1)]; }
+  /* Piers (Robin, 2026-10-30; Colin, AD's pieces, assets/pier; the rules in src/pier.js): an autotile of 2 by 2 tile modules in B.pier, the
+     small shipyard at a run's end, a net where you climb up from the water. A deck is a level of its own, by who stands on it (e.deck, the
+     hero's and every creature's): the sides stop anyone not on it, the landing takes anyone up, you step off any side. Beasts and men go
+     on it by the landing (pierVia). Dressing is ordinary things on a deck (pier_coil and the rest). The hull lies in the closest free water
+     with a way out (pierLaunch). */
+  var PIER_ART = __PIERART__ || { upp: 0.25, deckLift: 10.3, pieces: {} }, PIER_IMGS = {};
+  function pierImg(n) { var im = PIER_IMGS[n]; if (!im) { var p = PIER_ART.pieces[n]; if (!p) return null; im = new Image(); im.src = p.src; PIER_IMGS[n] = im; } return im.complete && im.naturalWidth ? im : null; }
+  function pierWarm() { if (pierWarm.on) return; pierWarm.on = 1; for (var n in PIER_ART.pieces) pierImg(n); }   /* (all of them at once when the first pier is in use, so no piece is blank the first time it shows) */
+  function pierD() { pierWarm(); return B.pier || (B.pier = Pier.fresh()); }
+  var PIER_G = { land: function (x, y) { return isLand(x, y); }, sand: function (x, y) { return code(Math.floor(x / T), Math.floor(y / T)) === 1; }, shallow: function (x, y) { return w.isWade(x, y) && !isLand(x, y); }, water: function (x, y) { return !isLand(x, y) && !w.cliffAt(x, y); },
+    clear: function (x, y) { var ok = true; around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < 36 + o.r) ok = false; }); B.items.forEach(function (it) { if (Math.hypot(it.x - x, it.y - y) < 44) ok = false; }); (fleet || []).forEach(function (v) { if (!v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + 34) ok = false; }); var tx = Math.floor(x / T), ty = Math.floor(y / T), a, b; for (a = -1; a <= 1; a++) for (b = -1; b <= 1; b++) { var kk = Build.key(tx + a, ty + b); if (B.H[kk] || B.V[kk] || B.floors[kk] != null) ok = false; } return ok; } };
+  function pierLiftOf(e) { if (!e.deck || !B.pier) return 0; var m = Pier.at(B.pier, e.x, e.y); return m ? Pier.liftAt(m, e.x, e.y, PIER_ART.deckLift) : 0; }
+  function pierWalk(x, y, e) { var D = B.pier; if (!D) return null; if ((!e || e === hero()) && raft && raft.aboard) return null; var m = Pier.at(D, x, y); if (e && e.deck) { if (m) return true; return e !== hero() && e.awake !== false && hero().deck ? false : null; }   /* (one hunting him on the deck keeps to it: a boar's turning circle ran it off the side) */ if (!m) return null; return m.k === 'landing'; }
+  function pierVia(e, x, y, tOn) {         // the next point on someone's way to a point, where a pier lies between: up by the landing, along the deck
+    var D = B.pier; if (!D || !Pier.any(D)) return null; var tm = Pier.at(D, x, y); if (tOn === undefined) tOn = !!tm && tm.k !== 'landing'; if (!tOn || !tm) return null; var em = e.deck ? Pier.at(D, e.x, e.y) : null;
+    if (em) { var n = Pier.next(D, em, tm); return n ? Pier.mid(n) : null; }
+    if (Math.hypot(e.x - x, e.y - y) > 900) return null; var lg = Pier.landingOf(D, tm); if (!lg) return null; var c = Pier.mid(lg), v = Pier.DIRS[lg.s || 'n']; return { x: c.x + v[0] * 18, y: c.y + v[1] * 18 }; }
+  Combat.api.chaseVia = function (e) { var P = hero(); if (!B.pier || Math.hypot(P.x - e.x, P.y - e.y) < 30) return null; return pierVia(e, P.x, P.y, !!P.deck); };
+  function pierTick(dt) {
+    var D = B.pier, P = hero(); if (!D || !Pier.any(D) || inCave) { if (P.deck) P.deck = false; return; }
+    pierWarm();
+    if (Combat.api.nav && !Combat.api.nav.pier) { var n0 = Combat.api.nav; Combat.api.nav = function (e, x, y) { var hp = hero(), onHero = Math.abs(hp.x - x) < 0.5 && Math.abs(hp.y - y) < 0.5, via = pierVia(e, x, y, onHero ? !!hp.deck : undefined); return via || n0(e, x, y); }; Combat.api.nav.pier = true; }
+    if (raft && raft.aboard) P.deck = false; else P.deck = !!Pier.at(D, P.x, P.y);
+    Combat.dbg().W.enemies.forEach(function (e) { if (Math.abs(e.x - P.x) > 1400 || Math.abs(e.y - P.y) > 1400) return; e.deck = !!Pier.at(D, e.x, e.y); });
+  }
+  function pierDraw1(c, n, x, y) { var p = PIER_ART.pieces[n], im = pierImg(n), u = PIER_ART.upp; if (!p || !im) return; c.drawImage(im, x - p.ax * u, y * K - p.ay * u, p.w * u, p.h * u); }
+  function pierVisible(m, hw, hh) { var c = Pier.mid(m); return Math.abs(c.x - cam.x) < hw + 110 && Math.abs(c.y * K - cam.y) < hh + 110; }
+  function pierShadows(c, hw, hh) {        // Colin, AD's recipe: each piece's ground box shifted, under all the pier's pieces, one fill
+    var D = B.pier; if (!D || !Pier.any(D) || inCave) return; c.save(); c.fillStyle = 'rgba(14,32,48,0.3)'; c.beginPath(); for (var k in D.m) { var m = D.m[k]; if (!pierVisible(m, hw, hh)) continue; var b = Pier.box(m); c.rect(b[0] + 2.3, b[1] * K + 1.8, b[2] - b[0], (b[3] - b[1]) * K); } c.fill(); c.restore();
+  }
+  function pierWaterLine(c, m) {           // the water's line at a wall's foot, over water only
+    var b = Pier.box(m), y = b[3], x; if (Pier.near(B.pier, m, 's')) return; c.save(); c.strokeStyle = 'rgba(235,250,245,0.55)'; c.lineWidth = 0.7; c.beginPath(); for (x = b[0]; x < b[2]; x += 2.7) { if (PIER_G.water(x, y + 2)) { c.moveTo(x, y * K + 2); c.lineTo(x + 2, y * K + 2); } } c.stroke(); c.restore();
+  }
+  function pierItems(items, hw, hh) {
+    var D = B.pier; if (!D || !Pier.any(D) || inCave) return;
+    Object.keys(D.m).forEach(function (k) { var m = D.m[k]; if (!pierVisible(m, hw, hh)) return; var b = Pier.box(m), c0 = Pier.mid(m), list = Pier.drawList(D, m);
+      items.push({ y: b[1], f: function () { pierWaterLine(ctx, m); list.forEach(function (q) { pierDraw1(ctx, q.n, q.x, q.y); }); } });
+      if (m.k === 'head') { items.push({ y: c0.y - 1, f: function () { pierDraw1(ctx, 'things_' + m.o + '_n', c0.x, c0.y); } }); items.push({ y: b[3] - 1, f: function () { pierDraw1(ctx, 'things_' + m.o + '_s', c0.x, c0.y); } }); }
+    });
+    Object.keys(D.n).forEach(function (nk) { var p = nk.split('|'), m = D.m[p[0]]; if (!m || !pierVisible(m, hw, hh)) return; var e = Pier.edge(m, p[1]), n = 'net_' + p[1], sp = PIER_ART.pieces[n]; items.push({ y: e.y + (sp ? sp.sort : 0), f: function () { pierDraw1(ctx, n, e.x, e.y); } }); });
+    var sp0 = shipPanel; if (sp0 && sp0.bench && sp0.bench.head && sp0.at && sp0.tab === 'new') { var sz = spSizeOf(sp0.kind), nF = Math.max(1, Math.min(3, Math.floor(sz.hw / 90))), i; for (i = 0; i < nF; i++) (function (i) { var fx = sp0.at.x + (nF === 1 ? sz.hw * 0.5 : -sz.hw * 0.6 + i * (sz.hw * 1.2) / (nF - 1)), fy = sp0.at.y + sz.hh * 0.9 + 24; items.push({ y: fy, f: function () { pierDraw1(ctx, 'float', fx, fy); } }); })(i); }   /* the work float beside the hull she is shown as */
+  }
+  function pierBench(m) { if (!m.b) { var c = Pier.mid(m); m.b = { head: Pier.key(m.x, m.y), x: c.x, y: c.y, door: { x: c.x, y: c.y }, ship: 1 }; } return m.b; }
+  function pierHeadNear(P) { var D = B.pier; if (!D || !P.deck) return null; for (var k in D.m) { var m = D.m[k]; if (m.k === 'head') { var c = Pier.mid(m); if (Math.hypot(P.x - c.x, P.y - c.y) < 70) return pierBench(m); } } return null; }
+  function pierPillars(P, out) { var D = B.pier; if (!D) return; for (var k in D.m) { var m = D.m[k]; if (m.k !== 'head') continue; var c = Pier.mid(m); if (Math.abs(c.x - P.x) > 400 || Math.abs(c.y - P.y) > 400) continue; ((PIER_ART.pieces['head_' + m.o] || {}).blocks || []).forEach(function (bk) { naustPillars({ box: [c.x + bk.box[0], c.y + bk.box[1], c.x + bk.box[2], c.y + bk.box[3]] }, out); }); } }
+  function pierHullHit(x, y) { return !!(B.pier && Pier.at(B.pier, x, y)); }
+  function pierHullClear(x, y, sz) { var D = B.pier, a = x - sz.hw - 10, b = x + sz.hw + 10, c = y - sz.hh - 28, d = y + sz.hh + 10;   /* (more room to its north: the picture stands higher than the hull's foot) */  for (var k in D.m) { var q = Pier.box(D.m[k]); if (q[2] > a && q[0] < b && q[3] > c && q[1] < d) return false; } return true; }
+  function pierWayOut(x, y, sz) {          // a search over the water, with room for her, from where she would lie out to the open sea (Robin, 2026-10-30: nobody builds himself in)
+    var S = 48, m = Math.max(10, sz.hh * 0.8), seen = {}, list = [[0, 0]], i = 0, open = function (cx, cy) { var q = [[0, 0], [m, 0], [-m, 0], [0, m], [0, -m]]; for (var j = 0; j < 5; j++) { var px = cx + q[j][0], py = cy + q[j][1]; if (px < 70 || py < 70 || px > WX - 70 || py > WY - 70 || isLand(px, py) || w.cliffAt(px, py) || pierHullHit(px, py)) return false; } return true; };
+    seen['0,0'] = 1; while (i < list.length && i < 5000) { var c = list[i++]; if (Math.hypot(c[0], c[1]) * S > 1500) return true; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (v) { var a = c[0] + v[0], b = c[1] + v[1], kk = a + ',' + b; if (seen[kk]) return; seen[kk] = 1; if (open(x + a * S, y + b * S)) list.push([a, b]); }); }
+    return false; }
+  function pierLaunch(bench, kind, skip) { // the closest free water to the yard, side on (heading 0) whichever way the pier runs, south of the pier before north of it, outside the shallows before in them
+    var sz = spSizeOf(kind), cands = [], r, a; for (r = 40; r < 720; r += 16) for (a = 0; a < 6.283; a += 0.2) { var x = bench.x + Math.cos(a) * (r + sz.hw * 0.5), y = bench.y + Math.sin(a) * (r + sz.hh);
+        if (!raftHull(x, y, 0, sz) || !pierHullClear(x, y, sz)) continue; if (fleet.some(function (v) { return v !== skip && !v.stowed && Math.abs(v.x - x) < (v.hw || 21) + sz.hw + 10 && Math.abs(v.y - y) < (v.hh || 21) + sz.hh + 10; })) continue;
+        cands.push({ x: x, y: y, h: 0, sc: r + (y < bench.y ? 90 : 0) + (w.isWade(x, y) ? 220 : 0) }); }
+    cands.sort(function (p, q) { return p.sc - q.sc; }); var tried = 0, lastX = null, lastY = null; for (var i = 0; i < cands.length && tried < 14; i++) { var c = cands[i]; if (lastX != null && Math.hypot(c.x - lastX, c.y - lastY) < 70) continue; lastX = c.x; lastY = c.y; tried++; if (pierWayOut(c.x, c.y, sz)) return c; }
+    return null; }
   /* The naust, the shipyard's picture (Colin, AD's step 13 of the ships rework, assets/props/shipyard, 2026-10-23): a boat shed with
      its slipway, in four facings. Placed by the cursor: of the facings whose way from the cursor meets the water within NAUST.reach,
      the one that leaves the shed nearest the cursor, set so its slipway's end lies NAUST.wet units into the water and the shed's
@@ -1860,6 +1927,9 @@ __COMBAT__
       var whyR = L ? 'Not up here' : far ? 'Too far' : endR ? '' : !isLand(spR.x, spR.y) ? 'Not in the water' : aR && LR > RUN.maxSeg ? 'Too long a stretch: set a post between' : aR && LR < RUN.minSeg ? 'Too short a stretch' : aR && !runStretchClear(aR, spR) ? 'Something stands in the way' : aR && !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '';
       return { kind: 'run', x: spR.x, y: spR.y, snapped: spR.snapped, from: aR, end: endR, piece: pc, ok: !whyR, why: whyR }; }
     if (pc.id === 'brush' && !P.wreck) { var okB = !far && !inCave && !L && isLand(mouseW.x, my); return { kind: 'brush', x: mouseW.x, y: my, piece: pc, ok: okB, why: far ? 'Too far' : L ? 'Not up here' : 'Not on land' }; }   // the ground brush paints anywhere on land within reach
+    if (!P.wreck && pc.kind === 'pier') { var DP = pierD(); if (pc.pk === 'net') { var nN = L ? null : Pier.netAt(DP, mouseW.x, my, PIER_G), whyN = L ? 'Not up here' : far ? 'Too far' : !nN ? 'Point at the side of a pier' : !nN.ok ? nN.why : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : ''; return { kind: 'piernet', net: nN, piece: pc, ok: !whyN, why: whyN }; }
+      var pmx = Math.floor(mouseW.x / Pier.M), pmy = Math.floor(my / Pier.M), rP = pc.pk === 'head' ? Pier.canHead(DP, pmx, pmy, PIER_G) : Pier.canRun(DP, pmx, pmy, PIER_G), whyP = L ? 'Not up here' : Math.hypot((pmx + 0.5) * Pier.M - P.x, (pmy + 0.5) * Pier.M - P.y) > 230 ? 'Too far' : !rP.ok ? rP.why : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : ''; return { kind: 'pier', mx: pmx, my: pmy, o: rP.o, piece: pc, ok: !whyP, why: whyP }; }
+    if (P.wreck && !L && B.pier) { var nW = Pier.netNear(B.pier, mouseW.x, my, 26); if (nW) return { kind: 'piernetx', key: nW.key, x: mouseW.x, y: my, ok: !far, why: far ? 'Too far' : '' }; var mW = Pier.at(B.pier, mouseW.x, my), itW = mW && B.items.some(function (q) { return Math.hypot(q.x - mouseW.x, q.y - my) < 16; }); if (mW && !itW) { var whyW = Math.hypot(mouseW.x - P.x, my - P.y) > 230 ? 'Too far' : !Pier.canRemove(B.pier, mW) ? 'Take it down from its end' : Pier.at(B.pier, P.x, P.y) === mW ? 'You stand on it' : ''; return { kind: 'piermod', m: mW, ok: !whyW, why: whyW }; } }
     if (P.wreck) {
       for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = (B.items[i].store && B.items[i].store.some(function (q) { return !!q; })) || (B.items[i].out && B.items[i].out.length) || (B.items[i].cooking && B.items[i].cooking.length) || !!B.items[i].burn; return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
       var co = cornerAt(mouseW.x, my), ck = Build.key(co.x, co.y);     // at a corner the post comes first, then the walls on it
@@ -1898,6 +1968,7 @@ __COMBAT__
       if (L && (pc.ship || pc.claim || pc.id === 'well' || pc.id === 'charcoal')) shipWhy = 'Not up here';
       if ((pc.id === 'campfire' || pc.id === 'hearth') && (L || (roomInfo && roomInfo.at(Math.floor(ix / T), Math.floor(iy / T)) >= 0))) shipWhy = 'Not indoors';   /* (Robin, 2026-10-16: a fire burns outside; a fireplace goes in the house) */
       if (pc.id === 'fireplace' && homeIsle(ix, iy) === 0) shipWhy = 'Not on this island';
+      if (pc.deckOnly) { var mdD = B.pier ? Pier.at(B.pier, ix, iy) : null; clear = !!mdD && mdD.k !== 'landing'; wallWhy = ''; if (clear && mdD.k === 'head') { var cD = Pier.mid(mdD); (PIER_ART.pieces['head_' + mdD.o].blocks || []).forEach(function (bk) { if (ix > cD.x + bk.box[0] - 6 && ix < cD.x + bk.box[2] + 6 && iy > cD.y + bk.box[1] - 6 && iy < cD.y + bk.box[3] + 6) clear = false; }); } for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 16) clear = false; shipWhy = !mdD ? 'It stands on a pier' : mdD.k === 'landing' ? 'Not on the landing' : ''; }
       if (pc.id === 'runeAltar' && !L && !altarRoomAt(ix, iy)) shipWhy = 'The altar wants room round it';   /* (Robin, 2026-10-27: open ground where the hero stands behind it and the stones rise before it) */
       return { kind: 'item', x: ix, y: iy, piece: pc, prop: nf ? 'naust_' + nf.f : null, nf: nf, ok: !far && clear && !shipWhy && !wallWhy && canAfford(buildCost(pc.cost)), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (nearIt ? 'Too close to the ' + (nearIt.name || 'thing').replace(/([A-Z])/g, ' $1').toLowerCase() : L ? 'No floor here' : (fellWhy(ix, iy) || 'Blocked, or not on land')) : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
@@ -1936,6 +2007,8 @@ __COMBAT__
   function buildAct(first) {
     var P = hero(), t = buildTarget(), L = lvl(), BB = Bl(L); if (!t || !t.ok) return;
     if (P.wreck) {
+      if (t.kind === 'piernetx') { pay({ fiber: 6, wood: 1 }, 1); delete B.pier.n[t.key]; sfx('build'); save(); return; }
+      if (t.kind === 'piermod') { pay(t.m.k === 'head' ? { wood: 16, fiber: 6, stone: 4 } : { wood: 6 }, 1); Pier.remove(B.pier, t.m); navStale = true; sfx('build'); save(); return; }
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); if (t.item.zoneId) B.zones = (B.zones || []).filter(function (z) { return z.id !== t.item.zoneId; }); B.items.splice(t.idx, 1); }
       else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete BB[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
       else if (t.kind === 'post') { pay(pieceFor('post', 0).cost, 1); delete BB.posts[Build.key(t.cx, t.cy)]; }
@@ -1953,7 +2026,9 @@ __COMBAT__
       runsBuild(); sfx('build'); save(); return; }
     if (t.kind === 'zone') { if (first && !zoneDrag) zoneDrag = { tx: Math.floor(t.px / T), ty: Math.floor(t.py / T), x: t.px, y: t.py }; return; }   /* the press sets the post; the square follows the mouse until it is let go */
     if (t.kind === 'brush') { if (w.paintGround(t.x, t.y, BRUSH_R, t.piece.k)) { if (first) sfx('build'); groundDirtyT = clock; } return; }
-    if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.prop || t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace, trapper: !!t.piece.trapper, altar: !!t.piece.altar }; if (nit.bench && !seen.freeBuild && !L) { seen.freeBuild = 1; }   /* the workbench opens building (Robin, 2026-10-28: as in Valheim; every piece then by its own key) */ if (t.nf) naustPlace(nit, t.nf.f, t.x, t.y); if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; if (villageAt(nit.x, nit.y) >= 0) noteSeen('mend'); var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = lineN('line.hird.stone', 0, 'I will keep this stone.'); kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
+    if (t.kind === 'pier') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); Pier.place(pierD(), t.mx, t.my, t.piece.pk === 'head' ? 'head' : 'run', PIER_G, t.o); navStale = true; if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } sfx('build'); save(); return; }
+    if (t.kind === 'piernet') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); pierD().n[t.net.key] = 1; sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.prop || t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace, trapper: !!t.piece.trapper, altar: !!t.piece.altar }; if (nit.bench && !seen.freeBuild && !L) { seen.freeBuild = 1; }   /* the workbench opens building (Robin, 2026-10-28: as in Valheim; every piece then by its own key) */ if (t.nf) naustPlace(nit, t.nf.f, t.x, t.y); if (t.piece.deckOnly) { var bkD = ((PIER_ART.pieces[t.piece.prop.slice(5)] || {}).blocks || [])[0]; if (bkD) nit.box = [t.x + bkD[0], t.y + bkD[1], t.x + bkD[2], t.y + bkD[3]]; } if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; if (villageAt(nit.x, nit.y) >= 0) noteSeen('mend'); var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = lineN('line.hird.stone', 0, 'I will keep this stone.'); kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     if (t.kind === 'stairs') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); B.stairs[Build.key(t.tx, t.ty)] = { d: 0 }; bDirty = true; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : t.kind === 'post' ? 'P' + Build.key(t.cx, t.cy) : 'F' + Build.key(t.tx, t.ty);
@@ -2001,7 +2076,7 @@ __COMBAT__
     var tx = Math.floor(P.x / T), ty = Math.floor(P.y / T), fy = P.y / T - ty, k = Build.key(tx, ty);
     if (B.stairs[k]) { if (!P.lvl && fy < 0.58) P.lvl = 1; else if (P.lvl && fy > 0.64) P.lvl = 0; }
     else if (P.lvl && !upFloorAt(tx, ty)) P.lvl = 0;      // the floor went (wrecked stairs): back on the ground
-    Combat.api.scene.noHeroShadow = !!P.lvl;
+    Combat.api.scene.noHeroShadow = !!P.lvl || !!P.deck;
   }
   function wreckRect(t) {
     var dy = lvl() ? -UP : 0;
@@ -2035,6 +2110,8 @@ __COMBAT__
     if (P.mode === 'build' && zonesShow) drawZones(c);
     var t = buildTarget(); if (!t) return;
     if (t.kind === 'run' || t.kind === 'runseg' || t.kind === 'rungate') { drawRunGhost(c, t); return; }
+    if (t.kind === 'pier' || t.kind === 'piernet') { c.save(); if (t.kind === 'pier') { var gx0 = (t.mx + 0.5) * Pier.M, gy0 = (t.my + 0.5) * Pier.M, gh = t.piece.pk === 'head', go = t.o || 'e', gn = gh ? 'head_' + go : 'deck_ew_1', gw = gh ? (go === 'e' || go === 'w' ? [32, 48] : [48, 32]) : [32, 32]; c.globalAlpha = t.ok ? 0.75 : 0.35; pierDraw1(c, gn, gx0, gy0); c.globalAlpha = 1; c.strokeStyle = t.ok ? 'rgba(230,240,190,0.9)' : 'rgba(255,90,70,0.9)'; c.lineWidth = 1.2; c.strokeRect(gx0 - gw[0], (gy0 - gw[1]) * K, gw[0] * 2, gw[1] * 2 * K); } else if (t.net) { c.globalAlpha = t.ok ? 0.8 : 0.35; var ge = Pier.edge(t.net.m, t.net.side); pierDraw1(c, 'net_' + t.net.side, ge.x, ge.y); } c.restore(); ghostLabel = t.ok ? { text: t.piece.name + '  ' + costText(t.piece.cost), bad: false } : { text: t.why || 'Not here', bad: true }; return; }
+    if (t.kind === 'piermod' || t.kind === 'piernetx') { var gb = t.kind === 'piermod' ? Pier.box(t.m) : [t.x - 14, t.y - 14, t.x + 14, t.y + 14]; c.save(); c.strokeStyle = t.ok ? 'rgba(255,160,90,0.95)' : 'rgba(255,90,70,0.8)'; c.lineWidth = 1.4; c.strokeRect(gb[0], gb[1] * K, gb[2] - gb[0], (gb[3] - gb[1]) * K); c.restore(); ghostLabel = t.ok ? { text: 'Take it down', bad: false } : { text: t.why || 'Not here', bad: true }; return; }
     if (t.kind === 'zone') { var Zg = ZONE[t.piece.zone] || ZONE.sleep, gc = t.ok || !t.drag ? Zg.col : '255,90,70'; c.save(); c.fillStyle = 'rgba(' + gc + ',0.16)'; c.strokeStyle = 'rgba(' + gc + ',0.95)'; c.lineWidth = 1.4; c.fillRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.strokeRect(t.r.x0 * T, t.r.y0 * TS, (t.r.x1 - t.r.x0) * T, (t.r.y1 - t.r.y0) * TS); c.fillStyle = 'rgba(' + gc + ',1)'; c.beginPath(); c.arc(t.px, t.py * K, 2.2, 0, 7); c.fill(); c.restore();
       ghostLabel = t.ok || (!t.drag && !t.why) ? { text: Zg.name + (t.drag ? '  ' + (t.r.x1 - t.r.x0) + ' by ' + (t.r.y1 - t.r.y0) : '  (press, and drag out its square)') + '  ' + costText(t.piece.cost), bad: false } : { text: t.why || 'Not here', bad: true }; return; }
     if (t.kind === 'mend' || t.kind === 'raise') {     // what would be mended, framed
@@ -2619,8 +2696,8 @@ __COMBAT__
     if (x < 70 || y < 70 || x > WX - 70 || y > WY - 70) return false;
     var hw = (sz ? sz.hw : raft && raft.hw || 21) * 0.8, hh = (sz ? sz.hh : raft && raft.hh || 21) * 0.8, ch, sh;
     if (h == null) h = raft ? raft.h : 0; ch = Math.cos(h); sh = Math.sin(h);
-    for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh, px = x + ex * ch - ey * sh, py = y + ex * sh + ey * ch; if (isLand(px, py) || w.cliffAt(px, py) || dockAt(Math.floor(px / T), Math.floor(py / T))) return false; }   // (a sea cliff's foot is not land, and not water either)
-    return !isLand(x, y) && !w.cliffAt(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T));
+    for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh, px = x + ex * ch - ey * sh, py = y + ex * sh + ey * ch; if (isLand(px, py) || w.cliffAt(px, py) || dockAt(Math.floor(px / T), Math.floor(py / T)) || pierHullHit(px, py)) return false; }   // (a sea cliff's foot is not land, and not water either)
+    return !isLand(x, y) && !w.cliffAt(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T)) && !pierHullHit(x, y);
   }
   function raftSpot(nx, ny) {              // the clear water nearest a point, searched outward in rings
     for (var r = 36; r < 320; r += 12) for (var a = 0; a < 6.283; a += 0.3) { var x = nx + Math.cos(a) * r, y = ny + Math.sin(a) * r; if (raftHull(x, y)) return { x: x, y: y }; }
@@ -2650,7 +2727,7 @@ __COMBAT__
   function shoreInReach() {                /* land within a step of the vessel (the search raftUse makes), looked for four times a second: "Step ashore" showed far from any shore (Robin, 2026-10-20) */
     if (!raft) return false; if (clock - shoreChk.t < 0.25) return shoreChk.ok; shoreChk.t = clock; shoreChk.ok = false;
     var rch = Math.cos(raft.h), rsh = Math.sin(raft.h), hw0 = (raft.hw || 21) + 8, hh0 = (raft.hh || 21) + 8;
-    for (var d = 20; d < Math.max(120, (raft.hw || 21) + 90) && !shoreChk.ok; d += 8) for (var k = 0; k < 16; k++) { var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d, du = Math.cos(a) * d * rch + Math.sin(a) * d * rsh, dq = -Math.cos(a) * d * rsh + Math.sin(a) * d * rch; if ((du / hw0) * (du / hw0) + (dq / hh0) * (dq / hh0) > 1 && isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) { shoreChk.ok = true; break; } }
+    for (var d = 20; d < Math.max(120, (raft.hw || 21) + 90) && !shoreChk.ok; d += 8) for (var k = 0; k < 16; k++) { var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d, du = Math.cos(a) * d * rch + Math.sin(a) * d * rsh, dq = -Math.cos(a) * d * rsh + Math.sin(a) * d * rch; if ((du / hw0) * (du / hw0) + (dq / hh0) * (dq / hh0) > 1 && ((isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) || pierHullHit(x, y))) { shoreChk.ok = true; break; } }
     return shoreChk.ok;
   }
   function raftUse() {
@@ -2661,7 +2738,7 @@ __COMBAT__
     function offHull(x, y) { var dx = x - raft.x, dy = y - raft.y, u = (dx * rch + dy * rsh) / ((raft.hw || 21) + 8), q = (-dx * rsh + dy * rch) / ((raft.hh || 21) + 8); return u * u + q * q > 1; }   /* (a step clear of her: off a beached bow he stood in the boat) */
     for (var d = 20; d < Math.max(120, (raft.hw || 21) + 90) && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
       var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d;
-      if (offHull(x, y) && isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
+      if (offHull(x, y) && ((isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) || pierHullHit(x, y))) best = { x: x, y: y };
     }
     if (!best) { toast('No shore close enough'); return; }
     raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.anim.sit = 0; P.anim.row = null; sfx('pick'); crewAshore(best); menAshore(best);
@@ -3131,7 +3208,7 @@ __COMBAT__
   }
   function groundUnder(P) {
     if (inCave) return Cave.sAt(here(), P.x, P.y) > 0 ? 'water' : 'rock';
-    if (P.lvl) return 'wood';
+    if (P.lvl || P.deck) return 'wood';
     var tx = Math.floor(P.x / T), ty = Math.floor(P.y / T), fl = B.floors[Build.key(tx, ty)];
     if (fl != null && Build.FLOORS[fl]) { var tl = Build.FLOORS[fl].tile; return tl === 'plank' ? 'wood' : (tl === 'path' || tl === 'rock') ? 'rock' : tl === 'trail' ? 'gravel' : 'grass'; }
     if (dockAt(tx, ty) || w.onPlank(P.x, P.y)) return 'wood';
@@ -4423,6 +4500,7 @@ __COMBAT__
     return null;
   }
   function spLaunch(bench, kind, skip) {   // clear water by the yard for a hull of this size, away from your other ships (a naust's beside its slipway)
+    if (bench.head) return pierLaunch(bench, kind, skip);
     var near0 = slipSpot(bench, kind, skip); if (near0) return near0;
     var sz = spSizeOf(kind), r, a, b, h, best = null, o0 = bench.slip || bench;
     for (r = bench.slip ? 0 : 40; r < 520 && !best; r += 14) for (a = 0; a < 6.283 && !best; a += 0.26) { var x = o0.x + Math.cos(a) * r, y = o0.y + Math.sin(a) * r;
@@ -4907,6 +4985,7 @@ __COMBAT__
     if (st) add(st, st.fallen ? 'Raise the stone (6 stone)' : 'Muster', st.fallen ? function () { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(st); } else toast('It takes 6 stone to raise it'); } : muster);
     if (wp) add(wp, HD.jobs[jobOf(wp)].name + ': ' + fo.name, function () { if (!hirdAssign(P) && wp === st && !st.fallen) muster(); }, -6);   // a follower and a place to work: the work comes before the muster
     var hm = hirdNear(P); if (hm) add(hm, hm.sayT > 0 ? null : hm.follow ? 'Stay' : (hm === npc && !seen.raft ? 'Talk' : 'Follow me'), function () { if (hm === npc && !seen.raft) talkOpen(npc, talk); else hirdTalk(hm); });   /* (while he mends the boat he tells you to sleep, 2026-10-27) */
+    var nkE = B.pier && !P.deck ? Pier.netNear(B.pier, P.x, P.y, 34) : null; if (nkE) add(Pier.footOf(nkE.m, nkE.side), 'Climb the net', function () { var cl = Pier.climbTo(nkE); P.x = cl.x; P.y = cl.y; P.vx = P.vy = 0; P.deck = true; sfx('pick'); }, -6);
     if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock) && !npc.seq) add(npc, npc.sayT > 0 && !arnorMore() && !arnorQuestReady() ? null : 'Talk', function () { talkOpen(npc, talk); });   /* (a story with lines left keeps its Talk while he speaks: Robin, 2026-10-22) */   /* (quiet after a remark: talking above) */
     var asE = aslakShopNear(P); if (asE && !aslakMore()) add(asE, 'Trade', function () { if (!(asE.sayT > 0)) aslakTalk(asE); invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('aslak'); }, -9);   /* Old Aslak's craft: the crafting board at him (Robin, 2026-10-29) */
     var potE = potNear(P); if (potE) add(potE, 'Look in the pot', function () { potLook(potE); }, -6);   /* a village's pot teaches a dish (Robin, 2026-10-29) */
@@ -7530,11 +7609,12 @@ __COMBAT__
   Combat.api.scene = {
     visible: function (x, y, r) { var z = cam.z || 1, hw = 200 / z, hh = 125 / z, m = (r || 0) + 90, v = Math.abs(x - cam.x) < hw + m && Math.abs(y * K - cam.y) < hh + m; if (v) figsInView++; return v; },   // beasts out of view are not drawn
     noHud: false, noKills: true, ownFallen: true,
-    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && Yard.isShip(raft.kind) ? -3 : 0) + riteLift + leapLift(); },
+    heroLift: function () { return pierLiftOf(hero()) + (hero().lvl ? UP : 0) + (raft && raft.aboard && Yard.isShip(raft.kind) ? -3 : 0) + riteLift + leapLift(); },
     heroSortY: function () { return null; }   /* (the over-the-altar sort of 2026-10-24 is dropped on Colin, AD's advice with his steps: behind the slab in the plain order, the slab hides his legs and he reads as standing on the steps) */,   /* at the slab's north edge he is drawn over the altar and under the beast laid on it (Colin, AD's wiring note, 2026-10-24): the knife goes down into the beast */
     still: function () { return !!CS.lock || !!(raft && raft.aboard) || !!craftJob || hero().fishCharge > 0 || !!fishing || !!BUTCH; },   /* (and while a craft is on: he stands at his work) */   /* aboard, the keys sail the ship and he stands (2026-10-21) */   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) { var UM = 7; return upFloorAt(wtx, wty) && upFloorAt(Math.floor((x - UM) / T), wty) && upFloorAt(Math.floor((x + UM) / T), wty) && upFloorAt(wtx, Math.floor((y - UM) / T)) && upFloorAt(wtx, Math.floor((y + UM) / T)); } if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor, and never its very edge (UM inside it): coming down by a wall you must land inside the wall, not in it (Robin's clip, 2026-10-07)
+      if (!inCave) { var pwk = pierWalk(x, y, e); if (pwk != null) return pwk; }
       if (!inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
       if (ADMIN.fly && !inCave) return true; if (inCave) return caveFloor(x, y); if ((!e || e === hero()) && mouthWalk(x, y)) return true;   /* (a way into the troll cave's mouth) */ if (beastBound(e)) return beastGround(x, y, e); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y) || (false && w.elevAt(x, y) > -2.6) || (w.isWater(x, y) && (!e || e === hero()) && !(e && e.leap) && canSwimTo(x, y)); },   /* (a leap lands on no deep water: it stops at the edge, 2026-10-24; the swim is the hero's alone: a fleeing deer had run out into the water where he could have swum, Robin the same day) */
     dry: function (x, y) { return inCave ? caveFloor(x, y) : isLand(x, y); },   /* dry land, for a shy beast's flight: it runs along the shore, not into the shallows (Robin, 2026-10-24) */   // the shallows can be waded; with the long breath, water twice as deep; deeper is swum (SWIM)
@@ -7569,7 +7649,7 @@ __COMBAT__
       if (!inCave && !PERF.skip.grass) w.drawGrass(c, cam, hw, hh, clock, seasonGrass());
       if (bDirty) rebuildRooms();
       bldShadows(c, hw, hh);   /* the buildings' and the walls' shadows, under the set pieces' */
-      drawCastShadows(c, hw, hh);
+      drawCastShadows(c, hw, hh); pierShadows(c, hw, hh);
       drawFireShadows(c, hw, hh);
     },
     items: function (items) {
@@ -7643,7 +7723,7 @@ __COMBAT__
         var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : facing(spriteName(it), it.rot).n, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : sleep && sleep.up && sleep.bd === it ? it.y - 40 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w * (isRuneAltar(it) ? ALTAR_SCALE : 1)); if (isRuneAltar(it)) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.scale(ALTAR_SCALE, ALTAR_SCALE); drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); } else if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, facing(spriteName(it), it.rot).flip);   /* (the altar at ALTAR_SCALE: Robin, 2026-10-23) */ if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       cryptOuts(items, hw, hh);   /* the churchyard's slab, once you have come up through it */
-      altarItems(items); butcherItems(items); csFxItems(items);   /* the altar's ring of stones, the beast laid, the storm's three, the lightning (Runes2) */
+      altarItems(items); butcherItems(items); csFxItems(items); pierItems(items, hw, hh);   /* the altar's ring of stones, the beast laid, the storm's three, the lightning (Runes2) */
       if (seaEnv) Sea.lifeItems(sea, seaEnv, SEA_IMG).forEach(function (li) { items.push({ y: li.y, f: function () { li.f(ctx); } }); });   /* the whale, the fish, the seal, the gulls' shadows */
       if (raft && Math.abs(raft.x - cam.x) < hw + 320 && Math.abs(raft.y * K - cam.y) < hh + 320) items.push({ y: raft.y - 14, f: function () { drawShip(ctx, raft); } });   /* (a hull is up to 520 units long now: the margin is its half-length and the mast) */
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 320 && Math.abs(mv.y * K - cam.y) < hh + 320) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
@@ -9303,13 +9383,13 @@ __COMBAT__
     lockedDoorsNear(P.x, P.y, 160, function (k, L, e, dx, dy) { D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true, wall: true }); if (L === 'H') D.W.pillars.push({ x: dx - 10, y: dy, r: 7, hide: true, wall: true }, { x: dx + 10, y: dy, r: 7, hide: true, wall: true }); else D.W.pillars.push({ x: dx, y: dy - 8, r: 7, hide: true, wall: true }, { x: dx, y: dy + 8, r: 7, hide: true, wall: true }); });   // a locked door is a wall until it breaks
     idleShips().forEach(function (iv) { if (Math.abs(iv.x - P.x) < 330 && Math.abs(iv.y - P.y) < 330) D.W.pillars.push({ x: iv.x, y: iv.y, r: Math.max(iv.hw || 21, iv.hh || 21) * 0.6, hide: true }); });   /* your other ships are solid */
     for (var mi = 0; mi < moored.length; mi++) { var mv = moored[mi]; if (Math.abs(mv.x - P.x) < 160 && Math.abs(mv.y - P.y) < 160) D.W.pillars.push({ x: mv.x, y: mv.y, r: Math.max(mv.hw || 21, mv.hh || 21) * 0.7, hide: true }); }
-    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (isRuneAltar(bt) && !bt.box) bt.box = altarBox(bt); if (bt.box && Math.abs(bt.x - P.x) < 400 && Math.abs(bt.y - P.y) < 400) naustPillars(bt, D.W.pillars); else if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 330 && Math.abs(bt.y - P.y) < 330) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }   // (330: a man fighting at the edge of the view walked through tables; walls are the grid's business)
+    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (isRuneAltar(bt) && !bt.box) bt.box = altarBox(bt); if (bt.box && Math.abs(bt.x - P.x) < 400 && Math.abs(bt.y - P.y) < 400) naustPillars(bt, D.W.pillars); else if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 330 && Math.abs(bt.y - P.y) < 330) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); } pierPillars(P, D.W.pillars);   // (330: a man fighting at the edge of the view walked through tables; walls are the grid's business)
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     csTick(dt); csFxTick(dt);   /* the cut-scene and the editor */
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hown ? sleepComfortAt(P.x, P.y) : 0, hrate = (fireNear(P.x, P.y, (runeHas('warmBelly') ? runeN('warmBelly', 'fireK') || 1 : 1) * 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || false ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); arrowPickTick(); butcherTick(dt); placeTick(dt); newWatch(dt); newTick(dt); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); pierTick(dt); heroGearSync(); arrowPickTick(); butcherTick(dt); placeTick(dt); newWatch(dt); newTick(dt); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); fishPoseTick(dt); if (SCENE === 'dialogue') dlgTick(); zonesT += dt; if (zonesT > 1) { zonesT = 0; zonesTick(); } sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); spTick(); if (bookOpen) { var bkP = hero(); if (bkP.hp < bookHp - 0.5) bookOpen = false; bookHp = bkP.hp; }   /* a blow taken while the book is open shuts it (a fresh loss of health, not one just before it opened) */ caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || (inCave && cur && cur.kind === 'cellar' && store.cellar ? !cellarChestNear(P) : Math.hypot(P.x - store.x, P.y - store.y) > 70))))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

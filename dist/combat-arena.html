@@ -4632,6 +4632,7 @@ function updateEnemies(dt) {
     if (e.rattle > 0) { e.rattle = Math.max(0, e.rattle - dt); if (Math.random() < dt * 16) spark(e.x + (Math.random() - 0.5) * e.r * 2, e.y, 1, '#ffe27a', 36); }
     e.t += adt;
     var dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
+    if (api.chaseVia) { var cvia = api.chaseVia(e); if (cvia) { dx = cvia.x - e.x; dy = cvia.y - e.y; d = Math.max(Math.hypot(dx, dy), 60); ang = Math.atan2(dy, dx); } }   /* (the hero up on a pier: the way is by its landing, 2026-10-30) */
     e.kx *= Math.exp(-dt * 9); e.ky *= Math.exp(-dt * 9);
     if (e.type !== 'shooter' && Math.abs(e.kx) + Math.abs(e.ky) > 1) {
       moveCircle(e, e.kx * dt, e.ky * dt);

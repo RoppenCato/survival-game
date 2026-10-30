@@ -10,7 +10,7 @@ const D = C.dbg(), P = D.P, W = D.W, DT = 1 / 60; W.pillars = [];
 C.api.dress = function (e) { if (e.type !== 'beast') return; const sp = G.lib.animalSpec('boar'); e.creature = true; e.kindA = 'boar'; e.kind = 'boar'; e.r = 8; e.cfg = { speed: 64, windup: sp.windup, lunge: 175, atk: G.lib.animalAttack('boar') }; e.hp = e.maxHp = sp.hp; C.tuneBeast(e, 'boar'); };
 C.tune({});
 let afloat = false; C.api.afloat = () => afloat;
-P.x = 0; P.y = 0; P.hp = P.maxHp = 100; P.dead = false;
+W.enemies.length = 0; P.x = 0; P.y = 0; P.hp = P.maxHp = 100; P.dead = false;
 const b = C.spawn('beast'); b.x = 100; b.y = 0; b.aggro = 75; b.awake = true; b.state = 'chase'; b.grudgeT = 12; b.wander = { x0: 100, y0: 0, r: 80, wait: 0 };
 const m = C.soldier({ side: 0, wpn: { kind: 'sword', mat: 'iron' }, shield: true, armor: 0.3, x: -150, y: 0, post: { x: -300, y: 0, face: 0 }, aggro: 80, hp: 30, strength: 4, wits: 4, nerve: 1 }); m.awake = true;
 for (let i = 0; i < 60; i++) { P.hp = 100; C.update(DT); }

@@ -202,8 +202,40 @@ def prop_images():
         for name in tj:
             fp = os.path.join(ROOT, 'assets', 'props', sub, name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
             tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; tj[name]['set'] = sub; j[name] = tj[name]   # (set: its folder, for the Art Editor's set-piece browser)
+    pj = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')          # the pier's dressing, placed as things on a deck: pier_coil and the rest (their own names: the game has a bench and barrels of its own)
+    if os.path.exists(pj):
+        pp = json.load(open(pj, encoding='utf-8'))
+        for name in ['mooring', 'coil', 'barrels', 'fish_rack', 'bench']:
+            fp = os.path.join(ROOT, 'assets', 'pier', 'sheets', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+            q = dict(pp['pieces'][name]); q['upp'] = pp['upp']; q['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag; q['set'] = 'pier'; j['pier_' + name] = q
+    pj = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')          # the pier's dressing, placed as things on a deck: pier_coil and the rest (their own names: the game has a bench and barrels of its own)
+    if os.path.exists(pj):
+        pp = json.load(open(pj, encoding='utf-8'))
+        for name in ['mooring', 'coil', 'barrels', 'fish_rack', 'bench']:
+            fp = os.path.join(ROOT, 'assets', 'pier', 'sheets', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+            q = dict(pp['pieces'][name]); q['upp'] = pp['upp']; q['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag; q['set'] = 'pier'; j['pier_' + name] = q
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
+SRC['__PIER__'] = read('src', 'pier.js')   # the piers' rules (2026-10-30)
+def pier_art():                               # Colin, AD's pier pieces, assets/pier/sheets, with their numbers (not set pieces: no ink ring, no finish)
+    jp = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')
+    if not os.path.exists(jp): return 'null'
+    j = json.load(open(jp, encoding='utf-8'))
+    for name in j['pieces']:
+        fp = os.path.join(ROOT, 'assets', 'pier', 'sheets', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+        j['pieces'][name]['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag
+    return json.dumps(j)
+SRC['__PIERART__'] = pier_art()
+SRC['__PIER__'] = read('src', 'pier.js')   # the piers' rules (2026-10-30)
+def pier_art():                               # Colin, AD's pier pieces, assets/pier/sheets, with their numbers (not set pieces: no ink ring, no finish)
+    jp = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')
+    if not os.path.exists(jp): return 'null'
+    j = json.load(open(jp, encoding='utf-8'))
+    for name in j['pieces']:
+        fp = os.path.join(ROOT, 'assets', 'pier', 'sheets', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+        j['pieces'][name]['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag
+    return json.dumps(j)
+SRC['__PIERART__'] = pier_art()
 def monster_images():
     """the world's monsters' pieces (assets/monsters/<beast>/<piece>.png + .json with its marks: origin, water, eyes, ppm; Colin, AD's kraken, 2026-10-24)"""
     out = {}; mdir = os.path.join(ROOT, 'assets', 'monsters')

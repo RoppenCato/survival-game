@@ -1,0 +1,755 @@
+{
+ "upp": 0.25,
+ "tile": 32,
+ "module": 64,
+ "deckLift": 10.3,
+ "ground_K": 0.75,
+ "note": "rendered at the tilt that matches the ground (sin = 0.75), so they lie on the grid; a head is 2 tiles along and 3 across, centred on the pier",
+ "pieces": {
+  "deck_ew_1": {
+   "w": 258,
+   "h": 198,
+   "ax": 129.3,
+   "ay": 140.6,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 1
+  },
+  "deck_ns_1": {
+   "w": 260,
+   "h": 196,
+   "ax": 130,
+   "ay": 139.3,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 1
+  },
+  "deck_ew_2": {
+   "w": 258,
+   "h": 198,
+   "ax": 129.3,
+   "ay": 140.6,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 2
+  },
+  "deck_ns_2": {
+   "w": 260,
+   "h": 196,
+   "ax": 130,
+   "ay": 139.3,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 2
+  },
+  "deck_ew_3": {
+   "w": 258,
+   "h": 198,
+   "ax": 129.3,
+   "ay": 140.6,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 3
+  },
+  "deck_ns_3": {
+   "w": 260,
+   "h": 196,
+   "ax": 130,
+   "ay": 139.3,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 3
+  },
+  "deck_ew_4": {
+   "w": 258,
+   "h": 198,
+   "ax": 129.3,
+   "ay": 140.6,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 4
+  },
+  "deck_ns_4": {
+   "w": 260,
+   "h": 196,
+   "ax": 130,
+   "ay": 139.3,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 4
+  },
+  "deck_ew_5": {
+   "w": 258,
+   "h": 198,
+   "ax": 129.3,
+   "ay": 140.6,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 5,
+   "note": "the cleat: only where the module's south (ew) or east (ns) side is open"
+  },
+  "deck_ns_5": {
+   "w": 260,
+   "h": 196,
+   "ax": 130,
+   "ay": 139.3,
+   "kind": "deck",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "variant": 5,
+   "note": "the cleat: only where the module's south (ew) or east (ns) side is open"
+  },
+  "kerb_n": {
+   "w": 260,
+   "h": 16,
+   "ax": 130,
+   "ay": 149.9,
+   "kind": "kerb",
+   "anchor": "the module's middle",
+   "sort": -32,
+   "when": "that side has no neighbour"
+  },
+  "kerb_s": {
+   "w": 260,
+   "h": 16,
+   "ax": 130,
+   "ay": -42.2,
+   "kind": "kerb",
+   "anchor": "the module's middle",
+   "sort": -32,
+   "when": "that side has no neighbour"
+  },
+  "kerb_e": {
+   "w": 16,
+   "h": 203,
+   "ax": -119.7,
+   "ay": 147.1,
+   "kind": "kerb",
+   "anchor": "the module's middle",
+   "sort": -32,
+   "when": "that side has no neighbour"
+  },
+  "kerb_w": {
+   "w": 16,
+   "h": 203,
+   "ax": 136.2,
+   "ay": 147.1,
+   "kind": "kerb",
+   "anchor": "the module's middle",
+   "sort": -32,
+   "when": "that side has no neighbour"
+  },
+  "wall_m": {
+   "w": 263,
+   "h": 63,
+   "ax": 131.8,
+   "ay": 45.2,
+   "kind": "wall",
+   "anchor": "the middle of the south edge",
+   "sort": -64,
+   "when": "the south side is open; drawn before the deck, sorts with it"
+  },
+  "wall_h2": {
+   "w": 263,
+   "h": 63,
+   "ax": 131.8,
+   "ay": 45.2,
+   "kind": "wall",
+   "anchor": "the middle of the south edge",
+   "sort": null,
+   "when": "the south side is open; drawn before the deck, sorts with it"
+  },
+  "wall_h3": {
+   "w": 391,
+   "h": 63,
+   "ax": 195.8,
+   "ay": 44.8,
+   "kind": "wall",
+   "anchor": "the middle of the south edge",
+   "sort": null,
+   "when": "the south side is open; drawn before the deck, sorts with it"
+  },
+  "landing_n": {
+   "w": 271,
+   "h": 165,
+   "ax": 135,
+   "ay": 108.7,
+   "kind": "landing",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "sand": "n",
+   "walkLift": "rises 0 to 10.3 units from the sand side to the deck"
+  },
+  "net_n": {
+   "w": 135,
+   "h": 83,
+   "ax": 67.5,
+   "ay": 95.7,
+   "kind": "net",
+   "anchor": "the middle of the edge it hangs on",
+   "sort": -0.5,
+   "side": "n",
+   "wide": 30,
+   "reach": 28,
+   "sortNote": "from the anchor: for e and w, that is the module's north edge + 0.5 (on a head: its own north edge + 0.5)"
+  },
+  "landing_e": {
+   "w": 261,
+   "h": 245,
+   "ax": 130.2,
+   "ay": 147.9,
+   "kind": "landing",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "sand": "e",
+   "walkLift": "rises 0 to 10.3 units from the sand side to the deck"
+  },
+  "net_e": {
+   "w": 122,
+   "h": 170,
+   "ax": 1.4,
+   "ay": 121.9,
+   "kind": "net",
+   "anchor": "the middle of the edge it hangs on",
+   "sort": -63.5,
+   "side": "e",
+   "wide": 30,
+   "reach": 28,
+   "sortNote": "from the anchor: for e and w, that is the module's north edge + 0.5 (on a head: its own north edge + 0.5)"
+  },
+  "landing_s": {
+   "w": 271,
+   "h": 241,
+   "ax": 136,
+   "ay": 145.7,
+   "kind": "landing",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "sand": "s",
+   "walkLift": "rises 0 to 10.3 units from the sand side to the deck"
+  },
+  "net_s": {
+   "w": 136,
+   "h": 161,
+   "ax": 68,
+   "ay": 72.4,
+   "kind": "net",
+   "anchor": "the middle of the edge it hangs on",
+   "sort": 0.5,
+   "side": "s",
+   "wide": 30,
+   "reach": 28,
+   "sortNote": "from the anchor: for e and w, that is the module's north edge + 0.5 (on a head: its own north edge + 0.5)"
+  },
+  "landing_w": {
+   "w": 261,
+   "h": 246,
+   "ax": 130.3,
+   "ay": 148.9,
+   "kind": "landing",
+   "box": [
+    -32,
+    -32,
+    32,
+    32
+   ],
+   "anchor": "the module's middle",
+   "sort": -32,
+   "sand": "w",
+   "walkLift": "rises 0 to 10.3 units from the sand side to the deck"
+  },
+  "net_w": {
+   "w": 122,
+   "h": 170,
+   "ax": 120.2,
+   "ay": 121.9,
+   "kind": "net",
+   "anchor": "the middle of the edge it hangs on",
+   "sort": -63.5,
+   "side": "w",
+   "wide": 30,
+   "reach": 28,
+   "sortNote": "from the anchor: for e and w, that is the module's north edge + 0.5 (on a head: its own north edge + 0.5)"
+  },
+  "head_e": {
+   "w": 272,
+   "h": 304,
+   "ax": 136.3,
+   "ay": 198.2,
+   "kind": "head",
+   "box": [
+    -32,
+    -48,
+    32,
+    48
+   ],
+   "anchor": "the head's middle",
+   "sort": -48,
+   "wall": "wall_h2",
+   "out": "e",
+   "blocks": [
+    {
+     "name": "rail",
+     "box": [
+      27.2,
+      -48,
+      32.4,
+      48
+     ]
+    },
+    {
+     "name": "trestle",
+     "box": [
+      -23.8,
+      -28.7,
+      8.7,
+      -17.4
+     ]
+    },
+    {
+     "name": "stump",
+     "box": [
+      2.2,
+      24.2,
+      10.8,
+      32.8
+     ]
+    },
+    {
+     "name": "barrel",
+     "box": [
+      -21.7,
+      32.8,
+      -10.8,
+      43.7
+     ]
+    }
+   ]
+  },
+  "things_e_n": {
+   "w": 258,
+   "h": 210,
+   "ax": 97.3,
+   "ay": 286.3,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": -1
+  },
+  "things_e_s": {
+   "w": 247,
+   "h": 188,
+   "ax": 85.6,
+   "ay": 83.9,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": 47
+  },
+  "head_w": {
+   "w": 272,
+   "h": 304,
+   "ax": 136.3,
+   "ay": 198.2,
+   "kind": "head",
+   "box": [
+    -32,
+    -48,
+    32,
+    48
+   ],
+   "anchor": "the head's middle",
+   "sort": -48,
+   "wall": "wall_h2",
+   "out": "w",
+   "blocks": [
+    {
+     "name": "rail",
+     "box": [
+      -32.4,
+      -41.9,
+      -27.2,
+      41.9
+     ]
+    },
+    {
+     "name": "trestle",
+     "box": [
+      -8.7,
+      17.4,
+      23.8,
+      28.7
+     ]
+    },
+    {
+     "name": "stump",
+     "box": [
+      -10.8,
+      -32.8,
+      -2.2,
+      -24.2
+     ]
+    },
+    {
+     "name": "barrel",
+     "box": [
+      10.8,
+      -43.7,
+      21.7,
+      -32.8
+     ]
+    }
+   ]
+  },
+  "things_w_n": {
+   "w": 247,
+   "h": 211,
+   "ax": 160.9,
+   "ay": 287.2,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": -1
+  },
+  "things_w_s": {
+   "w": 258,
+   "h": 188,
+   "ax": 160.8,
+   "ay": 84.1,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": 47
+  },
+  "head_n": {
+   "w": 400,
+   "h": 207,
+   "ax": 200.5,
+   "ay": 149.4,
+   "kind": "head",
+   "box": [
+    -48,
+    -32,
+    48,
+    32
+   ],
+   "anchor": "the head's middle",
+   "sort": -32,
+   "wall": "wall_h3",
+   "out": "n",
+   "blocks": [
+    {
+     "name": "rail",
+     "box": [
+      -41.9,
+      -32.4,
+      41.9,
+      -27.2
+     ]
+    },
+    {
+     "name": "trestle",
+     "box": [
+      -42.6,
+      -3.5,
+      -10.1,
+      7.8
+     ]
+    },
+    {
+     "name": "stump",
+     "box": [
+      24.2,
+      -10.8,
+      32.8,
+      -2.2
+     ]
+    },
+    {
+     "name": "barrel",
+     "box": [
+      32.8,
+      10.8,
+      43.7,
+      21.7
+     ]
+    }
+   ]
+  },
+  "things_n_n": {
+   "w": 388,
+   "h": 213,
+   "ax": 193.8,
+   "ay": 257.6,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": -1
+  },
+  "things_n_s": {
+   "w": 346,
+   "h": 118,
+   "ax": 172.4,
+   "ay": 98.4,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": 31
+  },
+  "head_s": {
+   "w": 400,
+   "h": 207,
+   "ax": 200.5,
+   "ay": 149.4,
+   "kind": "head",
+   "box": [
+    -48,
+    -32,
+    48,
+    32
+   ],
+   "anchor": "the head's middle",
+   "sort": -32,
+   "wall": "wall_h3",
+   "out": "s",
+   "blocks": [
+    {
+     "name": "rail",
+     "box": [
+      -48,
+      27.2,
+      48,
+      32.4
+     ]
+    },
+    {
+     "name": "trestle",
+     "box": [
+      10.1,
+      -7.8,
+      42.6,
+      3.5
+     ]
+    },
+    {
+     "name": "stump",
+     "box": [
+      -32.8,
+      2.2,
+      -24.2,
+      10.8
+     ]
+    },
+    {
+     "name": "barrel",
+     "box": [
+      -43.7,
+      -21.7,
+      -32.8,
+      -10.8
+     ]
+    }
+   ]
+  },
+  "things_s_n": {
+   "w": 346,
+   "h": 85,
+   "ax": 173.7,
+   "ay": 142.9,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": -1
+  },
+  "things_s_s": {
+   "w": 388,
+   "h": 160,
+   "ax": 193.8,
+   "ay": 101.8,
+   "kind": "things",
+   "anchor": "the head's middle",
+   "sort": 31
+  },
+  "mooring": {
+   "w": 21,
+   "h": 76,
+   "ax": 10.8,
+   "ay": 93.1,
+   "kind": "dressing",
+   "anchor": "where it stands on the deck (ground position; the picture carries the lift)",
+   "sort": 0,
+   "blocks": [
+    [
+     -3,
+     -3,
+     3,
+     3
+    ]
+   ],
+   "onDeckOnly": true
+  },
+  "coil": {
+   "w": 44,
+   "h": 40,
+   "ax": 22.3,
+   "ay": 65.6,
+   "kind": "dressing",
+   "anchor": "where it stands on the deck (ground position; the picture carries the lift)",
+   "sort": 0,
+   "blocks": [],
+   "onDeckOnly": true
+  },
+  "barrels": {
+   "w": 90,
+   "h": 78,
+   "ax": 44.7,
+   "ay": 101.7,
+   "kind": "dressing",
+   "anchor": "where it stands on the deck (ground position; the picture carries the lift)",
+   "sort": 0,
+   "blocks": [
+    [
+     -11,
+     -8,
+     12,
+     8
+    ]
+   ],
+   "onDeckOnly": true
+  },
+  "fish_rack": {
+   "w": 134,
+   "h": 101,
+   "ax": 67,
+   "ay": 118.1,
+   "kind": "dressing",
+   "anchor": "where it stands on the deck (ground position; the picture carries the lift)",
+   "sort": 0,
+   "blocks": [
+    [
+     -15,
+     -8,
+     15,
+     8
+    ]
+   ],
+   "onDeckOnly": true
+  },
+  "bench": {
+   "w": 125,
+   "h": 44,
+   "ax": 62.8,
+   "ay": 76.8,
+   "kind": "dressing",
+   "anchor": "where it stands on the deck (ground position; the picture carries the lift)",
+   "sort": 0,
+   "blocks": [
+    [
+     -16,
+     -4,
+     16,
+     4
+    ]
+   ],
+   "onDeckOnly": true
+  },
+  "float": {
+   "w": 228,
+   "h": 179,
+   "ax": 116.6,
+   "ay": 134.3,
+   "kind": "float",
+   "anchor": "its middle on the water",
+   "sort": 0,
+   "note": "not part of the pier: lay it beside the hull, repeat along a long one",
+   "blocks": [
+    [
+     -27,
+     -16,
+     27,
+     16
+    ]
+   ]
+  }
+ }
+}

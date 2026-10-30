@@ -183,6 +183,7 @@ and not built (`docs/idea-bank.md`).
   groups: found in nature, left by people, built by Vikings.
 - **Base building:** piece by piece, walls on tile edges, and a roof that appears by itself over any space closed by walls,
   doors and windows and fades when the hero is inside.
+- **Piers and the shipyard** (Robin, 2026-10-30, built; `docs/state/game.md`): the shipyard is a small head at a pier's end (Colin, AD's C3); piers are built from the beach and stand in the shallows, 1 or 2 pieces may reach inland; no stairs, a net where you climb from the water; the boat being built lies side on in the closest free water with a way out; beasts and men can go on a pier; **board a boat and hunters leave**.
 
 ## Design conventions (Robin's rules)
 
