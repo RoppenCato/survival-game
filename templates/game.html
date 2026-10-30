@@ -5566,6 +5566,7 @@ __COMBAT__
   }
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
   var noArrowT = 0;
+  Combat.api.afloat = function () { return !!(raft && raft.aboard); };   /* aboard, hunters leave: beasts wander off, a town's men go back to their posts; your own men still fight whoever is on the shore (Robin, 2026-10-30) */
   Combat.api.noArms = function () { return swim.on; };   /* no weapon in deep water, the shallows as on land (Robin, 2026-10-30) */
   Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && (!equip.quiver || quiverCount() <= 0) && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast(equip.quiver ? 'No arrows' : 'No quiver'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
   var TRAP_STACK = { tripper: 'trapTripper', poison: 'trapPoison' };

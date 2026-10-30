@@ -15681,9 +15681,10 @@ function armMan(e, o) {                     // make a spawned enemy a soldier: o
   return e;
 }
 function soldier(o) { var keep = api.dress; api.dress = null; var e = spawn('soldier'); api.dress = keep; armMan(e, o); if (api.dressMan) api.dressMan(e, o); return e; }
+function heroAfloat() { return !!(api.afloat && api.afloat()); }   /* aboard his ship nobody hunts him: beasts and men leave (Robin, 2026-10-30) */
 function eachFoe(e, fn) {
   var i, o;
-  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden) fn(P); for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
+  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden && !heroAfloat()) fn(P); for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
   else for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 || o.dead || o.fled || o.out) continue; if (o.type === 'soldier' ? o.awake !== false : (!o.flee && (!(o.aggro || o.strolls) || o.awake))) fn(o); }
 }
 // Man to man. A man is AT his target when he is within his reach of it and a few steps (inContact); a bowman at his distance
@@ -16068,7 +16069,7 @@ function soldierAI0(e, dt) {
   }
   e.retT -= dt; T = e.tgt;
   if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
-  if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
+  if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && (P.hidden || heroAfloat())) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; if (!T && e.side !== 1 && e.post && heroAfloat() && e.state !== 'windup' && e.state !== 'lunge') { e.awake = false; e.heardAt = null; e.guard = 0; postStep(e, dt); e.state = 'idle'; return; } }
   if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); tell(e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
   if (!T) {                                 // nobody to fight
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
@@ -16258,7 +16259,8 @@ function updateEnemies(dt) {
     if (e.down) { downTick(e, dt); continue; }
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
     if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
-      var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
+      var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x), afl = heroAfloat();
+      if (afl && !e.flee) { if (e.awake || e.grudgeT > 0 || e.heard > 0) { e.grudgeT = 0; e.heard = 0; e.awake = false; if (e.state !== 'idle') { e.state = 'idle'; e.t = 0; } if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = 0.4; } } if (e.wander) wanderStep(e, dt); else e.state = 'idle'; e.t += dt; continue; }
       if (!e.aggro) { /* the page decides when it wakes */ }
       else if (!e.awake && gd < e.aggro * stealthK() * (e.shy ? shyK(e, ga) : 1) && !P.dead) { e.awake = true; if (e.shy) { e.fleeT = 0; e.fled = 0; herdWake(e); } }   // the light step shortens the noticing; a shy beast's own sight (shyK)
       if (e.grudgeT > 0) { e.grudgeT -= dt; if (!P.dead && gd < BEAST_GRUDGE.far) { e.awake = true; if (e.state === 'idle') { e.state = 'chase'; e.t = 0; } } }   /* a grudge: it keeps coming however far you shot it from, unless you are long gone */
@@ -23033,6 +23035,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
   var noArrowT = 0;
+  Combat.api.afloat = function () { return !!(raft && raft.aboard); };   /* aboard, hunters leave: beasts wander off, a town's men go back to their posts; your own men still fight whoever is on the shore (Robin, 2026-10-30) */
   Combat.api.noArms = function () { return swim.on; };   /* no weapon in deep water, the shallows as on land (Robin, 2026-10-30) */
   Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && (!equip.quiver || quiverCount() <= 0) && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast(equip.quiver ? 'No arrows' : 'No quiver'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
   var TRAP_STACK = { tripper: 'trapTripper', poison: 'trapPoison' };

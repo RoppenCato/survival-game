@@ -1150,3 +1150,5 @@ Mine, to settle when built: a spot counts only if it passes a way-out check: fro
 
 **Robin's pick, 2026-10-30: C3, the short head** (`docs/pictures/pier/pier_c_board.png`), minding two things: **piers tried in many shapes and on every side of an island, so nothing clips or looks wrong; and no stairs on the pieces: a rope ladder or net you build where you want to climb up from the water, shallow or deep.** Colin, AD has the assembly board to make first.
 Mine, to settle when built: the deck is a level of its own (0.72 m up, as a storey's lift): the pier's sides stop you in the water, you get on from the landing on the sand or at a ladder (E), and you step or drop off the side into the water. Beasts stay off it unless they come by the landing. Every shape Colin, AD's board shows cannot look right is refused by the placement rule.
+
+**Robin, the same day:** beasts and men **can go on the pier**, and **must be tried there: fights on and round a pier, by play and by bots, before it is called done.** Entering a boat makes them leave (built, `api.afloat`, `docs/state/combat.md`).
