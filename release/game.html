@@ -13781,14 +13781,21 @@ function refresh(d) {                      // what each module is, from what sta
   for (var k in d.m) { var m = d.m[k]; if (m.k === 'head') continue; var N = neighbours(d, m.x, m.y); if (m.land && N.length <= 1) { m.k = 'landing'; if (N[0]) m.s = OPP[N[0].side]; } else m.k = 'run'; }
 }
 function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+function boxOf(mx, my, kind, o) { return box({ x: mx, y: my, k: kind, o: o }); }
 function place(d, mx, my, kind, G, o) {    // write it in; the deck's way from the module it joins; a first piece's landing faces away from the water
   var c = { x: (mx + 0.5) * M, y: (my + 0.5) * M }, N = neighbours(d, mx, my), m = { x: mx, y: my, k: kind === 'head' ? 'head' : 'run', land: !!G.land(c.x, c.y), v: VAR[Math.floor(hash(mx, my) * VAR.length)] };
   if (kind === 'head') m.o = o; if (N[0]) m.a = N[0].side === 'e' || N[0].side === 'w' ? 'ew' : 'ns';
   if (!N.length) { var best = 'n', bs = -1, s; for (s in DIRS) { var n0 = 0, i; for (i = 1; i <= 2; i++) if (G.land(c.x + DIRS[s][0] * M * i, c.y + DIRS[s][1] * M * i)) n0++; if (n0 > bs) { bs = n0; best = s; } } m.s = best; m.a = best === 'e' || best === 'w' ? 'ew' : 'ns'; }
   d.m[key(mx, my)] = m; refresh(d); return m;
 }
-function canRemove(d, m) { return neighbours(d, m.x, m.y).length <= 1; }   /* (from its ends in; a net goes with its module) */
-function remove(d, m) { delete d.m[key(m.x, m.y)]; for (var nk in d.n) if (nk.indexOf(key(m.x, m.y) + '|') === 0) delete d.n[nk]; refresh(d); }
+function canRemove(d, m) {                 // a pier comes down from its far ends, its beach last, so what is left is always one pier joined to the land: '' or why not
+  if (neighbours(d, m.x, m.y).length > 1) return 'Take it down from its end';
+  if (m.land) { var c = component(d, m), lands = c.filter(function (q) { return q.land; }).length; if (c.length > 1 && lands <= 1) return 'Take it down from the sea end first'; }
+  return '';
+}
+function remove(d, m) { var nets = 0; delete d.m[key(m.x, m.y)]; for (var nk in d.n) if (nk.indexOf(key(m.x, m.y) + '|') === 0) { delete d.n[nk]; nets++; } refresh(d); return nets; }   /* (how many nets went with it) */
+function netsCovered(d, mx, my) {            // the nets a new module would stand on: those hung on the side it comes to
+  var out = []; for (var s in DIRS) { var o = d.m[key(mx + DIRS[s][0], my + DIRS[s][1])]; if (o && d.n[key(o.x, o.y) + '|' + OPP[s]]) out.push(key(o.x, o.y) + '|' + OPP[s]); } return out; }
 function edge(m, side) { var b = box(m), c = mid(m); return side === 'n' ? { x: c.x, y: b[1] } : side === 's' ? { x: c.x, y: b[3] } : side === 'e' ? { x: b[2], y: c.y } : { x: b[0], y: c.y }; }
 function footOf(m, side) { var e = edge(m, side), v = DIRS[side]; return { x: e.x + v[0] * 22, y: e.y + v[1] * 22 }; }
 function netAt(d, x, y, G) {               // the side a net would hang on, pointed at from the deck or the water: { m, side, ok, why } or null
@@ -13823,7 +13830,7 @@ function drawList(d, m) {                  // the pieces of a module, in order, 
   ['n', 'e', 's', 'w'].forEach(function (s) { if (open(s)) out.push({ n: 'kerb_' + s, x: c.x, y: c.y }); });
   return out;
 }
-return { M: M, DIRS: DIRS, OPP: OPP, key: key, fresh: fresh, mid: mid, box: box, at: at, any: any, near: near, neighbours: neighbours, canRun: canRun, canHead: canHead, place: place, refresh: refresh, canRemove: canRemove, remove: remove, edge: edge, footOf: footOf, netAt: netAt, netNear: netNear, climbTo: climbTo, next: next, landingOf: landingOf, liftAt: liftAt, drawList: drawList, component: component };
+return { M: M, DIRS: DIRS, OPP: OPP, key: key, fresh: fresh, mid: mid, box: box, at: at, any: any, near: near, neighbours: neighbours, canRun: canRun, canHead: canHead, place: place, refresh: refresh, canRemove: canRemove, remove: remove, netsCovered: netsCovered, boxOf: boxOf, edge: edge, footOf: footOf, netAt: netAt, netNear: netNear, climbTo: climbTo, next: next, landingOf: landingOf, liftAt: liftAt, drawList: drawList, component: component };
 })();
 if (typeof module !== 'undefined') module.exports = Pier;
 
@@ -19414,7 +19421,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function pierWarm() { if (pierWarm.on) return; pierWarm.on = 1; for (var n in PIER_ART.pieces) pierImg(n); }   /* (all of them at once when the first pier is in use, so no piece is blank the first time it shows) */
   function pierD() { pierWarm(); return B.pier || (B.pier = Pier.fresh()); }
   var PIER_G = { land: function (x, y) { return isLand(x, y); }, sand: function (x, y) { return code(Math.floor(x / T), Math.floor(y / T)) === 1; }, shallow: function (x, y) { return w.isWade(x, y) && !isLand(x, y); }, water: function (x, y) { return !isLand(x, y) && !w.cliffAt(x, y); },
-    clear: function (x, y) { var ok = true; around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < 36 + o.r) ok = false; }); B.items.forEach(function (it) { if (Math.hypot(it.x - x, it.y - y) < 44) ok = false; }); (fleet || []).forEach(function (v) { if (!v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + 34) ok = false; }); var tx = Math.floor(x / T), ty = Math.floor(y / T), a, b; for (a = -1; a <= 1; a++) for (b = -1; b <= 1; b++) { var kk = Build.key(tx + a, ty + b); if (B.H[kk] || B.V[kk] || B.floors[kk] != null) ok = false; } return ok; } };
+    clear: function (x, y) { var ok = true; around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < 36 + o.r) ok = false; }); B.items.forEach(function (it) { if (Math.hypot(it.x - x, it.y - y) < 44) ok = false; }); (fleet || []).forEach(function (v) { if (!v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + 34) ok = false; }); (B.runs || []).forEach(function (rn) { (rn.pts || []).forEach(function (q) { if (Math.abs(q[0] - x) < 40 && Math.abs(q[1] - y) < 40) ok = false; }); }); var tx = Math.floor(x / T), ty = Math.floor(y / T), a, b; for (a = -1; a <= 1; a++) for (b = -1; b <= 1; b++) { var kk = Build.key(tx + a, ty + b); if (B.H[kk] || B.V[kk] || B.floors[kk] != null) ok = false; } return ok; } };
   function pierLiftOf(e) { if (!e.deck || !B.pier) return 0; var m = Pier.at(B.pier, e.x, e.y); return m ? Pier.liftAt(m, e.x, e.y, PIER_ART.deckLift) : 0; }
   function pierWalk(x, y, e) { var D = B.pier; if (!D) return null; if ((!e || e === hero()) && raft && raft.aboard) return null; var m = Pier.at(D, x, y); if (e && e.deck) { if (m) return true; return e !== hero() && e.awake !== false && hero().deck ? false : null; }   /* (one hunting him on the deck keeps to it: a boar's turning circle ran it off the side) */ if (!m) return null; return m.k === 'landing'; }
   function pierVia(e, x, y, tOn) {         // the next point on someone's way to a point, where a pier lies between: up by the landing, along the deck
@@ -19449,6 +19456,27 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function pierBench(m) { if (!m.b) { var c = Pier.mid(m); m.b = { head: Pier.key(m.x, m.y), x: c.x, y: c.y, door: { x: c.x, y: c.y }, ship: 1 }; } return m.b; }
   function pierHeadNear(P) { var D = B.pier; if (!D || !P.deck) return null; for (var k in D.m) { var m = D.m[k]; if (m.k === 'head') { var c = Pier.mid(m); if (Math.hypot(P.x - c.x, P.y - c.y) < 70) return pierBench(m); } } return null; }
   function pierPillars(P, out) { var D = B.pier; if (!D) return; for (var k in D.m) { var m = D.m[k]; if (m.k !== 'head') continue; var c = Pier.mid(m); if (Math.abs(c.x - P.x) > 400 || Math.abs(c.y - P.y) > 400) continue; ((PIER_ART.pieces['head_' + m.o] || {}).blocks || []).forEach(function (bk) { naustPillars({ box: [c.x + bk.box[0], c.y + bk.box[1], c.x + bk.box[2], c.y + bk.box[3]] }, out); }); } }
+  function pierOccupied(b) {               // anyone or anything that would be left standing on nothing: '' or why not (2026-10-30: a man left in deep water could not move, a chest would float)
+    var inB = function (o) { return o.x >= b[0] - 4 && o.x <= b[2] + 4 && o.y >= b[1] - 4 && o.y <= b[3] + 4; }, P = hero();
+    if (inB(P)) return 'You stand on it'; if (Combat.dbg().W.enemies.some(function (e) { return !e.away && inB(e); })) return 'Someone is on it';
+    if ((hird || []).some(function (m) { return !m.aboard && inB(m); }) || (folk || []).some(function (f) { return !f.gone && inB(f); }) || (npc && inB(npc))) return 'Someone is on it';
+    if (B.items.some(function (it) { return !/^pier_/.test(it.name) && inB(it); })) return 'Something stands on it'; if ((trunks || []).some(function (q) { return q.dying == null && inB(q); })) return 'A trunk lies on it'; if (carrying && !carrying.beast && carrying.man && inB(carrying.man)) return 'Someone is on it';
+    return '';
+  }
+  var PIER_SHUT = {};
+  function pierShuts(mx, my, kind, o) {    // would a piece here shut one of your ships off from the open sea? her name (remembered per place, per pier, per ships' places)
+    var D = pierD(), near0 = (fleet || []).filter(function (v) { return !v.stowed && !v.aboard && Math.hypot(v.x - (mx + 0.5) * Pier.M, v.y - (my + 0.5) * Pier.M) < 900; }); if (!near0.length) return '';
+    var mk = mx + ',' + my + ',' + kind + ',' + Object.keys(D.m).length + ',' + near0.map(function (v) { return Math.round(v.x / 8) + ':' + Math.round(v.y / 8); }).join(';'); if (PIER_SHUT[mk] != null) return PIER_SHUT[mk];
+    var who = '', temp = { x: mx, y: my, k: kind === 'head' ? 'head' : 'run', o: o }, k0 = Pier.key(mx, my); for (var i = 0; i < near0.length && !who; i++) { var v = near0[i], sz = { hw: v.hw || 21, hh: v.hh || 21 }; if (!pierWayOut(v.x, v.y, sz)) continue; D.m[k0] = temp; var open = pierWayOut(v.x, v.y, sz); delete D.m[k0]; if (!open) who = v.name || 'your ship'; }
+    PIER_SHUT = {}; PIER_SHUT[mk] = who; return who; }
+  function pierRemoveWhy(m) { var y = Pier.canRemove(B.pier, m); return y || pierOccupied(Pier.box(m)); }
+  function pierTakeDown(m) {               // what stood on it comes back to you, what lay on it falls by you
+    var b = Pier.box(m), P = hero(), inB = function (o) { return o.x >= b[0] - 4 && o.x <= b[2] + 4 && o.y >= b[1] - 4 && o.y <= b[3] + 4; };
+    for (var i = B.items.length - 1; i >= 0; i--) { var it = B.items[i]; if (/^pier_/.test(it.name) && inB(it)) { pay(costOfItem(it.name), 1); B.items.splice(i, 1); } }
+    drops.forEach(function (q) { if (inB(q)) { q.x = P.x; q.y = P.y + 6; q.mine = false; } });
+    if (shipPanel && shipPanel.bench && shipPanel.bench.head === Pier.key(m.x, m.y)) spClose();
+    var nets = Pier.remove(B.pier, m); for (var n = 0; n < nets; n++) pay({ fiber: 6, wood: 1 }, 1); navStale = true;
+  }
   function pierHullHit(x, y) { return !!(B.pier && Pier.at(B.pier, x, y)); }
   function pierHullClear(x, y, sz) { var D = B.pier, a = x - sz.hw - 10, b = x + sz.hw + 10, c = y - sz.hh - 28, d = y + sz.hh + 10;   /* (more room to its north: the picture stands higher than the hull's foot) */  for (var k in D.m) { var q = Pier.box(D.m[k]); if (q[2] > a && q[0] < b && q[3] > c && q[1] < d) return false; } return true; }
   function pierWayOut(x, y, sz) {          // a search over the water, with room for her, from where she would lie out to the open sea (Robin, 2026-10-30: nobody builds himself in)
@@ -19483,7 +19511,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function naustPlace(it, f, ax, ay) { var info = PROPIMG['naust_' + f]; it.name = 'naust_' + f; it.r = 0; it.box = [ax + info.solid[0], ay + info.solid[1], ax + info.solid[2], ay + info.solid[3]]; it.door = { x: ax + info.door[0], y: ay + info.door[1] }; it.slip = { x: ax + info.slipEnd[0], y: ay + info.slipEnd[1] }; return it; }
   function naustPillars(it, out) { var b = it.box, wd = b[2] - b[0], ht = b[3] - b[1], r = Math.min(wd, ht) / 2, n = Math.max(1, Math.ceil(Math.max(wd, ht) / r)), k; for (k = 0; k <= n; k++) { var t = n ? k / n : 0.5; out.push(wd >= ht ? { x: b[0] + r + (wd - 2 * r) * t, y: (b[1] + b[3]) / 2, r: r, hide: true } : { x: (b[0] + b[2]) / 2, y: b[1] + r + (ht - 2 * r) * t, r: r, hide: true }); } }
-  function buildTarget() {           // what the cursor is over in build mode, and whether it may be done there. A village that is not yours is not yours to build in or to take apart (2026-10-13: the wreck cursor took any wall anywhere, silently, and gave its wood back); a claim stone may be raised in it once nobody defends it
+  function buildTarget() { var t00 = buildTarget1(), P00 = hero(); if (t00 && t00.ok && !P00.wreck && B.pier && t00.kind !== 'pier' && t00.kind !== 'piernet' && !(t00.piece && t00.piece.deckOnly) && mouseW && Pier.at(B.pier, mouseW.x, mouseW.y)) { t00.ok = false; t00.why = 'A pier stands here'; } return t00; }
+  function buildTarget1() {           // what the cursor is over in build mode, and whether it may be done there. A village that is not yours is not yours to build in or to take apart (2026-10-13: the wreck cursor took any wall anywhere, silently, and gave its wood back); a claim stone may be raised in it once nobody defends it
     var t = buildTarget0(); if (!t || !mouseW || t.kind === 'mend' || t.kind === 'raise') return t;
     var P = hero(), my = mouseW.y + (lvl() ? UP / K : 0), pl = placeAt(mouseW.x, my); if (pl < 0 || (pl === 99 ? RU.held : villageHeld(pl))) return t;
     if (t.piece && t.piece.claim && !P.wreck) { if (pl !== 99 && defended(pl)) { t.ok = false; t.why = 'Its people still hold it'; } return t; }
@@ -19501,8 +19530,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       return { kind: 'run', x: spR.x, y: spR.y, snapped: spR.snapped, from: aR, end: endR, piece: pc, ok: !whyR, why: whyR }; }
     if (pc.id === 'brush' && !P.wreck) { var okB = !far && !inCave && !L && isLand(mouseW.x, my); return { kind: 'brush', x: mouseW.x, y: my, piece: pc, ok: okB, why: far ? 'Too far' : L ? 'Not up here' : 'Not on land' }; }   // the ground brush paints anywhere on land within reach
     if (!P.wreck && pc.kind === 'pier') { var DP = pierD(); if (pc.pk === 'net') { var nN = L ? null : Pier.netAt(DP, mouseW.x, my, PIER_G), whyN = L ? 'Not up here' : far ? 'Too far' : !nN ? 'Point at the side of a pier' : !nN.ok ? nN.why : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : ''; return { kind: 'piernet', net: nN, piece: pc, ok: !whyN, why: whyN }; }
-      var pmx = Math.floor(mouseW.x / Pier.M), pmy = Math.floor(my / Pier.M), rP = pc.pk === 'head' ? Pier.canHead(DP, pmx, pmy, PIER_G) : Pier.canRun(DP, pmx, pmy, PIER_G), whyP = L ? 'Not up here' : Math.hypot((pmx + 0.5) * Pier.M - P.x, (pmy + 0.5) * Pier.M - P.y) > 230 ? 'Too far' : !rP.ok ? rP.why : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : ''; return { kind: 'pier', mx: pmx, my: pmy, o: rP.o, piece: pc, ok: !whyP, why: whyP }; }
-    if (P.wreck && !L && B.pier) { var nW = Pier.netNear(B.pier, mouseW.x, my, 26); if (nW) return { kind: 'piernetx', key: nW.key, x: mouseW.x, y: my, ok: !far, why: far ? 'Too far' : '' }; var mW = Pier.at(B.pier, mouseW.x, my), itW = mW && B.items.some(function (q) { return Math.hypot(q.x - mouseW.x, q.y - my) < 16; }); if (mW && !itW) { var whyW = Math.hypot(mouseW.x - P.x, my - P.y) > 230 ? 'Too far' : !Pier.canRemove(B.pier, mW) ? 'Take it down from its end' : Pier.at(B.pier, P.x, P.y) === mW ? 'You stand on it' : ''; return { kind: 'piermod', m: mW, ok: !whyW, why: whyW }; } }
+      var pmx = Math.floor(mouseW.x / Pier.M), pmy = Math.floor(my / Pier.M), rP = pc.pk === 'head' ? Pier.canHead(DP, pmx, pmy, PIER_G) : Pier.canRun(DP, pmx, pmy, PIER_G), whyP = L ? 'Not up here' : Math.hypot((pmx + 0.5) * Pier.M - P.x, (pmy + 0.5) * Pier.M - P.y) > 230 ? 'Too far' : !rP.ok ? rP.why : !canAfford(buildCost(pc.cost)) ? 'Need ' + costText(pc.cost) : ''; if (!whyP) { whyP = pierOccupied(Pier.boxOf(pmx, pmy, pc.pk === 'head' ? 'head' : 'run', rP.o)); if (whyP === 'You stand on it') whyP = 'You stand in the way'; else if (whyP) whyP = 'Something is in the way'; } if (!whyP) { var shutV = pierShuts(pmx, pmy, pc.pk, rP.o); if (shutV) whyP = 'It would shut in ' + shutV; } return { kind: 'pier', mx: pmx, my: pmy, o: rP.o, piece: pc, ok: !whyP, why: whyP }; }
+    if (P.wreck && !L && B.pier) { var nW = Pier.netNear(B.pier, mouseW.x, my, 26); if (nW) return { kind: 'piernetx', key: nW.key, x: mouseW.x, y: my, ok: !far, why: far ? 'Too far' : '' }; var mW = Pier.at(B.pier, mouseW.x, my), itW = mW && B.items.some(function (q) { return Math.hypot(q.x - mouseW.x, q.y - my) < 16; }); if (mW && !itW) { var whyW = Math.hypot(mouseW.x - P.x, my - P.y) > 230 ? 'Too far' : pierRemoveWhy(mW); return { kind: 'piermod', m: mW, ok: !whyW, why: whyW }; } }
     if (P.wreck) {
       for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = (B.items[i].store && B.items[i].store.some(function (q) { return !!q; })) || (B.items[i].out && B.items[i].out.length) || (B.items[i].cooking && B.items[i].cooking.length) || !!B.items[i].burn; return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
       var co = cornerAt(mouseW.x, my), ck = Build.key(co.x, co.y);     // at a corner the post comes first, then the walls on it
@@ -19581,7 +19610,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), t = buildTarget(), L = lvl(), BB = Bl(L); if (!t || !t.ok) return;
     if (P.wreck) {
       if (t.kind === 'piernetx') { pay({ fiber: 6, wood: 1 }, 1); delete B.pier.n[t.key]; sfx('build'); save(); return; }
-      if (t.kind === 'piermod') { pay(t.m.k === 'head' ? { wood: 16, fiber: 6, stone: 4 } : { wood: 6 }, 1); Pier.remove(B.pier, t.m); navStale = true; sfx('build'); save(); return; }
+      if (t.kind === 'piermod') { pay(t.m.k === 'head' ? { wood: 16, fiber: 6, stone: 4 } : { wood: 6 }, 1); pierTakeDown(t.m); sfx('build'); save(); return; }
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); if (t.item.zoneId) B.zones = (B.zones || []).filter(function (z) { return z.id !== t.item.zoneId; }); B.items.splice(t.idx, 1); }
       else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete BB[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
       else if (t.kind === 'post') { pay(pieceFor('post', 0).cost, 1); delete BB.posts[Build.key(t.cx, t.cy)]; }
@@ -19599,7 +19628,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       runsBuild(); sfx('build'); save(); return; }
     if (t.kind === 'zone') { if (first && !zoneDrag) zoneDrag = { tx: Math.floor(t.px / T), ty: Math.floor(t.py / T), x: t.px, y: t.py }; return; }   /* the press sets the post; the square follows the mouse until it is let go */
     if (t.kind === 'brush') { if (w.paintGround(t.x, t.y, BRUSH_R, t.piece.k)) { if (first) sfx('build'); groundDirtyT = clock; } return; }
-    if (t.kind === 'pier') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); Pier.place(pierD(), t.mx, t.my, t.piece.pk === 'head' ? 'head' : 'run', PIER_G, t.o); navStale = true; if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } sfx('build'); save(); return; }
+    if (t.kind === 'pier') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); Pier.netsCovered(pierD(), t.mx, t.my).forEach(function (nk) { delete B.pier.n[nk]; pay({ fiber: 6, wood: 1 }, 1); }); Pier.place(pierD(), t.mx, t.my, t.piece.pk === 'head' ? 'head' : 'run', PIER_G, t.o); navStale = true; if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } sfx('build'); save(); return; }
     if (t.kind === 'piernet') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); pierD().n[t.net.key] = 1; sfx('build'); save(); return; }
     if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.prop || t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace, trapper: !!t.piece.trapper, altar: !!t.piece.altar }; if (nit.bench && !seen.freeBuild && !L) { seen.freeBuild = 1; }   /* the workbench opens building (Robin, 2026-10-28: as in Valheim; every piece then by its own key) */ if (t.nf) naustPlace(nit, t.nf.f, t.x, t.y); if (t.piece.deckOnly) { var bkD = ((PIER_ART.pieces[t.piece.prop.slice(5)] || {}).blocks || [])[0]; if (bkD) nit.box = [t.x + bkD[0], t.y + bkD[1], t.x + bkD[2], t.y + bkD[3]]; } if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; if (villageAt(nit.x, nit.y) >= 0) noteSeen('mend'); var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = lineN('line.hird.stone', 0, 'I will keep this stone.'); kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }

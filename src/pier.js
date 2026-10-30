@@ -56,14 +56,21 @@ function refresh(d) {                      // what each module is, from what sta
   for (var k in d.m) { var m = d.m[k]; if (m.k === 'head') continue; var N = neighbours(d, m.x, m.y); if (m.land && N.length <= 1) { m.k = 'landing'; if (N[0]) m.s = OPP[N[0].side]; } else m.k = 'run'; }
 }
 function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+function boxOf(mx, my, kind, o) { return box({ x: mx, y: my, k: kind, o: o }); }
 function place(d, mx, my, kind, G, o) {    // write it in; the deck's way from the module it joins; a first piece's landing faces away from the water
   var c = { x: (mx + 0.5) * M, y: (my + 0.5) * M }, N = neighbours(d, mx, my), m = { x: mx, y: my, k: kind === 'head' ? 'head' : 'run', land: !!G.land(c.x, c.y), v: VAR[Math.floor(hash(mx, my) * VAR.length)] };
   if (kind === 'head') m.o = o; if (N[0]) m.a = N[0].side === 'e' || N[0].side === 'w' ? 'ew' : 'ns';
   if (!N.length) { var best = 'n', bs = -1, s; for (s in DIRS) { var n0 = 0, i; for (i = 1; i <= 2; i++) if (G.land(c.x + DIRS[s][0] * M * i, c.y + DIRS[s][1] * M * i)) n0++; if (n0 > bs) { bs = n0; best = s; } } m.s = best; m.a = best === 'e' || best === 'w' ? 'ew' : 'ns'; }
   d.m[key(mx, my)] = m; refresh(d); return m;
 }
-function canRemove(d, m) { return neighbours(d, m.x, m.y).length <= 1; }   /* (from its ends in; a net goes with its module) */
-function remove(d, m) { delete d.m[key(m.x, m.y)]; for (var nk in d.n) if (nk.indexOf(key(m.x, m.y) + '|') === 0) delete d.n[nk]; refresh(d); }
+function canRemove(d, m) {                 // a pier comes down from its far ends, its beach last, so what is left is always one pier joined to the land: '' or why not
+  if (neighbours(d, m.x, m.y).length > 1) return 'Take it down from its end';
+  if (m.land) { var c = component(d, m), lands = c.filter(function (q) { return q.land; }).length; if (c.length > 1 && lands <= 1) return 'Take it down from the sea end first'; }
+  return '';
+}
+function remove(d, m) { var nets = 0; delete d.m[key(m.x, m.y)]; for (var nk in d.n) if (nk.indexOf(key(m.x, m.y) + '|') === 0) { delete d.n[nk]; nets++; } refresh(d); return nets; }   /* (how many nets went with it) */
+function netsCovered(d, mx, my) {            // the nets a new module would stand on: those hung on the side it comes to
+  var out = []; for (var s in DIRS) { var o = d.m[key(mx + DIRS[s][0], my + DIRS[s][1])]; if (o && d.n[key(o.x, o.y) + '|' + OPP[s]]) out.push(key(o.x, o.y) + '|' + OPP[s]); } return out; }
 function edge(m, side) { var b = box(m), c = mid(m); return side === 'n' ? { x: c.x, y: b[1] } : side === 's' ? { x: c.x, y: b[3] } : side === 'e' ? { x: b[2], y: c.y } : { x: b[0], y: c.y }; }
 function footOf(m, side) { var e = edge(m, side), v = DIRS[side]; return { x: e.x + v[0] * 22, y: e.y + v[1] * 22 }; }
 function netAt(d, x, y, G) {               // the side a net would hang on, pointed at from the deck or the water: { m, side, ok, why } or null
@@ -98,6 +105,6 @@ function drawList(d, m) {                  // the pieces of a module, in order, 
   ['n', 'e', 's', 'w'].forEach(function (s) { if (open(s)) out.push({ n: 'kerb_' + s, x: c.x, y: c.y }); });
   return out;
 }
-return { M: M, DIRS: DIRS, OPP: OPP, key: key, fresh: fresh, mid: mid, box: box, at: at, any: any, near: near, neighbours: neighbours, canRun: canRun, canHead: canHead, place: place, refresh: refresh, canRemove: canRemove, remove: remove, edge: edge, footOf: footOf, netAt: netAt, netNear: netNear, climbTo: climbTo, next: next, landingOf: landingOf, liftAt: liftAt, drawList: drawList, component: component };
+return { M: M, DIRS: DIRS, OPP: OPP, key: key, fresh: fresh, mid: mid, box: box, at: at, any: any, near: near, neighbours: neighbours, canRun: canRun, canHead: canHead, place: place, refresh: refresh, canRemove: canRemove, remove: remove, netsCovered: netsCovered, boxOf: boxOf, edge: edge, footOf: footOf, netAt: netAt, netNear: netNear, climbTo: climbTo, next: next, landingOf: landingOf, liftAt: liftAt, drawList: drawList, component: component };
 })();
 if (typeof module !== 'undefined') module.exports = Pier;

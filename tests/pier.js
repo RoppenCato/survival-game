@@ -30,4 +30,17 @@ ok('the way along', Pier.next(d, d.m['8,4'], d.m['12,4']) === d.m['9,4'] && Pier
 ok('a landing rises to the deck', Pier.liftAt(d.m['8,4'], 514, 290, 10.3) < 1.5 && Pier.liftAt(d.m['8,4'], 574, 290, 10.3) > 9 && Pier.liftAt(d.m['10,4'], 700, 290, 10.3) === 10.3);
 ok('the deck\'s pieces', /wall_m deck_ew_\d kerb_n kerb_s/.test(Pier.drawList(d, d.m['10,4']).map(p => p.n).join(' ')));
 const L = Pier.fresh(); put(L, 9, 4); put(L, 10, 4); put(L, 10, 5); ok('an L', !!L.m['10,5'] && /deck_ns/.test(Pier.drawList(L, L.m['10,5']).map(p => p.n).join(' ')));
+// taking it down: from its ends, its beach last, so what is left is always one pier joined to the land
+{ const q = Pier.fresh(); put(q, 8, 4); put(q, 9, 4); put(q, 10, 4); put(q, 11, 4); put(q, 10, 5); const h2 = Pier.canHead(q, 12, 4, G); Pier.place(q, 12, 4, 'head', G, h2.o); q.n['10,5|s'] = 1;
+  ok('not a junction', !!Pier.canRemove(q, q.m['10,4']));
+  ok('not a piece in the middle', !!Pier.canRemove(q, q.m['9,4']));
+  ok('the yard can go', !Pier.canRemove(q, q.m['12,4'])); Pier.remove(q, q.m['12,4']);
+  ok('the run behind it now ends in a kerb', /kerb_e/.test(Pier.drawList(q, q.m['11,4']).map(p => p.n).join(' ')));
+  ok('the outer land piece can go, the next becomes the landing', !Pier.canRemove(q, q.m['8,4'])); Pier.remove(q, q.m['8,4']); ok('...and it is', q.m['9,4'].k === 'landing' && q.m['9,4'].s === 'w');
+  ok('the last land piece cannot go while the pier stands', !!Pier.canRemove(q, q.m['9,4']));
+  const nn = Pier.remove(q, q.m['10,5']); ok('a net goes with its piece', nn === 1 && !q.n['10,5|s']);
+  Pier.remove(q, q.m['11,4']); Pier.remove(q, q.m['10,4']); ok('alone, the landing can go', !Pier.canRemove(q, q.m['9,4'])); Pier.remove(q, q.m['9,4']); ok('nothing left', !Pier.any(q));
+  ok('every order of taking down leaves it joined', (() => { for (let t = 0; t < 200; t++) { const w = Pier.fresh(); put(w, 8, 4); put(w, 9, 4); put(w, 10, 4); put(w, 11, 4); put(w, 10, 3); put(w, 10, 5); for (let g = 0; g < 40 && Pier.any(w); g++) { const ks = Object.keys(w.m), m = w.m[ks[Math.floor(Math.random() * ks.length)]]; if (!Pier.canRemove(w, m)) Pier.remove(w, m); const left = Object.keys(w.m); if (left.length) { const c = Pier.component(w, w.m[left[0]]); if (c.length !== left.length || !c.some(q2 => q2.land)) return false; } } } return true; })());
+  const r = Pier.fresh(); put(r, 9, 4); put(r, 10, 4); r.n['10,4|e'] = 1; ok('a new piece over a net finds it', Pier.netsCovered(r, 11, 4)[0] === '10,4|e');
+}
 console.log('bad = ' + bad);
