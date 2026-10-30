@@ -1,11 +1,13 @@
-# The test build online (Robin, 2026-10-27: "a playable version that can be played in a browser on any comp", clean of the Admin
-# things, for friends to try, raised a version at a time, "alpha 0.2"): every push to the `stable` branch publishes release/ (the
-# game alone and its start page, built by tools/build.py from RELEASE.json) and the assets it loads to GitHub Pages. Work goes on in
-# `main`; a new version is RELEASE.json raised, built, committed and `stable` moved to it. The site: https://roppencato.github.io/survival-game/
+# The game online, two versions (Robin, 2026-10-30: "Only checked features gets put in the alpha"; docs/chapter-checks.md):
+#   /dev/    the dev version: main's release/ (the game alone, no Admin) with main's assets, published on every push to main.
+#   /alpha/  the alpha: the `alpha` branch, moved only when a chapter is checked by Robin, with its own copy of the assets it was
+#            made with; its RELEASE.json names the alpha and its last chapter, and the game turns the boat back past it.
+#            While there is no alpha branch, /alpha/ says the alpha comes when chapter 0 is checked.
+# The site: https://roppencato.github.io/survival-game/ (a start page with both).
 name: Publish the game
 on:
   push:
-    branches: [stable]
+    branches: [main, alpha]
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,14 +24,46 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - name: Is there an alpha
+        id: alpha
+        run: |
+          if git -C main ls-remote --exit-code --heads origin alpha >/dev/null; then echo "has=1" >> "$GITHUB_OUTPUT"; else echo "has=0" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.alpha.outputs.has == '1'
+        with:
+          ref: alpha
+          path: alphasrc
       - name: Lay out the site
         run: |
-          mkdir _site
-          cp -r release assets _site/
-          rm -rf _site/assets/sfx/free _site/assets/sfx/runes _site/assets/sfx/fishing _site/assets/sfx/bow _site/assets/sfx/weather
-          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=release/index.html"><title>Skargard</title><a href="release/index.html">Play</a>\n' > _site/index.html
+          trim() { rm -rf "$1/sfx/free" "$1/sfx/runes" "$1/sfx/fishing" "$1/sfx/bow" "$1/sfx/weather"; }
+          mkdir -p _site/dev
+          cp -r main/release/. _site/dev/
+          cp -r main/assets _site/assets
+          trim _site/assets
+          mkdir -p _site/alpha
+          if [ -d alphasrc ]; then
+            mkdir -p _site/alpha/release
+            cp -r alphasrc/release/. _site/alpha/release/
+            cp -r alphasrc/assets _site/alpha/assets
+            trim _site/alpha/assets
+            ALPHA=$(python3 -c "import json;print(json.load(open('alphasrc/RELEASE.json'))['version'])")
+            printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=release/index.html"><title>Skargard</title><a href="release/index.html">Play</a>\n' > _site/alpha/index.html
+            ALINK="<a class=\"card\" href=\"alpha/release/index.html\"><b>$ALPHA</b><span>What is checked: every part of it played through and found good.</span></a>"
+          else
+            printf '<!doctype html><meta charset="utf-8"><title>Skargard alpha</title><body style="background:#1c1b18;color:#e8dcc0;font:18px Georgia,serif;padding:40px;max-width:640px;margin:auto"><h1>No alpha yet</h1><p>The alpha holds only what has been played through and checked. It comes when chapter 0, the starter island, is checked.</p><p><a style="color:#e8b860" href="../dev/index.html">The dev version</a> has everything as it is being made.</p></body>\n' > _site/alpha/index.html
+            ALINK="<div class=\"card off\"><b>Alpha</b><span>Not yet: it comes when chapter 0 is checked.</span></div>"
+          fi
+          DEV=$(python3 -c "import json;print(json.load(open('main/RELEASE.json'))['version'])")
+          cat > _site/index.html <<HTML
+          <!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skargard</title>
+          <style>body{background:#1c1b18;color:#e8dcc0;font:18px Georgia,serif;margin:0;padding:40px 16px}main{max-width:640px;margin:auto}h1{font-size:44px;letter-spacing:.08em;margin:0 0 24px}.card{display:block;border:1px solid #6b5a3a;border-radius:6px;padding:18px 20px;margin:14px 0;color:inherit;text-decoration:none}a.card:hover{border-color:#e8b860}.card b{display:block;font-size:22px;color:#e8b860;margin-bottom:6px}.off{opacity:.55}</style>
+          <main><h1>SKARGARD</h1>$ALINK<a class="card" href="dev/index.html"><b>$DEV</b><span>Everything as it is being made, chapters not yet checked included. Things may break.</span></a></main>
+          HTML
           touch _site/.nojekyll
-          du -sh _site
+          du -sh _site _site/assets _site/alpha
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

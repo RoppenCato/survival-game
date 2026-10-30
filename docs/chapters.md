@@ -58,7 +58,7 @@ the git history.
 **Summary.** You wake at the wreck with nothing. You learn to make tools and simple clothes, hunt and butcher, mend Arnor's house
 and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leave.
 
-**Status (2026-10-27): built** but for the glimpses (proposed in `docs/glimpses-chapter0.md`, waiting for Robin); the "Cooking" tag built 2026-10-27; played through by script on 2026-10-27 (`docs/playtest-2026-10-27.md`) (`CLAUDE.md`, "Chapter 0 as rebuilt"):
+**Status (2026-10-30): Not done; its checklist is `docs/chapter-0-checklist.md`, nothing Checked yet.** Before that, **(2026-10-27): built** but for the glimpses (proposed in `docs/glimpses-chapter0.md`, waiting for Robin); the "Cooking" tag built 2026-10-27; played through by script on 2026-10-27 (`docs/playtest-2026-10-27.md`) (`CLAUDE.md`, "Chapter 0 as rebuilt"):
 the wooden sword (the strong stick renamed, a sword not a blunt weapon, very weak: Robin, 2026-10-26), leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
 quests in the book's Quests page, his house mended with the Building board (a plank wall only in its marked gaps, 2026-10-27), the straw bed and waking by it, berries raw with their wait, no
 wolves, altar, cooking or free building, his boat mended overnight and given; the steading tidied of what a farm would not have.
@@ -172,10 +172,13 @@ and night, the weather.
 
 ## The checklist for finishing a chapter
 
+**Since 2026-10-30 each chapter has its own list of items, each Built, Checked by Robin, To fix or Open** (`docs/chapter-checks.md`,
+Robin's rules: a change moves an item back to Built; a Done chapter that changes goes back to Not done; only checked chapters reach the
+alpha). Chapter 0's is `docs/chapter-0-checklist.md`. Before a chapter's list is written:
+
 - [ ] Its table above answered; questions for Robin asked
 - [ ] Built in a test scene first where it helps, then in the game
 - [ ] A headless test for every rule that can be checked without a screen (`npm test`)
-- [ ] Played through by script, then by Robin
-- [ ] **The six areas judged by Robin** for what the chapter adds
-- [ ] What Robin found is fixed; `CLAUDE.md` and this file updated; `dist/` rebuilt and committed
-- [ ] Robin is happy: the chapter is **Done**, the next one becomes current
+- [ ] Played through by script
+- [ ] Its checklist written; then Robin checks it item by item, and what he finds is fixed and checked again
+- [ ] Every item Checked: the chapter is **Done**, the alpha is made from it (`docs/chapter-checks.md`), the next one becomes current

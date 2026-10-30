@@ -18328,7 +18328,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   var carryPending = null;
   function carryRestore() { if (!carryPending || carrying || SCENE) return; var cp = carryPending, P = hero(); carryPending = null; var e = placeAnimal(cp.kind, 0, { x: P.x, y: P.y }); if (!e) return; if (cp.young) e.young = true; if (cp.ko && Combat.api.knockOut) Combat.api.knockOut(e); else { e.dead = true; e.hp = 0; e.deadT = 0; e.deadFor = BODY_LIE; } takeUpBeast(e); }
-  function zonesTick() { butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
+  function zonesTick() { capTick(); butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
     if (!B.zonesV && roomInfo && !bDirty) { B.zonesV = 1; roomInfo.rooms.forEach(function (r, ri) { var bed = B.items.filter(function (it) { return it.bed && !(it.lvl || 0) && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri; })[0]; if (!bed || placeAt(bed.x, bed.y) >= 0) return;
       var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (tl) { x0 = Math.min(x0, tl[0]); y0 = Math.min(y0, tl[1]); x1 = Math.max(x1, tl[0] + 1); y1 = Math.max(y1, tl[1] + 1); });
@@ -19498,9 +19498,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
-  var RELEASE = null;   /* the test build for friends (Robin, 2026-10-27): its version ("alpha 0.1") in release/game.html, null in dist/; no Admin, sandbox, sky board or test scenes */
+  var RELEASE = null, REL_CAP = null;   /* the alpha's last chapter (Robin, 2026-10-30: only checked chapters reach the alpha; null in the dev build and in dist/) */
+  var CAPT = { said: 0 };
+  function capTick() { if (REL_CAP !== 0 || !w || !raft || !raft.aboard) return; var q0 = w.isles[0]; if (!q0) return; var cx = q0.x * T, cy = q0.y * T, R0 = q0.r * T + 300, d = Math.hypot(raft.x - cx, raft.y - cy); if (d <= R0) return; var a = Math.atan2(raft.y - cy, raft.x - cx); raft.x = cx + Math.cos(a) * R0; raft.y = cy + Math.sin(a) * R0; raft.vx = raft.vy = 0; raft.h = a + Math.PI; if (clock - CAPT.said > 20) { CAPT.said = clock; placeCard('The end of the alpha', 'Chapter 0 ends at the starter island. The dev version sails on.'); } }   /* (chapter 0's cap: the sea a little off the starter island turns the boat back) */
+   /* the test build for friends (Robin, 2026-10-27): its version ("alpha 0.1") in release/game.html, null in dist/; no Admin, sandbox, sky board or test scenes */
   var SCENE = RELEASE ? '' : (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
-  var SAVE = RELEASE ? 'skargard.save' : SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : SCENE === 'cutscene' ? 'game.save.cutscene' : 'game.save'))), gone = {}, saveT = 0;
+  var SAVE = RELEASE ? (REL_CAP != null ? 'skargard.alpha.save' : 'skargard.save') : SCENE === 'dialogue' ? 'game.save.dialogue' : SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : (SCENE === 'models' ? 'game.save.models' : SCENE === 'cutscene' ? 'game.save.cutscene' : 'game.save'))), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
