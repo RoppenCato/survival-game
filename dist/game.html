@@ -18737,6 +18737,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
      and the night is yours. They are far stronger than the day beasts (22 health, 22 a bite, quick): the point is to be
      indoors by a fire, not to fight. Their eyes glow red in the dark. */
   var nightWolves = [], nightSpawned = false, nightSaid = 0;
+  var WOLF_HUNT = { far: 1400, gap: 480, close: 300 };   /* a pack gives up when you are far from where its hunt began, or have outrun one that had got close, or are at sea (mine, 2026-10-30) */
+  function packGivesUp(P) { nightWolves.forEach(function (e) { if (e.gone || e.dead) return; e.gone = true; e.grudgeT = 0; e.heard = 0; e.awake = false; e.state = 'idle'; e.t = 0; var ga = Math.atan2(e.y - P.y, e.x - P.x); if (e.wander) { e.wander.x0 = e.x + Math.cos(ga) * 700; e.wander.y0 = e.y + Math.sin(ga) * 700; e.wander.r = 60; e.wander.tx = null; e.wander.wait = 0; } }); }
   function nightTick(dt) {
     var L = light(), P = hero(), W = Combat.dbg().W, i;
     if (day.t >= DUSK_AT && day.t < NIGHT_AT && L >= NOTE_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
@@ -18766,7 +18768,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (!e.ringT || e.ringT <= 0) { var ra = Math.random() * 6.283; e.wander.x0 = P.x + Math.cos(ra) * (FIRE_R + 60); e.wander.y0 = P.y + Math.sin(ra) * (FIRE_R + 60); e.wander.r = 40; e.wander.tx = null; e.wander.wait = 0; e.ringT = 2 + Math.random() * 3; }
         e.ringT -= dt;
         if (e.prowl > 16) { e.gone = true; var ga = Math.atan2(e.y - P.y, e.x - P.x); e.wander.x0 = e.x + Math.cos(ga) * 700; e.wander.y0 = e.y + Math.sin(ga) * 700; e.wander.r = 60; e.wander.tx = null; e.wander.wait = 0; }
-      } else if (!inFire) { e.aggro = 220; e.prowl = Math.max(0, (e.prowl || 0) - dt); if (Math.hypot(e.x - P.x, e.y - P.y) < 900) e.heard = 3; }
+      } else if (!inFire) { e.aggro = 220; e.prowl = Math.max(0, (e.prowl || 0) - dt); var dH = Math.hypot(e.x - P.x, e.y - P.y); if (e.huntX == null && dH < 900) { e.huntX = P.x; e.huntY = P.y; } if (dH < WOLF_HUNT.close) e.closed = true;
+        if (e.huntX != null && ((raft && raft.aboard) || Math.hypot(P.x - e.huntX, P.y - e.huntY) > WOLF_HUNT.far || (e.closed && dH > WOLF_HUNT.gap))) packGivesUp(P); else if (dH < 900) e.heard = 3; }   /* (Robin, 2026-10-30: they never stopped however far you ran: they run faster than your jog, so a 900 gap never opened) */
     });
     if (L > 0.6 && !nightSpawned && !inCave && !sleep) {
       nightSpawned = true;
