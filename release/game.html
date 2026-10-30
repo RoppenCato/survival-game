@@ -12759,7 +12759,7 @@ function hit(G, o, ctx) {
   if (crackHit(G, o, hero)) { out.mult *= G.crackBonus; out.crack = true; }
   o.lastHit = t;
   if (o.kind === 'tree' && G.spotLook === 5 && !o.notch) { o.notch = hero.x < o.x ? -1 : 1; out.notched = true; }
-  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = o.kind === 'stone' ? 0.3 : 0.5; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg;   /* (the shake: 0.5 s for a tree or a bush since 2026-10-14) */
+  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = o.kind === 'stone' ? 0.3 : 0.5; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg; if (o.kind === 'stone' && o.hitAng == null) o.hitAng = Math.atan2((hero.y - o.y) * K, hero.x - o.x);   /* (the shake: 0.5 s for a tree or a bush since 2026-10-14) */
   if (ev && ev.chip && G.chips) {
     var n = Math.round((ctx.right ? 4 : 2) * (out.spot || out.crack ? 2 : 1) * G.chips), top = ctx.s ? o.y * K + ctx.s.t * o.s : o.y * K - 30;
     if (o.kind === 'tree') { ev.chip(o.x, o.y, (o.y * K - top) * 0.6, '#6fb84f', 4, 50); ev.chip(o.x, o.y, 8, '#d9b37a', n, 70); }
@@ -12768,7 +12768,7 @@ function hit(G, o, ctx) {
   }
   if (o.hp <= 0) {
     o.dying = 0; out.felled = o.kind === 'tree'; out.broke = o.kind !== 'tree';
-    if (o.kind === 'stone' && ev) { if (ev.chip) ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); if (ev.drop) ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); }
+    if (o.kind === 'stone' && ev) { if (ev.chip) { ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); ev.chip(o.x, o.y, 4, '#c9c2b4', 10, 60); } if (ev.decal) ev.decal({ k: 'rubble', x: o.x, y: o.y + 1, r: 6 + 6 * (o.s || 1) * (ROCK_STONE[o.name] || 3) / 3, seed: Math.round(o.x * 7 + o.y * 13) }); if (ev.drop) ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); }
     else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, BERRIES); ev.drop('fiber', o.x, o.y, 1); } else ev.drop('fiber', o.x, o.y, BUSH_FIBER); }   // (BUSH_FIBER 3 since 2026-10-14, was 2; the page's own constants of the same names were never read here)
   }
   return out;
@@ -12778,7 +12778,7 @@ function hit(G, o, ctx) {
 function tick(G, o, dt, ctx) {
   if (o.dying == null) return false;
   o.dying += dt; var ev = ctx.ev || {};
-  var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.4 : 0.3);
+  var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.6 : 0.3);
   if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
     if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) { ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70); ev.chip(o.x + dir * len * 0.75, o.y + 2, 3, '#6fb84f', 8, 60); ev.chip(o.x + dir * len * 0.4, o.y + 2, 6, '#b59a72', 12, 55); }   /* (leaves and dust along where it lands) */
@@ -12833,9 +12833,9 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
     c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (bend) c.transform(1, 0, bend, 1, 0, 0); if (sq !== 1) c.scale(1, sq); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
   } else if (o.kind === 'stone') {
-    var sh = o.dying != null ? Math.max(0, 1 - o.dying / 0.4) : 1, sc = (1 - 0.18 * dmg) * sh;
-    c.globalAlpha *= sh;
-    c.translate(bx + shk, byy); c.scale(sc, sc); c.translate(-bx, -byy);
+    if (o.dying != null) { drawShards(c, o, s, px, py, w, h); c.restore(); return; }   /* (it bursts into its own pieces: Robin, 2026-10-30, it faded and shrank to nothing) */
+    var sq = o.shake > 0 ? 1 - 0.05 * Math.min(1, o.shake * 4) : 1;   /* a blow squashes it a moment (it shrank as it was mined until 2026-10-30) */
+    c.translate(bx + shk, byy); c.scale(1 / Math.sqrt(sq), sq); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
     if (G && G.cracks && G.crackLook && o.dying == null) {              // the sweet facet's cue, on the rock's body
       var ca = crackAng(G, o), fx = px + w / 2 + Math.cos(ca) * w * 0.19, fy = py + h * 0.5 + Math.sin(ca) * h * 0.12, fr = Math.max(2.5, w * 0.08);
@@ -12845,10 +12845,7 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
       else if (G.crackLook === 3) { c.fillStyle = '#6fa848'; c.beginPath(); c.ellipse(fx, fy, fr * 1.2, fr * 0.8, 0.3, 0, 7); c.fill(); c.fillStyle = '#8fc45c'; [[-0.5, -0.3], [0.4, 0.1], [-0.1, 0.4]].forEach(function (q) { c.beginPath(); c.arc(fx + q[0] * fr, fy + q[1] * fr, fr * 0.3, 0, 7); c.fill(); }); }
       else if (G.crackLook === 4) { var pl = 0.5 + 0.5 * Math.sin(t * 2.5 + bx); c.fillStyle = 'rgba(255,242,192,' + (0.25 + 0.15 * pl) + ')'; c.beginPath(); c.ellipse(fx + fr * 0.3, fy, fr * 0.9, fr * 1.1, 0.25, 0, 7); c.fill(); }
     }
-    if (dmg > 0.15) {                                 // cracks spread as it is mined
-      var n = Math.floor(dmg * 6), cx = px + w / 2, cy = py + h * 0.55; c.strokeStyle = 'rgba(30,24,30,0.65)'; c.lineWidth = 1.1; c.lineCap = 'round';
-      for (var k = 0; k < n; k++) { var a = hash(o.x, o.y, k) * 6.283, L = w * (0.18 + hash(o.y, o.x, k) * 0.2), mx = cx + Math.cos(a) * L * 0.5 + (hash(k, o.x, 2) - 0.5) * 4, my = cy + Math.sin(a) * L * 0.5 * 0.7; c.beginPath(); c.moveTo(cx, cy); c.lineTo(mx, my); c.lineTo(cx + Math.cos(a) * L, cy + Math.sin(a) * L * 0.7); c.stroke(); }
-    }
+    if (dmg > 0.12) { var ck = crackPic(o, s, w, h, Math.min(7, 1 + Math.floor(dmg * 7))); if (ck) c.drawImage(ck, px - 1, py - 1, w + 2, h + 2); }   /* cracks spread from where it is struck, kept inside the rock (2026-10-30: straight lines from its middle that ran past its edge) */
   } else {
     if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
     c.drawImage(s.cv, px + shk, py, w, h);
@@ -12870,6 +12867,60 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
     c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(bx - 9, py - 5, 18, 3);
     c.fillStyle = o.kind === 'stone' ? '#c5ccd6' : '#9be58b'; c.fillRect(bx - 9, py - 5, 18 * (1 - dmg), 3);
   }
+}
+function mkCanvas(w, h) { if (typeof document !== 'undefined') { var e = document.createElement('canvas'); e.width = w; e.height = h; return e; } return typeof __mk === 'function' ? __mk(w, h) : null; }
+// a rock's cracks: jagged dark lines with a pale lip, branching from the side it is struck on, cut to the rock's own shape (a canvas
+// kept on the rock, made again only when another crack opens)
+function crackPic(o, s, w, h, n) {
+  if (o.crk && o.crk.n === n && o.crk.w === Math.round(w)) return o.crk.cv;
+  var W = Math.round(w) + 2, H = Math.round(h) + 2, cv = mkCanvas(W, H); if (!cv) return null; var g = cv.getContext('2d');
+  var a0 = o.hitAng != null ? o.hitAng : hash(o.x, o.y, 4) * 6.283, cx = W / 2 + Math.cos(a0) * W * 0.22, cy = H * 0.55 + Math.sin(a0) * H * 0.18;
+  var lines = [];
+  for (var k = 0; k < n; k++) { var a = a0 + Math.PI + (hash(o.x, o.y, k + 11) - 0.5) * 2.4, L = W * (0.22 + hash(o.y, o.x, k + 5) * 0.3), x = cx, y = cy, pts = [[x, y]], seg = 4;
+    for (var j = 1; j <= seg; j++) { var aj = a + (hash(k, j, o.x) - 0.5) * 0.9; x += Math.cos(aj) * L / seg; y += Math.sin(aj) * L / seg * 0.8; pts.push([x, y]); }
+    lines.push(pts); if (k % 2 === 1 && pts.length > 2) { var bp = pts[2], ba = a + (hash(k, 3, o.y) > 0.5 ? 0.9 : -0.9), bl = L * 0.35; lines.push([[bp[0], bp[1]], [bp[0] + Math.cos(ba) * bl * 0.5, bp[1] + Math.sin(ba) * bl * 0.4], [bp[0] + Math.cos(ba) * bl, bp[1] + Math.sin(ba) * bl * 0.8]]); } }
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  var stroke = function (col, lw, dy) { g.strokeStyle = col; g.lineWidth = lw; lines.forEach(function (p) { g.beginPath(); g.moveTo(p[0][0], p[0][1] + dy); for (var q = 1; q < p.length; q++) g.lineTo(p[q][0], p[q][1] + dy); g.stroke(); }); };
+  stroke('rgba(255,248,230,0.5)', 1.1, 0.9); stroke('rgba(28,22,26,0.85)', 1.5, 0);
+  g.globalCompositeOperation = 'destination-in'; g.drawImage(s.cv, 1, 1, W - 2, H - 2); g.globalCompositeOperation = 'source-over';
+  o.crk = { n: n, w: Math.round(w), cv: cv }; return cv;
+}
+// a broken rock: its own picture cut in five wedges (each made once, its cut edges inked and kept to the rock's shape) that burst a
+// little apart, hop and come down on the ground, fading as the rubble shows beneath
+function makeShards(o, s, w, h) {
+  var W = Math.round(w) + 2, H = Math.round(h) + 2, cx = W / 2, cy = H * 0.62, R0 = Math.max(W, H) * 1.5, N = 5, out = [];
+  for (var k = 0; k < N; k++) {
+    var a1 = (k / N) * 6.283 + hash(o.x, o.y, k) * 0.5, a2 = ((k + 1) / N) * 6.283 + hash(o.x, o.y, k + 1) * 0.5, cv = mkCanvas(W, H); if (!cv) return null; var g = cv.getContext('2d');
+    var ox = cx + (hash(o.y, k, 5) - 0.5) * W * 0.12, oy = cy + (hash(k, o.x, 6) - 0.5) * H * 0.1;
+    g.save(); g.beginPath(); g.moveTo(ox, oy); g.lineTo(cx + Math.cos(a1) * R0, cy + Math.sin(a1) * R0); g.lineTo(cx + Math.cos((a1 + a2) / 2) * R0, cy + Math.sin((a1 + a2) / 2) * R0); g.lineTo(cx + Math.cos(a2) * R0, cy + Math.sin(a2) * R0); g.closePath(); g.clip();
+    g.drawImage(s.cv, 1, 1, W - 2, H - 2);
+    g.lineJoin = 'round'; g.strokeStyle = 'rgba(205,200,190,0.9)'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + Math.cos(a1) * R0, cy + Math.sin(a1) * R0); g.lineTo(ox, oy); g.lineTo(cx + Math.cos(a2) * R0, cy + Math.sin(a2) * R0); g.stroke();   /* the fresh broken face, pale */
+    g.strokeStyle = '#2a2226'; g.lineWidth = 1.4; g.stroke(); g.restore();
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(s.cv, 1, 1, W - 2, H - 2);
+    out.push({ cv: cv, am: (a1 + a2) / 2, W: W, H: H });
+  }
+  return out;
+}
+function drawShards(c, o, s, px, py, w, h) {
+  if (!o.shards) o.shards = makeShards(o, s, w, h) || []; var d = o.dying, e = Math.min(1, d / 0.34), eo = 1 - (1 - e) * (1 - e), cx = px + w / 2, cy = py + h * 0.62;
+  c.globalAlpha *= Math.max(0, 1 - Math.max(0, d - 0.34) / 0.24);
+  o.shards.forEach(function (sh, k) {
+    var sp = w * (0.1 + 0.12 * hash(o.y, o.x, k)), dx = Math.cos(sh.am) * sp * eo, dy = Math.sin(sh.am) * sp * 0.4 * eo - h * 0.2 * Math.sin(Math.PI * e) + h * 0.3 * e * (Math.sin(sh.am) < 0 ? 1 : 0.35), rot = (hash(k, o.x, 3) - 0.5) * 1.1 * eo, scl = 1 - 0.2 * e;
+    c.save(); c.translate(cx + dx, cy + dy); c.rotate(rot); c.scale(scl, scl); c.translate(-cx, -cy); c.drawImage(sh.cv, px - 1, py - 1, w + 2, h + 2); c.restore();
+  });
+}
+// what a broken rock leaves: a few grey stones and grit on the ground (a decal, k 'rubble', like a tree's stump; gone after some days)
+function drawRubble(c, d) {
+  var y = d.y * K, r = d.r || 8, sd = d.seed || 0, n = 6 + Math.floor(hash(sd, 1, 2) * 3);
+  c.save(); c.fillStyle = 'rgba(40,46,60,0.16)'; c.beginPath(); c.ellipse(d.x, y + 1, r * 1.2, r * 0.55, 0, 0, 7); c.fill();
+  c.lineJoin = 'round';
+  for (var k = 0; k < n; k++) { var a = hash(sd, k, 3) * 6.283, rr = r * (0.15 + 0.85 * hash(k, sd, 4)), x = d.x + Math.cos(a) * rr, yy = y + Math.sin(a) * rr * 0.45, sz = r * (0.1 + 0.12 * hash(k, 7, sd)) + (k < 2 ? r * 0.1 : 0), m = 5, pts = [];
+    for (var q = 0; q < m; q++) { var aq = q / m * 6.283 + hash(k, q, sd) * 0.8, rq = sz * (0.7 + 0.5 * hash(q, k, sd + 1)); pts.push([x + Math.cos(aq) * rq, yy + Math.sin(aq) * rq * 0.7]); }
+    var path = function () { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (var q2 = 1; q2 < m; q2++) c.lineTo(pts[q2][0], pts[q2][1]); c.closePath(); };
+    path(); c.fillStyle = k % 3 ? '#56607a' : '#66708a'; c.fill();   /* the rocks' own blue-grey (Colin, AD's boulders) */
+    c.save(); path(); c.clip(); c.fillStyle = 'rgba(190,200,220,0.45)'; c.beginPath(); c.ellipse(x - sz * 0.35, yy - sz * 0.35, sz * 0.7, sz * 0.45, -0.4, 0, 7); c.fill(); c.restore();   /* the lit facet, the sun upper left */
+    path(); c.strokeStyle = '#2a2430'; c.lineWidth = 0.9; c.stroke(); }
+  c.restore();
 }
 var BARK = { oak: ['#7a5636', '#4a3220', '#c9a070'], pine: ['#6b4a3a', '#3f2a1c', '#c99a70'], birch: ['#e8e4dc', '#5a5650', '#d9c9a6'] };
 // a felled trunk lying along the ground, its cut end toward where it fell from; shorter as the logs come off
@@ -12904,7 +12955,7 @@ function drawTrunk(c, o, pic) {
   c.restore();
   if (o.chops > 0) { c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(o.x - 9, y - r - 8, 18, 3); c.fillStyle = '#9be58b'; c.fillRect(o.x - 9, y - r - 8, 18 * Math.min(1, o.chops / Math.max(1, o.chopsPerLog || 2)), 3); }
 }
-return { DEF: DEF, cfg: cfg, hash: hash, TREE_LOOK: TREE_LOOK, ROCK_LOOK: ROCK_LOOK, spot: spot, spotHit: spotHit, crackAng: crackAng, crackHit: crackHit, rhythmHit: rhythmHit, hit: hit, tick: tick, chopTrunk: chopTrunk, regrowTick: regrowTick, drawProp: drawProp, drawTrunk: drawTrunk, TREE_WOOD: TREE_WOOD, ROCK_STONE: ROCK_STONE, treeLen: treeLen };
+return { DEF: DEF, cfg: cfg, hash: hash, TREE_LOOK: TREE_LOOK, ROCK_LOOK: ROCK_LOOK, spot: spot, spotHit: spotHit, crackAng: crackAng, crackHit: crackHit, rhythmHit: rhythmHit, hit: hit, tick: tick, chopTrunk: chopTrunk, regrowTick: regrowTick, drawProp: drawProp, drawTrunk: drawTrunk, drawRubble: drawRubble, TREE_WOOD: TREE_WOOD, ROCK_STONE: ROCK_STONE, treeLen: treeLen };
 })();
 if (typeof module !== 'undefined') module.exports = Gather;
 
@@ -23358,6 +23409,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var bees = [];
   function beesTick(dt) { var P = hero(); for (var i = bees.length - 1; i >= 0; i--) { var be = bees[i]; be.t += dt; be.life -= dt; var tx = P.x - be.x, ty = P.y - be.y, dl = Math.hypot(tx, ty) || 1; be.x += (tx / dl * 70 + Math.cos(be.t * 7 + be.a) * 40) * dt; be.y += (ty / dl * 50 + Math.sin(be.t * 6 + be.a) * 30) * dt; be.cd = (be.cd || 0) - dt; if (dl < 12 && be.cd <= 0) { if (!ADMIN.immortal) P.hp = Math.max(1, P.hp - 1); P.flash = 0.5; be.cd = 2; } if (be.life <= 0 || fireNear(be.x, be.y, 60)) bees.splice(i, 1); } }
   function regrowTick() {                   // each new day the stumps old enough become saplings that grow up
+    decals = decals.filter(function (d) { return !(d.k === 'rubble' && day.n - (d.day || 0) >= 3); });   /* (a broken rock's rubble is gone after three days) */
     Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; if (st.k === 'grass') { var gp = { name: st.name, x: st.x, y: st.y, s: st.s || 1, r: 0, v: st.v || 0, kind: World.KIND[st.name] || 'bush', leanDir: 1 }; gp.max = gp.hp = (World.HP[st.name] || 1) * (0.7 + 0.6 * gp.s); w.addProp(gp); delete gone[propKey(gp)]; return gp; } var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
   }
   /* Blood on the ground (2026-10-14): a wounded deer leaves a trail of drops and a pool where it stands (the engine's api.onBlood);
@@ -24959,7 +25011,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
       if (B.ruin) drawDebrisAll(c, hw, hh);     // what a fallen or a burnt roof left on the floor
       // stumps where trees stood
-      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue; if (dc.k === 'blood') { drawBlood(c, dc); continue; } if (dc.k === 'grass') continue; if (dc.k === 'litter') { var ls = sprite(dc.name, dc.v); c.drawImage(ls.cv, dc.x + ls.l, dc.y * K + ls.t, ls.w, ls.h); continue; }
+      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue; if (dc.k === 'blood') { drawBlood(c, dc); continue; } if (dc.k === 'grass') continue; if (dc.k === 'rubble') { Gather.drawRubble(c, dc); continue; } if (dc.k === 'litter') { var ls = sprite(dc.name, dc.v); c.drawImage(ls.cv, dc.x + ls.l, dc.y * K + ls.t, ls.w, ls.h); continue; }
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
         c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
