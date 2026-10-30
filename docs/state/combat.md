@@ -49,3 +49,5 @@ How this part of the game stands now, moved out of `CLAUDE.md` on 2026-10-27 (th
   2026-10-15: the club stun-locked a bear). The hero's blows are paced (a sword blow about 0.55 s whole).
 - **Sound:** the engine calls `sfx(name, v, src, x)` (`x` = the weapon's kind, weight, heaviness and, for a swing, the lead
   until it lands); a swing is heard from the windup's start so its loudest moment comes on the hit.
+
+**A struck beast holds a grudge** (Robin, 2026-10-30: "enemies dont aggro if you shoot them from far enough. So you can effectively hit boars from afar until they die"): a beast the hero strikes (not a shy one, not a tame one) keeps coming for `BEAST_GRUDGE.t` 12 s after the blow, however far it was shot from, unless he is farther than `BEAST_GRUDGE.far` 900 (`e.grudgeT`, set in `damageEnemy`, run where a calm beast wakes and calms). Before, it woke and calmed again on the next frame when the hero stood past its calm-down reach (aggro times 2.6: 195 for a boar), which the bow reaches. `tests/grudge.js` (in `npm test`): a boar shot from 150, 220 and 280 comes and strikes; on the old engine it stood still past 195.

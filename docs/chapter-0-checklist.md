@@ -50,7 +50,7 @@ wrong with the rest.
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Built |
 | 2b.3 | The quiver and wooden arrows: made, carried, used up. | Built |
 | 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** **A tree falls with a creak, a bending crown and a bounce.** **A rock cracks from where it is struck, breaks into pieces and leaves rubble.** | Built (changed 2026-10-30) |
-| 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. | Built |
+| 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. **A boar shot from afar charges you** (it calmed again at once past 195 units). | Built (fixed 2026-10-30) |
 | **2c** | **Menus and crafting** | |
 | 2c.1 | Tab: the panel, the bag, and what you can make where you stand. | Built |
 | 2c.2 | The bar: 1 to 6, the wheel, Shift and drag; the knife counts as a weapon. | Built |
@@ -98,6 +98,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-30: a beast shot from afar keeps coming for 12 s (2b.5).
 - 2026-10-30: felled trunks easier to hit and their cut ends drawn as end grain (2b.4); the roast quest's words canon.
 - 2026-10-30: Arnor's quests moved into his talk, the deer made a meal, the day's haste cleared in the morning (Robin's three points); two scripted playthroughs fixed a body gone when the beast died off screen, the plaques under the talk window, and a talk during the graves story. Items 1.5, 1.6, 1.8, 1.10, 1.11, 1.12 and 2d.2 changed.
 - 2026-10-30: the list written. Nothing Checked yet.

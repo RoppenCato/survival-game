@@ -8905,7 +8905,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
-  if (!src && e.type === 'beast') e.angered = true;   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */
+  if (!src && e.type === 'beast') { e.angered = true; if (!e.shy && !e.tame) e.grudgeT = BEAST_GRUDGE.t; }   /* (struck from afar, it comes for you: Robin, 2026-10-30, a boar shot from past its calm-down reach went calm again at once) */   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */
   if (e.noHarm > 0) { num(e.x, headY(e), 'DOWN', '#dfe8ff'); return; }   /* (a man the Charge put down takes no harm while down) */
   if (!src && kind !== 'proj') { e.heroHitAt = W.t; e.confusedT = 0; }   /* (the Rush-step's mark; a blow wakes a confused man) */   // src: the man whose blow this is; none is the hero
   var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && (e.asleep || Math.abs(wrap(ang - e.face)) < 1.25);   // the hero's blade in the back of a man at his post who has noticed nothing
@@ -10197,6 +10197,7 @@ function updateEnemies(dt) {
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.aggro) { /* the page decides when it wakes */ }
       else if (!e.awake && gd < e.aggro * stealthK() * (e.shy ? shyK(e, ga) : 1) && !P.dead) { e.awake = true; if (e.shy) { e.fleeT = 0; e.fled = 0; herdWake(e); } }   // the light step shortens the noticing; a shy beast's own sight (shyK)
+      if (e.grudgeT > 0) { e.grudgeT -= dt; if (!P.dead && gd < BEAST_GRUDGE.far) { e.awake = true; if (e.state === 'idle') { e.state = 'chase'; e.t = 0; } } }   /* a grudge: it keeps coming however far you shot it from, unless you are long gone */
       else if (e.awake && gd > (e.human ? 900 : e.shy ? e.aggro * 3.2 * (1 - SHY.run * woundOf(e)) : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) { /* (a wounded shy beast stops sooner) */ e.awake = false; if (e.shy) { e.watchT = 6 + Math.random() * 4; if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = e.watchT; } } }   // a guard gives up only when you are far gone; a shy beast grazes again where it stopped (watchT: it was kept in e.fled until 2026-10-14, and e.fled is what the list drops a man for who has run off, so a deer that stopped running vanished from the world)
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.shy && e.bleedT > 0) { bleedTick(e, dt); if (e.dead) continue; }
@@ -11028,6 +11029,7 @@ function render(c) {
    from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
+var BEAST_GRUDGE = { t: 12, far: 900 };   // a beast struck by the hero keeps coming for t seconds unless he is farther than far (mine, 2026-10-30)
 var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
