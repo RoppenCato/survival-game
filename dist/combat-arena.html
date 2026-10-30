@@ -3558,6 +3558,7 @@ function updateAnim(dt, dashing) {
 function updatePlayer(dt) {
   var p = P, a = p.atk, i;
   if (p.dead) return;
+  if (api.noArms && api.noArms()) { IN.pressed.lmb = IN.pressed.rmb = IN.pressed.KeyJ = IN.pressed.KeyK = false; IN.lmb = IN.rmb = false; IN.keys.KeyJ = IN.keys.KeyK = false; p.atkBuf = 0; p.guard = false; p.bowDraw = 0; p.axeAim = false; p.trapAim = null; p.holdT = 0; p.holdG = 0; if (a.ph !== 'none') { a.ph = 'none'; a.since = 9; a.tr = null; } }   /* the page says his hands are not free (swimming in deep water: Robin, 2026-10-30): no blow, guard, draw or throw, and what was under way stops; the buttons must be pressed again */
   packT -= dt;
   if (p.venom) {                           // a lingering bite: a little damage each second, then it passes
     p.venom.t -= dt; p.venom.tick = (p.venom.tick || 0) - dt;

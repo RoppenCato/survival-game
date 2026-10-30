@@ -24,3 +24,8 @@ console.log('draw 3 s (full at 1.5)', JSON.stringify(d), d.shot && d.dmg === c.d
 const { D, P } = setup(); Combat.button(0, true); Combat.update(DT); Combat.button(0, false);
 console.log('left alone, no draw', JSON.stringify({ shot: D.W.projs.length, guard: P.guard }), D.W.projs.length === 0 ? 'ok' : '!! wrong');
 console.log('the full draw does', (c.dmg / a.dmg).toFixed(2), 'times the snap shot; BOW', JSON.stringify(Combat.api.bowSpec || {}));
+{ // swimming (Robin, 2026-10-30): no weapon from deep water; out of it the bow works again
+  const { D, P } = setup(); let deep = true; Combat.api.noArms = () => deep; Combat.button(2, true); for (let i = 0; i < 95; i++) Combat.update(DT); const drew = P.bowDraw; Combat.button(0, true); Combat.update(DT); Combat.button(0, false); Combat.button(2, false); const shotDeep = D.W.projs.length;
+  deep = false; Combat.button(2, true); for (let i = 0; i < 95; i++) Combat.update(DT); Combat.button(0, true); Combat.update(DT); Combat.button(0, false); Combat.button(2, false); const shotOut = D.W.projs.length; Combat.api.noArms = null;
+  console.log('in deep water', JSON.stringify({ draw: drew, shot: shotDeep }), 'out of it', JSON.stringify({ shot: shotOut }), !drew && !shotDeep && shotOut === 1 ? 'ok' : '!! wrong');
+}

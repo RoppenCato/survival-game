@@ -51,6 +51,7 @@ wrong with the rest.
 | 2b.3 | The quiver and wooden arrows: made, carried, used up. | Built |
 | 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** **A tree falls with a creak, a bending crown and a bounce.** **A rock cracks from where it is struck, breaks into pieces and leaves rubble.** | Built (changed 2026-10-30) |
 | 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. **A boar shot from afar charges you** (it calmed again at once past 195 units). **Animals stay out of the water but for its shallow edge, and a deer driven to the shore runs along it or past you, never standing.** | Built (fixed 2026-10-30) |
+| 2b.6 | Water: in deep water no swing, guard, bow or throw; in the shallows all of them. | Built (2026-10-30) |
 | **2c** | **Menus and crafting** | |
 | 2c.1 | Tab: the panel, the bag, and what you can make where you stand. | Built |
 | 2c.2 | The bar: 1 to 6, the wheel, Shift and drag; the knife counts as a weapon. | Built |
@@ -98,6 +99,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-30: no weapons in deep water, the shallows as on land (2b.6).
 - 2026-10-30: animals and the water, a deer at the shore (2b.5).
 - 2026-10-30: a beast shot from afar keeps coming for 12 s (2b.5).
 - 2026-10-30: felled trunks easier to hit and their cut ends drawn as end grain (2b.4); the roast quest's words canon.
