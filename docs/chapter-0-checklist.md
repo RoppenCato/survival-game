@@ -29,8 +29,8 @@ wrong with the rest.
 | 1.7 | **The workbench opens building** everywhere (Valheim-like): before it, only the comfort pieces, the workbench and the campfire. | Built |
 | 1.8 | **Hunting a boar** with the wooden sword or the bow, then carrying it (the slower walk, E to set it down). **A body lies five minutes even when the beast died off screen.** | Built (fixed 2026-10-30) |
 | 1.9 | **Butchering at Arnor's table**: meat, leather and the boar's sinew. | Built |
-| 1.10 | **The boar quest** (Meat for Arnor): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Built (changed 2026-10-30) |
-| 1.11 | **The meal quest** (A meal for Arnor): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its book words and his lines are proposals (`LORE?`) until Alistair, LD's. | Built (changed 2026-10-30) |
+| 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Built (changed 2026-10-30) |
+| 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its book words and his lines are proposals (`LORE?`) until Alistair, LD's. | Built (changed 2026-10-30) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Built (fixed 2026-10-30) |
 | 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Built |
