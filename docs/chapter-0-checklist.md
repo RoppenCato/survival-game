@@ -24,14 +24,14 @@ wrong with the rest.
 | 1.2 | **The first quest**, The shore: the book's words (handoff 20, 2026-10-29); the quest is done when you reach the steading. | Built (new words 2026-10-29) |
 | 1.3 | **Gathering by hand**: planks and litter at the wreck; wood, stone and fibre; a punch reaches the tree or rock you stand by. | Built |
 | 1.4 | **The first recipes** show once their key ingredient is held, never as question marks. | Built |
-| 1.5 | **Arnor at the steading**: the meeting, his story, and his lines for each state (meet, wait, mending, teach, taught). | Built |
-| 1.6 | **Arnor's house quest**: the gaps are marked, a plank wall goes only in them, the house is mended, and the straw bed is yours. | Built (new words 2026-10-29) |
+| 1.5 | **Arnor at the steading**: the meeting, his story, and his lines for each state (meet, wait, deer, mending, teach, taught). **His quests are given and ended only when you talk to him**, and no two lines show at once (not during his graves story either). | Built (changed 2026-10-30) |
+| 1.6 | **Arnor's house quest**: the gaps are marked, a plank wall goes only in them, the house is mended; talk to him: "That's a home again", and the straw bed is yours. | Built (changed 2026-10-30) |
 | 1.7 | **The workbench opens building** everywhere (Valheim-like): before it, only the comfort pieces, the workbench and the campfire. | Built |
-| 1.8 | **Hunting a boar** with the wooden sword or the bow, then carrying it (the slower walk, E to set it down). | Built |
+| 1.8 | **Hunting a boar** with the wooden sword or the bow, then carrying it (the slower walk, E to set it down). **A body lies five minutes even when the beast died off screen.** | Built (fixed 2026-10-30) |
 | 1.9 | **Butchering at Arnor's table**: meat, leather and the boar's sinew. | Built |
-| 1.10 | **The meat quest**: meat for Arnor; he eats by his fire and keeps the sinew for a bowstring. | Built (new words 2026-10-29) |
-| 1.11 | **The deer quest**: the bow, a deer shot and butchered, the deer's supper running the day into night. | Built |
-| 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, and in the morning the boat is mended. | Built |
+| 1.10 | **The boar quest** (Meat for Arnor): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Built (changed 2026-10-30) |
+| 1.11 | **The meal quest** (A meal for Arnor): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its book words and his lines are proposals (`LORE?`) until Alistair, LD's. | Built (changed 2026-10-30) |
+| 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Built (fixed 2026-10-30) |
 | 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Built |
 
@@ -60,7 +60,7 @@ wrong with the rest.
 | 2c.6 | The basic outfit: chest, trousers, leather shoes. | Built |
 | **2d** | **The interface** | |
 | 2d.1 | The prompts over the hero, and E's rule: the right thing at each place. | Built |
-| 2d.2 | The book (L): the quests page, its plaque, the Lore Book's pages. | Built (new words 2026-10-29) |
+| 2d.2 | The book (O, the Quests tab; L, the Lore Book): the quests page and its plaque, which now waits until a talk window is closed. | Built (changed 2026-10-30) |
 | 2d.3 | The map (M): what has been seen, the lettering's big turns. | Built |
 | 2d.4 | Health, stamina, the food buffs, the comfort buff by the fire. | Built |
 | 2d.5 | Esc: the menu, the music and world-sound bars, Save to a file, Load from a file. | Built |
@@ -98,4 +98,5 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-30: Arnor's quests moved into his talk, the deer made a meal, the day's haste cleared in the morning (Robin's three points); two scripted playthroughs fixed a body gone when the beast died off screen, the plaques under the talk window, and a talk during the graves story. Items 1.5, 1.6, 1.8, 1.10, 1.11, 1.12 and 2d.2 changed.
 - 2026-10-30: the list written. Nothing Checked yet.

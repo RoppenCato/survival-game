@@ -278,8 +278,7 @@ the web between them (2026-10-27, Robin: "so that when you change something at o
 **The player's path, and what gates each step** (chapter 0, then 1):
 - Wreck → planks, litter → wood, stone, fibre → the first recipes (`known`: a recipe shows once its key ingredient was held).
 - Steading → Arnor (`arnorState`: meet → wait → mending → teach → taught; `arnorLineId` picks his lore entry for each state).
-- His story's end → quest house (`seen.quests`, `questTick` in `zonesTick`) → `houseGaps`, `mendGap`, a fire by his door → `arnorHouseMended` → quest meat.
-- Meat = a beast butchered at his table → `seen.meatForArnor` → state `mending` → a night slept → boat `ready` (the wake block) → state `teach` → `arnorBoatGive` (state `taught`, `seen.raft`).
+- **Arnor's quests move only in a talk with him** (Robin, 2026-10-30; `arnorQuestTalk` from `talk()`, `arnorQuestReady` keeps his Talk prompt while one can move; `QUEST_WHEN` entries marked `talk`, skipped by `questTick`): his story's end → quest house → `houseGaps` filled with plank walls → `arnorHouseMended` → talk ("That's a home again") → quest meat: a boar butchered at a table (`seen.boarButchered`, its sinew) → talk → quest deer, **a meal**: a deer shot with the bow, butchered, its venison roasted at a fire (`roastVenison`) → talk hands it over (`seen.deerForArnor`, the day hastened to dusk, `day.supper`) → state `mending` → a night slept (the wake block clears the haste) → boat `ready` → state `teach` → `arnorBoatGive` (state `taught`, `seen.raft`).
 - Off the starter island (chapter 1, mostly not built): free building waits for `seen.freeBuild`; the altar waits for `seen.villageBlot` (the village's first blót).
 
 **Gates live in a few places; change one, check all of them:**
