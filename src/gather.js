@@ -176,9 +176,15 @@ function drawTrunk(c, o, pic) {
     if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
     c.save(); c.translate(xs, yP + shkP); if (o.dir < 0) c.scale(-1, 1);
     c.fillStyle = 'rgba(20,40,20,0.22)'; c.beginPath(); c.ellipse(o.len0 * f * 0.5, 2, o.len0 * f * 0.5 + 3, pic.h * sc0 * 0.3, 0, 0, 7); c.fill();
-    c.drawImage(pic.cv, 0, 0, pic.cv.width * f, pic.cv.height, 0, pic.t * sc0, pic.w * sc0 * f, pic.h * sc0);   // the picture's chopped end is toward -x: cut at the other end
+    if (f > 0.995) c.drawImage(pic.cv, 0, 0, pic.cv.width, pic.cv.height, 0, pic.t * sc0, pic.w * sc0, pic.h * sc0);   // whole: the picture's chopped end is toward -x
+    else {                                               // shortened: the body to near the cut, capped by the picture's own cut end mirrored (Robin, 2026-10-30: a straight crop through the bark looked glitchy)
+      var s1 = pic.w * sc0 / pic.cv.width, capS = Math.max(4, Math.round(pic.cv.width * 0.09)), capW = capS * s1, Wd = pic.w * sc0 * f, bodyW = Math.max(capW * 0.5, Wd - capW * 0.5);
+      c.drawImage(pic.cv, 0, 0, bodyW / s1, pic.cv.height, 0, pic.t * sc0, bodyW, pic.h * sc0);
+      c.save(); c.translate(Math.max(capW, Wd), 0); c.scale(-1, 1); c.drawImage(pic.cv, 0, 0, capS, pic.cv.height, 0, pic.t * sc0, capW, pic.h * sc0); c.restore();
+    }
     c.restore();
-    if (o.chops > 0) { c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(o.x - 9, yP + pic.t * sc0 - 6, 18, 3); c.fillStyle = '#9be58b'; c.fillRect(o.x - 9, yP + pic.t * sc0 - 6, 18 * Math.min(1, o.chops / Math.max(1, o.chopsPerLog || 2)), 3); }
+    var xm = xs + o.dir * o.len0 * f * 0.5;   /* (over what is left of it) */
+    if (o.chops > 0) { c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(xm - 9, yP + pic.t * sc0 - 6, 18, 3); c.fillStyle = '#9be58b'; c.fillRect(xm - 9, yP + pic.t * sc0 - 6, 18 * Math.min(1, o.chops / Math.max(1, o.chopsPerLog || 2)), 3); }
     return;
   }
   var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5 * (TRUNK_W[o.tree] || 1), shk = o.shake > 0 ? Math.sin(o.shake * 50) * 2.4 * Math.min(1, o.shake * 3) : 0;   /* (the thickness by TRUNK_W, never by the bake) */

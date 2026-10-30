@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-29T18:26:35.411Z",
+ "built": "2026-10-30T09:11:11.912Z",
  "entries": [
   {
    "id": "world.realm",
@@ -902,11 +902,11 @@
   },
   {
    "id": "line.arnor.deer",
-   "title": "Arnor asks for a deer",
+   "title": "Arnor asks for a roast",
    "kind": "line",
-   "status": "in-game",
-   "decided": "in the game since 2026-10-28 (alpha 0.3; Alistair, LD's words as LORE? placeholders; Robin has not reviewed them)",
-   "summary": "After the boar: the sinew makes a bowstring, and Arnor wants a deer ([[quest.arnor.deer]]).",
+   "status": "canon",
+   "decided": "Robin, 2026-10-30: \"Yes\" (the roast quest, the two titles and Arnor's lines)",
+   "summary": "After the boar: the sinew makes a bowstring, and Arnor wants a deer, roasted ([[quest.arnor.deer]]).",
    "speaker": "person.arnor",
    "when": "the boar is butchered at his table",
    "mode": "sequence",
@@ -915,9 +915,29 @@
    "time": "day",
    "lines": [
     "Keep the sinew. Dried and twisted, it's a bowstring.",
-    "Bring me a deer. They don't wait for you to walk up."
+    "Then a deer, roasted. Two winters I've eaten my own cooking."
    ],
-   "body": "PROPOSED: Version A is above. B: \"Boar's sinew. That's a bowstring, once it's dry.\" | \"Deer next. You'll not get near one on\nfoot.\" C: \"That sinew wants drying. Then it's a string.\" | \"A bow for the deer. They hear you long before you see them.\" Clive,\nGD's placeholder: \"Boar's sinew makes a fair string. Bring me a deer; they don't wait for you to walk up.\""
+   "body": "Before (2026-10-30): \"Keep the sinew. Dried and twisted, it's a bowstring.\" | \"Bring me a deer. They don't wait for you to walk\nup.\". The second line changed in its place; the positions hold."
+  },
+  {
+   "id": "line.arnor.wait.deer",
+   "title": "Arnor, waiting for the roast",
+   "kind": "line",
+   "status": "canon",
+   "decided": "Robin, 2026-10-30: \"Yes\" (the roast quest, the two titles and Arnor's lines)",
+   "summary": "Arnor waits for roast venison ([[quest.arnor.deer]]). The hints go bow, deer, fire.",
+   "speaker": "person.arnor",
+   "when": "quest.arnor.deer given, the roast not yet brought",
+   "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "steading.yard",
+   "time": "day",
+   "lines": [
+    "A bow, a deer, a fire. In that order.",
+    "Downwind, and slow. They hear you before they see you.",
+    "Venison, roasted. Any fire will do."
+   ],
+   "body": "Three to cycle, one hint each, in the order the work goes."
   },
   {
    "id": "line.arnor.supper",
@@ -2579,10 +2599,10 @@
   },
   {
    "id": "quest.arnor.meat",
-   "title": "Meat for Arnor",
+   "title": "A boar for Arnor",
    "kind": "quest",
    "status": "canon",
-   "decided": "Robin, 2026-10-26: Arnor's two quests and his boat lines, \"Yes, as written\"; 2026-10-26: \"behind the house\" made \"in the yard\", to match where the table stands (Clive, GD; a fact, not a new word); Robin, 2026-10-29: \"Yes\" (the seven quest book texts): the boar and the sinew",
+   "decided": "Robin, 2026-10-26: Arnor's two quests and his boat lines, \"Yes, as written\"; 2026-10-26: \"behind the house\" made \"in the yard\", to match where the table stands (Clive, GD; a fact, not a new word); Robin, 2026-10-29: \"Yes\" (the seven quest book texts): the boar and the sinew; Robin, 2026-10-30: \"Yes\" (the roast quest, the two titles and Arnor's lines): the title",
    "summary": "Arnor has not eaten meat since the raid. The hero brings him some.",
    "giver": "person.arnor",
    "chapter": "chapter.1",
@@ -2592,24 +2612,24 @@
    "book": "Arnor hasn't eaten meat since the raid, I think. There are boar in the woods; I've seen where they root. He says to keep the sinew. Whatever I bring, he'll want it carried to the butcher's table in the yard.",
    "book_more": "Arnor ate like a man who'd forgotten how. Then he hung the boar's sinew up to dry. A bowstring, he says.",
    "book_more_after": "done",
-   "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them.\n\nIN THE GAME: Since 2026-10-26 (commit 91f5b92): given once the house is mended, or from the second day; done with the first beast\nbutchered at the table in the yard, by the woodpile, after Arnor asked. Arnor keeps one piece.\n\nBefore (2026-10-26): when given, \"Arnor hasn't eaten meat since the raid, I think. The deer come to the meadows at dusk, and a\nbow would reach them where my feet won't. Whatever I bring, he'll want it carried to the butcher's table in the yard.\"; when\ndone, \"Arnor ate like a man who'd forgotten how. Then he went down to the shingle, to his boat.\""
+   "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them.\n\nIN THE GAME: Since 2026-10-26 (commit 91f5b92): given once the house is mended, or from the second day; done with the first beast\nbutchered at the table in the yard, by the woodpile, after Arnor asked. Arnor keeps one piece.\n\nBefore (2026-10-26): when given, \"Arnor hasn't eaten meat since the raid, I think. The deer come to the meadows at dusk, and a\nbow would reach them where my feet won't. Whatever I bring, he'll want it carried to the butcher's table in the yard.\"; when\ndone, \"Arnor ate like a man who'd forgotten how. Then he went down to the shingle, to his boat.\"\n\nIN THE GAME: Since 2026-10-30 (Clive, GD): Arnor still eats the boar; he keeps a piece when it is butchered at his table while the\nquest is open, so the canon book still fits.\n\nBefore (2026-10-30), the title was \"Meat for Arnor\"."
   },
   {
    "id": "quest.arnor.deer",
-   "title": "A deer for Arnor",
+   "title": "A roast for Arnor",
    "kind": "quest",
    "status": "canon",
-   "decided": "Robin, 2026-10-29: \"Yes\" (the seven quest book texts)",
-   "summary": "After the boar, Arnor asks for a deer, hunted with a bow strung with the boar's sinew.",
+   "decided": "Robin, 2026-10-29: \"Yes\" (the seven quest book texts); Robin, 2026-10-30: \"Yes\" (the roast quest, the two titles and Arnor's lines)",
+   "summary": "After the boar, Arnor asks for a meal: a deer, shot with a bow strung with the boar's sinew, roasted at a fire and handed to him.",
    "giver": "person.arnor",
    "chapter": "chapter.1",
    "place": "steading.yard",
    "time": "day",
    "when": "the boar is butchered at Arnor's table",
-   "book": "Arnor says boar's sinew makes a fair bowstring, and he wants a deer next. They won't wait for me to walk up to them. They come to the meadows at dusk, he says, and they hear you before you see them.",
-   "book_more": "The deer is on Arnor's table. He said eat, then sleep, and that tomorrow he'd see to the boat.",
+   "book": "Arnor says boar's sinew makes a fair bowstring. With a bow I could take a deer. He wants it roasted, by somebody else's hands for once. Deer come to the meadows at dusk, and they hear you before you see them.",
+   "book_more": "I brought Arnor roast venison. He ate every bite, then said eat, sleep, and that tomorrow he'd see to the boat.",
    "book_more_after": "done",
-   "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them."
+   "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them.\n\nROBIN DECIDED: On 2026-10-30 (Robin, 2026-10-30, through Clive, GD) **the deer is a meal**: the boar gives the bow its sinew;\nthe hero shoots a deer, butchers it, roasts the venison at a fire and hands Arnor the roast in a talk. All Arnor's quests move\nonly when he is talked to.\n\nBefore (2026-10-29), \"A deer for Arnor\": when given, \"Arnor says boar's sinew makes a fair bowstring, and he wants a deer next.\nThey won't wait for me to walk up to them. They come to the meadows at dusk, he says, and they hear you before you see them.\";\nwhen done, \"The deer is on Arnor's table. He said eat, then sleep, and that tomorrow he'd see to the boat.\""
   },
   {
    "id": "quest.sail-east",
@@ -2786,6 +2806,7 @@
   "line.arnor.meet",
   "line.arnor.wait.meat",
   "line.arnor.deer",
+  "line.arnor.wait.deer",
   "line.arnor.supper",
   "line.arnor.evening",
   "line.arnor.graves",

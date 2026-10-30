@@ -30,7 +30,7 @@ wrong with the rest.
 | 1.8 | **Hunting a boar** with the wooden sword or the bow, then carrying it (the slower walk, E to set it down). **A body lies five minutes even when the beast died off screen.** | Built (fixed 2026-10-30) |
 | 1.9 | **Butchering at Arnor's table**: meat, leather and the boar's sinew. | Built |
 | 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Built (changed 2026-10-30) |
-| 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its book words and his lines are proposals (`LORE?`) until Alistair, LD's. | Built (changed 2026-10-30) |
+| 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its words are canon (lore handoff 21). | Built (changed 2026-10-30) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Built (fixed 2026-10-30) |
 | 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Built |
@@ -49,7 +49,7 @@ wrong with the rest.
 | 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Built |
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Built |
 | 2b.3 | The quiver and wooden arrows: made, carried, used up. | Built |
-| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. | Built |
+| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** | Built (changed 2026-10-30) |
 | 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. | Built |
 | **2c** | **Menus and crafting** | |
 | 2c.1 | Tab: the panel, the bag, and what you can make where you stand. | Built |
@@ -98,5 +98,6 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-30: felled trunks easier to hit and their cut ends drawn as end grain (2b.4); the roast quest's words canon.
 - 2026-10-30: Arnor's quests moved into his talk, the deer made a meal, the day's haste cleared in the morning (Robin's three points); two scripted playthroughs fixed a body gone when the beast died off screen, the plaques under the talk window, and a talk during the graves story. Items 1.5, 1.6, 1.8, 1.10, 1.11, 1.12 and 2d.2 changed.
 - 2026-10-30: the list written. Nothing Checked yet.
