@@ -10157,15 +10157,17 @@ function bleedTick(e, dt) {
 function fleeStep(e, dt, ga, gd) {
   var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? (e.bleedT > 0 ? SHY.bleedRun : 1.7) * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk, dry = api.scene && api.scene.dry;   // (a wounded shy beast runs slower, by its wounds; bleeding, from the first hit a chase and not a race: SHY.bleedRun, Robin, 2026-10-24)
   e.state = 'chase'; e.t += dt; e.fleeT = (e.fleeT || 0) + dt;
-  if (e.shy && wkw && (e.fleeT > (e.fleeRe || 0))) {               // a heading, chosen again every half second: the open way nearest to straight away
-    var best = null, bestR = -1, k;
-    for (k = 0; k < 9; k++) { var ang = away + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.42, run = 0, st; for (st = 1; st <= 6; st++) { var sx1 = e.x + Math.cos(ang) * st * 24, sy1 = e.y + Math.sin(ang) * st * 24; if (!wkw(sx1, sy1, e) || (dry && !dry(sx1, sy1))) break; run = st; } var score = run * 10 - Math.ceil(k / 2) * 3; if (score > bestR) { bestR = score; best = ang; } }
+  if (wkw && (e.fleeT > (e.fleeRe || 0))) {                        // a heading, chosen again every half second: the open way nearest to straight away; the whole circle, past the hunter if it must (Robin, 2026-10-30: a deer chased to the water stood there to be killed; the fan went only 96 degrees each way, and a corner of shore shut all of it)
+    var best = null, bestR = -1e9, k;
+    for (k = 0; k < 15; k++) { var ang = away + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.42, run = 0, st; for (st = 1; st <= 6; st++) { var sx1 = e.x + Math.cos(ang) * st * 24, sy1 = e.y + Math.sin(ang) * st * 24; if (!wkw(sx1, sy1, e)) break; run += !dry || dry(sx1, sy1) ? 10 : 6; }   /* (dry land first; the shallow edge counts for less) */
+      var pass = Math.abs(wrap(ang - ga)) < 0.5 && gd < 110 ? 22 : 0, keep = e.fleeAng != null && Math.abs(wrap(ang - e.fleeAng)) < 0.3 ? 6 : 0, score = run - Math.ceil(k / 2) * 2 - pass + keep; if (run > 0 && score > bestR) { bestR = score; best = ang; } }
     e.fleeAng = best == null ? away : best; e.fleeRe = e.fleeT + 0.5;
   }
-  var fa = e.shy ? (e.fleeAng == null ? away : e.fleeAng) : away, L = e.shy ? herdLead(e) : null;
-  if (L && L.awake && L.fleeAng != null && Math.hypot(L.x - e.x, L.y - e.y) < SHY.herdR) fa = L.fleeAng + (e.herdOff || (e.herdOff = (Math.random() - 0.5) * 0.5));   // a herd runs the way its watcher runs, so it stays a herd
-  e.face = e.shy ? turnToward(e.face, fa, dt * 6) : fa;
-  moveCircle(e, Math.cos(e.face) * fs2 * dt, Math.sin(e.face) * fs2 * dt);
+  var fa = wkw && e.fleeAng != null ? e.fleeAng : away, L = e.shy ? herdLead(e) : null;
+  if (L && L.awake && L.fleeAng != null && Math.hypot(L.x - e.x, L.y - e.y) < SHY.herdR && (!wkw || wkw(e.x + Math.cos(L.fleeAng) * 48, e.y + Math.sin(L.fleeAng) * 48, e))) fa = L.fleeAng + (e.herdOff || (e.herdOff = (Math.random() - 0.5) * 0.5));   // a herd runs the way its watcher runs, so it stays a herd
+  e.face = wkw ? turnToward(e.face, fa, dt * 6) : fa;
+  var fx0 = e.x, fy0 = e.y; moveCircle(e, Math.cos(e.face) * fs2 * dt, Math.sin(e.face) * fs2 * dt);
+  if (Math.hypot(e.x - fx0, e.y - fy0) < fs2 * dt * 0.3) e.fleeRe = 0;   /* (it has run up against something: choose again now) */
 }
 function wanderStep(e, dt) {
   var w = e.wander;

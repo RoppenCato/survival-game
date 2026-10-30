@@ -1273,9 +1273,15 @@ __COMBAT__
      and the night is yours. They are far stronger than the day beasts (22 health, 22 a bite, quick): the point is to be
      indoors by a fire, not to fight. Their eyes glow red in the dark. */
   var nightWolves = [], nightSpawned = false, nightSaid = 0;
-  var WOLF_HUNT = { far: 1400, gap: 480, close: 300 };   /* a pack gives up when you are far from where its hunt began, or have outrun one that had got close, or are at sea (mine, 2026-10-30) */
+  /* Beasts and the water (Robin, 2026-10-30: "They should generally stop by the water and only run along the shallow edges"; mine: the edge is elevation BEAST_EDGE; while the hero was aboard, every creature could walk on the sea): land, or the shallow edge. One that stands outside it (an old save, a knock) walks back to the nearest ground. */
+  var BEAST_EDGE = -0.8;
+  function beastBound(e) { return !!e && e !== hero() && !e.human && (e.type === 'beast' || e.type === 'brute'); }
+  function beastGround(x, y) { return isLand(x, y) || (w.elevAt(x, y) > BEAST_EDGE && w.isWade(x, y)); }
+  function beastShoreTick(dt) { if (inCave || SCENE) return; var P = hero(); Combat.dbg().W.enemies.forEach(function (e) { if (!beastBound(e) || e.dead || e.carried || e.hidden || Math.abs(e.x - P.x) > 1500 || Math.abs(e.y - P.y) > 1500 || beastGround(e.x, e.y)) return; var best = null, a, r; for (r = 16; r <= 640 && !best; r += 32) for (a = 0; a < 16; a++) { var x = e.x + Math.cos(a * 0.3927) * r, y = e.y + Math.sin(a * 0.3927) * r; if (beastGround(x, y)) { best = { x: x, y: y }; break; } } if (!best) return; var d = Math.hypot(best.x - e.x, best.y - e.y) || 1, st = Math.min(d, 110 * dt); e.x += (best.x - e.x) / d * st; e.y += (best.y - e.y) / d * st; e.face = Math.atan2(best.y - e.y, best.x - e.x); }); }
+  var WOLF_HUNT = { far: 1400, gap: 480, close: 300, back: 220 };   /* a pack gives up when you are far from where its hunt began, or have outrun one that had got close, or are at sea (mine, 2026-10-30) */
   function packGivesUp(P) { nightWolves.forEach(function (e) { if (e.gone || e.dead) return; e.gone = true; e.grudgeT = 0; e.heard = 0; e.awake = false; e.state = 'idle'; e.t = 0; var ga = Math.atan2(e.y - P.y, e.x - P.x); if (e.wander) { e.wander.x0 = e.x + Math.cos(ga) * 700; e.wander.y0 = e.y + Math.sin(ga) * 700; e.wander.r = 60; e.wander.tx = null; e.wander.wait = 0; } }); }
   function nightTick(dt) {
+    beastShoreTick(dt);
     var L = light(), P = hero(), W = Combat.dbg().W, i;
     if (day.t >= DUSK_AT && day.t < NIGHT_AT && L >= NOTE_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
     nightWolves = nightWolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
@@ -1288,7 +1294,7 @@ __COMBAT__
       if (e.dead) return;
       var nf = nearestFire(e.x, e.y), inFire = nf && nf.d < FIRE_R;
       if (false && !e.struck) { e.awake = false; e.heard = 0; e.aggro = 1; e.prowl = 0; return; }   // the wolf's run: they let you be unless you strike first
-      if (e.gone) { e.goneT = (e.goneT || 0) + dt; e.awake = false; e.heard = 0; e.aggro = 1; if (e.goneT > 20) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); e.dead = true; } return; }
+      if (e.gone) { e.goneT = (e.goneT || 0) + dt; if (e.grudgeT > 0 || (e.goneT > 2 && !safe && !torchHeld() && !(raft && raft.aboard) && Math.hypot(e.x - P.x, e.y - P.y) < WOLF_HUNT.back)) { nightWolves.forEach(function (q) { q.gone = false; q.goneT = 0; q.huntX = null; q.closed = false; q.prowl = 0; }); } else { e.awake = false; e.heard = 0; e.aggro = 1; return; } }   /* it keeps to its part of the island till morning, and comes again if you walk near it or strike it (Robin, 2026-10-30; it was gone for good after 20 s) */
       if (inFire) {                         // too close to a fire: it shies back out of the light
         var a = Math.atan2(e.y - nf.y, e.x - nf.x); e.x += Math.cos(a) * 110 * dt; e.y += Math.sin(a) * 110 * dt; e.face = a; e.awake = false; e.heard = 0; e.aggro = 1; e.state = 'idle'; e.t = 0;
         if (e.wander) { e.wander.tx = null; e.wander.wait = 0; }
@@ -1308,8 +1314,7 @@ __COMBAT__
         if (e.huntX != null && ((raft && raft.aboard) || Math.hypot(P.x - e.huntX, P.y - e.huntY) > WOLF_HUNT.far || (e.closed && dH > WOLF_HUNT.gap))) packGivesUp(P); else if (dH < 900) e.heard = 3; }   /* (Robin, 2026-10-30: they never stopped however far you ran: they run faster than your jog, so a 900 gap never opened) */
     });
     if (L > 0.6 && !nightSpawned && !inCave && !sleep) {
-      nightSpawned = true;
-      var isle = isleAt(P.x, P.y), first = null; if (isle < 0 || isle === 0) return;   /* no wolves on the starter island (Robin, 2026-10-26) */
+      var isle = isleAt(P.x, P.y), first = null; if (isle < 0 || isle === 0) return; nightSpawned = true;   /* no wolves on the starter island (Robin, 2026-10-26) */
       placeIsle = isle;
       var packN = 3 + (Math.random() < 0.5 ? 1 : 0); for (i = 0; i < packN; i++) { var e = placeAnimal('wolf', 380, first ? { x: first.wander.x0, y: first.wander.y0 } : null, false); if (!e) continue; if (!first) first = e; e.isle = isle; e.night = true; e.wander.r = 260; nightWolves.push(e); }
       placeIsle = null;
@@ -7529,7 +7534,7 @@ __COMBAT__
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) { var UM = 7; return upFloorAt(wtx, wty) && upFloorAt(Math.floor((x - UM) / T), wty) && upFloorAt(Math.floor((x + UM) / T), wty) && upFloorAt(wtx, Math.floor((y - UM) / T)) && upFloorAt(wtx, Math.floor((y + UM) / T)); } if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor, and never its very edge (UM inside it): coming down by a wall you must land inside the wall, not in it (Robin's clip, 2026-10-07)
       if (!inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
-      if (ADMIN.fly && !inCave) return true; if (inCave) return caveFloor(x, y); if ((!e || e === hero()) && mouthWalk(x, y)) return true;   /* (a way into the troll cave's mouth) */ return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y) || (false && w.elevAt(x, y) > -2.6) || (w.isWater(x, y) && (!e || e === hero()) && !(e && e.leap) && canSwimTo(x, y)); },   /* (a leap lands on no deep water: it stops at the edge, 2026-10-24; the swim is the hero's alone: a fleeing deer had run out into the water where he could have swum, Robin the same day) */
+      if (ADMIN.fly && !inCave) return true; if (inCave) return caveFloor(x, y); if ((!e || e === hero()) && mouthWalk(x, y)) return true;   /* (a way into the troll cave's mouth) */ if (beastBound(e)) return beastGround(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y) || (false && w.elevAt(x, y) > -2.6) || (w.isWater(x, y) && (!e || e === hero()) && !(e && e.leap) && canSwimTo(x, y)); },   /* (a leap lands on no deep water: it stops at the edge, 2026-10-24; the swim is the hero's alone: a fleeing deer had run out into the water where he could have swum, Robin the same day) */
     dry: function (x, y) { return inCave ? caveFloor(x, y) : isLand(x, y); },   /* dry land, for a shy beast's flight: it runs along the shore, not into the shallows (Robin, 2026-10-24) */   // the shallows can be waded; with the long breath, water twice as deep; deeper is swum (SWIM)
     begin: function (c, P) {
       var lookE = lookK * lookK * (3 - 2 * lookK), fightE = fightK * fightK * (3 - 2 * fightK), z = zoom * (1 - 0.5 * lookE) * (1 - 0.2 * fightE), hw = 200 / z, hh = 125 / z, i;   // looking out from the beacon cairn: the view pulls back to twice as far; a fight of more than six: back by a fifth, so its edges are seen
