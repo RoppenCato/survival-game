@@ -10414,11 +10414,11 @@ var T = 32, TS = 24, K = 0.75;
     var tvx = Math.cos(v.h) * v.speed, tvy = Math.sin(v.h) * v.speed, g = Math.min(1, dt * (1 + H.grip * 11));
     v.vx += (tvx - v.vx) * g; v.vy += (tvy - v.vy) * g;
     var nx = v.x + v.vx * dt, ny = v.y + v.vy * dt;
-    var fw = v.speed > 0.5;
-    if (stuck || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
+    var fw = v.speed > 0.5, wetAt = beach && beach.mid ? beach.mid : function () { return true; };   /* (her middle in the water: the two moves below that skip the hull's check went on over land, Robin 2026-10-31, rowing across a meadow) */
+    if ((stuck && wetAt(nx, ny)) || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
     else if (beach && (fw || v.beached) && beach(nx, ny, v.h)) { v.x = nx; v.y = ny; v.beached = 1; if (fw) { var dk = Math.exp(-dt * 6); v.speed *= dk; v.vx *= dk; v.vy *= dk; if (Math.abs(v.speed) < 4) { v.speed = 0; v.vx = v.vy = 0; } } }   // up the sand: she slows and stops (backing off, she just moves)
     else if (v.beached && fw) { v.speed = 0; v.vx = v.vy = 0; }                                                     // beached: no further
-    else if (v.beached && v.speed < 0) { v.x = nx; v.y = ny; }                                                      // backing off the sand: the way she came is water (a thin band at the waterline is neither, 2026-10-22: she stuck there)
+    else if (v.beached && v.speed < 0 && wetAt(nx, ny)) { v.x = nx; v.y = ny; }                                                      // backing off the sand: the way she came is water (a thin band at the waterline is neither, 2026-10-22: she stuck there)
     else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.5; v.speed *= 0.96; }                                       // along the shore
     else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.5; v.speed *= 0.96; }
     else { var vm = Math.hypot(v.vx, v.vy), a2, done = false;                                                       // against rock: slide along it, not stop dead
@@ -20351,6 +20351,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function onOtherIsland(x, y) { for (var i = 1; i < w.isles.length; i++) { var q = w.isles[i]; if (Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4) return true; } return false; }
   var shoreChk = { t: -9, ok: false };
+  function raftToWater() { var r, a, b = null; for (r = 24; r < 3200 && !b; r += 24) for (a = 0; a < 6.283; a += 0.2) { var x = raft.x + Math.cos(a) * r, y = raft.y + Math.sin(a) * r; if (raftHull(x, y, raft.h)) { b = { x: x, y: y }; break; } } if (b) { raft.x = b.x; raft.y = b.y; raft.speed = raft.vx = raft.vy = 0; raft.beached = 0; } }   /* a boat a save left on dry land (the fault fixed in Yard.sail) goes to the nearest free water when you are aboard */
   function raftBeach(x, y, h) {            // the hull there touches only sand, and only at its bow: she can run up the beach (Yard.sail; docs/ships-rework.md)
     if (x < 70 || y < 70 || x > WX - 70 || y > WY - 70) return false;
     var hw = (raft && raft.hw || 21) * 0.8, hh = (raft && raft.hh || 21) * 0.8, ch = Math.cos(h), sh = Math.sin(h), k, hit = 0;
@@ -20360,6 +20361,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (ex < hw * 0.3 || w.cliffAt(px, py) || dockAt(tx, ty) || code(tx, ty) > 1) return false; hit++; }   // the bow on the sand, nothing else ashore (a tile still coded water at the very edge counts as the sand)
     return hit > 0;
   }
+  raftBeach.mid = function (x, y) { return !isLand(x, y) && !w.cliffAt(x, y); };
   function shoreInReach() {                /* land within a step of the vessel (the search raftUse makes), looked for four times a second: "Step ashore" showed far from any shore (Robin, 2026-10-20) */
     if (!raft) return false; if (clock - shoreChk.t < 0.25) return shoreChk.ok; shoreChk.t = clock; shoreChk.ok = false;
     var rch = Math.cos(raft.h), rsh = Math.sin(raft.h), hw0 = (raft.hw || 21) + 8, hh0 = (raft.hh || 21) + 8;
@@ -20474,6 +20476,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
     var sailIn = { ix: ix, iy: iy }; if (Yard.rigged(raft.kind) && runeHas('starRoad') && !ix && !iy && chartMark && (runeN('starRoad', 'day') || light() < 0.5) && !raft.beached) { var mdx = chartMark.x - raft.x, mdy = chartMark.y - raft.y, mdd = Math.hypot(mdx, mdy); if (mdd > 60) { var want = Math.atan2(mdy, mdx), dh = Math.atan2(Math.sin(want - raft.h), Math.cos(want - raft.h)); sailIn = { ix: Math.abs(dh) > 0.08 ? (dh > 0 ? 1 : -1) : 0, iy: -1 }; } else chartMark = null; }   /* the Star-road: the ship holds a course to the chart's mark by itself (by night at tier I, by day too at II) */
     var windR = wind; if (Yard.rigged(raft.kind) && wind && (Yard.extra.abeam || Yard.extra.never)) { windR = { s: wind.s, a: wind.a }; var rel = Math.atan2(Math.sin(wind.a - raft.h), Math.cos(wind.a - raft.h)); if (Yard.extra.never || Math.abs(rel) < 1.9) windR.a = raft.h; }   /* the Following wind II and III: a wind abeam fills the sail as one behind; no wind is against you */
+    if (raft.aboard && !raftBeach.mid(raft.x, raft.y)) raftToWater();
     Yard.sail(raft, sailIn, dt, raftHull, H, Yard.rigged(raft.kind) ? windR : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
     seaSounds(raft, dt);
     if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */

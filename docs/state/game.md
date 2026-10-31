@@ -390,3 +390,7 @@ Colin, AD's `assets/hearth` (`out/indoor_fire_round2`, whole): one hearth set in
 - **Drawing:** three entries in the y-sorted list: the base under everyone, the flames at the hearth's middle, the over-layer at its south edge, so a man north of it stands behind the timber.
 - **Villages (Robin's mix):** a hall, 14 tiles of floor or more (the number is mine), is 4 by 1 with the pot on a trivet or 2 by 1 with the kettle; a house 2 by 1 or 1 by 1 with the kettle or nothing, by its place. `hearthMigrate` in `zonesTick` turns any unburnt stone ring on a floor into one whenever the list of things changes: fresh games, old saves, no flag. The burnt hall's cold fire and yard fires stay rings.
 - **Building board:** House hearth (`indoorHearth`) only in a closed room, largest size that fits; Hanging kettle (`hearthKettle`) only on a bare house hearth, its cost returned with the hearth's when taken down. Both under the `mason` key. The stone ring stays refused indoors. The ghost always shows the 2-tile picture, whatever size will be set (mine, to improve).
+
+## A boat never crosses land (2026-10-31)
+
+Robin rowed across a meadow. In `Yard.sail` two moves skipped the hull check: backing while beached and moving while stuck. Beached stayed set on land, so a boat turned on a beach and backed went on inland (`tests/boatland.js`: 905 units on the old code, 0 now). Both now need her middle in the water (`beach.mid`). A boat a save left on dry land goes to the nearest free water once you are aboard (`raftToWater`).

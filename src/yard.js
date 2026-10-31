@@ -386,11 +386,11 @@ var T = 32, TS = 24, K = 0.75;
     var tvx = Math.cos(v.h) * v.speed, tvy = Math.sin(v.h) * v.speed, g = Math.min(1, dt * (1 + H.grip * 11));
     v.vx += (tvx - v.vx) * g; v.vy += (tvy - v.vy) * g;
     var nx = v.x + v.vx * dt, ny = v.y + v.vy * dt;
-    var fw = v.speed > 0.5;
-    if (stuck || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
+    var fw = v.speed > 0.5, wetAt = beach && beach.mid ? beach.mid : function () { return true; };   /* (her middle in the water: the two moves below that skip the hull's check went on over land, Robin 2026-10-31, rowing across a meadow) */
+    if ((stuck && wetAt(nx, ny)) || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
     else if (beach && (fw || v.beached) && beach(nx, ny, v.h)) { v.x = nx; v.y = ny; v.beached = 1; if (fw) { var dk = Math.exp(-dt * 6); v.speed *= dk; v.vx *= dk; v.vy *= dk; if (Math.abs(v.speed) < 4) { v.speed = 0; v.vx = v.vy = 0; } } }   // up the sand: she slows and stops (backing off, she just moves)
     else if (v.beached && fw) { v.speed = 0; v.vx = v.vy = 0; }                                                     // beached: no further
-    else if (v.beached && v.speed < 0) { v.x = nx; v.y = ny; }                                                      // backing off the sand: the way she came is water (a thin band at the waterline is neither, 2026-10-22: she stuck there)
+    else if (v.beached && v.speed < 0 && wetAt(nx, ny)) { v.x = nx; v.y = ny; }                                                      // backing off the sand: the way she came is water (a thin band at the waterline is neither, 2026-10-22: she stuck there)
     else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.5; v.speed *= 0.96; }                                       // along the shore
     else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.5; v.speed *= 0.96; }
     else { var vm = Math.hypot(v.vx, v.vy), a2, done = false;                                                       // against rock: slide along it, not stop dead
