@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-30T09:11:11.912Z",
+ "built": "2026-10-31T10:16:53.263Z",
  "entries": [
   {
    "id": "world.realm",
@@ -1202,6 +1202,169 @@
    "body": "IN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): when the first raft is launched, Arnor waits at the shore by the bench and says one line as the hero boards; he goes home when the raft is far away.\n\nROBIN DECIDED: On 2026-10-23, for the rowboat: the `when` is its first launch, and the third line was added.\n\nBefore the cut (2026-10-25): \"Go on, then. And if you hear his story told somewhere, tell them how it ends here.\" | \"East. Come\nback with somebody. This place could use a second voice.\" | \"Pull steady. Thorkel always said the sea respects a slow stroke.\""
   },
   {
+   "id": "line.aslak.brother",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Old Aslak asks the hero to look",
+   "summary": "Aslak asks the hero to find his brother ([[quest.aslak.brother]]).",
+   "speaker": "person.aslak",
+   "when": "the first talk with Old Aslak",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "lines": [
+    "Hogni went up the mountain three days back. After a crooked oak.",
+    "He knows every tree up there. He doesn't know the wolves have the old cave.",
+    "These knees won't take me up there. Yours would."
+   ],
+   "body": "PROPOSED: A crooked oak is the shipwright's errand (see [[person.aslak]]). Other versions of the last line: \"I'd go. My knees\nsay otherwise.\" | \"Find him. Or find what's left. Either way, I'll know.\""
+  },
+  {
+   "id": "line.aslak.wait",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Old Aslak, waiting",
+   "summary": "Talked to again before Hogni is found.",
+   "speaker": "person.aslak",
+   "when": "quest.aslak.brother given, Hogni not found",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "lines": [
+    "Anything? … No. Go on, then.",
+    "He's stubborn. He'd have found shelter. He'd have found somewhere.",
+    "The wolves sleep by day. Mostly."
+   ],
+   "body": "PROPOSED: Three to cycle."
+  },
+  {
+   "id": "line.aslak.found",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Old Aslak, when Hogni is found",
+   "summary": "The hero brings back Hogni's adze. Aslak's grief, said short, and then his offer to teach.",
+   "speaker": "person.aslak",
+   "when": "the first talk with Aslak after Hogni is found",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "lines": [
+    "That's his adze. … I put that haft on it, the winter our father died.",
+    "He found it, then. The oak. He'd not have stopped till he had.",
+    "There's no one left to build with. Unless you'd learn.",
+    "Bring me what a ship's made of. I'll show you what the two of us knew."
+   ],
+   "body": "PROPOSED: The grief is in the haft, not in words. If the adze is not carried back, the first line becomes: \"You found him. …\nSitting, or lying?\" (and he does not wait for an answer)."
+  },
+  {
+   "id": "line.aslak.craft",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Old Aslak at his craft",
+   "summary": "Aslak teaching, after Hogni: said at his shop as the hero trades materials for the craft and the ships' looks.",
+   "speaker": "person.aslak",
+   "when": "E at Aslak's shop, after Hogni is found",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "village.yard",
+   "time": "day",
+   "lines": [
+    "Hogni did the keels. I did the rest. Now I do both, slowly.",
+    "A ship's a tree that learned to swim. Bring me trees.",
+    "He'd have argued over every board you brought. I won't. Much."
+   ],
+   "body": "PROPOSED: Three to cycle."
+  },
+  {
+   "id": "line.hogni.found",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Hogni, found",
+   "summary": "Said at the place (sayAt), not in anyone's voice: Hogni found in the cave's depths.",
+   "when": "the hero comes to Hogni in the cave's depths; said in order",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "cave.troll",
+   "time": "day",
+   "lines": [
+    "An old man, sitting against the rock as if he'd stopped to rest.",
+    "An adze by his hand, the haft worn to the shape of it.",
+    "Scratched low on the rock beside him: \"Tell Aslak I found his oak.\""
+   ],
+   "body": "PROPOSED: No wounds named, no wolves named. The player knows where he is. The third line replaces the old scratch\n([[person.hogni]])."
+  },
+  {
+   "id": "line.cave.traces",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "The trolls' traces in the cave",
+   "summary": "Said at the place (sayAt): what the trolls left when they went north. One line a spot, in this order: the bed, the bones, the claw marks.",
+   "when": "the hero comes to each trace in the cave",
+   "mode": "sequence",
+   "chapter": "chapter.2",
+   "place": "cave.troll",
+   "time": "day",
+   "lines": [
+    "A bed of heather and moss, pressed flat by something the size of a cart.",
+    "Great bones, split for the marrow. Whatever ate here ate well, and long ago.",
+    "Claw marks in the rock, higher than a man can reach."
+   ],
+   "body": "PROPOSED: Each line belongs to a spot by its place: line 1 the bed, 2 the bones, 3 the claws. Spares: \"Wolf hair on the old bed\nnow.\" | \"A stone worn smooth, as if something sat on it for a hundred winters.\""
+  },
+  {
+   "id": "line.folk.wolves",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "Villagers on the wolves",
+   "summary": "Villagers of the big island warn of the packs that hunt at night, and that the old troll cave is the wolves' now.",
+   "speaker": "role.villager",
+   "when": "a villager talked to, chapter 1",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "lines": [
+    "Don't be out after dark. They hunt in threes and fours now.",
+    "One wolf you can shout at. Four, you climb something.",
+    "They've taken the old troll cave. Wolves don't mind the smell.",
+    "In the cave they come at you one at a time. Out here, all at once."
+   ],
+   "body": "NOTE: Robin, 2026-10-29 (through Clive, GD): packs of three or four hunt at night, which is why the cave is the place to take\none; in the cave they are met one or two at a time. The fourth line hints at it in a villager's voice."
+  },
+  {
+   "id": "line.folk.pot",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "title": "At the village pot",
+   "summary": "The villager at the hearth, as the hero looks into the pot and learns a dish.",
+   "speaker": "role.villager",
+   "when": "E at a village pot",
+   "mode": "variants",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "day",
+   "with": "fire",
+   "lines": [
+    "Stir it. Don't stare at it.",
+    "Whatever the woods give. Taste.",
+    "My mother's way. Yours now, I suppose.",
+    "Angelica for the broth. It grows by the stream."
+   ],
+   "body": "PROPOSED: Angelica is real: the Norse grew it in gardens and ate it ([[names.dishes]])."
+  },
+  {
    "id": "line.folk.ormr",
    "title": "The folk on Ormr and the sea",
    "kind": "line",
@@ -2060,6 +2223,47 @@
    "body": "PROPOSED: Stockfish, cod dried on racks in the wind, is real and old in the north."
   },
   {
+   "id": "line.altar.seen",
+   "title": "Of the altar",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "summary": "Said of the hero's altar by whoever is near it, once it stands.",
+   "speaker": "role.any",
+   "when": "once, when the hero stands by his first built altar and the speaker is within hearing (Arnor's line is the one Clive, GD would play)",
+   "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "day",
+   "lines": [
+    "(arnor) Thorgunna kept one of these behind the byre. I never knelt at it. Maybe I should have.",
+    "(villager) A hörgr. My grandfather's stones were redder than that. Give it time.",
+    "(hirdman) Build it high. The gods are old, and their eyes aren't what they were."
+   ],
+   "body": ""
+  },
+  {
+   "id": "line.altar.storm",
+   "title": "At the altar, as the storm comes",
+   "kind": "line",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "summary": "Said by whoever stands near, as the storm rises over the altar and the lightning carves the chosen stone.",
+   "speaker": "role.any",
+   "when": "the storm rises over the altar, and the lightning strikes the stones",
+   "mode": "variants",
+   "chapter": "chapter.1",
+   "place": "home.altar",
+   "time": "dusk",
+   "with": "storm",
+   "lines": [
+    "(hirdman) Listen to that. They've taken it.",
+    "(arnor) I've seen lightning take a roof. I never saw it write.",
+    "(villager) Don't look at the stone till the thunder's done. My grandmother's rule."
+   ],
+   "body": ""
+  },
+  {
    "id": "line.folk.fire",
    "title": "A fire in the village",
    "kind": "line",
@@ -2459,11 +2663,11 @@
   },
   {
    "id": "rumour.troll-cave.old-man",
-   "title": "The old man who went into the hill",
+   "title": "The old man's brother",
    "kind": "rumour",
-   "status": "canon",
-   "decided": "Robin, 2026-10-17 (the first rumours approved: \"Sure\")",
-   "summary": "An old man in the village went into the troll's hill once, long ago, and came out.",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "summary": "Old Aslak's brother went up the mountain and has not come down.",
    "tier": "lead",
    "heard": "villagers of the big island",
    "about": "person.aslak, place.troll-cave",
@@ -2474,9 +2678,33 @@
    "time": "dusk",
    "with": "fire",
    "lines": [
-    "Old Aslak went into the troll's hill when he was young. He came out. His brother didn't. Bring ale if you ask him."
+    "Old Aslak's brother went up the mountain and hasn't come down. Aslak sits by the boats, watching the path.",
+    "Hogni went up for timber. With the wolves in the old cave, I'd not have gone."
    ],
-   "body": "ROBIN DECIDED: On 2026-10-26 (Robin, 2026-10-26, in Clive, GD's `docs/chapters.md`) the cave is the wolves' now, with traces of\ntrolls. The rumour's troll wants rewording.\n\nPROPOSED: In the new story (Robin, 2026-10-29, through Clive, GD): \"Old Aslak's brother went up the mountain and hasn't come\ndown. Aslak sits by the boats, watching the path.\" | \"Hogni went up for timber. With the wolves in the old cave, I'd not have\ngone.\""
+   "body": "ROBIN DECIDED: On 2026-10-26 (Robin, 2026-10-26, in Clive, GD's `docs/chapters.md`) the cave is the wolves' now, with traces of\ntrolls. The rumour's troll wants rewording.\n\nBefore (canon, Robin, 2026-10-17): \"Old Aslak went into the troll's hill when he was young. He came out. His brother didn't. Bring ale if you ask him.\""
+  },
+  {
+   "id": "rumour.trolls.north",
+   "title": "The trolls went north",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "summary": "Why the old cave is empty: the trolls went north, for the cold and the long nights.",
+   "tier": "whisper",
+   "heard": "villagers of the big island",
+   "about": "being.bergtroll, place.troll-cave",
+   "mode": "variants",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "lines": [
+    "The trolls went north, my grandmother said. For the cold, and nights that don't end.",
+    "My father heard them go. All one night, the ground shaking. By morning the hill was quiet.",
+    "Sun's too kind here for trolls. They like it where it never comes up in winter."
+   ],
+   "body": "NOTE: The trolls live in the north (Robin, 2026-10-26, [[being.bergtroll]]). Folk belief: trolls burst or turn to stone in\nsunlight, so the north's long winter dark suits them (Alvíssmál, where the dwarf is caught by the dawn)."
   },
   {
    "id": "rumour.golden-boar",
@@ -2632,6 +2860,23 @@
    "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them.\n\nROBIN DECIDED: On 2026-10-30 (Robin, 2026-10-30, through Clive, GD) **the deer is a meal**: the boar gives the bow its sinew;\nthe hero shoots a deer, butchers it, roasts the venison at a fire and hands Arnor the roast in a talk. All Arnor's quests move\nonly when he is talked to.\n\nBefore (2026-10-29), \"A deer for Arnor\": when given, \"Arnor says boar's sinew makes a fair bowstring, and he wants a deer next.\nThey won't wait for me to walk up to them. They come to the meadows at dusk, he says, and they hear you before you see them.\";\nwhen done, \"The deer is on Arnor's table. He said eat, then sleep, and that tomorrow he'd see to the boat.\""
   },
   {
+   "id": "quest.arnor.boat",
+   "title": "Arnor's boat",
+   "kind": "quest",
+   "status": "canon",
+   "decided": "Robin, 2026-10-31: \"Yes, the words for Arnor's boat go in as written.\"",
+   "summary": "The morning after the roast, Arnor is gone from the steading: he is down at his boat. Ended by talking to him, before East begins.",
+   "giver": "person.arnor",
+   "chapter": "chapter.1",
+   "place": "shore.ship",
+   "time": "dawn",
+   "when": "the morning after the roast",
+   "book": "Arnor said he'd see to the boat. His straw was cold this morning. She lies on the shingle below the steading, so that's where he'll be.",
+   "book_more": "She's tarred and in the water. He looked at her a long while, then said she's mine.",
+   "book_more_after": "done",
+   "body": "The book's words are in `book` (when given) and `book_more` (when done), as Robin approved them.\n\nBefore (Clive, GD's placeholder): when given, \"Arnor said he'd see to the boat by morning. She lay on the shingle below the\nsteading. I should go and find him there.\"; when done, \"She's tarred and in the water. He says she's mine.\""
+  },
+  {
    "id": "quest.sail-east",
    "title": "East",
    "kind": "quest",
@@ -2692,6 +2937,23 @@
    "tags": "names, the generator",
    "game": "FOLK_NAMES, WOMEN, NAMES, FIRST, END_SHORE, END_IN, Hird names",
    "body": "- **FOLK_NAMES:** Ulf, Sigrid, Hakon, Astrid, Leif, Thora, Gunnar, Ingrid, Eirik, Helga, Bjorn, Runa\n- **WOMEN:** Sigrid, Astrid, Thora, Ingrid, Helga, Runa, Gudrun, Ragnhild\n- **NAMES (villages):** Arnfinn, Bera, Dagny, Eyvind, Frida, Gorm, Halla, Ingolf, Jorunn, Ketil, Liv, Mundi, Nanna, Orm,\n  Ragna, Sigrun, Thorir, Ulf, Vigdis, Yngvar, Asa, Bjorn, Gunnhild, Hakon\n- **The hird:** Ulf, Sigrid, Hakon, Astrid, Leif, Thora, Gunnar, Ingrid, Eirik, Helga, Bjorn, Runa, Torstein, Gudrun, Olaf,\n  Ragnhild\n- **Place first names (FIRST):** Eirik, Orm, Hallvard, Sigrun, Asta, Ketil, Thorir, Gunnar, Ingrid, Ragna, Ulf, Bjorn, Halla,\n  Yngvar, Vigdis, Hakon, Dagny, Mundi, Nanna, Torsten, Alvar, Solveig, Audun, Brynja, Geir, Tova, Steinar, Hild\n- **The name board's dice** (2026-10-16, marked LORE?): Ulf, Hakon, Leif, Gunnar, Bjorn, Halfdan, Sven, Kol, Ivar, Toke, Geir,\n  Einar, Hrafn, Ketil, Vidar, Asmund, Torvald, Sigurd, Ragnvald, Eyvind. (Halfdan and Eyvind are names of proposed fixed people;\n  they should leave if Robin keeps those people.)\n- **Endings:** by the shore vik, nes, sund, havn, ey, strand; inland by, stad, heim, dal, tun, lund, berg, mark; a chieftain's\n  seat borg; a farmstead gard\n\nNOTE: Today's pools hold Orm (too close to Ormr Midgardbane, Robin's raider), and Eyvind and Ragnhild, which are fixed\npeople in the proposed lore. Orm should leave the generated pools now; the other two if Robin takes the proposed people."
+  },
+  {
+   "id": "names.dishes",
+   "title": "The dishes",
+   "kind": "names",
+   "status": "in-game",
+   "decided": "in the game since 2026-10-31 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "summary": "Names for the dishes learnt at the village pot. Clive, GD's working names stand in the game until Robin chooses.",
+   "tags": "names, food",
+   "list": [
+    "Spit-roast boar",
+    "Venison on the spit",
+    "Boar and mushroom stew",
+    "Venison with lingonberries",
+    "Angelica broth"
+   ],
+   "body": "PROPOSED: One for each of Clive, GD's, in his order: Roast boar → **Spit-roast boar**; Roast venison → **Venison on the spit**;\nBoar stew (boar, mushroom, berries) → **Boar and mushroom stew**; Venison with berries → **Venison with lingonberries**;\nMushroom broth (mushrooms and angelica) → **Angelica broth**.\n\nReal first: meat was roasted on spits and boiled in a cauldron over the hearth, and boiling was the everyday way. Lingonberries,\nwild mushrooms and angelica were all gathered in the Viking north. If the berries in the game are not lingonberries, \"Venison\nwith berries\" stands."
   },
   {
    "id": "names.ships",
@@ -2822,6 +3084,8 @@
   "line.year.blot.summer",
   "line.year.blot.autumn",
   "line.year.blot.winter",
+  "line.altar.seen",
+  "line.altar.storm",
   "line.arnor.shore",
   "line.arnor.wait.no-zone",
   "line.arnor.wait.no-bed",
@@ -2836,6 +3100,11 @@
   "line.crew.oars",
   "line.crew.noroom",
   "line.crew.land",
+  "line.aslak.brother",
+  "line.aslak.wait",
+  "line.aslak.found",
+  "line.folk.wolves",
+  "line.folk.pot",
   "line.folk.ormr",
   "line.folk.greeting",
   "line.folk.roles",
@@ -2844,10 +3113,12 @@
   "rumour.ormr.storm",
   "rumour.ormr.the-one-left",
   "rumour.troll-cave.old-man",
+  "rumour.trolls.north",
   "rumour.golden-boar",
   "rumour.wanderer",
   "rumour.odins-ring",
   "rumour.the-swell",
+  "line.aslak.craft",
   "line.blot.wait",
   "line.blot.wolf",
   "line.blot.rite",
@@ -2857,6 +3128,8 @@
   "line.fisherman.meet",
   "line.fisherman.lesson",
   "line.fisherman.after",
+  "line.hogni.found",
+  "line.cave.traces",
   "line.folk.raided",
   "line.folk.mourn",
   "line.folk.fire",

@@ -44,7 +44,7 @@ wrong with the rest.
 | 2a.2 | The boar and the deer: walking, running, falling, lying, carried. | Built |
 | 2a.3 | Arnor, his house, the steading, the wreck, the butcher's table, the straw bed, the boat in each of its states. | To fix (the haystack "like a ball or a bottle": Colin, AD redrawing; the rest not yet judged) |
 | 2a.4 | The island's look: ground, coasts, trees, rocks, grass; set pieces with their cast shadow and foot grass, no sticker look. | Built |
-| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Built (changed 2026-10-31: shutters on both sides, the door's night glow only under it, sparks not through roofs; the indoor fire waits on Colin, AD's drafts) |
+| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Built (changed 2026-10-31: shutters on both sides, the door's night glow only under it, sparks not through roofs; the house hearth in: set in the floor, 4, 2 or 1 tiles by one, the kettle an optional add) |
 | **2b** | **Combat and gathering** | |
 | 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Built |
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Checked (Robin, 2026-10-31) |

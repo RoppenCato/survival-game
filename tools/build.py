@@ -202,6 +202,11 @@ def prop_images():
         for name in tj:
             fp = os.path.join(ROOT, 'assets', 'props', sub, name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
             tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; tj[name]['set'] = sub; j[name] = tj[name]   # (set: its folder, for the Art Editor's set-piece browser)
+    hj = os.path.join(ROOT, 'assets', 'hearth', 'sheets', 'indoor_fires.json')   # the house hearth and the kettle, for the Building board's pictures and ghost (their drawing is the game's own, from the next table)
+    if os.path.exists(hj):
+        hh = json.load(open(hj, encoding='utf-8'))
+        for nm, src in [('indoorHearth', 'hearth2'), ('indoorKettle', 'kettle1')]:
+            q = dict(hh[src]); q.pop('embers', None); q.pop('flames', None); q['src'] = '../assets/hearth/sheets/' + src + '.png'; q['set'] = 'hearth'; j[nm] = q
     pj = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')          # the pier's dressing, placed as things on a deck: pier_coil and the rest (their own names: the game has a bench and barrels of its own)
     if os.path.exists(pj):
         pp = json.load(open(pj, encoding='utf-8'))
@@ -226,6 +231,16 @@ def pier_art():                               # Colin, AD's pier pieces, assets/
         j['pieces'][name]['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag
     return json.dumps(j)
 SRC['__PIERART__'] = pier_art()
+def hearth_art():                             # Colin, AD's house hearth, assets/hearth/sheets: flames and embers with their own anchors
+    jp = os.path.join(ROOT, 'assets', 'hearth', 'sheets', 'indoor_fires.json')
+    if not os.path.exists(jp): return 'null'
+    j = json.load(open(jp, encoding='utf-8')); u = lambda n: '../assets/hearth/sheets/' + n + '.png?v=' + hashlib.md5(open(os.path.join(ROOT, 'assets', 'hearth', 'sheets', n + '.png'), 'rb').read()).hexdigest()[:8]
+    for name in j:
+        j[name]['src'] = u(name)
+        if 'embers' in j[name]: j[name]['embers']['src'] = u(name + '_embers')
+        if 'flames' in j[name]: j[name]['flames']['src'] = u(j[name]['flames']['file'][:-4])
+    return json.dumps(j)
+SRC['__HEARTHART__'] = hearth_art()
 SRC['__PIER__'] = read('src', 'pier.js')   # the piers' rules (2026-10-30)
 def pier_art():                               # Colin, AD's pier pieces, assets/pier/sheets, with their numbers (not set pieces: no ink ring, no finish)
     jp = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')
