@@ -132,6 +132,7 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
     if (spL) ang += spL.side * 0.07;
     c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (bend) c.transform(1, 0, bend, 1, 0, 0); if (sq !== 1) c.scale(1, sq); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
+    if (o.notch && G && G.spotLook === 5) { var nc = notchPic(o, s, bx - px, byy - py, w, h, Math.max(3, w * 0.07)); if (nc) c.drawImage(nc, px, py, w, h); }   /* the notch, on the tree and falling with it */
   } else if (o.kind === 'stone') {
     if (o.dying != null) { drawShards(c, o, s, px, py, w, h); c.restore(); return; }   /* (it bursts into its own pieces: Robin, 2026-10-30, it faded and shrank to nothing) */
     var sq = o.shake > 0 ? 1 - 0.05 * Math.min(1, o.shake * 4) : 1;   /* a blow squashes it a moment (it shrank as it was mined until 2026-10-30) */
@@ -155,8 +156,6 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
   // on a rock without cracks the glint on its facet
   if (G && G.sweetSpot && o.kind && o.dying == null && !dark) {
     var sp = spot(G, o, t), gx = null, gy = null, tw = Math.max(3, w * 0.07);
-    if (o.kind === 'tree' && G.spotLook === 5 && o.notch) {                    // the notch: a wedge cut into the trunk on the side the first blow came from, pale wood inside
-      var nn = o.notch, ox = bx + nn * (tw + 1.2), ix = bx + nn * tw * 0.05; c.save(); c.fillStyle = '#2e1e14'; c.beginPath(); c.moveTo(ox, byy - 15); c.lineTo(ix, byy - 11); c.lineTo(ox, byy - 7.5); c.closePath(); c.fill(); c.fillStyle = '#d9b37a'; c.beginPath(); c.moveTo(ox, byy - 14); c.lineTo(ix + nn * 0.8, byy - 11); c.lineTo(ox, byy - 11); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(ox, byy - 15); c.lineTo(ix, byy - 11); c.lineTo(ox, byy - 7.5); c.stroke(); c.restore(); }
     if (sp && o.kind === 'tree' && G.spotLook === 1) { gx = bx + sp.side * tw; gy = byy - 14; }
     else if (sp && o.kind === 'tree' && G.spotLook === 2) { var sx0 = bx + sp.side * 2.2, sy0 = byy - 13; c.save(); c.fillStyle = '#3a2416'; c.beginPath(); c.ellipse(sx0, sy0, 2.6, 4.2, 0, 0, 7); c.fill(); c.fillStyle = '#e4c58e'; c.beginPath(); c.ellipse(sx0, sy0, 1.7, 3.2, 0, 0, 7); c.fill(); c.restore(); }
     else if (sp && o.kind === 'tree' && G.spotLook === 4) { var pl = 0.3 + 0.12 * Math.sin(t * 2.5 + bx); c.save(); c.globalAlpha = pl; c.fillStyle = '#fff2c0'; c.beginPath(); c.ellipse(bx + sp.side * 2.1, byy - 15, 1.9, 12, 0, 0, 7); c.fill(); c.restore(); }
@@ -208,6 +207,13 @@ function drawShards(c, o, s, px, py, w, h) {
     var sp = w * (0.1 + 0.12 * hash(o.y, o.x, k)), dx = Math.cos(sh.am) * sp * eo, dy = Math.sin(sh.am) * sp * 0.4 * eo - h * 0.2 * Math.sin(Math.PI * e) + h * 0.3 * e * (Math.sin(sh.am) < 0 ? 1 : 0.35), rot = (hash(k, o.x, 3) - 0.5) * 1.1 * eo, scl = 1 - 0.2 * e;
     c.save(); c.translate(cx + dx, cy + dy); c.rotate(rot); c.scale(scl, scl); c.translate(-cx, -cy); c.drawImage(sh.cv, px - 1, py - 1, w + 2, h + 2); c.restore();
   });
+}
+// the axe's notch: a bite in the bark on the side the first blow came from, pale wood inside, cut to the tree's own shape (Robin, 2026-10-31: a triangle laid over it stuck out past the trunk); a canvas kept on the tree
+function notchPic(o, s, ax, ay, w, h, tw) {
+  if (o.ncv && o.ncv.n === o.notch) return o.ncv; var S = 2, cv = mkCanvas(Math.ceil(w * S), Math.ceil(h * S)); if (!cv) return null; var g = cv.getContext('2d'), nn = o.notch, x0 = ax + nn * tw * 3, ix = ax + nn * tw * 0.25, yT = ay - 15, yM = ay - 11.5, yB = ay - 8;
+  g.scale(S, S); g.fillStyle = '#2e1e14'; g.beginPath(); g.moveTo(x0, yT - 1.5); g.lineTo(ix, yM); g.lineTo(x0, yB + 1); g.closePath(); g.fill();
+  g.fillStyle = '#d9b37a'; g.beginPath(); g.moveTo(x0, yT - 0.6); g.lineTo(ix + nn * 0.9, yM - 0.2); g.lineTo(x0, yM - 0.2); g.closePath(); g.fill();
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'destination-in'; g.drawImage(s.cv, 0, 0, cv.width, cv.height); cv.n = nn; o.ncv = cv; return cv;
 }
 // what a broken rock leaves: a few grey stones and grit on the ground (a decal, k 'rubble', like a tree's stump; gone after some days)
 function drawRubble(c, d) {

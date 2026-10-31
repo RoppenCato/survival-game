@@ -4428,10 +4428,10 @@ var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor
     c.fillStyle = 'rgba(255,220,150,0.08)'; c.fillRect(g.x + 1, g.y + g.h * 0.55, g.w - 2, g.h * 0.45 - 1);
     box(c, g.x - 2, g.y, 2, g.h, dark, 0.6); box(c, g.x + g.w, g.y, 2, g.h, dark, 0.6);                       // the jambs
     box(c, g.x - 3, g.y - 3, g.w + 6, 3, top, 0.7); c.fillStyle = 'rgba(255,240,205,0.35)'; c.fillRect(g.x - 2.6, g.y - 2.7, g.w + 5.2, 0.7);   // the lintel, its lit top
-    var sx = g.x + g.w + 2, sw = g.w * 0.62;                                                                   // the shutter, open on its right
+    var sw = g.w * 0.62; [g.x + g.w + 2, g.x - 2 - sw].forEach(function (sx, sI) {                              // a shutter open on each side (Robin, 2026-10-31; one on its right until then)
     c.fillStyle = '#7a5a3e'; c.beginPath(); c.moveTo(sx, g.y - 0.5); c.lineTo(sx + sw, g.y + 1); c.lineTo(sx + sw, g.y + g.h - 0.5); c.lineTo(sx, g.y + g.h + 0.5); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.6; c.stroke();
     c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(sx + sw / 2, g.y + 0.5); c.lineTo(sx + sw / 2, g.y + g.h); c.moveTo(sx + 0.5, g.y + g.h * 0.2); c.lineTo(sx + sw - 0.5, g.y + g.h * 0.24); c.lineTo(sx + 0.5, g.y + g.h * 0.76); c.lineTo(sx + sw - 0.5, g.y + g.h * 0.8); c.stroke();   // two boards and the Z-brace
-    c.fillStyle = 'rgba(255,240,205,0.25)'; c.fillRect(sx + 0.4, g.y + 0.5, 0.8, g.h - 1);
+    c.fillStyle = 'rgba(255,240,205,0.25)'; c.fillRect(sx + 0.4, g.y + 0.5, 0.8, g.h - 1); });
     box(c, g.x - 3.5, g.y + g.h, g.w + 7, 2.2, top, 0.6); c.fillStyle = 'rgba(255,240,205,0.35)'; c.fillRect(g.x - 3, g.y + g.h + 0.3, g.w + 6, 0.6);   // the sill
     c.fillStyle = 'rgba(20,14,10,0.25)'; c.fillRect(g.x - 3, g.y + g.h + 2.2, g.w + 6, 1.4);                 // its shadow on the wall
   }

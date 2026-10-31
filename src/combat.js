@@ -1112,7 +1112,7 @@ function updatePlayer(dt) {
   if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), gA = gapAhead(a.dir), lf = clamp((gA - 3) / 14, 0, 1) * (gA < sd2.reach + 60 ? 1 : 0.15); var lgK = swingRune() === 'lunge' ? 1 + 0.6 * (runeN('lunge', 'stride') || 1) : 1; lvx = Math.cos(a.dir) * sd2.lunge * lf * lgK; lvy = Math.sin(a.dir) * sd2.lunge * lf * lgK; }   /* (the step into a blow is taken toward a foe in front, within the reach and 60 units; at nothing, a small step: 2026-10-15, with Robin's long lunge a blow at the air slid him 35 units, which read as gliding) */
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
   if (p.leap && p.roll.t > 0) { var lnx = p.x + (p.vx + p.kx) * dt, lny = p.y + (p.vy + p.ky) * dt, lrs = Math.hypot(p.vx, p.vy), lex = p.x + p.roll.dx * lrs * p.roll.t * 0.7, ley = p.y + p.roll.dy * lrs * p.roll.t * 0.7, canW = !api.scene || !api.scene.walk, okNow = canW || api.scene.walk(lnx, lny, p), okEnd = canW || api.scene.walk(lex, ley, p), wallNow = wallBetween(p.x, p.y, lnx, lny) || wallPillarCross(p.x, p.y, lnx, lny, p.r); if ((okNow || okEnd) && !wallNow) { p.x = lnx; p.y = lny; var LB = api.scene && api.scene.bounds; if (LB) { p.x = clamp(p.x, LB.x0, LB.x1); p.y = clamp(p.y, LB.y0, LB.y1); } else { p.x = clamp(p.x, 24, AW - 24); p.y = clamp(p.y, 40, AH - 20); } } else { p.roll.t = 0; p.vx = p.vy = 0; } }   /* (kept inside the field as a walk is: the fuzz of 2026-10-24 found the leap carrying him out of the arena's ring) */   /* (no leap through a shut edge, a house wall or a palisade: the walls' pillars still stop him; over every other thing) */   /* the Long leap: over what stands in the way, a stream or a fence, as long as he can land beyond it; else it stops at the edge */
-  else moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
+  else { var mvX0 = p.x, mvY0 = p.y, mvV = Math.hypot(p.vx, p.vy); moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt); if (p.moving && p.roll.t <= 0 && mvV > 10 && Math.hypot(p.x - mvX0, p.y - mvY0) < mvV * dt * 0.2) { p.stopT = (p.stopT || 0) + dt; if (p.stopT > 0.08) { p.moving = false; p.vx = p.vy = 0; } } else p.stopT = 0; }   /* walking into something he stands (Robin, 2026-10-31: the walk froze in mid-stride) */
   shadeTick(dt);
   updateAnim(dt, p.roll.t > 0);
   if (S.juice && p.moving && p.roll.t <= 0) { W.dustT -= dt; if (W.dustT <= 0) { W.dustT = p.sprinting ? 0.07 : 0.14; dust(p.x, p.y, p.sprinting ? 2 : 1); } }
@@ -1327,7 +1327,7 @@ function soldier(o) { var keep = api.dress; api.dress = null; var e = spawn('sol
 function heroAfloat() { return !!(api.afloat && api.afloat()); }   /* aboard his ship nobody hunts him: beasts and men leave (Robin, 2026-10-30) */
 function eachFoe(e, fn) {
   var i, o;
-  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden && !heroAfloat()) fn(P); for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
+  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden && (!heroAfloat() || e.bow)) fn(P);   /* (a bowman shoots till she is out of his sight: Robin, 2026-10-31) */ for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
   else for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 || o.dead || o.fled || o.out) continue; if (o.type === 'soldier' ? o.awake !== false : (!o.flee && (!(o.aggro || o.strolls) || o.awake))) fn(o); }
 }
 // Man to man. A man is AT his target when he is within his reach of it and a few steps (inContact); a bowman at his distance
@@ -1712,7 +1712,7 @@ function soldierAI0(e, dt) {
   }
   e.retT -= dt; T = e.tgt;
   if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
-  if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && (P.hidden || heroAfloat())) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; if (!T && e.side !== 1 && e.post && heroAfloat() && e.state !== 'windup' && e.state !== 'lunge') { e.awake = false; e.heardAt = null; e.guard = 0; postStep(e, dt); e.state = 'idle'; return; } }
+  if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && (P.hidden || (heroAfloat() && !e.bow))) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; if (!T && e.side !== 1 && e.post && heroAfloat() && e.state !== 'windup' && e.state !== 'lunge') { e.awake = false; e.heardAt = null; e.guard = 0; postStep(e, dt); e.state = 'idle'; return; } }
   if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); tell(e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
   if (!T) {                                 // nobody to fight
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }

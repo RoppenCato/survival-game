@@ -23,3 +23,11 @@ console.log((manOk ? 'ok ' : '!! ') + ' the man: ' + Math.round(Math.hypot(m.x +
 console.log((hurt < 15 ? 'ok ' : '!! ') + ' the hero lost ' + Math.round(hurt) + ' after boarding (a blow begun may land)');
 afloat = false; b.x = 30; b.y = 0; for (let i = 0; i < 60; i++) { P.hp = 100; C.update(DT); }
 console.log((b.awake ? 'ok ' : '!! ') + ' ashore again, a boar beside him wakes: ' + !!b.awake);
+{ // a bowman keeps shooting at the boat till she is out of his sight (Robin, 2026-10-31)
+  W.enemies.length = 0; W.projs.length = 0; P.x = 0; P.y = 0; P.hp = P.maxHp = 100; P.dead = false; afloat = true;
+  const a = C.soldier({ side: 0, wpn: { kind: 'bow', mat: 'wood' }, x: -180, y: 0, post: { x: -180, y: 0, face: 0 }, aggro: 400, aim: 6, hp: 30, nerve: 1 }); a.awake = true;
+  let shots = 0, was = 0; for (let i = 0; i < 8 * 60; i++) { P.hp = 100; C.update(DT); if (W.projs.length > was) shots++; was = W.projs.length; }
+  console.log((shots > 0 ? 'ok ' : '!! ') + ' a bowman in range shoots at the boat: ' + shots + ' shots');
+  P.x = 3000; for (let i = 0; i < 20 * 60; i++) { P.hp = 100; C.update(DT); }
+  console.log((Math.hypot(a.x + 180, a.y) < 30 ? 'ok ' : '!! ') + ' out of his sight he goes back to his post: ' + Math.round(Math.hypot(a.x + 180, a.y)) + ' from it');
+}

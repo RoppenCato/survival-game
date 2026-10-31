@@ -543,7 +543,7 @@ var WorldMap = (function () {
       },
       miniWindow: function (X0, Y0, W, H, open) {   /* the minimap's window (Colin, AD's restyle, 2026-10-25): the painted tiles covering a rectangle of tiles at half a pixel a tile, the old chart's resolution, into a small canvas; null until every covering tile has been painted once, and then a stale tile is drawn while it is painted again; at most one tile painted a call, and none more often than every 0.6 s while the big map is shut */
         if (!ready) { prepare(); return null; } if (BLOOM) return miniCv || null;
-        var li = 1, ppt = LEVELS[li], cw = Math.max(1, Math.ceil(W * ppt)), chh = Math.max(1, Math.ceil(H * ppt)), now = Date.now(), missing = false, todo = null;
+        var li = 2, ppt = LEVELS[li],   /* (a pixel a tile: half that was blurry at the size it is drawn, Robin 2026-10-31) */ cw = Math.max(1, Math.ceil(W * ppt)), chh = Math.max(1, Math.ceil(H * ppt)), now = Date.now(), missing = false, todo = null;
         if (!miniCv) miniCv = document.createElement('canvas'); if (miniCv.width !== cw || miniCv.height !== chh) { miniCv.width = cw; miniCv.height = chh; }
         var g = miniCv.getContext('2d'); g.fillStyle = S.paper; g.fillRect(0, 0, cw, chh); fogField(); if (!paintedKey) paintedKey = 'p' + (++gen);
         for (var ty = Math.floor(Y0 * ppt / TILE); ty <= Math.floor((Y0 + H) * ppt / TILE); ty++) for (var tx = Math.floor(X0 * ppt / TILE); tx <= Math.floor((X0 + W) * ppt / TILE); tx++) {
