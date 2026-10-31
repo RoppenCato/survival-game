@@ -6852,7 +6852,7 @@ function stunStars(c, e) {             // three small stars going round over a s
   c.restore();
 }
 function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker; red for a blow that cannot be parried (2026-10-15)
-  if (!S.juice) return; var hv = heavyBlow(e); dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, hv ? '#ff6a4a' : '#fff3b0', 55);
+  if (!S.juice) return; var hv = heavyBlow(e), dl = e.dirLock != null ? e.dirLock : e.face;   /* (the glint alone: its dust and sparks were Robin's orange bubbles round a charging boar, 2026-10-31) */
   glint(e.x + Math.cos(dl) * (e.r + 5), e.y * K + Math.sin(dl) * (e.r + 5) * K - (e.human ? 30 : e.r * 1.6 + 6), hv); if (hv) sfx('heavytell', 0, e);
 }
 function tone2(n) { sfx('chain', n); }   // the chain heard: the charge's rising tone, a step higher each parry

@@ -192,7 +192,7 @@ and not built (`docs/idea-bank.md`).
 - **Guidance is subtle:** the game states no goals and explains nothing: no journal, no checklists, no explaining labels or
   hint lines. Only bare key reminders at the very start; everything else is found (prompts over the hero, people speaking
   in their own voice, how things look, a tooltip). Recipes appear when you first hold their key ingredient, never as
-  question marks.
+  question marks. **The one exception: quest marks** (Robin, 2026-10-31): a small ! (a quest to be had) or ? (one to hand in) over the person or thing and on the maps.
 - **Reward, don't punish:** Valheim's food is the model: the unprepared state is the weak baseline, preparation gives buffs.
   No meters that drain and hurt, no repair chores as punishment, nothing that cuts stamina, no wetness. A rested or comfort
   buff from a warm, furnished home is wanted.

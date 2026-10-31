@@ -398,3 +398,7 @@ Robin rowed across a meadow. In `Yard.sail` two moves skipped the hull check: ba
 ## Robin's third list (2026-10-31)
 
 What is made by hand lets him walk (`craftJob.walk`, `r.at === hand`); at a station he stands. Blood: `bloodSlash` and `bloodDrops` in `src/combat.js`, for blows that land, in place of the pale sparks and the round bits on a kill; blocked blows keep grey sparks. `arnorShore` takes the nearest shore with a way to the open sea (`seaOpen`); `arnorBoatSea` moves a boat an older save has on a lake, once (`B.boatSeaV`). `yearReset` puts a save at summer with the day's own weather, once (`seen.yearResetV`).
+
+## Robin's fourth run (2026-10-31)
+
+`tell` in the engine is a glint alone. `Build.window.glowV` takes the outer side. `arnorMark`, `questGlyph` and `questGoal`'s `ch` are the quest marks. `Yard.artFrame` turns the nearest of the 32 pictures the rest of the way, so a hull turns smoothly at no real cost; the rowers' far oar is drawn before the figures. The bow and the quiver are made at a roofed workbench; arrows by hand or there, once a quiver is worn.

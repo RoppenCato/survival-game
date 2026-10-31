@@ -139,11 +139,11 @@ var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor
     pool(c, g.x + g.w / 2, yb + 1, g.w + 6, 30, 's', a, 'fire', true);                                                  // the light on the ground before the wall
     c.restore();
   }
-  function glowV(c, xl, yt, th, len, a) {
+  function glowV(c, xl, yt, th, len, a, side) {   /* side: 'w' or 'e', the outer side only; the room's side is under the roof (Robin, 2026-10-31) */
     if (!(a > 0)) return; var y0 = yt + len * 0.28, y1 = yt + len * 0.72, cx = xl + th / 2, cy = (y0 + y1) / 2;
     c.save(); c.globalAlpha = a; c.fillStyle = '#f4b75c'; c.fillRect(xl + 1, y0 + 0.4, th - 2, y1 - y0 - 0.8); c.restore();
-    c.save(); c.globalCompositeOperation = 'lighter'; halo(c, cx, cy, 16, a, '255,170,80');
-    pool(c, xl, cy, y1 - y0, 22, 'w', a * 0.8, 'fire', true); pool(c, xl + th, cy, y1 - y0, 22, 'e', a * 0.8, 'fire', true); c.restore();
+    c.save(); c.globalCompositeOperation = 'lighter'; if (side) { c.beginPath(); c.rect(side === 'w' ? xl - 60 : xl + th, yt - 60, 60, len + 120); c.clip(); } halo(c, cx, cy, 16, a, '255,170,80');
+    if (side !== 'e') pool(c, xl, cy, y1 - y0, 22, 'w', a * 0.8, 'fire', true); if (side !== 'w') pool(c, xl + th, cy, y1 - y0, 22, 'e', a * 0.8, 'fire', true); c.restore();
   }
   var POOLS = {};   /* (Clive, GD, 2026-10-28: each pool drawn once, blurred, into a small kept picture and laid on with its alpha; a blur filter on the game's canvas every frame cost Robin 20 frames a second inside a house) */
   function poolShape(g, x, y, w, len, dir, a, kind) {
@@ -708,7 +708,7 @@ function ridgeMid(room, C) {                     // where a room's ridge is at i
   return { x: (left + right) / 2, y: (top + bot) / 2 - rh };
 }
 function drawSmokeHole(c, x, yBase, a, t) {
-  var w = 10, h = 4, i, seed = Math.round(x); c.save(); c.globalAlpha = a;
+  var w = 10, h = 4, i, seed = Math.round(x); c.save(); c.globalAlpha = a; c.translate(x, yBase); c.scale(1.8, 1.8); c.translate(-x, -yBase);   /* (bigger: Robin, 2026-10-31) */
   c.fillStyle = '#1e1714'; c.beginPath(); c.ellipse(x, yBase, w * 0.5, 1.6, 0, 0, 7); c.fill();                                   // the dark hole in the ridge
   for (i = 0; i < 2; i++) ink(c, rect(x - w / 2 + 1 + i * (w - 3.4), yBase - h - 3, 1.4, h + 3), '#4a3626', { wob: 0.3, seed: seed + i, lw: 0.5, heavy: 0.9 });   // the posts
   ink(c, [[x - w / 2 - 1.5, yBase - h - 2], [x + w / 2 + 1.5, yBase - h - 2.4], [x + w / 2 + 0.5, yBase - h - 4.4], [x - w / 2 - 0.5, yBase - h - 4]], '#5a4030', { wob: 0.5, seed: seed + 3, lw: 0.7, heavy: 1.3 });   // the plank hood
