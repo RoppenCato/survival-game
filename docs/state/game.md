@@ -394,3 +394,7 @@ Colin, AD's `assets/hearth` (`out/indoor_fire_round2`, whole): one hearth set in
 ## A boat never crosses land (2026-10-31)
 
 Robin rowed across a meadow. In `Yard.sail` two moves skipped the hull check: backing while beached and moving while stuck. Beached stayed set on land, so a boat turned on a beach and backed went on inland (`tests/boatland.js`: 905 units on the old code, 0 now). Both now need her middle in the water (`beach.mid`). A boat a save left on dry land goes to the nearest free water once you are aboard (`raftToWater`).
+
+## Robin's third list (2026-10-31)
+
+What is made by hand lets him walk (`craftJob.walk`, `r.at === hand`); at a station he stands. Blood: `bloodSlash` and `bloodDrops` in `src/combat.js`, for blows that land, in place of the pale sparks and the round bits on a kill; blocked blows keep grey sparks. `arnorShore` takes the nearest shore with a way to the open sea (`seaOpen`); `arnorBoatSea` moves a boat an older save has on a lake, once (`B.boatSeaV`). `yearReset` puts a save at summer with the day's own weather, once (`seen.yearResetV`).

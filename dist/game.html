@@ -14737,6 +14737,10 @@ var TOOL_DMG = 0.8;                          // a tool's blow on a beast or a ma
 function num(x, y, txt, c, big, weak) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big, weak: !!weak }); }
 var wrongToolAt = -1e9;                   // when the 'wrong tool' note was last shown (W.t); it comes back after five minutes
 function slowmo(scale, dur) { if (S.juice && dur > W.slow.t) { W.slow.t = dur; W.slow.s = scale; } }
+/* Blood (Robin, 2026-10-31): a blow that lands leaves a quick red slash across the body and throws drops along it; an arrow only the drops. They replace the pale round sparks, which on an arrow's hit and a kill read as orange bubbles. */
+var BLOOD_C = ['#7a1414', '#9c1f1c', '#5e1010'];
+function bloodDrops(x, y, ang, n, speed) { for (var i = 0; i < n; i++) { var a = ang + (Math.random() - 0.5) * 1.3, s = (0.35 + Math.random()) * speed; W.parts.push({ k: 'spark', x: x, y: y, z: 12, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: 15 + Math.random() * 45, life: 0.3 + Math.random() * 0.25, max: 0.5, c: BLOOD_C[i % 3], s: 0.7 + Math.random() * 0.9 }); } if (api.onBlood) api.onBlood(x + Math.cos(ang) * 8, y + Math.sin(ang) * 5, 0.7, false); }
+function bloodSlash(x, y, ang, len) { W.parts.push({ k: 'bslash', x: x, y: y, z: 14, vx: 0, vy: 0, vz: 0, life: 0.24, max: 0.24, ang: ang + Math.PI / 2 + (Math.random() - 0.5) * 0.8, len: len, s: 0, c: BLOOD_C[1] }); }
 function ring(x, y, z, r1, life, col, air, w) { if (S.juice) W.rings.push({ x: x, y: y, z: z || 0, r1: r1, life: life, max: life, c: col || '255,255,255', air: !!air, w: w || 2 }); }
 function streaks(x, y, ang, n, speed, rgb) {
   if (!S.juice) return;
@@ -15149,7 +15153,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
     e.flash = blocked ? 0.5 : 1; e.flashRgb = '255,255,255';
     var push = blocked ? (hitFlags.thrust ? 1.1 : 0.4) : (hitFlags.thrust ? 1.2 : 0.8); e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * push; e.ky += Math.sin(ang) * kb * push;   // a spear keeps its man at the point, stopped or not
-    spark(e.x - Math.cos(ang) * e.r * 0.8, e.y - Math.sin(ang) * e.r * 0.8, blocked ? 3 : 5, blocked ? '#cfd6e6' : '#fff3b0', 90); sfx(blocked ? 'block' : 'hit', 0, e);
+    if (blocked) spark(e.x - Math.cos(ang) * e.r * 0.8, e.y - Math.sin(ang) * e.r * 0.8, 3, '#cfd6e6', 90); else { bloodDrops(e.x, e.y, ang, kind === 'proj' ? 4 : 6, 80); if (kind !== 'proj') bloodSlash(e.x, e.y, ang, 9 + e.r * 0.5); } sfx(blocked ? 'block' : 'hit', 0, e);
     if (broke) bits(e.x, e.y, 3);
     if (killing) { killEnemy(e, src); return; }
     if (blocked && !broke) return;
@@ -15175,13 +15179,13 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
     e.freezeT = Math.max(e.freezeT, fz); if (melee) P.freezeT = Math.max(P.freezeT, fz * 0.9 * WM.pf);
     e.pkx = Math.cos(ang) * kb * kbm * WM.kb; e.pky = Math.sin(ang) * kb * kbm * WM.kb;
     e.sq = 1; e.sqAng = ang;
-    streaks(hx, hy, ang, (heavy && !killing ? 8 : 5) + (crit ? 4 : 0), heavy ? 260 : 200, crit ? '255,214,90' : null);
+    streaks(hx, hy, ang, (heavy && !killing ? 8 : 5) + (crit ? 4 : 0), heavy ? 260 : 200, crit ? '255,214,90' : blocked ? null : '150,28,26');
     ring(hx, hy, 12, ((heavy && !killing) ? 22 : 14) * (0.7 + 0.3 * WT), heavy ? 0.16 : 0.12, hot, true, (heavy ? 3 : 2) * (WT > 1.3 ? 1.3 : 1));
     if (crit) ring(hx, hy, 12, 28, 0.2, '255,208,70', true, 2.4);
     if (heavy && !killing) slowmo(WM.hs, WM.hd * (WT > 1.3 ? 1.4 : 1));
     if (WT >= 1.4 && !blocked) dust(e.x, e.y, 3);                                   // a club or a Dane axe lands with dust
   }
-  spark(hx, hy, Math.round(((heavy && !killing ? 12 : 7) + (crit ? 5 : 0)) * (0.7 + 0.3 * WT)), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
+  var hitN = Math.round(((heavy && !killing ? 12 : 7) + (crit ? 5 : 0)) * (0.7 + 0.3 * WT)); if (blocked && !broke) spark(hx, hy, hitN, '#cfd6e6', 110); else { bloodDrops(hx, hy, ang, hitN, heavy ? 130 : 95); if (melee) bloodSlash(hx, hy, ang, (heavy ? 13 : 9) + e.r * 0.5); }
   num(e.x, e.y - e.r * 2.2 - 10, String(Math.max(1, Math.round(dealt * SHOW))), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit || WT >= 1.4));   // (the number is the blow times SHOW, whole; a heavy weapon's is big)
   sfx(blocked && !broke ? 'block' : ((heavy && !killing) || WT >= 1.4) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0, null, WK ? { kind: WK, wt: WT, heavy: heavy && !killing } : null);
   if (!blocked && !killing && e.type === 'beast' && e.bkind) sfx('pain', (heavy || WT >= 1.4) ? 1 : 0, e, { beast: e.bkind });   // the beast's own cry, after the hit (the page plays it if one is picked: 2026-10-20)
@@ -15209,8 +15213,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
   e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet * (runeHas('quietBlade') ? (runeN('quietBlade', 'fellow') ? 0 : 0.5) : 1) : MEN.noise.cry);
-  if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
-  else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
+  if (src) { bloodDrops(e.x, e.y, Math.random() * 6.283, 5, 80); sfx('die', 0, e); }
+  else { W.kills++; bloodDrops(e.x, e.y, Math.random() * 6.283, bigK ? 14 : 9, 100);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
   if (W.lock === e) W.lock = null;
   if (!src && runeHas('bloodlust') && !P.dead) { var bl = Math.max(1, Math.round(P.maxHp * (runeN('bloodlust', 'healK') || 0.05))); P.hp = Math.min(P.maxHp, P.hp + bl); num(P.x - 8, P.y - 30, '+' + bl, '#c8322a'); if (runeN('bloodlust', 'ready') && RS2() && typeof Runes2 !== 'undefined') Runes2.readyAll(RS2()); }   /* Bloodlust (Runes2) */
@@ -17009,6 +17013,7 @@ function drawProj(c, pr) {
 function drawPart(c, q) {
   var a = Math.max(0, q.life / q.max), x = q.x, y = q.y * K - q.z;
   if (q.k === 'streak') { c.strokeStyle = 'rgba(' + (q.rgb || '255,246,200') + ',' + a + ')'; c.lineWidth = 1.6 * (0.4 + a * 0.6); c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x - q.vx * 0.045, y - q.vy * 0.045 * K); c.stroke(); }
+  else if (q.k === 'bslash') { var gr = Math.min(1, (1 - a) * 5), hl = q.len * gr, cs = Math.cos(q.ang), sn = Math.sin(q.ang), nx = -sn * q.len * 0.3, ny = cs * q.len * 0.3; c.fillStyle = q.c; c.globalAlpha = Math.min(1, a * 1.8); c.beginPath(); c.moveTo(x - cs * hl, y - sn * hl); c.quadraticCurveTo(x + nx, y + ny, x + cs * hl, y + sn * hl); c.quadraticCurveTo(x + nx * 0.2, y + ny * 0.2, x - cs * hl, y - sn * hl); c.fill(); c.globalAlpha = 1; }
   else if (q.k === 'dust') { c.fillStyle = 'rgba(232,220,192,' + (0.55 * a) + ')'; c.beginPath(); c.arc(x, y, q.s * (1.6 - a * 0.6), 0, Math.PI * 2); c.fill(); }
   else if (q.k === 'bit') { c.fillStyle = q.c; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.9; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.stroke(); }
   else { c.fillStyle = q.c; c.globalAlpha = a; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
@@ -18271,8 +18276,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
       c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
     } },
-    { id: 'indoorHearth', name: 'House hearth', kind: 'item', prop: 'indoorHearth', r: 0, hearth: true, light: 1, flat: true, cost: { stone: 6, wood: 2 }, key: 'mason' },
-    { id: 'hearthKettle', name: 'Hanging kettle', kind: 'item', prop: 'indoorKettle', hearthOver: 1, r: 0, flat: true, cost: { wood: 4, stone: 2 }, key: 'mason' },
+    { id: 'indoorHearth', name: 'House hearth', kind: 'item', prop: 'indoorHearth', r: 0, hearth: true, light: 1, flat: true, cost: { stone: 6, wood: 2 } },
+    { id: 'hearthKettle', name: 'Hanging kettle', kind: 'item', prop: 'indoorKettle', hearthOver: 1, r: 0, flat: true, cost: { wood: 4, stone: 2 } },
     { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 }, key: 'mason' },
     { id: 'runeAltar', name: 'Stone altar', kind: 'item', prop: 'runeAltar', r: 28, altar: true, cost: { stone: 12 }, key: 'villageBlot' },   /* the runes' altar: introduced at the village's first blót, so it is built only after it (Robin, 2026-10-27: "I want the Altar to be introduced to the player at the village, then the player does the second one once he has built his base himself on another island"; key villageBlot, set by that rite, not built yet) */
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
@@ -18533,7 +18538,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   var carryPending = null;
   function carryRestore() { if (!carryPending || carrying || SCENE) return; var cp = carryPending, P = hero(); carryPending = null; var e = placeAnimal(cp.kind, 0, { x: P.x, y: P.y }); if (!e) return; if (cp.young) e.young = true; if (cp.ko && Combat.api.knockOut) Combat.api.knockOut(e); else { e.dead = true; e.hp = 0; e.deadT = 0; e.deadFor = BODY_LIE; } takeUpBeast(e); }
-  function zonesTick() { capTick(); hearthMigrate(); butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
+  function zonesTick() { capTick(); hearthMigrate(); arnorBoatSea(); yearReset(); butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
     if (!B.zonesV && roomInfo && !bDirty) { B.zonesV = 1; roomInfo.rooms.forEach(function (r, ri) { var bed = B.items.filter(function (it) { return it.bed && !(it.lvl || 0) && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri; })[0]; if (!bed || placeAt(bed.x, bed.y) >= 0) return;
       var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (tl) { x0 = Math.min(x0, tl[0]); y0 = Math.min(y0, tl[1]); x1 = Math.max(x1, tl[0] + 1); y1 = Math.max(y1, tl[1] + 1); });
@@ -19340,7 +19345,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function craft(r, n) {
     n = r.out.raft || r.out.learn ? 1 : (n || 1); if (craftJob || !known(r)) return false; var need = {}, k; for (k in r.needs) need[k] = r.needs[k] * n; if (!canAfford(need)) return false;
     pay(need); var one = (CRAFT_T[r.at] || 2) * (false ? 0.5 : 1);
-    craftJob = { r: r, n: n, t: 0, dur: n > 1 ? one * n * CRAFT_BATCH : one, need: need, hp: hero().hp }; sfx('pick'); return true;
+    craftJob = { r: r, n: n, t: 0, dur: n > 1 ? one * n * CRAFT_BATCH : one, need: need, hp: hero().hp, walk: r.at === 'hand' }; sfx('pick'); return true;
   }
   function workStart(e, n) {               /* a dish at the fire or a bar at the furnace, made as a craft is (2026-10-22, Robin: "Cooking menu still has the old cancel button. Check this in all crafting menus"): one at a time, the button its Cancel, five with Shift; into the bag */
     var r = e.dish || e.r, kind = e.dish ? 'cook' : (r.at === 'furnace' ? 'smelt' : 'craft'); if (kind === 'craft') return craft(r, n);
@@ -20056,9 +20061,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   /* Arnor's boat (Robin, 2026-10-26: "Arnor fixes his broken boat and gives it to you for helping out"; his lines the lore's line.arnor.teach): when his story of it is told, his mended boat lies at the shore nearest the steading. */
   /* Arnor's boat (Colin, AD's out/arnorboat, 2026-10-26): the rowboat's own hull drawn up on the shore nearest the steading, heeled on stones, holed from the start (arnorBoat_broken); once the house is mended and the meat brought he is at work on her (arnorBoat_mending); when he gives her she is tarred and put in the water by where she lay as the rowboat (mine: the mending shows from the quests' end until his talk). */
-  function arnorShore() { if (!village) return null; var cx = (village.tx + village.w / 2) * T, cy = (village.ty + village.h / 2) * T, best = null, bd = 1e9, a, r;
-    for (a = 0; a < 6.283; a += 0.13) for (r = 200; r < 3200; r += 40) { var x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; if (!isLand(x, y)) { if (r < bd) { bd = r; best = { x: x, y: y, a: a, r: r }; } break; } }
-    return best; }
+  function seaOpen(x, y) { var q = [[0, 0], [70, 0], [-70, 0], [0, 70], [0, -70]], i; for (i = 0; i < 5; i++) if (pierWayOut(x + q[i][0], y + q[i][1], { hh: 12 })) return true; return false; }   /* water with a way out to the open sea */
+  function arnorShore() { if (!village) return null; var cx = (village.tx + village.w / 2) * T, cy = (village.ty + village.h / 2) * T, cands = [], a, r, i;   /* (the nearest shore of the sea, never of a lake: Robin, 2026-10-31, Arnor mended the boat on an inland lake) */
+    for (a = 0; a < 6.283; a += 0.13) for (r = 200; r < 3200; r += 40) { var x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; if (!isLand(x, y)) { cands.push({ x: x, y: y, a: a, r: r }); break; } }
+    cands.sort(function (p, q) { return p.r - q.r; }); for (i = 0; i < cands.length; i++) if (seaOpen(cands[i].x, cands[i].y)) return cands[i];
+    return cands[0] || null; }
+  function arnorBoatSea() { if (B.boatSeaV || !village || SCENE) return; B.boatSeaV = 1; var it = arnorBoatItem();   /* (once: a boat an older save left on a lake) */
+    if (it && it.sea && !seaOpen(it.sea.x, it.sea.y)) { var st = it.st; B.items.splice(B.items.indexOf(it), 1); B.arnorBoatV = 0; arnorBoatEnsure(); var n = arnorBoatItem(); if (n) n.st = st; }
+    else if (raft && Math.hypot(raft.x - (village.tx + village.w / 2) * T, raft.y - (village.ty + village.h / 2) * T) < 3400 && !seaOpen(raft.x, raft.y)) { var sh = arnorShore(), sp = sh && (raftSpot(sh.x, sh.y) || sh); if (sp) { raft.x = sp.x; raft.y = sp.y; raft.h = launchHeading(sh, sp); raft.speed = raft.vx = raft.vy = 0; raft.beached = 0; } } }
+  function yearReset() { if (seen.yearResetV || SCENE) return; seen.yearResetV = 1; WTH.force = null; year.pending = null; if (year.season !== 'summer') seasonTurn('summer'); year.day = 0; }   /* (once: Robin's save back to summer and the day's own weather, 2026-10-31) */
   function arnorBoatItem() { for (var i = 0; i < B.items.length; i++) if (B.items[i].name === 'arnorBoat') return B.items[i]; return null; }
   function arnorBoatEnsure() { if (!village || SCENE || B.arnorBoatV) return; B.arnorBoatV = 1; if (seen.raft || arnorBoatItem()) return; var sh = arnorShore(); if (!sh) return;
     var cx = (village.tx + village.w / 2) * T, cy = (village.ty + village.h / 2) * T, rr = sh.r; while (rr > 120 && !isLand(cx + Math.cos(sh.a) * rr, cy + Math.sin(sh.a) * rr)) rr -= 3; rr -= 18;   /* on the sand, a little up from the water's edge */
@@ -25265,7 +25276,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     noHud: false, noKills: true, ownFallen: true,
     heroLift: function () { return pierLiftOf(hero()) + (hero().lvl ? UP : 0) + (raft && raft.aboard && Yard.isShip(raft.kind) ? -3 : 0) + riteLift + leapLift(); },
     heroSortY: function () { return null; }   /* (the over-the-altar sort of 2026-10-24 is dropped on Colin, AD's advice with his steps: behind the slab in the plain order, the slab hides his legs and he reads as standing on the steps) */,   /* at the slab's north edge he is drawn over the altar and under the beast laid on it (Colin, AD's wiring note, 2026-10-24): the knife goes down into the beast */
-    still: function () { return !!CS.lock || !!(raft && raft.aboard) || !!craftJob || hero().fishCharge > 0 || !!fishing || !!BUTCH; },   /* (and while a craft is on: he stands at his work) */   /* aboard, the keys sail the ship and he stands (2026-10-21) */   // a storey up upstairs   // feet a little below the rim, inside the hull
+    still: function () { return !!CS.lock || !!(raft && raft.aboard) || !!(craftJob && !craftJob.walk) || hero().fishCharge > 0 || !!fishing || !!BUTCH; },   /* (and while a craft is on: he stands at his work) */   /* aboard, the keys sail the ship and he stands (2026-10-21) */   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) { var UM = 7; return upFloorAt(wtx, wty) && upFloorAt(Math.floor((x - UM) / T), wty) && upFloorAt(Math.floor((x + UM) / T), wty) && upFloorAt(wtx, Math.floor((y - UM) / T)) && upFloorAt(wtx, Math.floor((y + UM) / T)); } if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor, and never its very edge (UM inside it): coming down by a wall you must land inside the wall, not in it (Robin's clip, 2026-10-07)
       if (!inCave) { var pwk = pierWalk(x, y, e); if (pwk != null) return pwk; }
@@ -25615,7 +25626,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (mapOpen && !inCave && WMAP && !pauseOpen && WMAP.key(e)) { e.preventDefault(); return; }   /* the world map: a name typed, or Esc letting go of the marker */   // the name board takes every key while it is open
     if (pauseOpen && e.code !== 'Escape') { if (e.code === 'Tab') e.preventDefault(); return; }   // the Escape menu holds the world still, and the game's keys with it (the browser's own keys are left alone)
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') shiftK = true;   // Shift held: the crafting board's button reads x5
-    if (craftJob && e.code !== 'F5' && e.code !== 'F12' && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight') { e.preventDefault(); return; }
+    if (craftJob && !(craftJob.walk && /^(KeyW|KeyA|KeyS|KeyD|Arrow)/.test(e.code)) && e.code !== 'F5' && e.code !== 'F12' && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight') {   /* (what is made by hand lets him walk on: Robin, 2026-10-31; at a station he stands) */ e.preventDefault(); return; }
     if (shipPanelKey(e)) return;   /* (typing a ship's name) */
     if (shipPanel && e.code === 'Escape') { e.preventDefault(); spClose(); return; }
     if (talkWin && e.code !== 'KeyE' && e.code !== 'F5' && e.code !== 'F12' && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight' && e.code !== 'ControlLeft' && e.code !== 'ControlRight') { talkClose(); if (e.code === 'Escape') { e.preventDefault(); return; } }   /* the talk window: anything but E closes it and does what it does; Esc only closes it */   /* a craft holds the board and the hero until it is made or cancelled (Robin, 2026-10-21) */
@@ -25688,7 +25699,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else if (e.button === 2 || (!hit && !th)) menu = null;
       return;
     }
-    if (invOpen && store && INV.slide > 0.9 && mouseS.x < storeLeft() + STORE_UI.w + 4 && mouseS.y > STORE_UI.y - 4 && mouseS.y < STORE_UI.y + STORE_UI.h + 4) {
+    if (invOpen && store && INV.slide > 0.9 && mouseS.x > storeLeft() - 4 && mouseS.x < storeLeft() + STORE_UI.w + 4 && mouseS.y > STORE_UI.y - 4 && mouseS.y < STORE_UI.y + STORE_UI.h + 4) {
       var ssl = slotAt(), sst = ssl >= 100 ? slotGet(ssl) : null; if (sst) { if (e.button === 0) pick = { i: ssl, x: mouseS.x, y: mouseS.y, drag: false, shift: e.shiftKey, half: e.shiftKey && sst.kind !== 'item' && sst.n > 1 }; else if (e.button === 2) transfer(ssl); } return;
     }
     if (invOpen && !store && CHAR.slide > 0.9) {

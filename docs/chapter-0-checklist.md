@@ -32,7 +32,7 @@ wrong with the rest.
 | 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Checked (Robin, 2026-10-31) |
 | 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its words are canon (lore handoff 21). | Checked (Robin, 2026-10-31) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Checked (Robin, 2026-10-31) |
-| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built (changed 2026-10-31: a quest in the morning to find Arnor, then East; the map marks where to go) |
+| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built (launch, sail and the land bug Checked 2026-10-31; changed: the boat is mended on the sea's shore, never a lake) |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Checked (Robin, 2026-10-31) |
 
 ## 2. Robin's six areas, for what chapter 0 shows
@@ -40,42 +40,42 @@ wrong with the rest.
 | # | Item: what to try | State |
 | --- | --- | --- |
 | **2a** | **Models and art** | |
-| 2a.1 | The hero: walking, sprinting, the dash, the sneak, the bow's draw, carrying, butchering, sleeping, waking. | Built (changed 2026-10-31: wakes on the bed; stands when walking into something) |
-| 2a.2 | The boar and the deer: walking, running, falling, lying, carried. | Built |
-| 2a.3 | Arnor, his house, the steading, the wreck, the butcher's table, the straw bed, the boat in each of its states. | To fix (the haystack "like a ball or a bottle": Colin, AD redrawing; the rest not yet judged) |
-| 2a.4 | The island's look: ground, coasts, trees, rocks, grass; set pieces with their cast shadow and foot grass, no sticker look. | Built |
-| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Built (changed 2026-10-31: shutters on both sides, the door's night glow only under it, sparks not through roofs; the house hearth in: set in the floor, 4, 2 or 1 tiles by one, the kettle an optional add) |
+| 2a.1 | The hero: walking, sprinting, the dash, the sneak, the bow's draw, carrying, butchering, sleeping, waking. | Checked (Robin, 2026-10-31) |
+| 2a.2 | The boar and the deer: walking, running, falling, lying, carried. | Checked (Robin, 2026-10-31) |
+| 2a.3 | Arnor, his house, the steading, the wreck, the butcher's table, the straw bed, the boat in each of its states. | Checked (Robin, 2026-10-31) |
+| 2a.4 | The island's look: ground, coasts, trees, rocks, grass; set pieces with their cast shadow and foot grass, no sticker look. | Checked (Robin, 2026-10-31) |
+| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Built (the pieces Checked 2026-10-31; changed: the house hearth now opens with the workbench, was gated by the mason's bench) |
 | **2b** | **Combat and gathering** | |
-| 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Built |
+| 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Built (Works, Robin 2026-10-31; changed: a blow that lands leaves a red slash and drops, an arrow drops, no more orange dots) |
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Checked (Robin, 2026-10-31) |
 | 2b.3 | The quiver and wooden arrows: made, carried, used up. | Checked (Robin, 2026-10-31) |
-| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** **A tree falls with a creak, a bending crown and a bounce.** **A rock cracks from where it is struck, breaks into pieces and leaves rubble.** | Built (changed 2026-10-31: the axe's cut drawn inside the trunk; swings and trunks Checked, Robin) |
+| 2b.4 | The axe, the pick and the bare hands: what they give and how fast. **A felled trunk is struck anywhere along what is left of it, and each shortened piece ends in a cut log end.** **A tree falls with a creak, a bending crown and a bounce.** **A rock cracks from where it is struck, breaks into pieces and leaves rubble.** | Checked (Robin, 2026-10-31) |
 | 2b.5 | Boars and deer: how they flee, how a boar fights back, how hard each is. **A boar shot from afar charges you** (it calmed again at once past 195 units). **Animals stay out of the water but for its shallow edge, and a deer driven to the shore runs along it or past you, never standing.** | Checked (Robin, 2026-10-31) |
-| 2b.6 | Water: in deep water no swing, guard, bow or throw; in the shallows all of them. **Aboard a boat, animals give up and leave.** | Built (deep and shallow water Checked, Robin 2026-10-31; aboard not reached yet) |
+| 2b.6 | Water: in deep water no swing, guard, bow or throw; in the shallows all of them. **Aboard a boat, animals give up and leave.** | Checked (Robin, 2026-10-31) |
 | **2c** | **Menus and crafting** | |
 | 2c.1 | Tab: the panel, the bag, and what you can make where you stand. | Checked (Robin, 2026-10-31) |
-| 2c.2 | The bar: 1 to 6, the wheel, Shift and drag; the knife counts as a weapon. | Built |
-| 2c.3 | E at a station shows that station's work alone (Cooking at a fire). | Built |
-| 2c.4 | The Building board on a right click: the pieces you know, their icons, the costs. | Built |
-| 2c.5 | Chests: Q sort, Z stack, V fill up, N quick stack. | Built |
-| 2c.6 | The basic outfit: chest, trousers, leather shoes. | Built |
+| 2c.2 | The bar: 1 to 6, the wheel, Shift and drag; the knife counts as a weapon. | Checked (Robin, 2026-10-31) |
+| 2c.3 | E at a station shows that station's work alone (Cooking at a fire). | Checked (Robin, 2026-10-31) |
+| 2c.4 | The Building board on a right click: the pieces you know, their icons, the costs. | Checked (Robin, 2026-10-31) |
+| 2c.5 | Chests: Q sort, Z stack, V fill up, N quick stack. | Built (changed 2026-10-31: Shift and click on the bag's lower rows, the chest board's area had covered them) |
+| 2c.6 | The basic outfit: chest, trousers, leather shoes. | Checked (Robin, 2026-10-31) |
 | **2d** | **The interface** | |
-| 2d.1 | The prompts over the hero, and E's rule: the right thing at each place. | Built |
+| 2d.1 | The prompts over the hero, and E's rule: the right thing at each place. | Checked (Robin, 2026-10-31) |
 | 2d.2 | The book (O, the Quests tab; L, the Lore Book): the quests page and its plaque, which now waits until a talk window is closed. | Checked (Robin, 2026-10-31) |
-| 2d.3 | The map (M): what has been seen, the lettering's big turns. | Built (changed 2026-10-31: the minimap sharper, a mark for the quest; new icons from Colin, AD to come) |
-| 2d.4 | Health, stamina, the food buffs, the comfort buff by the fire. | Built (changed 2026-10-31: the stats page: Melee, Ranged, no NaN, no effective health) |
+| 2d.3 | The map (M): what has been seen, the lettering's big turns. | Checked (Robin, 2026-10-31) |
+| 2d.4 | Health, stamina, the food buffs, the comfort buff by the fire. | Checked (Robin, 2026-10-31) |
 | 2d.5 | Esc: the menu, the music and world-sound bars, Save to a file, Load from a file. | Checked (Robin, 2026-10-31) |
 | 2d.6 | **The "Building" board** still announces building. By the rule there should be no announcing boards. | Open (Colin, AD is looking at how other games do it) |
 | **2e** | **Music, sound and effects** | |
-| 2e.1 | The day's music and the night's; music in danger. | Built |
-| 2e.2 | The world's sounds: the sea, wind, birds, the fire. | Built |
-| 2e.3 | Blows, the bow, gathering, footsteps, butchering, eating, and the boat. | Built |
-| 2e.4 | Effects: blood, hits, chips from trees and rocks, embers. | Built |
+| 2e.1 | The day's music and the night's; music in danger. | Checked (Robin, 2026-10-31) |
+| 2e.2 | The world's sounds: the sea, wind, birds, the fire. | Checked (Robin, 2026-10-31) |
+| 2e.3 | Blows, the bow, gathering, footsteps, butchering, eating, and the boat. | Checked (Robin, 2026-10-31) |
+| 2e.4 | Effects: blood, hits, chips from trees and rocks, embers. | Built (Works, Robin 2026-10-31; changed: the blood above) |
 | **2f** | **The day and night** | |
-| 2f.1 | The light through the day, dusk, the night and the dawn; the fires' light and shadows at night. | Built |
-| 2f.2 | The weather and the season on the starter island (summer). | Built |
+| 2f.1 | The light through the day, dusk, the night and the dawn; the fires' light and shadows at night. | Checked (Robin, 2026-10-31) |
+| 2f.2 | The weather and the season on the starter island (summer). | Checked (Robin, 2026-10-31) |
 | 2f.3 | Roast meat at any fire; raw berries with their 2-minute wait. | Checked (Robin, 2026-10-31) |
-| 2f.4 | Comfort by the fire, and health back over time near it. | Built |
+| 2f.4 | Comfort by the fire, and health back over time near it. | Checked (Robin, 2026-10-31) |
 
 ## 3. The foundations
 
@@ -86,7 +86,7 @@ wrong with the rest.
 | 3.3 | **A steady frame rate** at Robin's size, at home. | Checked (Robin, 2026-10-31) |
 | 3.4 | **The frame rate on a weaker computer**: Robin's work computer found the online game laggy (2026-10-29). | To fix (Robin: leave it for now) |
 | 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Built |
-| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Built (changed 2026-10-31) |
+| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Checked (Robin, 2026-10-31) |
 | 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (tested by script 2026-10-30) |
 
 ## 4. Choices that wait on Robin
@@ -99,6 +99,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-31: Robin's third list: most Checked. Fixed: hand crafts let him walk, blood on hits, the hearth's gate, Shift and click on the bag's lower rows, the boat never on a lake, summer and the day's own weather set once in an older save.
 - 2026-10-31: Robin's second run: the deer, the roast, the night and boarding pass; his notes built (the morning quest, map marks, opening screen, stats, minimap, door paths and so on).
 - 2026-10-31: Robin's playtest: thirteen items Checked, the rest as marked; the deer blocked 14, 16, 22 and 28 of his list (the roast, the boat, boarding, the sail), so those wait. Armor as points, the gambeson off the bench, no nests from trees.
 - 2026-10-30: no weapons in deep water, the shallows as on land (2b.6).
