@@ -607,6 +607,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
+  var calmBeast = !src && kind === 'proj' && e.type === 'beast' && !!e.aggro && !e.awake && !e.struck;   /* (an arrow from one it has not seen is a critical: Robin, 2026-10-31, a deer down on three arrows, two with a critical) */
   if (!src && e.type === 'beast') { e.angered = true; if (!e.shy && !e.tame) e.grudgeT = BEAST_GRUDGE.t; }   /* (struck from afar, it comes for you: Robin, 2026-10-30, a boar shot from past its calm-down reach went calm again at once) */   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */
   if (e.noHarm > 0) { num(e.x, headY(e), 'DOWN', '#dfe8ff'); return; }   /* (a man the Charge put down takes no harm while down) */
   if (!src && kind !== 'proj') { e.heroHitAt = W.t; e.confusedT = 0; }   /* (the Rush-step's mark; a blow wakes a confused man) */   // src: the man whose blow this is; none is the hero
@@ -634,8 +635,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   if (!src && e.exposedT > 0) mult *= PERFECT.bonus;                       // after a perfect dodge
   if (bigE && e.state === 'stunned') mult = 2;
   var cb2 = !src && hitFlags.wkind === 'seax' && runeHas('serpentTongue') ? runeN('serpentTongue', 'crit') : 0;
-  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0 || cb2 > 0) && Math.random() < S.crit + critBonus + cb2;
-  if (crit) mult *= 1.5;
+  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0 || cb2 > 0) && Math.random() < S.crit + critBonus + cb2; if (calmBeast && !blocked) crit = true;
+  if (crit) mult *= kind === 'proj' ? 2 : 1.5;
   if (crit && cb2 > 0 && man) { markOn(e, 'bleeding', 5); e.bleedDmg = runeN('serpentTongue', 'bleed') || 3; }   /* the Serpent's tongue: a crit bleeds */
   if (!src && man && e.axeOpen > 1) { mult *= e.axeOpen; e.axeOpen = 0; }
   if (berserkOn() && kind !== 'bow') mult *= 1 + Math.max(0, (runeN('berserk', 'at') || 0.5) - P.hp / P.maxHp) * 2 * (runeN('berserk', 'bonusK') || 1);   /* Berserk: the melee bonus grows with the health you lack below half, half more at the last point (Robin, 2026-10-24) */
@@ -758,6 +759,7 @@ function startAttack() {
   a.riposte = false; a.ripRune = false; if (p.riposteT > 0 && p.mode === 'fight' && rune('guardBlow') !== 'riposte') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   if (p.mode === 'fight' && bareHanded() && api.harvest && !W.enemies.some(function (e) { return !e.dead && Math.hypot(e.x - p.x, e.y - p.y) < 80; })) { var hvA = api.harvest.list(p.x, p.y, 70), bestA = null, bdA = 1e9; for (var ia = 0; ia < hvA.length; ia++) { var oA = hvA[ia]; if (oA.edge || oA.stake || oA.box || oA.vein || oA.gate || !(oA.kind === 'tree' || oA.kind === 'trunk' || oA.kind === 'stone')) continue; var dA = Math.hypot(oA.x - p.x, oA.y - p.y), angA = Math.abs(wrap(Math.atan2(oA.y - p.y, oA.x - p.x) - a.dir)); if (dA < 34 + (oA.r || 8) + FIST_AIM.reach && angA < 1.8 && dA + angA * 20 < bdA) { bdA = dA + angA * 20; bestA = oA; } } if (bestA) { a.dir = Math.atan2(bestA.y - p.y, bestA.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a punch turns to the tree or rock you stand by (Robin, 2026-10-28: punching was very hard to aim) */
+  if (p.mode === 'gather' && api.harvest && TOOLS[p.tool]) { var gdT = TOOLS[p.tool].good, hvT = api.harvest.list(p.x, p.y, 80), bT = null, bdT = 1e9; for (var iT = 0; iT < hvT.length; iT++) { var oT = hvT[iT]; if (oT.edge || oT.stake || oT.box || oT.gate || !(oT.kind === gdT || (oT.kind === 'trunk' && gdT === 'tree'))) continue; var dT = Math.hypot(oT.x - p.x, oT.y - p.y), anT = Math.abs(wrap(Math.atan2(oT.y - p.y, oT.x - p.x) - a.dir)); if (dT < 30 + (oT.r || 8) && dT + anT * 8 < bdT) { bdT = dT + anT * 8; bT = oT; } } if (bT) { a.dir = Math.atan2(bT.y - p.y, bT.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a tool's swing the same (Robin, 2026-10-31: trunks were still hard to hit) */
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
@@ -1839,7 +1841,7 @@ function soldierAI0(e, dt) {
    shy beast with e.herd runs when any of its herd within SHY.herdR runs or is struck (herdWake), and one of them, e.watch,
    keeps its head up: it sees as far behind it as before it (shyK), so a herd is stalked from the side its watcher is not on.
    Every number is mine, a first setting. */
-var SHY = { bleedT: 40, bleed: 0.14, slow: 0.7, run: 0.6, bleedRun: 1.2, herdR: 260, trail: 16, pool: 2.5 };   /* bleedRun: a bleeding shy beast's run against its walk, 1.7 unhurt (Robin, 2026-10-24: "It should be a chase but they need to be a little bit slower") */ api.shy = SHY;
+var SHY = { run0: 1.45, bleedT: 40, bleed: 0.14, slow: 0.7, run: 0.6, bleedRun: 1.2,   /* run0: an unhurt shy beast's run against its walk, a little over his sprint (Robin, 2026-10-31: too hard to catch; it was 1.7) */ herdR: 260, trail: 16, pool: 2.5 };   /* bleedRun: a bleeding shy beast's run against its walk, 1.7 unhurt (Robin, 2026-10-24: "It should be a chase but they need to be a little bit slower") */ api.shy = SHY;
 function shyK(e, ga) { var behind = !e.watch && Math.abs(wrap(ga - e.face)) > 1.6, k = behind ? 0.45 : 1; if (P.sprinting) k *= 1.6; return k; }
 function woundOf(e) { return e.maxHp > 0 ? Math.max(0, Math.min(1, 1 - e.hp / e.maxHp)) : 0; }
 function herdLead(e) {                 // the watcher of a beast's herd, while it lives: the one the rest run with and graze by
@@ -1859,7 +1861,7 @@ function bleedTick(e, dt) {
   if (e.hp <= 0) { e.hp = 0; e.bledOut = true; killEnemy(e); }
 }
 function fleeStep(e, dt, ga, gd) {
-  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? (e.bleedT > 0 ? SHY.bleedRun : 1.7) * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk, dry = api.scene && api.scene.dry;   // (a wounded shy beast runs slower, by its wounds; bleeding, from the first hit a chase and not a race: SHY.bleedRun, Robin, 2026-10-24)
+  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? (e.bleedT > 0 ? SHY.bleedRun : SHY.run0) * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk, dry = api.scene && api.scene.dry;   // (a wounded shy beast runs slower, by its wounds; bleeding, from the first hit a chase and not a race: SHY.bleedRun, Robin, 2026-10-24)
   e.state = 'chase'; e.t += dt; e.fleeT = (e.fleeT || 0) + dt;
   if (wkw && (e.fleeT > (e.fleeRe || 0))) {                        // a heading, chosen again every half second: the open way nearest to straight away; the whole circle, past the hunter if it must (Robin, 2026-10-30: a deer chased to the water stood there to be killed; the fan went only 96 degrees each way, and a corner of shore shut all of it)
     var best = null, bestR = -1e9, k;
@@ -2738,7 +2740,7 @@ function render(c) {
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
 var BEAST_GRUDGE = { t: 12, far: 900 };   // a beast struck by the hero keeps coming for t seconds unless he is farther than far (mine, 2026-10-30)
-var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 140, hp: 4.4 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {

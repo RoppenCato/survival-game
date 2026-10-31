@@ -138,7 +138,7 @@ __COMBAT__
   var ANIMALS = {
     // nearN of them live within nearMax of camp: the safe first meat and leather, a short walk from the fire
     boar: { start: 4, n: 8, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, leather: 1 }, young: { hp: 6, dmg: 7, size: 0.84 } },   // young: what the starter island's are (see youngOne)
-    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
+    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 140, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
     snake: { start: 0, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },   /* start 0: no adders on the starter island (Robin, 2026-10-22: "you have no use for the blood yet"; it was 3) */
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 0, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
@@ -387,7 +387,7 @@ __COMBAT__
      multiplies every drop of gathering, of beasts, of berries, of the weir and of the veins. Nothing made or bought is touched. */
   function yieldK() { return ADMIN.triple ? 3 : 1; }
   function yieldDrop(kind, x, y, n) { if (kind === 'copper' && inCave && here() === cave) ungeOre(n); drop(kind, x, y, Math.max(1, Math.round(n * yieldK()))); }
-  var GT = Gather.cfg(null); try { var gg0 = JSON.parse(localStorage.getItem('game.gather')); if (gg0) GT = Gather.cfg(gg0); } catch (e) {}   // the Gathering Editor's tuning (src/gather.js)
+  var GT = Gather.cfg(null); try { var gg0 = JSON.parse(localStorage.getItem('game.gather')); if (gg0) GT = Gather.cfg(gg0); } catch (e) {} GT.nests = 0;  /* (off whatever an old tuning kept) */   // the Gathering Editor's tuning (src/gather.js)
   var trunks = [];                          // felled trunks lying about, waiting for the axe (saved)
   function hash(x, y, s) { return World.hash(x, y, s); }
   function isLand(x, y) { return w.isLand(x, y); }
@@ -1695,7 +1695,7 @@ __COMBAT__
     { id: 'ironMaul', cat: 'weapon', out: { item: ['maul', 'iron'] }, needs: { ironBar: 4, wood: 3 }, at: 'bench', key: 'ironBar' },
     { id: 'ironGreataxe', cat: 'weapon', out: { item: ['greataxe', 'iron'] }, needs: { ironBar: 5, wood: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'paintedShield', cat: 'weapon', out: { item: ['shield', 'iron'] }, needs: { ironBar: 1, wood: 5, leather: 1 }, at: 'bench', key: 'ironBar' },
-    { id: 'gambeson', cat: 'armour', out: { item: ['tunic', 'wool'] }, needs: { fiber: 8, leather: 1 }, at: 'bench', key: 'leather' },
+    /* (the gambeson is gone from the bench, Robin 2026-10-31: strictly better than the leather tunic, no reason for one; the padded material stays for older saves and a later place) */
     { id: 'mailShirt', cat: 'armour', out: { item: ['tunic', 'iron'] }, needs: { ironBar: 6, leather: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'ironHelm', cat: 'armour', out: { item: ['helmet', 'iron'] }, needs: { ironBar: 2, leather: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'flintAxe', cat: 'tool', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },
@@ -4446,7 +4446,7 @@ __COMBAT__
   }
   function talkMore(w) { return w.who === npc ? arnorMore() : w.who.aslak ? aslakMore() : false; }
   function talkNext() { var w = talkWin; if (!w) return; if (talkMore(w)) { w.more(); w.line = w.who.say; } else talkClose(); }
-  function talkClose() { var w = talkWin; if (!w) return; talkWin = null; if (w.who.sayT > 0.4) w.who.sayT = 0.4; }
+  function talkClose() { var w = talkWin; if (!w) return; talkWin = null; w.who.sayT = 0; }   /* (it was left 0.4 s, and in that moment the same line showed on the old speech board behind: Robin's playtest of 2026-10-31) */
   function talkTick() {
     var w = talkWin; if (!w) return; var P = hero();
     if (P.hp > w.hp) w.hp = P.hp;
@@ -4683,7 +4683,8 @@ __COMBAT__
     ORDER.forEach(function (k) { seen[k] = 1; }); ['raft', 'mason', 'ship1', 'ship2', 'ship3', 'freeBuild', 'villageBlot'].forEach(function (k) { seen[k] = 1; });
     if (SHOW.runes) sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
   }
-  Combat.api.armor = function () { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor;  return Math.min(0.6, a); };
+  function armorPoints() { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor; return a; }
+  Combat.api.armor = function () { return Items.armorShare(armorPoints()); };
   function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
     var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind]; if (where === 'shield' && torchOn) { torchOn = false; torchShield = null; toast('Torch put out'); }   /* (a shield into that hand puts the torch out) */
     if (!where) {                          // a weapon or tool: to a free slot of its bar, or swapped with the thing in that bar's hand
@@ -5264,7 +5265,7 @@ __COMBAT__
   }
   function thingLines(it) {                 // a thing's numbers, as [label, value] lines (no difference by them since 2026-10-22: Shift shows what you have now beside the card)
     var st = Items.stats(it), K = Items.KINDS[it.kind], hs = null, h = null, out = [];
-    if (st.gear) { var gl = [['Turns aside', Math.round(st.armor * 100) + '% of a blow', hs ? dlt(Math.round(st.armor * 100), Math.round(hs.armor * 100)) : null, '%']]; if (it.kind === 'shield') gl.push(['Raised, it stops', Math.round((1 - shieldThrough(it)) * 100) + '% of a blow']); return gl; }
+    if (st.gear) { var gl = [['Armor', st.armor, hs ? dlt(st.armor, hs.armor) : null]]; if (it.kind === 'shield') gl.push(['Raised, it stops', Math.round((1 - shieldThrough(it)) * 100) + '% of a blow']); return gl; }
     if (K.ranged) out.push([it.kind === 'bow' ? 'An arrow' : K.ammo ? 'A stone' : 'Thrown', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     else if (K.melee) out.push(['Damage', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     if (st.tool) out.push([st.tool === 'tree' ? 'Chop' : st.tool === 'stone' ? 'Mine' : 'Cut', String(st.power), hs ? dlt(st.power, hs.power) : null]);
@@ -5827,7 +5828,8 @@ __COMBAT__
       ['An arrow', bw ? String(Math.round(bw.dmg * Combat.api.SHOW)) : 'no bow'],
       ['Crit chance', Math.round(Combat.S.crit * 100) + '%'],
       ['Crit damage', 'x1.5'],
-      ['Defense', Math.round(Math.min(0.6, ar) * 100) + '%'],
+      ['Armor', armorPoints() + '  (' + Math.round(ar * 100) + '% of a blow)'],
+      ['Effective health', Math.round(Items.effectiveHealth(P.maxHp, armorPoints()))],
       ['Guard', shieldFits() ? 'shield, stops ' + Math.round((1 - shieldThrough()) * 100) + '%' : (handItem() ? 'weapon, stops half' : 'bare arm, stops little')],
       ['Walk', Math.round(Combat.HERO_GAIT.walk) + '  (run ' + Math.round(Combat.HERO_GAIT.sprint * m.sprint) + ')'],
       ['Chop', pw(bestTool('axe'))], ['Mine', pw(bestTool('pick'))], ['Cut', pw(bestTool('knife'))]
@@ -6015,7 +6017,7 @@ __COMBAT__
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying != null) return; var L0 = o.len0 || o.len, x0 = o.x - o.dir * L0 * 0.5, x1 = x0 + o.dir * o.len, nx = Math.max(Math.min(x0, x1), Math.min(Math.max(x0, x1), x)); if (Math.abs(nx - x) < rad && Math.abs(o.y - y) < rad) { var px = o.px || (o.px = { kind: 'trunk', trunk: o }); px.x = nx; px.y = o.y; px.r = 10; px.dying = null; out.push(px); } });   /* a trunk is struck at the point of what is left of it nearest you (Robin, 2026-10-30: hard to hit; it was a circle round the middle of the whole trunk as it fell, which drifted off as the logs came off); the same stand-in each time, so a swing strikes it once */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying != null) return; var L0 = o.len0 || o.len, x0 = o.x - o.dir * L0 * 0.5, x1 = x0 + o.dir * o.len, nx = Math.max(Math.min(x0, x1), Math.min(Math.max(x0, x1), x)); if (Math.abs(nx - x) < rad && Math.abs(o.y - y) < rad) { var px = o.px || (o.px = { kind: 'trunk', trunk: o }); px.x = nx; px.y = o.y; px.r = 14; px.dying = null; out.push(px); } });   /* a trunk is struck at the point of what is left of it nearest you (Robin, 2026-10-30: hard to hit; it was a circle round the middle of the whole trunk as it fell, which drifted off as the logs came off); the same stand-in each time, so a swing strikes it once */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool, chg) {
       if (o.trunk) o = o.trunk;   /* (a trunk's stand-in at its nearest point) */
       if (o.kind === 'stone' && right && false) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */

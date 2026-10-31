@@ -4420,7 +4420,7 @@ var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor
   'use strict';
   var LINE = '#231a16', DARK = '#241a14';
   function box(c, x, y, w, h, fill, lw) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = lw || 0.7; c.strokeRect(x, y, w, h); }
-  function geomH(x0, yb, h) { var w = 12, wh = Math.round(h * 0.42), x = x0 + 7, y = yb - h + 8; return { x: x, y: y, w: w, h: wh }; }
+  function geomH(x0, yb, h) { var w = 12, wh = Math.round(h * 0.42), x = x0 + 10, y = yb - h + 8;   /* (the hole in the middle of its tile, Robin 2026-10-31: it was 3 units to the left) */  return { x: x, y: y, w: w, h: wh }; }
   function h(c, x0, yb, hh, m, seed) {
     var g = geomH(x0, yb, hh), dark = (m && m.dark) || '#4a3626', top = (m && m.top) || '#7a5a3c';
     box(c, g.x, g.y, g.w, g.h, DARK, 0.8);

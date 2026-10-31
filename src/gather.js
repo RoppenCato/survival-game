@@ -18,7 +18,7 @@ var DEF = {
   rhythm: 1, rhythmAfter: 0.45, rhythmWindow: 0.3, rhythmBonus: 1.5,
   fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12, fallBite: 0.45, fallFloor: 0.15, fallMax: 3,   // (2026-10-16, Robin: a falling tree chipped away at the trees it landed on instead of felling them all: the nearest takes fallBite of its health, the next less, at most fallMax, never below fallFloor)
   trunks: 1, logsPerTrunk: 4, chopsPerLog: 2,   // (four logs a trunk since 2026-10-14, with the trees grown: eight blows that each shake it and roll a log out every second one)
-  nests: 1, nestChance: 0.15,
+  nests: 0, nestChance: 0.15,   /* (off, Robin 2026-10-31: eggs and honey from a felled tree have no use yet; it was 1) */
   regrow: 1, regrowDays: 3,
   cracks: 1, crackBonus: 2.5,
   treeHp: 1, rockHp: 1, bushHp: 1, chips: 1
@@ -72,13 +72,14 @@ function hit(G, o, ctx) {
   }
   return out;
 }
-// The fall, stepped each frame while o.dying runs: at 0.95 the trunk hits the ground. ctx: { hero, trees (the trees near, for
+var FALL_T = 1.6;   // a tree's fall in seconds to the ground (Robin, 2026-10-31: 0.95 was still very quick)
+// The fall, stepped each frame while o.dying runs: at FALL_T the trunk hits the ground. ctx: { hero, trees (the trees near, for
 // the chain), ev }. Returns true when the prop is done and may go.
 function tick(G, o, dt, ctx) {
   if (o.dying == null) return false;
   o.dying += dt; var ev = ctx.ev || {};
-  var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.6 : 0.3);
-  if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {
+  var done = o.kind === 'tree' ? FALL_T + 0.35 : (o.kind === 'stone' ? 0.6 : 0.3);
+  if (o.kind === 'tree' && o.dying >= FALL_T && !o.dropped) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
     if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) { ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70); ev.chip(o.x + dir * len * 0.75, o.y + 2, 3, '#6fb84f', 8, 60); ev.chip(o.x + dir * len * 0.4, o.y + 2, 6, '#b59a72', 12, 55); }   /* (leaves and dust along where it lands) */
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
@@ -124,9 +125,9 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
   if (o.kind === 'tree') {
     var fd = o.leanDir || 1, ang = fd * Math.max(0, dmg) * 0.1, bend = 0, sq = 1, d = o.dying, spL = G && G.spotLook === 3 && d == null ? spot(G, o, t) : null;
     if (d != null) {                                     // the fall (Robin, 2026-10-30: one stiff turn looked wrong): a creak, a fall that gathers speed with the crown lagging, a bounce and a whip on the ground; it lands at 0.95 as before
-      if (d < 0.22) { var hz = d / 0.22; ang = fd * (0.1 + 0.08 * hz * hz + 0.028 * Math.sin(d * 45) * (1 - hz)); }
-      else if (d < 0.95) { var pz = (d - 0.22) / 0.73, ez = Math.pow(pz, 2.3); ang = fd * (0.16 + 1.36 * ez); bend = fd * 0.17 * Math.sin(Math.PI * Math.min(1, pz * 1.15)); }
-      else { var qz = Math.min(1, (d - 0.95) / 0.35); ang = fd * (1.52 - 0.09 * Math.sin(Math.PI * Math.min(1, qz * 1.6)) * (1 - qz)); bend = -fd * 0.2 * Math.exp(-qz * 5) * Math.cos(qz * 16); sq = 1 - 0.07 * Math.exp(-qz * 8); c.globalAlpha *= Math.max(0, 1 - qz * 1.4); }
+      if (d < 0.4) { var hz = d / 0.4; ang = fd * (0.1 + 0.08 * hz * hz + 0.028 * Math.sin(d * 32) * (1 - hz)); }
+      else if (d < FALL_T) { var pz = (d - 0.4) / (FALL_T - 0.4), ez = Math.pow(pz, 2.3); ang = fd * (0.16 + 1.36 * ez); bend = fd * 0.17 * Math.sin(Math.PI * Math.min(1, pz * 1.15)); }
+      else { var qz = Math.min(1, (d - FALL_T) / 0.35); ang = fd * (1.52 - 0.09 * Math.sin(Math.PI * Math.min(1, qz * 1.6)) * (1 - qz)); bend = -fd * 0.2 * Math.exp(-qz * 5) * Math.cos(qz * 16); sq = 1 - 0.07 * Math.exp(-qz * 8); c.globalAlpha *= Math.max(0, 1 - qz * 1.4); }
     }
     if (spL) ang += spL.side * 0.07;
     c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (bend) c.transform(1, 0, bend, 1, 0, 0); if (sq !== 1) c.scale(1, sq); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);

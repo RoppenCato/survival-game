@@ -8635,7 +8635,7 @@ var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor
   'use strict';
   var LINE = '#231a16', DARK = '#241a14';
   function box(c, x, y, w, h, fill, lw) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = lw || 0.7; c.strokeRect(x, y, w, h); }
-  function geomH(x0, yb, h) { var w = 12, wh = Math.round(h * 0.42), x = x0 + 7, y = yb - h + 8; return { x: x, y: y, w: w, h: wh }; }
+  function geomH(x0, yb, h) { var w = 12, wh = Math.round(h * 0.42), x = x0 + 10, y = yb - h + 8;   /* (the hole in the middle of its tile, Robin 2026-10-31: it was 3 units to the left) */  return { x: x, y: y, w: w, h: wh }; }
   function h(c, x0, yb, hh, m, seed) {
     var g = geomH(x0, yb, hh), dark = (m && m.dark) || '#4a3626', top = (m && m.top) || '#7a5a3c';
     box(c, g.x, g.y, g.w, g.h, DARK, 0.8);
@@ -9528,13 +9528,13 @@ var KINDS = {
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
   javelin: { name: 'Javelin', len: 30, w: 1.9, dmg: 1.8, tool: null, ranged: true, thrown: true, desc: 'A light spear made to be thrown. It flies true and hits hard, then has to be fetched.' },
   throwaxe: { name: 'Throwing axe', len: 12, w: 2.4, dmg: 1.6, tool: null, ranged: true, thrown: true, desc: 'A small axe balanced for the throw. Short range, a heavy blow, and it lies where it falls.' },
-  // gear: worn, not held. armor is the share of a blow it turns aside
-  helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
-  tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },
-  trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 0.08, desc: 'For the legs.' },
-  boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 0.05, desc: 'Good on rock and in snow.' },
-  cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 0.05, desc: 'Against the wind at sea.' },
-  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 0.1, desc: 'A round shield with an iron boss, painted the way you like.' },
+  // gear: worn, not held. armor is points; what they turn aside is Items.armorShare, the sum over all that is worn (Robin, 2026-10-31)
+  helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 1, desc: 'Keeps the rain and the blows off your head.' },
+  tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 3, desc: 'Worn over the shirt.' },
+  trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 1, desc: 'For the legs.' },
+  boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 1, desc: 'Good on rock and in snow.' },
+  cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 1, desc: 'Against the wind at sea.' },
+  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 1, desc: 'A round shield with an iron boss, painted the way you like.' },
   quiver: { name: 'Quiver', len: 10, w: 2, dmg: 0, tool: null, gear: 'quiver', armor: 0, desc: 'A leather tube on the belt. The arrows go in it.' }   /* (2026-10-26: the arrows' slot outside the bag, Robin; Colin, AD's quiver) */
 };
 var MATS = {
@@ -9594,12 +9594,16 @@ function desc(it) {
   if (Math.abs(it.twist) >= 0.5) bits.push('The ' + (it.kind === 'bow' ? 'limbs' : 'blade') + ' bend' + (it.kind === 'bow' ? '' : 's') + ' in a way no smith intended.');
   return s + ' ' + bits.join(' ');
 }
+/* Armor (Robin, 2026-10-31): points, and the share of a blow they turn aside is X / (X + K). K = ARMOR_K, 10, mine: the game's numbers are small (a whole leather set 7, a whole iron set 17, a boar's bite 14, a troll's 40, the hero's health 100), and with 10 each point is one you can feel. It never reaches 100% and needs no cap, and each point is always worth the same: effective health = health x (1 + X / K), +10% of his health a point. */
+var ARMOR_K = 10;
+function armorShare(x) { return x > 0 ? x / (x + ARMOR_K) : 0; }
+function effectiveHealth(hp, x) { return hp * (1 + Math.max(0, x) / ARMOR_K); }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
   var weak = it.kind === 'sword' && it.mat === 'wood' ? WOOD_SWORD : 1;   /* the Wooden Sword: very weak (Robin, 2026-10-26; the number mine) */
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * weak * 100) / 100;
-  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
+  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear && K.armor ? Math.max(1, Math.round(K.armor * (M.armor || M.power))) : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
   if (!dh) return hex;
@@ -9764,7 +9768,7 @@ function icon(c, it, s) {
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
+return { ARMOR_K: ARMOR_K, armorShare: armorShare, effectiveHealth: effectiveHealth, KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
 })();
 if (typeof module !== 'undefined') module.exports = Items;
 
@@ -12719,7 +12723,7 @@ var DEF = {
   rhythm: 1, rhythmAfter: 0.45, rhythmWindow: 0.3, rhythmBonus: 1.5,
   fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12, fallBite: 0.45, fallFloor: 0.15, fallMax: 3,   // (2026-10-16, Robin: a falling tree chipped away at the trees it landed on instead of felling them all: the nearest takes fallBite of its health, the next less, at most fallMax, never below fallFloor)
   trunks: 1, logsPerTrunk: 4, chopsPerLog: 2,   // (four logs a trunk since 2026-10-14, with the trees grown: eight blows that each shake it and roll a log out every second one)
-  nests: 1, nestChance: 0.15,
+  nests: 0, nestChance: 0.15,   /* (off, Robin 2026-10-31: eggs and honey from a felled tree have no use yet; it was 1) */
   regrow: 1, regrowDays: 3,
   cracks: 1, crackBonus: 2.5,
   treeHp: 1, rockHp: 1, bushHp: 1, chips: 1
@@ -12773,13 +12777,14 @@ function hit(G, o, ctx) {
   }
   return out;
 }
-// The fall, stepped each frame while o.dying runs: at 0.95 the trunk hits the ground. ctx: { hero, trees (the trees near, for
+var FALL_T = 1.6;   // a tree's fall in seconds to the ground (Robin, 2026-10-31: 0.95 was still very quick)
+// The fall, stepped each frame while o.dying runs: at FALL_T the trunk hits the ground. ctx: { hero, trees (the trees near, for
 // the chain), ev }. Returns true when the prop is done and may go.
 function tick(G, o, dt, ctx) {
   if (o.dying == null) return false;
   o.dying += dt; var ev = ctx.ev || {};
-  var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.6 : 0.3);
-  if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {
+  var done = o.kind === 'tree' ? FALL_T + 0.35 : (o.kind === 'stone' ? 0.6 : 0.3);
+  if (o.kind === 'tree' && o.dying >= FALL_T && !o.dropped) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
     if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) { ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70); ev.chip(o.x + dir * len * 0.75, o.y + 2, 3, '#6fb84f', 8, 60); ev.chip(o.x + dir * len * 0.4, o.y + 2, 6, '#b59a72', 12, 55); }   /* (leaves and dust along where it lands) */
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
@@ -12825,9 +12830,9 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
   if (o.kind === 'tree') {
     var fd = o.leanDir || 1, ang = fd * Math.max(0, dmg) * 0.1, bend = 0, sq = 1, d = o.dying, spL = G && G.spotLook === 3 && d == null ? spot(G, o, t) : null;
     if (d != null) {                                     // the fall (Robin, 2026-10-30: one stiff turn looked wrong): a creak, a fall that gathers speed with the crown lagging, a bounce and a whip on the ground; it lands at 0.95 as before
-      if (d < 0.22) { var hz = d / 0.22; ang = fd * (0.1 + 0.08 * hz * hz + 0.028 * Math.sin(d * 45) * (1 - hz)); }
-      else if (d < 0.95) { var pz = (d - 0.22) / 0.73, ez = Math.pow(pz, 2.3); ang = fd * (0.16 + 1.36 * ez); bend = fd * 0.17 * Math.sin(Math.PI * Math.min(1, pz * 1.15)); }
-      else { var qz = Math.min(1, (d - 0.95) / 0.35); ang = fd * (1.52 - 0.09 * Math.sin(Math.PI * Math.min(1, qz * 1.6)) * (1 - qz)); bend = -fd * 0.2 * Math.exp(-qz * 5) * Math.cos(qz * 16); sq = 1 - 0.07 * Math.exp(-qz * 8); c.globalAlpha *= Math.max(0, 1 - qz * 1.4); }
+      if (d < 0.4) { var hz = d / 0.4; ang = fd * (0.1 + 0.08 * hz * hz + 0.028 * Math.sin(d * 32) * (1 - hz)); }
+      else if (d < FALL_T) { var pz = (d - 0.4) / (FALL_T - 0.4), ez = Math.pow(pz, 2.3); ang = fd * (0.16 + 1.36 * ez); bend = fd * 0.17 * Math.sin(Math.PI * Math.min(1, pz * 1.15)); }
+      else { var qz = Math.min(1, (d - FALL_T) / 0.35); ang = fd * (1.52 - 0.09 * Math.sin(Math.PI * Math.min(1, qz * 1.6)) * (1 - qz)); bend = -fd * 0.2 * Math.exp(-qz * 5) * Math.cos(qz * 16); sq = 1 - 0.07 * Math.exp(-qz * 8); c.globalAlpha *= Math.max(0, 1 - qz * 1.4); }
     }
     if (spL) ang += spL.side * 0.07;
     c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (bend) c.transform(1, 0, bend, 1, 0, 0); if (sq !== 1) c.scale(1, sq); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
@@ -15077,6 +15082,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
+  var calmBeast = !src && kind === 'proj' && e.type === 'beast' && !!e.aggro && !e.awake && !e.struck;   /* (an arrow from one it has not seen is a critical: Robin, 2026-10-31, a deer down on three arrows, two with a critical) */
   if (!src && e.type === 'beast') { e.angered = true; if (!e.shy && !e.tame) e.grudgeT = BEAST_GRUDGE.t; }   /* (struck from afar, it comes for you: Robin, 2026-10-30, a boar shot from past its calm-down reach went calm again at once) */   /* (a beast struck by the hero has an enemy now: the Hunter's stride keeps the unstruck friendly) */
   if (e.noHarm > 0) { num(e.x, headY(e), 'DOWN', '#dfe8ff'); return; }   /* (a man the Charge put down takes no harm while down) */
   if (!src && kind !== 'proj') { e.heroHitAt = W.t; e.confusedT = 0; }   /* (the Rush-step's mark; a blow wakes a confused man) */   // src: the man whose blow this is; none is the hero
@@ -15104,8 +15110,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {
   if (!src && e.exposedT > 0) mult *= PERFECT.bonus;                       // after a perfect dodge
   if (bigE && e.state === 'stunned') mult = 2;
   var cb2 = !src && hitFlags.wkind === 'seax' && runeHas('serpentTongue') ? runeN('serpentTongue', 'crit') : 0;
-  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0 || cb2 > 0) && Math.random() < S.crit + critBonus + cb2;
-  if (crit) mult *= 1.5;
+  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0 || cb2 > 0) && Math.random() < S.crit + critBonus + cb2; if (calmBeast && !blocked) crit = true;
+  if (crit) mult *= kind === 'proj' ? 2 : 1.5;
   if (crit && cb2 > 0 && man) { markOn(e, 'bleeding', 5); e.bleedDmg = runeN('serpentTongue', 'bleed') || 3; }   /* the Serpent's tongue: a crit bleeds */
   if (!src && man && e.axeOpen > 1) { mult *= e.axeOpen; e.axeOpen = 0; }
   if (berserkOn() && kind !== 'bow') mult *= 1 + Math.max(0, (runeN('berserk', 'at') || 0.5) - P.hp / P.maxHp) * 2 * (runeN('berserk', 'bonusK') || 1);   /* Berserk: the melee bonus grows with the health you lack below half, half more at the last point (Robin, 2026-10-24) */
@@ -15228,6 +15234,7 @@ function startAttack() {
   a.riposte = false; a.ripRune = false; if (p.riposteT > 0 && p.mode === 'fight' && rune('guardBlow') !== 'riposte') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   if (p.mode === 'fight' && bareHanded() && api.harvest && !W.enemies.some(function (e) { return !e.dead && Math.hypot(e.x - p.x, e.y - p.y) < 80; })) { var hvA = api.harvest.list(p.x, p.y, 70), bestA = null, bdA = 1e9; for (var ia = 0; ia < hvA.length; ia++) { var oA = hvA[ia]; if (oA.edge || oA.stake || oA.box || oA.vein || oA.gate || !(oA.kind === 'tree' || oA.kind === 'trunk' || oA.kind === 'stone')) continue; var dA = Math.hypot(oA.x - p.x, oA.y - p.y), angA = Math.abs(wrap(Math.atan2(oA.y - p.y, oA.x - p.x) - a.dir)); if (dA < 34 + (oA.r || 8) + FIST_AIM.reach && angA < 1.8 && dA + angA * 20 < bdA) { bdA = dA + angA * 20; bestA = oA; } } if (bestA) { a.dir = Math.atan2(bestA.y - p.y, bestA.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a punch turns to the tree or rock you stand by (Robin, 2026-10-28: punching was very hard to aim) */
+  if (p.mode === 'gather' && api.harvest && TOOLS[p.tool]) { var gdT = TOOLS[p.tool].good, hvT = api.harvest.list(p.x, p.y, 80), bT = null, bdT = 1e9; for (var iT = 0; iT < hvT.length; iT++) { var oT = hvT[iT]; if (oT.edge || oT.stake || oT.box || oT.gate || !(oT.kind === gdT || (oT.kind === 'trunk' && gdT === 'tree'))) continue; var dT = Math.hypot(oT.x - p.x, oT.y - p.y), anT = Math.abs(wrap(Math.atan2(oT.y - p.y, oT.x - p.x) - a.dir)); if (dT < 30 + (oT.r || 8) && dT + anT * 8 < bdT) { bdT = dT + anT * 8; bT = oT; } } if (bT) { a.dir = Math.atan2(bT.y - p.y, bT.x - p.x); p.face = a.dir; if (!S.juice) p.faceVis = a.dir; } }   /* a tool's swing the same (Robin, 2026-10-31: trunks were still hard to hit) */
   a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; if (!a.whirl) a.spin = false; a.bash = false; a.smashed = false; a.recK = 1; p.recFast = 0; a.reckless = false; a.sweepAll = false; a.noParry = 0;   /* the Twin blow: the Dane axe recovers in half the time after a kill (or any landed blow at tier II) */
   a.feint = false; if (p.mode === 'fight' && swingRune() === 'feint' && a.since > 1.2 && !a.finisher && !a.riposte) { a.feint = true; }   /* the Feint: the first swing after a pause opens the man's guard instead of striking (Runes2) */
@@ -16309,7 +16316,7 @@ function soldierAI0(e, dt) {
    shy beast with e.herd runs when any of its herd within SHY.herdR runs or is struck (herdWake), and one of them, e.watch,
    keeps its head up: it sees as far behind it as before it (shyK), so a herd is stalked from the side its watcher is not on.
    Every number is mine, a first setting. */
-var SHY = { bleedT: 40, bleed: 0.14, slow: 0.7, run: 0.6, bleedRun: 1.2, herdR: 260, trail: 16, pool: 2.5 };   /* bleedRun: a bleeding shy beast's run against its walk, 1.7 unhurt (Robin, 2026-10-24: "It should be a chase but they need to be a little bit slower") */ api.shy = SHY;
+var SHY = { run0: 1.45, bleedT: 40, bleed: 0.14, slow: 0.7, run: 0.6, bleedRun: 1.2,   /* run0: an unhurt shy beast's run against its walk, a little over his sprint (Robin, 2026-10-31: too hard to catch; it was 1.7) */ herdR: 260, trail: 16, pool: 2.5 };   /* bleedRun: a bleeding shy beast's run against its walk, 1.7 unhurt (Robin, 2026-10-24: "It should be a chase but they need to be a little bit slower") */ api.shy = SHY;
 function shyK(e, ga) { var behind = !e.watch && Math.abs(wrap(ga - e.face)) > 1.6, k = behind ? 0.45 : 1; if (P.sprinting) k *= 1.6; return k; }
 function woundOf(e) { return e.maxHp > 0 ? Math.max(0, Math.min(1, 1 - e.hp / e.maxHp)) : 0; }
 function herdLead(e) {                 // the watcher of a beast's herd, while it lives: the one the rest run with and graze by
@@ -16329,7 +16336,7 @@ function bleedTick(e, dt) {
   if (e.hp <= 0) { e.hp = 0; e.bledOut = true; killEnemy(e); }
 }
 function fleeStep(e, dt, ga, gd) {
-  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? (e.bleedT > 0 ? SHY.bleedRun : 1.7) * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk, dry = api.scene && api.scene.dry;   // (a wounded shy beast runs slower, by its wounds; bleeding, from the first hit a chase and not a race: SHY.bleedRun, Robin, 2026-10-24)
+  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? (e.bleedT > 0 ? SHY.bleedRun : SHY.run0) * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk, dry = api.scene && api.scene.dry;   // (a wounded shy beast runs slower, by its wounds; bleeding, from the first hit a chase and not a race: SHY.bleedRun, Robin, 2026-10-24)
   e.state = 'chase'; e.t += dt; e.fleeT = (e.fleeT || 0) + dt;
   if (wkw && (e.fleeT > (e.fleeRe || 0))) {                        // a heading, chosen again every half second: the open way nearest to straight away; the whole circle, past the hunter if it must (Robin, 2026-10-30: a deer chased to the water stood there to be killed; the fan went only 96 degrees each way, and a corner of shore shut all of it)
     var best = null, bestR = -1e9, k;
@@ -17208,7 +17215,7 @@ function render(c) {
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
 var BEAST_GRUDGE = { t: 12, far: 900 };   // a beast struck by the hero keeps coming for t seconds unless he is farther than far (mine, 2026-10-30)
-var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 140, hp: 4.4 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
@@ -17266,7 +17273,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var ANIMALS = {
     // nearN of them live within nearMax of camp: the safe first meat and leather, a short walk from the fire
     boar: { start: 4, n: 8, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, leather: 1 }, young: { hp: 6, dmg: 7, size: 0.84 } },   // young: what the starter island's are (see youngOne)
-    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
+    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 140, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
     snake: { start: 0, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },   /* start 0: no adders on the starter island (Robin, 2026-10-22: "you have no use for the blood yet"; it was 3) */
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 0, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
@@ -19275,7 +19282,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'ironMaul', cat: 'weapon', out: { item: ['maul', 'iron'] }, needs: { ironBar: 4, wood: 3 }, at: 'bench', key: 'ironBar' },
     { id: 'ironGreataxe', cat: 'weapon', out: { item: ['greataxe', 'iron'] }, needs: { ironBar: 5, wood: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'paintedShield', cat: 'weapon', out: { item: ['shield', 'iron'] }, needs: { ironBar: 1, wood: 5, leather: 1 }, at: 'bench', key: 'ironBar' },
-    { id: 'gambeson', cat: 'armour', out: { item: ['tunic', 'wool'] }, needs: { fiber: 8, leather: 1 }, at: 'bench', key: 'leather' },
+    /* (the gambeson is gone from the bench, Robin 2026-10-31: strictly better than the leather tunic, no reason for one; the padded material stays for older saves and a later place) */
     { id: 'mailShirt', cat: 'armour', out: { item: ['tunic', 'iron'] }, needs: { ironBar: 6, leather: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'ironHelm', cat: 'armour', out: { item: ['helmet', 'iron'] }, needs: { ironBar: 2, leather: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'flintAxe', cat: 'tool', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },
@@ -22026,7 +22033,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function talkMore(w) { return w.who === npc ? arnorMore() : w.who.aslak ? aslakMore() : false; }
   function talkNext() { var w = talkWin; if (!w) return; if (talkMore(w)) { w.more(); w.line = w.who.say; } else talkClose(); }
-  function talkClose() { var w = talkWin; if (!w) return; talkWin = null; if (w.who.sayT > 0.4) w.who.sayT = 0.4; }
+  function talkClose() { var w = talkWin; if (!w) return; talkWin = null; w.who.sayT = 0; }   /* (it was left 0.4 s, and in that moment the same line showed on the old speech board behind: Robin's playtest of 2026-10-31) */
   function talkTick() {
     var w = talkWin; if (!w) return; var P = hero();
     if (P.hp > w.hp) w.hp = P.hp;
@@ -22263,7 +22270,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     ORDER.forEach(function (k) { seen[k] = 1; }); ['raft', 'mason', 'ship1', 'ship2', 'ship3', 'freeBuild', 'villageBlot'].forEach(function (k) { seen[k] = 1; });
     if (SHOW.runes) sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
   }
-  Combat.api.armor = function () { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor;  return Math.min(0.6, a); };
+  function armorPoints() { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor; return a; }
+  Combat.api.armor = function () { return Items.armorShare(armorPoints()); };
   function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
     var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind]; if (where === 'shield' && torchOn) { torchOn = false; torchShield = null; toast('Torch put out'); }   /* (a shield into that hand puts the torch out) */
     if (!where) {                          // a weapon or tool: to a free slot of its bar, or swapped with the thing in that bar's hand
@@ -22844,7 +22852,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function thingLines(it) {                 // a thing's numbers, as [label, value] lines (no difference by them since 2026-10-22: Shift shows what you have now beside the card)
     var st = Items.stats(it), K = Items.KINDS[it.kind], hs = null, h = null, out = [];
-    if (st.gear) { var gl = [['Turns aside', Math.round(st.armor * 100) + '% of a blow', hs ? dlt(Math.round(st.armor * 100), Math.round(hs.armor * 100)) : null, '%']]; if (it.kind === 'shield') gl.push(['Raised, it stops', Math.round((1 - shieldThrough(it)) * 100) + '% of a blow']); return gl; }
+    if (st.gear) { var gl = [['Armor', st.armor, hs ? dlt(st.armor, hs.armor) : null]]; if (it.kind === 'shield') gl.push(['Raised, it stops', Math.round((1 - shieldThrough(it)) * 100) + '% of a blow']); return gl; }
     if (K.ranged) out.push([it.kind === 'bow' ? 'An arrow' : K.ammo ? 'A stone' : 'Thrown', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     else if (K.melee) out.push(['Damage', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     if (st.tool) out.push([st.tool === 'tree' ? 'Chop' : st.tool === 'stone' ? 'Mine' : 'Cut', String(st.power), hs ? dlt(st.power, hs.power) : null]);
@@ -23407,7 +23415,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       ['An arrow', bw ? String(Math.round(bw.dmg * Combat.api.SHOW)) : 'no bow'],
       ['Crit chance', Math.round(Combat.S.crit * 100) + '%'],
       ['Crit damage', 'x1.5'],
-      ['Defense', Math.round(Math.min(0.6, ar) * 100) + '%'],
+      ['Armor', armorPoints() + '  (' + Math.round(ar * 100) + '% of a blow)'],
+      ['Effective health', Math.round(Items.effectiveHealth(P.maxHp, armorPoints()))],
       ['Guard', shieldFits() ? 'shield, stops ' + Math.round((1 - shieldThrough()) * 100) + '%' : (handItem() ? 'weapon, stops half' : 'bare arm, stops little')],
       ['Walk', Math.round(Combat.HERO_GAIT.walk) + '  (run ' + Math.round(Combat.HERO_GAIT.sprint * m.sprint) + ')'],
       ['Chop', pw(bestTool('axe'))], ['Mine', pw(bestTool('pick'))], ['Cut', pw(bestTool('knife'))]
@@ -23595,7 +23604,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying != null) return; var L0 = o.len0 || o.len, x0 = o.x - o.dir * L0 * 0.5, x1 = x0 + o.dir * o.len, nx = Math.max(Math.min(x0, x1), Math.min(Math.max(x0, x1), x)); if (Math.abs(nx - x) < rad && Math.abs(o.y - y) < rad) { var px = o.px || (o.px = { kind: 'trunk', trunk: o }); px.x = nx; px.y = o.y; px.r = 10; px.dying = null; out.push(px); } });   /* a trunk is struck at the point of what is left of it nearest you (Robin, 2026-10-30: hard to hit; it was a circle round the middle of the whole trunk as it fell, which drifted off as the logs came off); the same stand-in each time, so a swing strikes it once */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); (here().gates || []).forEach(function (g) { if (g.state === 'shut' && Math.abs(g.x - x) < rad && Math.abs(g.y - y) < rad) { g.kind = 'tree'; g.r = 14; g.gate = true; out.push(g); } }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying != null) return; var L0 = o.len0 || o.len, x0 = o.x - o.dir * L0 * 0.5, x1 = x0 + o.dir * o.len, nx = Math.max(Math.min(x0, x1), Math.min(Math.max(x0, x1), x)); if (Math.abs(nx - x) < rad && Math.abs(o.y - y) < rad) { var px = o.px || (o.px = { kind: 'trunk', trunk: o }); px.x = nx; px.y = o.y; px.r = 14; px.dying = null; out.push(px); } });   /* a trunk is struck at the point of what is left of it nearest you (Robin, 2026-10-30: hard to hit; it was a circle round the middle of the whole trunk as it fell, which drifted off as the logs came off); the same stand-in each time, so a swing strikes it once */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool, chg) {
       if (o.trunk) o = o.trunk;   /* (a trunk's stand-in at its nearest point) */
       if (o.kind === 'stone' && right && false) { power = Math.max(power, (o.hp || 0) + 1); chip(o.x, o.y, 12, '#cfd0cc', 6, 90); if (runeN('stoneBiter', 'ore') > 0 && Math.random() < runeN('stoneBiter', 'ore')) yieldDrop('copper', o.x, o.y + 6, 1); sfx('rock_split'); }   /* the Stone-biter: the rock cracks whole */

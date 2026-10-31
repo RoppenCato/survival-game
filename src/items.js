@@ -27,13 +27,13 @@ var KINDS = {
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
   javelin: { name: 'Javelin', len: 30, w: 1.9, dmg: 1.8, tool: null, ranged: true, thrown: true, desc: 'A light spear made to be thrown. It flies true and hits hard, then has to be fetched.' },
   throwaxe: { name: 'Throwing axe', len: 12, w: 2.4, dmg: 1.6, tool: null, ranged: true, thrown: true, desc: 'A small axe balanced for the throw. Short range, a heavy blow, and it lies where it falls.' },
-  // gear: worn, not held. armor is the share of a blow it turns aside
-  helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
-  tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },
-  trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 0.08, desc: 'For the legs.' },
-  boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 0.05, desc: 'Good on rock and in snow.' },
-  cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 0.05, desc: 'Against the wind at sea.' },
-  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 0.1, desc: 'A round shield with an iron boss, painted the way you like.' },
+  // gear: worn, not held. armor is points; what they turn aside is Items.armorShare, the sum over all that is worn (Robin, 2026-10-31)
+  helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 1, desc: 'Keeps the rain and the blows off your head.' },
+  tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 3, desc: 'Worn over the shirt.' },
+  trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 1, desc: 'For the legs.' },
+  boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 1, desc: 'Good on rock and in snow.' },
+  cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 1, desc: 'Against the wind at sea.' },
+  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 1, desc: 'A round shield with an iron boss, painted the way you like.' },
   quiver: { name: 'Quiver', len: 10, w: 2, dmg: 0, tool: null, gear: 'quiver', armor: 0, desc: 'A leather tube on the belt. The arrows go in it.' }   /* (2026-10-26: the arrows' slot outside the bag, Robin; Colin, AD's quiver) */
 };
 var MATS = {
@@ -93,12 +93,16 @@ function desc(it) {
   if (Math.abs(it.twist) >= 0.5) bits.push('The ' + (it.kind === 'bow' ? 'limbs' : 'blade') + ' bend' + (it.kind === 'bow' ? '' : 's') + ' in a way no smith intended.');
   return s + ' ' + bits.join(' ');
 }
+/* Armor (Robin, 2026-10-31): points, and the share of a blow they turn aside is X / (X + K). K = ARMOR_K, 10, mine: the game's numbers are small (a whole leather set 7, a whole iron set 17, a boar's bite 14, a troll's 40, the hero's health 100), and with 10 each point is one you can feel. It never reaches 100% and needs no cap, and each point is always worth the same: effective health = health x (1 + X / K), +10% of his health a point. */
+var ARMOR_K = 10;
+function armorShare(x) { return x > 0 ? x / (x + ARMOR_K) : 0; }
+function effectiveHealth(hp, x) { return hp * (1 + Math.max(0, x) / ARMOR_K); }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
   var weak = it.kind === 'sword' && it.mat === 'wood' ? WOOD_SWORD : 1;   /* the Wooden Sword: very weak (Robin, 2026-10-26; the number mine) */
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * weak * 100) / 100;
-  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
+  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear && K.armor ? Math.max(1, Math.round(K.armor * (M.armor || M.power))) : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
   if (!dh) return hex;
@@ -263,6 +267,6 @@ function icon(c, it, s) {
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
+return { ARMOR_K: ARMOR_K, armorShare: armorShare, effectiveHealth: effectiveHealth, KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
 })();
 if (typeof module !== 'undefined') module.exports = Items;
