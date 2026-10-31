@@ -662,13 +662,13 @@ __COMBAT__
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
     // the shipyard (docs/ships-rework.md; Robin, 2026-10-22): one piece on any shore of your land, as many as you like, in place of the raft bench, the boat bench and the shipwright's yard; E opens the panel by the water (spOpen). Its picture is the raft bench's until Colin, AD's slipway and shed come
-    { id: 'pier', name: 'Pier', cat: 'pier', kind: 'pier', pk: 'run', prop: 'pier_straight', cost: { wood: 6 } },
-    { id: 'pierNet', name: 'Climbing net', cat: 'pier', kind: 'pier', pk: 'net', prop: 'pier_net', cost: { fiber: 6, wood: 1 } },
-    { id: 'pierMooring', name: 'Mooring post', cat: 'pier', kind: 'item', prop: 'pier_mooring', deckOnly: 1, r: 0, cost: { wood: 2 } },
-    { id: 'pierCoil', name: 'Rope coil', cat: 'pier', kind: 'item', prop: 'pier_coil', deckOnly: 1, r: 0, cost: { fiber: 3 } },
-    { id: 'pierBarrels', name: 'Barrels', cat: 'pier', kind: 'item', prop: 'pier_barrels', deckOnly: 1, r: 0, cost: { wood: 4 } },
-    { id: 'pierRack', name: 'Fish rack', cat: 'pier', kind: 'item', prop: 'pier_fish_rack', deckOnly: 1, r: 0, cost: { wood: 3, fiber: 1 } },
-    { id: 'pierBench', name: 'Pier bench', cat: 'pier', kind: 'item', prop: 'pier_bench', deckOnly: 1, r: 0, cost: { wood: 3 } },
+    { id: 'pier', name: 'Pier', cat: 'pier', kind: 'pier', pk: 'run', prop: 'pier_straight', cost: { wood: 6 }, key: 'shipwright' },
+    { id: 'pierNet', name: 'Climbing net', cat: 'pier', kind: 'pier', pk: 'net', prop: 'pier_net', cost: { fiber: 6, wood: 1 }, key: 'shipwright' },
+    { id: 'pierMooring', name: 'Mooring post', cat: 'pier', kind: 'item', prop: 'pier_mooring', deckOnly: 1, r: 0, cost: { wood: 2 }, key: 'shipwright' },
+    { id: 'pierCoil', name: 'Rope coil', cat: 'pier', kind: 'item', prop: 'pier_coil', deckOnly: 1, r: 0, cost: { fiber: 3 }, key: 'shipwright' },
+    { id: 'pierBarrels', name: 'Barrels', cat: 'pier', kind: 'item', prop: 'pier_barrels', deckOnly: 1, r: 0, cost: { wood: 4 }, key: 'shipwright' },
+    { id: 'pierRack', name: 'Fish rack', cat: 'pier', kind: 'item', prop: 'pier_fish_rack', deckOnly: 1, r: 0, cost: { wood: 3, fiber: 1 }, key: 'shipwright' },
+    { id: 'pierBench', name: 'Pier bench', cat: 'pier', kind: 'item', prop: 'pier_bench', deckOnly: 1, r: 0, cost: { wood: 3 }, key: 'shipwright' },
     { id: 'ship1', name: 'Shipyard', cat: 'pier', kind: 'pier', pk: 'head', prop: 'pier_head', cost: { wood: 16, fiber: 6, stone: 4 }, key: 'shipwright', gives: 'ship1' },   /* the small yard at a pier's end (Robin, 2026-10-30, Colin, AD's C3; the naust of older saves still stands and works) */   /* (Old Aslak's craft, Robin, 2026-10-29; it was Arnor's boat, key raft) */
     { id: 'mason', name: 'Mason’s bench', kind: 'item', prop: 'masonBench', r: 5, cost: { wood: 6, copper: 3, stone: 4 }, key: 'copper', gives: 'mason' },   // building in stone begins here (2026-10-08, Robin)
     { id: 'signpost', name: 'Wooden sign', kind: 'item', prop: 'signPost', r: 2, sign: true, cost: { wood: 3, charcoal: 1 }, key: 'charcoal' },   // E writes on it in charcoal

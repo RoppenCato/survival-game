@@ -86,7 +86,7 @@ wrong with the rest.
 | 3.3 | **A steady frame rate** at Robin's size, at home. | Built |
 | 3.4 | **The frame rate on a weaker computer**: Robin's work computer found the online game laggy (2026-10-29). | To fix (Robin: leave it for now) |
 | 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Built |
-| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird. | Built |
+| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Built (changed 2026-10-31) |
 | 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (tested by script 2026-10-30) |
 
 ## 4. Choices that wait on Robin
