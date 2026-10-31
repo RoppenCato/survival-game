@@ -32,8 +32,8 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
   `docs/integration.md`): names, people, families, what creatures are and what folk believe, and the words people say (lines,
   cards, tales, name pools). **The lore says what people believe; the game decides what is true.** Interface words (prompts,
-  toasts, the big-step boards, plain item names) stay mine. Only canon reaches the game, delivered as `out/lore/` with a
-  HANDOFF.md, copied into `assets/lore/` and inlined at build time; lines come keyed by situation with slots (`{name}`,
+  toasts, the big-step boards, plain item names) stay mine. **Lore and dialogue need no wait for Robin** (Robin, 2026-10-31: "Its better to have something and that i change it later"): they come as `in-game` or canon, delivered as `out/lore/` with a
+  HANDOFF.md, copied into `assets/lore/` and inlined at build time; `canon` means Robin's own decision; lines come keyed by situation with slots (`{name}`,
   `{place}`, `{lack}`, `{dead}`), under 130 characters. Words in the game that Robin never reviewed are "in-game" in its
   canon. **A name or line needed before the lore has one is a placeholder marked `LORE?` in a comment, and a message to the
   Lore Director; Robin's lore decisions made here are messaged to it.** `docs/beasts.md` keeps only the mechanics. **The lore
