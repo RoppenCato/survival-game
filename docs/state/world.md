@@ -50,3 +50,7 @@ How this part of the game stands now, moved out of `CLAUDE.md` on 2026-10-27 (th
   it yet: the jarl's call comes later): `homeAtPeace(vi)`: tools and fire do nothing to a ring-0 place and no raid alarm
   sounds there; a drawn blade still makes it uneasy. `tools/visual/villages.js`,
   `bigplace.js`.
+
+## Trees without a picture (2026-10-31)
+
+`NO_PICTURE_TREE` in `src/world.js`: beech, ash, apple, willow and the struck tree have no studio pictures and fell back on the old drawn trees, on the starter island too. They are planted as oak, birch or pine until the pictures come (mine: Robin asked why an old tree stood there). So no struck trees stand for now, and their charcoal is gone with them. Still drawn the old way near the start: `wildHerbs`, `birdNest`, `fallenTree`; further out `bogIron`, `graveStone`, `varde`, `chalkRock`, `yew`.
