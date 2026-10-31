@@ -2483,7 +2483,7 @@ function make(kit, opts) {
      with twigs for leaves), with the dusting. The flower is not drawn in winter. Nothing else is graded: the people, the beasts, the
      buildings, the camp things keep their look (their snow caps are the studio's, still to come). */
   var gradeN = 0, GRADE_A_FRAME = 3;
-  var SEASON_KINDS = { pine: 1, oak: 1, birch: 1, bush: 1, berryBush: 1, juniper: 1, heather: 1, fern: 1, tallGrass: 1, reeds: 1, mushroom: 1, mushrooms: 1, flower: 1, wildHerbs: 1, rock: 1, boulder: 1, rockFormation: 1, dwarfBirch: 1, willow: 1 };
+  var SEASON_KINDS = { pine: 1, oak: 1, birch: 1, dwarfBirch: 1, bush: 1, berryBush: 1, juniper: 1, heather: 1, fern: 1, tallGrass: 1, reeds: 1, mushroom: 1, mushrooms: 1, flower: 1, wildHerbs: 1, rock: 1, boulder: 1, rockFormation: 1, dwarfBirch: 1, willow: 1 };
   function pixOf(g, cw, chh) { try { return g.getImageData(0, 0, cw, chh); } catch (e) { return null; } }   /* (Chrome taints a canvas that has drawn a picture loaded from file://: reading it throws a SecurityError; the ground's grade is the one reader left, and a piece that holds a picture stays ungraded) */
   function seasonSprite(name, v, im, o) {
     if (!im.sp || w.season === 'summer' || typeof Seasons === 'undefined') return null;
