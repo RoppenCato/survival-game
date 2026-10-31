@@ -99,6 +99,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-10-31: a workbench in Arnor's house from the start, working once the house has its roof (Robin); it cannot be taken down.
 - 2026-10-31: Robin's fourth run, fixed: the orange dots (an attack's warning, its dust and sparks gone), the east and west window's light on the outer side only, a bigger smoke hole, the door's light not across the hero, the map arrow follows the boat, the far oar under the hero, the boat turns smoothly, ! and ? quest marks over Arnor and the boat and on the maps, the bow and quiver at the workbench.
 - 2026-10-31: Robin's third list: most Checked. Fixed: hand crafts let him walk, blood on hits, the hearth's gate, Shift and click on the bag's lower rows, the boat never on a lake, summer and the day's own weather set once in an older save.
 - 2026-10-31: Robin's second run: the deer, the roast, the night and boarding pass; his notes built (the morning quest, map marks, opening screen, stats, minimap, door paths and so on).

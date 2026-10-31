@@ -402,3 +402,5 @@ What is made by hand lets him walk (`craftJob.walk`, `r.at === hand`); at a stat
 ## Robin's fourth run (2026-10-31)
 
 `tell` in the engine is a glint alone. `Build.window.glowV` takes the outer side. `arnorMark`, `questGlyph` and `questGoal`'s `ch` are the quest marks. `Yard.artFrame` turns the nearest of the 32 pictures the rest of the way, so a hull turns smoothly at no real cost; the rowers' far oar is drawn before the figures. The bow and the quiver are made at a roofed workbench; arrows by hand or there, once a quiver is worn.
+
+`arnorBench`: Arnor's workbench stands in his broken house from the start (Robin, 2026-10-31); it works once the mended house roofs it, and cannot be taken down. `arnorBenchEnsure` adds it once to an older save (`B.arnorBenchV`).
