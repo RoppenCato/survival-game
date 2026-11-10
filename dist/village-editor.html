@@ -4531,6 +4531,36 @@ var BuildElm = (function () {
     WALL: { name: 'Elm boards', face: '#c49a66', top: '#d4ae7c', dark: '#8c6440', tex: 'elmBoards' }, FLOOR: { name: 'Elm boards', tile: 'elm' } };
   return BuildElm;
 })();
+/* build_roof.js: a roof's age (Colin, AD, 2026-11-10; Robin via Clive, GD: "three houses and the view is mostly roof", one yellow). The
+   generator gives every roof an age (src/village.js, V.roofs[].age: 0 fresh, 1 weathered, 2 old; by the place's age, the hall and the
+   church kept best, stores, byres and lean-tos let go, a ruin's old), so a village has two or three ages of roof side by side. This file
+   tints a roof material by that age; nothing else changes (the lit and shaded slopes, the courses, Build's thatchWeather patches and
+   mends stay as they are; no moss, Robin 2026-10-23). Global BuildRoof, also module.exports. No pictures, no memory.
+   - In Build's drawRoof, where it takes r = ROOFS[C.roof]: r = BuildRoof.aged(r, C.roofAge, C.roof). It returns the same object for a
+     fresh roof (or no age) and a copy with col, line and ridge tinted otherwise, so nothing else in drawRoof changes.
+   - The age reaches drawRoof in its cfg as roofAge: the game keeps it beside B.roofs (B.roofAges[room.id], as the generator's own
+     draw does) and passes it in roofCfg (and in its cache key: the roofs are drawn once into a canvas).
+   Fresh thatch is the golden straw it is now; weathered has gone a grey-brown; old is darker and greyer still. Shingles go silver-grey,
+   turf drier and browner; tiles and slate barely change. */
+var BuildRoof = (function () {
+  'use strict';
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), r = ((pa >> 16) & 255) + ((((pb >> 16) & 255) - ((pa >> 16) & 255)) * t),
+      g = ((pa >> 8) & 255) + ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t), bl = (pa & 255) + (((pb & 255) - (pa & 255)) * t);
+    var h = function (v) { var s = Math.round(v).toString(16); return s.length < 2 ? '0' + s : s; };
+    return '#' + h(r) + h(g) + h(bl);
+  }
+  // by material (Build's ROOFS: 0 turf, 1 thatch, 2 shingles, 3 tiles, 4 slate): the colour an age goes toward, and how far at 1 and 2
+  var TOWARD = { 0: ['#8a8452', 0.22, 0.38], 1: ['#8e8674', 0.32, 0.5], 2: ['#8a8784', 0.3, 0.48], 3: ['#8a6a5c', 0.12, 0.2], 4: ['#565c64', 0.08, 0.14] };
+  function aged(r, age, kind) {
+    if (!r || !r.col || !age) return r; var t = TOWARD[kind] || TOWARD[1], k = age >= 2 ? t[2] : t[1], o = {}, key;
+    for (key in r) o[key] = r[key];
+    o.col = mix(r.col, t[0], k); if (r.line) o.line = mix(r.line, t[0], k * 0.6); if (r.ridge) o.ridge = mix(r.ridge, t[0], k * 0.4);
+    return o;
+  }
+  var BuildRoof = { aged: aged, mix: mix, TOWARD: TOWARD };
+  return BuildRoof;
+})();
 var WALLS = [
   { name: 'Logs', face: '#6e5540', top: '#8c6e52', dark: '#3e2d20', tex: 'logs' },      // the earth palette of the art direction (2026-10-07)
   { name: 'Planks', face: '#7d634a', top: '#9a7c5c', dark: '#4a3626', tex: 'planks' },
@@ -5340,6 +5370,7 @@ function drawTower(c, cx, yFoot, ridgeY, m, roof, a) {   // (8) the depth board'
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
+  r = BuildRoof.aged(r, C.roofAge, C.roof);   /* a roof's age (Colin, AD, 2026-11-10): fresh, weathered or old, by the generator; a tinted copy of the material */
   var kind = C.roof, ov = C.overhang + 1.5 + (kind === 1 ? 2 : 0), up = C.wallH + C.thick * K + 1, wm = WALLS[C.wallM] || WALLS[1];   /* (thatch stands proud of the wall: 2026-10-22) */
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
@@ -5492,7 +5523,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { roofAged: BuildRoof.aged, logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 
@@ -5624,6 +5655,12 @@ function make(seed, site, opts) {
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h, HK = G.houseK || 1;
   var lowland = !!(opts.biome || A.lowland);
   var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
+  // a roof's age (2026-11-10, Colin, AD; Robin via Clive, GD: "three houses and the view is mostly roof", one yellow): fresh, weathered or
+  // old thatch side by side, so a village has two or three ages of roof. Skewed by the place's age; the hall and the church kept best;
+  // stores, byres and lean-tos let go; a ruin's old. A hash of the house's own place and the seed, not the shared stream: no layout moves.
+  var roofAge = function (l) { if (V.ruin || l.ruin) return 2; var hv = Math.sin(l.x * 127.1 + l.y * 311.7 + seed * 0.0137) * 43758.5453; hv -= Math.floor(hv);
+    var b2 = (age === 'new' ? 0.2 : age === 'old' ? 1.25 : 0.75) + (l.id === 'hall' || l.id === 'church' ? -0.55 : l.id === 'store' || l.id === 'byre' || l.id === 'lean' || l.id === 'pit' ? 0.45 : 0) + (hv - 0.5) * 1.3;
+    return b2 < 0.5 ? 0 : b2 < 1.3 ? 1 : 2; };
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : 'rail'; if (A.chapel) fenceKind = 'drystone';   /* (wattle only for pens and the kitchen plot: Robin, 2026-10-22) */ if (A.hut && (fenceKind === 'palisade' || fenceKind === 'drystone')) fenceKind = 'fence';   // (the fisherman's hut keeps a wattle fence at most: a ring of stakes round two buildings shut its door, 2026-10-22)
   var farmFence = A.family === 'single' ? null : wealth >= G.farmFenceAt ? 'rail' : null;   // a farm's own fence inside a village (section 9's question 1: both, by wealth)
@@ -5665,7 +5702,7 @@ function make(seed, site, opts) {
     for (y = by0; y < by1; y++) { if (!gapAt[n++] && sk !== 'e') Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
     if (bow) { H(l.x, l.y + 1, 'wall', m); H(l.x + l.w - 1, l.y + 1, 'wall', m); H(l.x, l.y + l.h - 1, 'wall', m); H(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); Vw(l.x + 1, l.y, 'wall', m); Vw(l.x + 1, l.y + l.h - 1, 'wall', m); Vw(l.x + l.w - 1, l.y, 'wall', m); Vw(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); }   // the notches at the four corners
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) { if (bow && (x === l.x || x === l.x + l.w - 1) && (y === l.y || y === l.y + l.h - 1)) continue; C.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0); }
-    if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof });
+    if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof, age: roofAge(l) });   // (age: the roof's own, 0 fresh, 1 weathered, 2 old: Build tints it by BuildRoof.col; 2026-11-10)
     if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
     furnish(l); roomCheck(l);
@@ -5925,7 +5962,7 @@ function make(seed, site, opts) {
     for (k in L.V) { q = k.split(','); edge(+q[0], +q[1], +q[0], +q[1] + 1, L.V[k]); }
     for (k in L.floors) { q = k.split(','); var t2 = PT(+q[0], +q[1]); V.floors[key(t2[0], t2[1])] = L.floors[k]; }
     L.posts.forEach(function (p) { var a = P(p[0], p[1]); V.posts.push([a[0], a[1]]); });
-    L.roofs.forEach(function (r) { var t3 = PT(r.tx, r.ty); V.roofs.push({ tx: t3[0], ty: t3[1], m: r.m }); });
+    L.roofs.forEach(function (r) { var t3 = PT(r.tx, r.ty); V.roofs.push({ tx: t3[0], ty: t3[1], m: r.m, age: r.age }); });
     function pt(o) { var a = PU(o.x, o.y); o.x = a[0]; o.y = a[1]; return o; }
     L.items.forEach(function (o) { V.items.push(pt(o)); }); L.props.forEach(function (o) { V.props.push(pt(o)); }); L.paints.forEach(function (o) { V.paints.push(pt(o)); }); L.finds.forEach(function (o) { V.finds.push(pt(o)); });
     L.lots.forEach(function (l) {
@@ -6750,12 +6787,12 @@ function draw(c, V, env, clock) {
   var PC = { 1: 'rgba(150,138,118,0.85)', 2: 'rgba(126,98,62,0.85)', 3: 'rgba(92,128,70,0.85)' };
   V.paints.forEach(function (p) { if (!inView(p.x, p.y, 40)) return; c.fillStyle = PC[p.kind]; c.beginPath(); c.ellipse(p.x, p.y * K, p.r, p.r * K, 0, 0, 7); c.fill(); });
   for (k in V.floors) { q = k.split(','); x = +q[0]; y = +q[1]; if (!inView(x * T, y * T, 40)) continue; if (env.tile) env.tile(c, x, y, x * T, y * TS, T + 0.4, TS + 0.4); else { c.fillStyle = V.floors[k] === 1 ? '#8a6e4c' : '#9a7c5c'; c.fillRect(x * T, y * TS, T, TS); } }
-  var B = { floors: V.floors, H: V.H, V: V.V, posts: {}, stairs: {}, roofs: {}, items: [] }, ri = Build.rooms(B, 400, 400, { x0: V.tx - 2, y0: V.ty - 2, x1: V.tx + V.w + 2, y1: V.ty + V.h + 2 });
-  V.roofs.forEach(function (r) { var i = ri.at(r.tx, r.ty); if (i >= 0) B.roofs[ri.rooms[i].id] = r.m; });
+  var B = { floors: V.floors, H: V.H, V: V.V, posts: {}, stairs: {}, roofs: {}, roofAges: {}, items: [] }, ri = Build.rooms(B, 400, 400, { x0: V.tx - 2, y0: V.ty - 2, x1: V.tx + V.w + 2, y1: V.ty + V.h + 2 });
+  V.roofs.forEach(function (r) { var i = ri.at(r.tx, r.ty); if (i >= 0) { B.roofs[ri.rooms[i].id] = r.m; B.roofAges[ri.rooms[i].id] = r.age || 0; } });
   var items = [];
   for (k in V.H) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: y * T, f: function () { Build.drawH(c, x, y, e, false, false, Build.cfg({})); } }); })(+q[0], +q[1], V.H[k]); }
   for (k in V.V) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
-  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r) }), 0); } }); });
+  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r), roofAge: B.roofAges[r.id] }), 0); } }); });
   // a thing is drawn as the game draws it when the page has the game's set pieces (env.images: name -> { img, w, h, ax, ay, upp },
   // name_1..name_N for a piece with variants, as World.setImages takes them; the editor since 2026-10-22), else as the kit's drawn prop
   var IM = env.images || null;

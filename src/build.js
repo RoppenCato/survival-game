@@ -215,6 +215,36 @@ var BuildElm = (function () {
     WALL: { name: 'Elm boards', face: '#c49a66', top: '#d4ae7c', dark: '#8c6440', tex: 'elmBoards' }, FLOOR: { name: 'Elm boards', tile: 'elm' } };
   return BuildElm;
 })();
+/* build_roof.js: a roof's age (Colin, AD, 2026-11-10; Robin via Clive, GD: "three houses and the view is mostly roof", one yellow). The
+   generator gives every roof an age (src/village.js, V.roofs[].age: 0 fresh, 1 weathered, 2 old; by the place's age, the hall and the
+   church kept best, stores, byres and lean-tos let go, a ruin's old), so a village has two or three ages of roof side by side. This file
+   tints a roof material by that age; nothing else changes (the lit and shaded slopes, the courses, Build's thatchWeather patches and
+   mends stay as they are; no moss, Robin 2026-10-23). Global BuildRoof, also module.exports. No pictures, no memory.
+   - In Build's drawRoof, where it takes r = ROOFS[C.roof]: r = BuildRoof.aged(r, C.roofAge, C.roof). It returns the same object for a
+     fresh roof (or no age) and a copy with col, line and ridge tinted otherwise, so nothing else in drawRoof changes.
+   - The age reaches drawRoof in its cfg as roofAge: the game keeps it beside B.roofs (B.roofAges[room.id], as the generator's own
+     draw does) and passes it in roofCfg (and in its cache key: the roofs are drawn once into a canvas).
+   Fresh thatch is the golden straw it is now; weathered has gone a grey-brown; old is darker and greyer still. Shingles go silver-grey,
+   turf drier and browner; tiles and slate barely change. */
+var BuildRoof = (function () {
+  'use strict';
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), r = ((pa >> 16) & 255) + ((((pb >> 16) & 255) - ((pa >> 16) & 255)) * t),
+      g = ((pa >> 8) & 255) + ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t), bl = (pa & 255) + (((pb & 255) - (pa & 255)) * t);
+    var h = function (v) { var s = Math.round(v).toString(16); return s.length < 2 ? '0' + s : s; };
+    return '#' + h(r) + h(g) + h(bl);
+  }
+  // by material (Build's ROOFS: 0 turf, 1 thatch, 2 shingles, 3 tiles, 4 slate): the colour an age goes toward, and how far at 1 and 2
+  var TOWARD = { 0: ['#8a8452', 0.22, 0.38], 1: ['#8e8674', 0.32, 0.5], 2: ['#8a8784', 0.3, 0.48], 3: ['#8a6a5c', 0.12, 0.2], 4: ['#565c64', 0.08, 0.14] };
+  function aged(r, age, kind) {
+    if (!r || !r.col || !age) return r; var t = TOWARD[kind] || TOWARD[1], k = age >= 2 ? t[2] : t[1], o = {}, key;
+    for (key in r) o[key] = r[key];
+    o.col = mix(r.col, t[0], k); if (r.line) o.line = mix(r.line, t[0], k * 0.6); if (r.ridge) o.ridge = mix(r.ridge, t[0], k * 0.4);
+    return o;
+  }
+  var BuildRoof = { aged: aged, mix: mix, TOWARD: TOWARD };
+  return BuildRoof;
+})();
 var WALLS = [
   { name: 'Logs', face: '#6e5540', top: '#8c6e52', dark: '#3e2d20', tex: 'logs' },      // the earth palette of the art direction (2026-10-07)
   { name: 'Planks', face: '#7d634a', top: '#9a7c5c', dark: '#4a3626', tex: 'planks' },
@@ -1024,6 +1054,7 @@ function drawTower(c, cx, yFoot, ridgeY, m, roof, a) {   // (8) the depth board'
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
+  r = BuildRoof.aged(r, C.roofAge, C.roof);   /* a roof's age (Colin, AD, 2026-11-10): fresh, weathered or old, by the generator; a tinted copy of the material */
   var kind = C.roof, ov = C.overhang + 1.5 + (kind === 1 ? 2 : 0), up = C.wallH + C.thick * K + 1, wm = WALLS[C.wallM] || WALLS[1];   /* (thatch stands proud of the wall: 2026-10-22) */
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
@@ -1176,6 +1207,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { roofAged: BuildRoof.aged, logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;

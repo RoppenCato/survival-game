@@ -801,7 +801,7 @@ __COMBAT__
   var roofCache = {}, figsInView = 0, figsLast = 0;
   function roofBox(r) { var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (t) { x0 = Math.min(x0, t[0]); y0 = Math.min(y0, t[1]); x1 = Math.max(x1, t[0]); y1 = Math.max(y1, t[1]); }); return { x0: x0, y0: y0, x1: x1, y1: y1 }; }
   function roofSprite(r, cfg) {
-    var key = r.id + ':' + r.tiles.length + ':' + cfg.roof + ':' + cfg.wallM + ':' + (w.season === 'winter' ? 'w' : ''), sp = roofCache[key]; if (sp) return sp;
+    var key = r.id + ':' + r.tiles.length + ':' + cfg.roof + ':' + cfg.wallM + ':' + (cfg.roofAge || 0) + ':' + (w.season === 'winter' ? 'w' : ''), sp = roofCache[key]; if (sp) return sp;
     var bb = roofBox(r), ov = Build.CFG.overhang + 1.5, left = bb.x0 * T - ov - 6, right = (bb.x1 + 1) * T + ov + 6, top = bb.y0 * TS - UP - ov * K - 52, bottom = (bb.y1 + 1) * TS - UP + ov * K + 14;
     var w2 = Math.ceil(right - left), h2 = Math.ceil(bottom - top), cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
     var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -left * 2, -top * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawRoof(c2, r, 1, cfg, 0);
@@ -831,7 +831,7 @@ __COMBAT__
   }
   function drawRoofCached(c, r, a, cfg, dy) { if (a <= 0.01) return; var sp = roofSprite(r, cfg); c.save(); c.globalAlpha *= a; c.drawImage(sp.cv, sp.x, sp.y + (dy || 0), sp.w, sp.h); c.restore(); }
   function roofInView(r, hw, hh) { var bb = roofBox(r); return !((bb.x1 + 1) * T < cam.x - hw - 60 || bb.x0 * T > cam.x + hw + 60 || (bb.y1 + 1) * TS < cam.y - hh - 120 || bb.y0 * TS > cam.y + hh + 60); }
-  function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var m = Build.roomWallM(BB, r), ck = BB.roofs[r.id] + ':' + m, c = roofCfgs[ck]; if (!c) c = roofCfgs[ck] = Build.cfg({ roof: BB.roofs[r.id], wallM: m }); return c; }   // the gable end in the room's own wall material
+  function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var m = Build.roomWallM(BB, r), ag = (BB.roofAges && BB.roofAges[r.id]) || 0, ck = BB.roofs[r.id] + ':' + m + ':' + ag, c = roofCfgs[ck]; if (!c) c = roofCfgs[ck] = Build.cfg({ roof: BB.roofs[r.id], wallM: m, roofAge: ag }); return c; }   /* (roofAge: the generator's age of this roof, Colin, AD 2026-11-10) */   // the gable end in the room's own wall material
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
   function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
@@ -4062,7 +4062,7 @@ __COMBAT__
         if (V2.ruin && /^(campfire|firePit|stoneHearth|hearth|lantern|torchBracket)$/.test(it.name)) it.cold = true;   /* nobody keeps a fire in an abandoned place (2026-11-10: Ulfarstad's yard fire burned) */
         B.items.push(it);
       });
-      V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
+      V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m, age: r.age || 0 }); });
       layArms(v, villages.indexOf(v));
       if (v.jetty) {                                                               // the jetty: dock planks out into the shallows
         var J = v.jetty, rt = J.root, ok = true;
@@ -4823,7 +4823,7 @@ __COMBAT__
     if (npc.sayT > 0) npc.sayT -= dt;
     if (d > HEAR) { if (npc.sayT > 0 && !npc.seq) npc.sayT = 0; npc.quietUntil = 0; }   /* (out of hearing: what he was saying is gone, and he will talk again when you come back) */
     else if (npc.quietUntil > clock && !npc.joined) { var lid = arnorLineId(arnorState()); if ((npc.quietLid && npc.quietLid !== lid) || arnorQuestReady()) npc.quietUntil = 0; npc.quietLid = lid; } else npc.quietLid = null;   /* (something new to say: the quiet ends) */
-    if (roofLaters.length && roomInfo && !bDirty) { roofLaters.forEach(function (rl) { var ri2 = roomInfo.at(rl.tx, rl.ty); if (ri2 >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri2].id] = rl.m; } }); roofLaters = []; save(); }
+    if (roofLaters.length && roomInfo && !bDirty) { roofLaters.forEach(function (rl) { var ri2 = roomInfo.at(rl.tx, rl.ty); if (ri2 >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri2].id] = rl.m; if (rl.age) { if (!B.roofAges) B.roofAges = {}; B.roofAges[roomInfo.rooms[ri2].id] = rl.age; } } }); roofLaters = []; save(); }
     if (roofLater && roomInfo && !bDirty) { var ri = roomInfo.at(roofLater.tx, roofLater.ty); if (ri >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri].id] = roofLater.m; save(); } roofLater = null; }
   }
 

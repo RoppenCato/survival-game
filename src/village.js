@@ -124,6 +124,12 @@ function make(seed, site, opts) {
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h, HK = G.houseK || 1;
   var lowland = !!(opts.biome || A.lowland);
   var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
+  // a roof's age (2026-11-10, Colin, AD; Robin via Clive, GD: "three houses and the view is mostly roof", one yellow): fresh, weathered or
+  // old thatch side by side, so a village has two or three ages of roof. Skewed by the place's age; the hall and the church kept best;
+  // stores, byres and lean-tos let go; a ruin's old. A hash of the house's own place and the seed, not the shared stream: no layout moves.
+  var roofAge = function (l) { if (V.ruin || l.ruin) return 2; var hv = Math.sin(l.x * 127.1 + l.y * 311.7 + seed * 0.0137) * 43758.5453; hv -= Math.floor(hv);
+    var b2 = (age === 'new' ? 0.2 : age === 'old' ? 1.25 : 0.75) + (l.id === 'hall' || l.id === 'church' ? -0.55 : l.id === 'store' || l.id === 'byre' || l.id === 'lean' || l.id === 'pit' ? 0.45 : 0) + (hv - 0.5) * 1.3;
+    return b2 < 0.5 ? 0 : b2 < 1.3 ? 1 : 2; };
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : 'rail'; if (A.chapel) fenceKind = 'drystone';   /* (wattle only for pens and the kitchen plot: Robin, 2026-10-22) */ if (A.hut && (fenceKind === 'palisade' || fenceKind === 'drystone')) fenceKind = 'fence';   // (the fisherman's hut keeps a wattle fence at most: a ring of stakes round two buildings shut its door, 2026-10-22)
   var farmFence = A.family === 'single' ? null : wealth >= G.farmFenceAt ? 'rail' : null;   // a farm's own fence inside a village (section 9's question 1: both, by wealth)
@@ -165,7 +171,7 @@ function make(seed, site, opts) {
     for (y = by0; y < by1; y++) { if (!gapAt[n++] && sk !== 'e') Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
     if (bow) { H(l.x, l.y + 1, 'wall', m); H(l.x + l.w - 1, l.y + 1, 'wall', m); H(l.x, l.y + l.h - 1, 'wall', m); H(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); Vw(l.x + 1, l.y, 'wall', m); Vw(l.x + 1, l.y + l.h - 1, 'wall', m); Vw(l.x + l.w - 1, l.y, 'wall', m); Vw(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); }   // the notches at the four corners
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) { if (bow && (x === l.x || x === l.x + l.w - 1) && (y === l.y || y === l.y + l.h - 1)) continue; C.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0); }
-    if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof });
+    if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof, age: roofAge(l) });   // (age: the roof's own, 0 fresh, 1 weathered, 2 old: Build tints it by BuildRoof.col; 2026-11-10)
     if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
     furnish(l); roomCheck(l);
@@ -425,7 +431,7 @@ function make(seed, site, opts) {
     for (k in L.V) { q = k.split(','); edge(+q[0], +q[1], +q[0], +q[1] + 1, L.V[k]); }
     for (k in L.floors) { q = k.split(','); var t2 = PT(+q[0], +q[1]); V.floors[key(t2[0], t2[1])] = L.floors[k]; }
     L.posts.forEach(function (p) { var a = P(p[0], p[1]); V.posts.push([a[0], a[1]]); });
-    L.roofs.forEach(function (r) { var t3 = PT(r.tx, r.ty); V.roofs.push({ tx: t3[0], ty: t3[1], m: r.m }); });
+    L.roofs.forEach(function (r) { var t3 = PT(r.tx, r.ty); V.roofs.push({ tx: t3[0], ty: t3[1], m: r.m, age: r.age }); });
     function pt(o) { var a = PU(o.x, o.y); o.x = a[0]; o.y = a[1]; return o; }
     L.items.forEach(function (o) { V.items.push(pt(o)); }); L.props.forEach(function (o) { V.props.push(pt(o)); }); L.paints.forEach(function (o) { V.paints.push(pt(o)); }); L.finds.forEach(function (o) { V.finds.push(pt(o)); });
     L.lots.forEach(function (l) {
@@ -588,6 +594,7 @@ function make(seed, site, opts) {
     if (G.clutter && !V.ruin && gr.w >= 8) { item('foodTable', gc[0] - T * 2.6, gc[1] - T * 1.2, { r: 7 }); item('bench', gc[0] - T * 2.6, gc[1] - T * 1.2 + 15, { seat: true }); }
     if (market && !V.ruin) { var ns2 = 2 + Math.floor(R() * 2), k2; for (k2 = 0; k2 < ns2; k2++) item('stall', (gr.x + 1.5 + k2 * Math.max(3, (gr.w - 3) / ns2)) * T, (gr.y + gr.h - 0.9) * T, { r: 8 }); prop({ name: 'signPost', x: (gr.x + gr.w - 1) * T, y: (gr.y + gr.h - 0.5) * T, solid: 3 }); }
     if (gr.w >= 8 && R() < 0.5) prop({ name: 'cart', x: (gr.x + gr.w - 1.2) * T, y: (gr.y + 1.2) * T });
+    if (G.clutter && !V.ruin && gr.w >= 6) greenEdge(gr, market);
     if (G.yardEarth) earthPatch(gc[0], gc[1], gr.w * T * 0.46, gr.h * T * 0.46, market ? 0.95 : 0.8);
     V.yards.push({ x: gr.x, y: gr.y, w: gr.w, h: gr.h });
   }
@@ -606,6 +613,31 @@ function make(seed, site, opts) {
     approachPl = { cls: 'main', pts: pts, taper: true }; V.spine.push(approachPl);
     if (backGateX != null) { exitPl = { cls: 'lane', pts: [[L0d[0], L0d[1]], [backGateX + 0.5, L0.y + L0.h + 1], [backGateX + 0.5, ty + 0.5], [backGateX + 0.5 + side * 0.3, ty - 1.5]] }; V.spine.push(exitPl); }
     if (shore && shore !== 's') { var shp = shore === 'n' ? [fc[0], ty - 0.3] : shore === 'e' ? [tx + w + 0.3, fc[1]] : [tx - 0.3, fc[1]]; V.spine.push({ cls: 'lane', pts: [[fc[0] + side * 1.6, fc[1] + 1.0], [fc[0] - side * 0.6, fc[1] + 1.8], shp] }); }
+  }
+  /* the green busy at its edges, open in the middle (2026-11-10, Colin, AD; Robin via Clive, GD: "the green is bare"): small clusters of the
+     things a common gathers, laid round its rim between the ways in (never on the street's junctions, the north way out or the south way
+     in), each kept clear of what already stands there; the middle stays open for people. From the pieces the game has. Their own random
+     stream (rngOf of the seed), so the place's layout does not move. */
+  function greenEdge(gr, market) {
+    var RG = rngOf(seed * 13 + 7), cx = (gr.x + gr.w / 2) * T, cy = (gr.y + gr.h / 2) * T, rx = (gr.w / 2 - 0.55) * T, ry = (gr.h / 2 - 0.5) * T;
+    var taken = C.items.concat(C.props).filter(function (o) { return Math.abs(o.x - cx) < rx + T * 2 && Math.abs(o.y - cy) < ry + T * 2; }).map(function (o) { return [o.x, o.y, o.r || o.solid || 10]; });
+    function free(x, y, r) { for (var i = 0; i < taken.length; i++) if (Math.hypot(taken[i][0] - x, taken[i][1] - y) < taken[i][2] + r + 6) return false; return true; }
+    function put(kind, name, x, y, r, extra) { if (!free(x, y, r)) return false; taken.push([x, y, r]); if (kind === 'item') item(name, x, y, Object.assign({ r: r }, extra || {})); else prop(Object.assign({ name: name, x: x, y: y, solid: r }, extra || {})); return true; }
+    var kinds = ['fuel', 'water', 'rest', 'cart', 'flowers'].concat(market ? ['goods', 'goods'] : []).concat(G.sacred && A.tier >= 2 ? ['post'] : []).concat(shore ? ['drying'] : []);
+    var angles = [-140, -112, -68, -40, 40, 68, 112, 140].map(function (d) { return d * Math.PI / 180 + (RG() - 0.5) * 0.18; }), n = Math.min(angles.length, Math.max(3, Math.round(gr.w / 2.4))), k, i;
+    for (i = angles.length - 1; i > 0; i--) { var j = Math.floor(RG() * (i + 1)), t0 = angles[i]; angles[i] = angles[j]; angles[j] = t0; }
+    for (k = 0; k < n && kinds.length; k++) {
+      var a = angles[k], px = cx + Math.cos(a) * rx, py = cy + Math.sin(a) * ry, tx2 = -Math.sin(a), ty2 = Math.cos(a), ki = Math.floor(RG() * kinds.length), kind = kinds.splice(ki, 1)[0], o2 = 24;
+      var bx = px + tx2 * o2, by = py + ty2 * o2 * 0.7;                    // the second thing of a cluster, along the rim
+      if (kind === 'fuel') { if (put('prop', 'woodpile', px, py, 9)) put('prop', 'choppingBlock', bx, by, 5, { block: true }); }
+      else if (kind === 'water') { if (put('prop', 'trough', px, py, 8)) put('prop', 'bucket', bx, by, 3); }
+      else if (kind === 'rest') { if (put('item', 'bench', px, py, 6, { seat: true })) put('item', 'logSeat', bx, by, 5, { seat: true }); }
+      else if (kind === 'cart') { if (put('prop', 'cart', px, py, 10)) put('prop', 'sackPile', bx, by, 6); }
+      else if (kind === 'flowers') { put('prop', 'flowerBed', px, py, 0); put('prop', 'flower_' + (1 + Math.floor(RG() * 3)), bx, by, 0); }
+      else if (kind === 'goods') { if (put('item', 'barrel', px, py, 4)) { put('item', 'crate', bx, by, 4); put('prop', 'sack', px - tx2 * 16, py - ty2 * 12, 3); } }
+      else if (kind === 'post') { var sp2 = [(gr.x + 0.8) * T, (gr.y + 0.8) * T]; put('prop', 'dragonPost', sp2[0] + 30, sp2[1] - 4, 4); }
+      else if (kind === 'drying') put('prop', 'dryingRack', px, py, 6);
+    }
   }
   function growCluster() {                            // farms along a winding street, or round a green (the forte): a hamlet, a village, a seat
     var isGreen = shape === 'green', gw = A.green ? A.green[0] : 6, gh = A.green ? A.green[1] : 4;
@@ -1250,12 +1282,12 @@ function draw(c, V, env, clock) {
   var PC = { 1: 'rgba(150,138,118,0.85)', 2: 'rgba(126,98,62,0.85)', 3: 'rgba(92,128,70,0.85)' };
   V.paints.forEach(function (p) { if (!inView(p.x, p.y, 40)) return; c.fillStyle = PC[p.kind]; c.beginPath(); c.ellipse(p.x, p.y * K, p.r, p.r * K, 0, 0, 7); c.fill(); });
   for (k in V.floors) { q = k.split(','); x = +q[0]; y = +q[1]; if (!inView(x * T, y * T, 40)) continue; if (env.tile) env.tile(c, x, y, x * T, y * TS, T + 0.4, TS + 0.4); else { c.fillStyle = V.floors[k] === 1 ? '#8a6e4c' : '#9a7c5c'; c.fillRect(x * T, y * TS, T, TS); } }
-  var B = { floors: V.floors, H: V.H, V: V.V, posts: {}, stairs: {}, roofs: {}, items: [] }, ri = Build.rooms(B, 400, 400, { x0: V.tx - 2, y0: V.ty - 2, x1: V.tx + V.w + 2, y1: V.ty + V.h + 2 });
-  V.roofs.forEach(function (r) { var i = ri.at(r.tx, r.ty); if (i >= 0) B.roofs[ri.rooms[i].id] = r.m; });
+  var B = { floors: V.floors, H: V.H, V: V.V, posts: {}, stairs: {}, roofs: {}, roofAges: {}, items: [] }, ri = Build.rooms(B, 400, 400, { x0: V.tx - 2, y0: V.ty - 2, x1: V.tx + V.w + 2, y1: V.ty + V.h + 2 });
+  V.roofs.forEach(function (r) { var i = ri.at(r.tx, r.ty); if (i >= 0) { B.roofs[ri.rooms[i].id] = r.m; B.roofAges[ri.rooms[i].id] = r.age || 0; } });
   var items = [];
   for (k in V.H) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: y * T, f: function () { Build.drawH(c, x, y, e, false, false, Build.cfg({})); } }); })(+q[0], +q[1], V.H[k]); }
   for (k in V.V) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
-  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r) }), 0); } }); });
+  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r), roofAge: B.roofAges[r.id] }), 0); } }); });
   // a thing is drawn as the game draws it when the page has the game's set pieces (env.images: name -> { img, w, h, ax, ay, upp },
   // name_1..name_N for a piece with variants, as World.setImages takes them; the editor since 2026-10-22), else as the kit's drawn prop
   var IM = env.images || null;
