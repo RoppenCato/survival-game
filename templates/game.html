@@ -451,7 +451,8 @@ __COMBAT__
   function heroLook(face) {
     var P = hero(), M = sprHero && sprHero.meta; if (!M || !sprHero.kit) return null;
     var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, mf = function (it, d) { return (it && Items.MATS[it.mat] && Items.MATS[it.mat].face) || d; };
-    var L = [{ l: 'body' }, { l: 'legs', t: equip.legs ? mf(equip.legs, S.legs) : S.legs }, { l: 'tunic', t: S.tunic }, { l: equip.feet ? 'boots' : 'shoes' }, { l: 'belt' }];
+    var L = [{ l: 'body' }, { l: 'legs', t: equip.legs ? mf(equip.legs, S.legs) : S.legs }, has('shirt') ? { l: 'shirt' } : { l: 'tunic', t: S.tunic }, { l: equip.feet ? 'boots' : 'shoes' }, { l: 'belt' }];
+    if (equip.chest && has('shirt')) L.splice(3, 0, { l: 'tunic', t: S.tunic });   /* the basic outfit is the undyed shirt (Robin, 2026-11-10; Colin, AD's `shirt`, no tint, the lowest worn layer); the tunic goes on with what is worn on the chest (mine) */
     if (equip.chest) L.push(equip.chest.mat === 'iron' ? { l: 'mail', t: Items.MATS.iron.face } : { l: 'coat', t: mf(equip.chest, '#9a6a44') });
     if (equip.quiver) { L.push({ l: 'quiver' }); if (quiverCount() > 0) L.push({ l: 'arrowsQuiver' }); }   /* the quiver on his right hip, its arrows' ends while it holds any (Colin, AD's, 2026-10-26): after the worn layers, before the cloak */
     if (equip.cloak) L.push({ l: 'cloak', t: mf(equip.cloak, '#6b4f36') });

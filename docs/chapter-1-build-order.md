@@ -18,5 +18,6 @@ page is the order, as rungs: each is tried by itself and has a done-when before 
 
 ## What changed
 
+- 2026-11-10: Colin, AD's first drops copied in (the hero kit with `shirt`, the flint layers and `carryLog`; flint, old pine, logs, loom and flax pieces). Flint and flax draw as his pictures; the rest is wired in its own step.
 - 2026-11-10: **step 1, first half built** (`src/world.js` `homeRoles`, `plantRound`; `tests/isles.js`): roles for the nine islands round (hamlet, elm, fisher, ruin, homes with a feature or more of one thing, the bear's island), flint, flax, old pines and elms planted by hash alone so nothing else in the world moved (checked against the old code, seed 11). They stand in as a small rock, tall grass, a big pine and an oak. **Left of step 1:** the hamlet's and the fisherman's villages on their islands, the ruin, the spring, the bay and the hill as things you see, the bear put on his island, the islands' names on the map.
 - 2026-11-10: set up.

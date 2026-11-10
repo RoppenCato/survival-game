@@ -41,8 +41,8 @@ var TREE_SHAPES = { big: [1, 1, 'twice'], mid: [0.5, 0.5, 'one and a half'], tal
 function treeBake(name) { var tb = TREE_BAKE[name] || 1; return { sx: 1 + (tb - 1) * treeShape[0], sy: 1 + (tb - 1) * treeShape[1] }; }
 var NO_PICTURE_TREE = { beech: 'oak', ash: 'birch', apple: 'oak', willow: 'birch', struckTree: 'pine' };   /* Kinds the studio has not drawn, planted as one it has, so none of the old drawn trees stand in the world (Robin, 2026-10-31, the big teal tree on the starter island). Take a kind out when its pictures come. */
 var TREE_BAKE = { oak: 2, pine: 2, birch: 2, beech: 2, ash: 2, apple: 1.7, struckTree: 2, dwarfBirch: 1.2 };   // twice (Robin, 2026-10-15: "maybe twice the size is better than 3x"; the 3x of 2026-10-14 never showed, see trimSprite)   // how much bigger each tree is baked than its prop (2026-10-14)
-var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
-var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
+var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', flint: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', wildFlax: 'bush', hedge: 'bush' };
+var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, flint: 2, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, wildFlax: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -1621,7 +1621,7 @@ function make(kit, opts) {
   var plantRound = function () {
     var n = { flint: 0, flax: 0, oldPine: 0, elm: 0, more: 0 }, free = function (wx, wy, d) { var ok = true; w.around(wx, wy, function (p) { if (ok && Math.abs(p.x - wx) < d && Math.abs(p.y - wy) < d) ok = false; }); return ok; };
     var own = function (x, y, q) { var d = Math.hypot(x - q.x, y - q.y) / q.r, j; for (j = 0; j < isles.length; j++) if (isles[j] !== q && Math.hypot(x - isles[j].x, y - isles[j].y) / isles[j].r < d) return false; return true; };   /* (the tile is this island's and no neighbour's) */
-    var put = function (is, name, wx, wy, sc, r, hv, hp) { if (!kit.PROPS[name]) return; var p = { name: name, is: is, x: wx, y: wy, s: sc, r: r, v: Math.floor(hv * 3) % 3, kind: KIND[name] || null }; p.max = p.hp = hp; p.leanDir = hv < 0.5 ? -1 : 1; w.addProp(p); n[is === 'flint' || is === 'flax' || is === 'oldPine' || is === 'elm' ? is : 'more']++; };
+    var put = function (is, name, wx, wy, sc, r, hv, hp) { if (!kit.PROPS[name] && !IMAGES[name + '_1']) return; var p = { name: name, is: is, x: wx, y: wy, s: sc, r: r, v: Math.floor(hv * 3) % 3, kind: KIND[name] || null }; p.max = p.hp = hp; p.leanDir = hv < 0.5 ? -1 : 1; w.addProp(p); n[is === 'flint' || is === 'flax' || is === 'oldPine' || is === 'elm' ? is : 'more']++; };
     isles.forEach(function (q, qi) {
       var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || big)) return;
       var e = Math.ceil(q.r * 1.45), xa = Math.max(3, Math.floor(q.x - e)), xb = Math.min(GW - 4, Math.ceil(q.x + e)), ya = Math.max(3, Math.floor(q.y - e)), yb = Math.min(GH - 4, Math.ceil(q.y + e)), x, y;
@@ -1630,8 +1630,8 @@ function make(kit, opts) {
         var h1 = hash(x, y, s + 801), h2 = hash(x, y, s + 802), wx = (x + 0.25 + h2 * 0.5) * T, wy = (y + 0.3 + hash(x, y, s + 803) * 0.4) * T, grass = t3 >= 2 && t3 !== 5;
         if (big) { var fn = w.fellNear(wx, wy), mc = cellAt(wx, wy); if (grass && !(mc & 3) && !(mc & (M_BLOCK | M_RAMP | M_WATER)) && fn > 0.2 && fn < 0.95 && h1 < 0.012 && vnoise(x / 9, y / 9, s + 41) > 0.5 && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3); continue; }
         if (Math.hypot(wx - w.home.x, wy - w.home.y) < 130) continue;
-        if (q.flint && t3 === 1 && h1 < 0.022 && own(wx / T, wy / T, q) && free(wx, wy, 18)) put('flint', 'rock', wx, wy, 0.36 + h2 * 0.1, 5, h2, 2);
-        else if (q.flax && grass && h1 < 0.16 && vnoise(x / 5, y / 5, s + 31 + qi) > 0.7 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('flax', 'tallGrass', wx, wy, 0.9, 0, h2, HP.tallGrass);
+        if (q.flint && t3 === 1 && h1 < 0.022 && own(wx / T, wy / T, q) && free(wx, wy, 18)) { if (IMAGES.flint_1) put('flint', 'flint', wx, wy, 1, 4, h2, 2); else put('flint', 'rock', wx, wy, 0.36 + h2 * 0.1, 5, h2, 2); }   /* (Colin, AD's flint_1..3 where the pictures are loaded; a small rock in a headless test) */
+        else if (q.flax && grass && h1 < 0.16 && vnoise(x / 5, y / 5, s + 31 + qi) > 0.7 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('flax', IMAGES.wildFlax_1 ? 'wildFlax' : 'tallGrass', wx, wy, IMAGES.wildFlax_1 ? 1 : 0.9, 0, h2, HP.tallGrass);
         else if (q.pines && grass && h1 < 0.022 && vnoise(x / 9, y / 9, s + 41 + qi) > 0.6 && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
         else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.oak);
         else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
@@ -1673,6 +1673,7 @@ function make(kit, opts) {
       } else if (t3 === 1 && roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
       p.x = wx; p.y = wy; p.v = Math.floor(R() * (ROCKV[p.name] ? 6 : 3));   // (a rock in six variations since 2026-10-14, its tone and build by the seed: see rockMat in the kit)
+      if (p.name === 'wildHerbs') p.v = Math.floor(hash(x, y, s + 77) * 4);   /* (four herbs since Colin, AD's pictures of 2026-11-10: the kind by the place, no draw taken) */
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }
