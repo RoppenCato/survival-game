@@ -37,7 +37,7 @@ Last updated: 2026-11-10.
 | Colin, AD | The blót's ritual clips and props (the cut-scene uses stand-ins) | 2026-10-29 |
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
-| Colin, AD | Chapter 1's new things (asked 2026-11-10): flint gear, the old pine and its log, log walls and floors, the loom, wild flax, the wolf-skin cloak, hood and tunic, the bear rug and cloak, the yew and the yew bow, roseroot, the claim stone lying, carved, reddened and standing, salt | 2026-11-10 |
+| Colin, AD | Chapter 1's new things (asked 2026-11-10): flint gear, the old pine and its log, log walls and floors, the loom, wild flax, the wolf-skin cloak, hood and tunic, the bear rug and cloak, the elm, the elm bow and elm building pieces, roseroot, the claim stone lying, carved, reddened and standing, salt | 2026-11-10 |
 | Alistair, LD | Nothing: handoffs 24 and 25 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
 | Colin, AD | Chapter 0 (Robin, 2026-11-10): the basic outfit's undyed shirt; pictures for wild herbs and fallen trees | 2026-11-10 |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
