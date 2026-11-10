@@ -51,7 +51,7 @@ How to tell what is unused:
 - **Every doc in `docs/`**: its top says whether it is decided, a proposal waiting for Robin, or finished (then archive it). Update the
   parts the game has overtaken.
 - **`tests/README.md`** lists every test that exists, what it prints and whether it is in `npm test`; `package.json`'s scripts match.
-- **`docs/for-robin.md`**: questions answered are taken out; open ones stay.
+- **`docs/decisions.md`** (it was `docs/for-robin.md` until 2026-11-10): choices answered are taken out; open ones stay. **`docs/next-up.md`** is brought up to date.
 - **The start page** (`templates/index.html`) and **`docs/state/pages.md`'s Pages table** list exactly the pages and scenes that exist.
 
 ## 3. The editors and test scenes, one by one

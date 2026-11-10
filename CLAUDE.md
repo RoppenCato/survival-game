@@ -18,6 +18,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 
 - **Robin's decisions are marked as Robin's; choices I made are marked "mine"** so Robin can judge them. Robin has played
   little of the systems below: their numbers are first settings, measured by bots, not felt.
+- **The lists (Robin, 2026-11-10):** `docs/next-up.md` is the one page for "what's next" (what I do now, what waits on Robin, what waits on a studio); `docs/decisions.md` holds every choice waiting for Robin, numbered, with my recommendation, by the chapter it holds up; each chapter has a checklist (`docs/chapter-0-checklist.md`, `docs/chapter-1-checklist.md`, a draft); `docs/idea-bank.md` holds only undecided ideas. Keep all four current: an answer leaves the decisions list, a change moves `next-up.md`.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`world-shape.md`: waters, the lifecycle of a raided place, named
   islands, claims and the year; `build-plan-waters.md`: the steps to build it; **`raid-build-plan.md`: the raid in the real game in ten
