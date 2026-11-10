@@ -4404,6 +4404,19 @@ var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
+/* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the bear's; the small ones the fisherman's, the ruin's and homes. */
+var HOME_FEATS = ['spring', 'bay', 'meadow', 'hill'], HOME_RES = ['fish', 'deer', 'berries', 'stone', 'birds'];
+function homeRoles(isles, home, R) {
+  var rest = home.isles.slice(2).map(function (k) { return isles[k]; }).filter(function (q) { return q && !q.role; }), sh = function (l) { for (var k = l.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = l[k]; l[k] = l[j]; l[j] = t; } return l; };
+  rest.sort(function (p, q) { return q.r - p.r; });
+  var mids = sh(rest.filter(function (q) { return q.r >= 60; })), smalls = sh(rest.filter(function (q) { return q.r < 60; })), take = function (l, alt) { return l.length ? l.shift() : alt.length ? alt.shift() : null; };
+  var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), ruin = take(smalls, mids), homes = smalls.concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
+  if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher'; if (ruin) { ruin.role = 'ruin'; ruin.flax = true; }   /* (flax gone wild in the ruin's old fields) */
+  if (wild) { wild.role = 'home'; wild.feat = 'pines'; wild.pines = true; }
+  homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
+  var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
+  rest.forEach(function (q) { q.flint = true; });
+}
 function hash(x, y, s) { var h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
 function vnoise(x, y, s) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); var a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
 function fbm(x, y, s) { return vnoise(x, y, s) * 0.65 + vnoise(x * 2.1, y * 2.1, s + 9) * 0.35; }
@@ -4481,6 +4494,7 @@ function make(kit, opts) {
     placeAt(waters[0], -px / 2 - (rB - rS) / 2, -py / 2, rS, 'starter'); placeAt(waters[0], px / 2 - (rB - rS) / 2, py / 2, rB, 'big');
     for (i = 0; i < WD.homeMid[0]; i++) placeIn(waters[0], rndW(WD.homeMid[1], WD.homeMid[2]));
     for (i = 0; i < WD.homeSmall[0]; i++) placeIn(waters[0], rndW(WD.homeSmall[1], WD.homeSmall[2]));
+    homeRoles(isles, waters[0], kit.rng(s * 101 + 991));   /* chapter 1 (Robin, 2026-11-10): what each island round is for */
     waters.slice(1).forEach(function (wt) {                      // a ring-1 water: one or two big islands, the rest small, and one slot (a generic island now; a special island's recipe drops in later)
       var nI = intW(WD.ringN[0], WD.ringN[1]), nBig = RW() < 0.5 ? 1 : 2, j, south = wt.dir === 'south' ? 1 : 0, mid = null;
       for (j = 0; j < nI; j++) { var rr2 = j < nBig ? rndW(WD.ringBig[0], WD.ringBig[1]) : j === nBig ? rndW(WD.ringMid[0], WD.ringMid[1]) : rndW(WD.ringSmall[0], WD.ringSmall[1]), rec2 = placeIn(wt, rr2, null, false, south); if (rec2 && j === nBig) mid = rec2; }
@@ -5961,6 +5975,30 @@ function make(kit, opts) {
   w.sortBuckets = function () { buckets.forEach(function (b) { if (b) b.sort(function (p, q) { return p.y - q.y; }); }); };
   w.eachProp = function (fn) { buckets.forEach(function (b) { if (b) b.slice().forEach(fn); }); };
   // 5. what grows there: the first biome only. Trees stand in groves with open ground between them; the beach stays bare.
+  /* Chapter 1's own plants (Robin, 2026-11-10), laid after the rest and by hash alone: flint nodules on the beaches of the islands round, wild flax, the old pines (two islands, and the foot of the big island's mountain), the elms of the elm island, and more of one thing where an island has it. Each stands in as a thing that has a picture (`is` says what it is) until Colin, AD's come. */
+  var plantRound = function () {
+    var n = { flint: 0, flax: 0, oldPine: 0, elm: 0, more: 0 }, free = function (wx, wy, d) { var ok = true; w.around(wx, wy, function (p) { if (ok && Math.abs(p.x - wx) < d && Math.abs(p.y - wy) < d) ok = false; }); return ok; };
+    var own = function (x, y, q) { var d = Math.hypot(x - q.x, y - q.y) / q.r, j; for (j = 0; j < isles.length; j++) if (isles[j] !== q && Math.hypot(x - isles[j].x, y - isles[j].y) / isles[j].r < d) return false; return true; };   /* (the tile is this island's and no neighbour's) */
+    var put = function (is, name, wx, wy, sc, r, hv, hp) { if (!kit.PROPS[name]) return; var p = { name: name, is: is, x: wx, y: wy, s: sc, r: r, v: Math.floor(hv * 3) % 3, kind: KIND[name] || null }; p.max = p.hp = hp; p.leanDir = hv < 0.5 ? -1 : 1; w.addProp(p); n[is === 'flint' || is === 'flax' || is === 'oldPine' || is === 'elm' ? is : 'more']++; };
+    isles.forEach(function (q, qi) {
+      var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || big)) return;
+      var e = Math.ceil(q.r * 1.45), xa = Math.max(3, Math.floor(q.x - e)), xb = Math.min(GW - 4, Math.ceil(q.x + e)), ya = Math.max(3, Math.floor(q.y - e)), yb = Math.min(GH - 4, Math.ceil(q.y + e)), x, y;
+      for (y = ya; y <= yb; y++) for (x = xa; x <= xb; x++) {
+        var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
+        var h1 = hash(x, y, s + 801), h2 = hash(x, y, s + 802), wx = (x + 0.25 + h2 * 0.5) * T, wy = (y + 0.3 + hash(x, y, s + 803) * 0.4) * T, grass = t3 >= 2 && t3 !== 5;
+        if (big) { var fn = w.fellNear(wx, wy), mc = cellAt(wx, wy); if (grass && !(mc & 3) && !(mc & (M_BLOCK | M_RAMP | M_WATER)) && fn > 0.2 && fn < 0.95 && h1 < 0.012 && vnoise(x / 9, y / 9, s + 41) > 0.5 && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3); continue; }
+        if (Math.hypot(wx - w.home.x, wy - w.home.y) < 130) continue;
+        if (q.flint && t3 === 1 && h1 < 0.022 && own(wx / T, wy / T, q) && free(wx, wy, 18)) put('flint', 'rock', wx, wy, 0.36 + h2 * 0.1, 5, h2, 2);
+        else if (q.flax && grass && h1 < 0.16 && vnoise(x / 5, y / 5, s + 31 + qi) > 0.7 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('flax', 'tallGrass', wx, wy, 0.9, 0, h2, HP.tallGrass);
+        else if (q.pines && grass && h1 < 0.022 && vnoise(x / 9, y / 9, s + 41 + qi) > 0.6 && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
+        else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.oak);
+        else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
+        else if (q.res === 'stone' && grass && h1 < 0.008 && own(wx / T, wy / T, q) && free(wx, wy, 22)) put('stone', 'boulder', wx, wy, 0.9 + h2 * 0.3, 11, h2, HP.boulder);
+      }
+      if (q.feat === 'meadow') { var cx = (q.x + 0.5) * T, cy = (q.y + 0.5) * T, rr = q.r * T * 0.42, gone = []; w.eachProp(function (p) { if (p.kind === 'tree' && Math.hypot(p.x - cx, p.y - cy) < rr) gone.push(p); }); gone.forEach(w.removeProp); n.cleared = gone.length; }   /* a wide meadow: the middle of the island open */
+    });
+    return n;
+  };
   w.plant = function () {
     var TREES = ['birch', 'pine', 'birch', 'pine', 'oak'].filter(function (nm) { return !!kit.PROPS[nm]; }), LOW = ['oak', 'beech', 'ash', 'beech', 'oak', 'apple'].filter(function (nm) { return !!kit.PROPS[nm]; }), home = w.home;   // the lowlands: oak, beech, ash, an apple tree now and then
     for (y = 3; y < GH - 3; y++) for (x = 3; x < GW - 3; x++) {
@@ -6014,6 +6052,7 @@ function make(kit, opts) {
     if (mtn && kit.PROPS.cairn) mtn.ramps.forEach(function (rm) {            // a cairn at the foot and the head of every slope: the old way of marking a way up
       (rm.gap ? [[rm.x1 + 30, rm.y1 + 4]] : [[rm.x1 + 38, rm.y1 - 6], [rm.x0 - 38, rm.y0 + 10]]).forEach(function (q) { if (w.flatAt(q[0], q[1], 12)) w.addProp({ name: 'cairn', x: q[0], y: q[1], s: 0.9, r: 8, v: Math.floor(R() * 3) }); });
     });
+    w.stats.round = plantRound();
     return w.stats;
   };
   // 5b. the peaks (2026-10-12): the Blender peaks stood on the ground nobody can walk. A peak goes only where everything under

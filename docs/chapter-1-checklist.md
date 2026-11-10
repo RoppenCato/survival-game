@@ -52,6 +52,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.20 | **The healing herb** from the mountain: a healing drink. | Not built |
 | 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |
 | 2.11 | **Rumours** from villagers (trolls gone north, and more from the lore). | Built for two lines; surfacing the lore's rumours Not built |
+| 2.21 | **Clues steer you to the islands, subtly** (Robin, 2026-11-10): what people say leaves **a question mark on the map where the island is** ("Theres an old bear walking around the woods at X island, i'd be careful around that area", "I heard greater weapons can be created from flint"); nothing is stated as a goal. One clue at least for each island with a reason, for flint, flax, the old pines and the Old Man. | Not built (the lore has most of the lines) |
 
 ## 3. The islands round
 
@@ -59,7 +60,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | --- | --- | --- |
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
 | 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island, a trading hamlet, an elm island. | Not built (Gamli is on the big island today) |
-| 3.6 | **Flint on the beaches of every island round**, never on the big island. | Not built |
+| 3.6 | **Flint on the beaches of every island round**, never on the big island or the starter island. | Built in the world (`tests/isles.js`); it is a small rock that gives stone until step 2 makes flint a thing of its own |
 | 3.7 | **The elm island** (Robin, 2026-11-10: no yew anywhere in the game; the name is Alistair, LD's, Barlindey goes): **elm for a better bow, and new building options from it, a floor, walls and more**. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | Not built (the bear's model and fight exist; the elm bow, the elm pieces, the cape, the rug and the rune do not) |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
 | 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **a healing herb** gathered only up there (2.20). | The cave Built; the lookout opening the map and the herb Not built |
@@ -88,6 +89,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 1's first half built: every island round has its role, flint on its beaches, flax on three or more, old pines on two and at the mountain's foot, elms on the elm island (`tests/isles.js`, ten seeds). Robin: clues that leave a question mark on the map (2.21).
 - 2026-11-10: Robin on the bear: no island of its own, a named old bear as a miniboss, the best cape of the chapter and a rune (D46).
 - 2026-11-10: Robin's second round: the healing herb, three wolf-skin pieces, the hamlet's swaps and the loom, wild flax, the big-log tree, the very hard bear, home sites that differ, flint arrows' numbers, the claim stone of stone and a wolf's blood in three steps.
 - 2026-11-10: Robin's questionnaire: three islands with a reason, the bear, flint gear and wolf-skin gear, flint on the outer beaches, barter, the lookout and a rare thing on the mountain, the claim stone, four glimpses; the end is being able to leave; no practice ground, no hirdman; seasons independent.

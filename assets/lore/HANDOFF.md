@@ -1,20 +1,25 @@
-# Lore handoff 25: the Old Man (2026-11-10)
+# Lore handoff 26: no yew, the elm isle (2026-11-10)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-24.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-25.md`.
 
-Robin's change of 2026-11-10 is recorded as Robin's in `beast.bear`, `beast.old-man` and `chapter.2`: a named old bear,
-a miniboss, on an island of the generator's pick. All the words here are `in-game`. lore.json: 196 entries.
+Robin, 2026-11-10: "I dont want Yew used at all." The third island's reason is elm, recorded as Robin's in `chapter.2` and
+`place.almey`. Ids never change, so the yew ids are retired and new ones replace them. lore.json: 196 entries. No title, line or
+book field in it says yew; the word is left only in the record notes of Robin's decisions.
 
-## New
+## New (in-game)
 
-- `beast.old-man`, **the Old Man**: his own entry, with a Lore Book page (`book`, and `book_facts` with folk name, where and
-  folk say). `beast.bear` stays the kind.
-- `rumour.old-man.age` (lead), variants. Line 1 has a `{place}` slot for his island: "The Old Man's on {place} now. Grey to the
-  ears, and slower than he was." If you can't fill the slot, the entry gives a version that names no island.
-- `line.folk.old-man-dead`, variants, for villagers after he is killed. The third line hints that the bears further out are worse.
+- `place.almey`, **Almey**, "elm isle", a fixed name: *alm* is elm, and *almr* was a skald's word for the bow.
+- `rumour.almey.elm` (lead), variants: "The best bow wood grows on Almey. Elm, old and straight." | "There are elms on Almey older
+  than the village. Bend a branch, it won't break." | "My grandmother said the first woman was made from an elm. On Almey you'd
+  believe it."
+- `rumour.old-man.name` (whisper): the Old Man's three lines, unchanged and in the same places, under an id without Barlindey.
 
-## Changed
+## Retired (gone from lore.json)
 
-- `rumour.barlindey.old-man`: the id keeps its name, the lines are unchanged and name no island; `about` is now `beast.old-man`.
-- `rumour.barlindey.yew`: line 2 changed in its place: "There's yew out on Barlindey, old trees. Older than the village."
-- `place.barlindey`: the yew isle only; the bear is gone from it.
+- `place.barlindey` → `place.almey`
+- `rumour.barlindey.yew` → `rumour.almey.elm`
+- `rumour.barlindey.old-man` → `rumour.old-man.name`
+
+## The register
+
+`isle.yew` is now `isle.elm` (Almey, the elm wood). No line was staged there.
