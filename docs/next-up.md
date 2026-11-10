@@ -8,11 +8,10 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD), in order
 
-1. **The villages' and places' look**, with Colin, AD (Robin, 2026-11-10): the big island's village and the places on the islands round; what art needs improving; then do it.
-2. **Inland water**: can there be waterfalls, rivers and lakes on the land; mockups for Robin.
-3. **What is left of chapter 1:** Old Aslak's two clues, Arnor's loom line, the whispered rumours of chapter 2, the steading's houses mended on your return, a spring (with inland water), Eadric's own look.
-4. **Seen in the game:** the claim stone's acts at a real stone, a clue's `?`, the towed log on the water, the rune screens with upgrading off (Robin's play, or the pane).
-5. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
+1. **The villages' look, with Colin, AD** (Robin, 2026-11-10; the plan is Colin, AD's list of that day, in his order): done on my side: paths with no straight edge and a trodden edge, roofs lit and shaded, no fire in a ruin. Next: wire his `BuildRoof` (thatch courses, ages, smoke) and place what he makes (the green's pieces, Saltvik's salt works, Gamli's hut and kit, the ruin's kit, the mound and the hill), each seen in the game.
+2. **What is left of chapter 1:** Old Aslak's two clues, Arnor's loom line, the whispered rumours of chapter 2, the steading's houses mended on your return, Eadric's own look.
+3. **Seen in the game:** the claim stone's acts at a real stone, a clue's `?`, the towed log on the water, the rune screens with upgrading off (Robin's play, or the pane).
+4. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 
 ## Waiting on Robin
 
@@ -32,7 +31,7 @@ Last updated: 2026-11-10.
 12. The first tools are called Stone Axe, Stone Pickaxe and Stone Knife (4.5).
 13. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 for chapter 1.
+**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 for chapter 1. **Inland water** (`docs/inland-water.md`, with mockups in `docs/pictures/inland-water/`): lakes only or rivers too, on which islands, a river from the mountain's waterfall, boats up a river. **Turf on byres and boathouses** (Colin, AD asks; your ruling of 2026-10-14 was thatch, turf only for the poorest).
 
 ## Waiting on a studio
 

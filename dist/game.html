@@ -5862,6 +5862,14 @@ function make(kit, opts) {
     q.bay = { x: q.x + Math.cos(a) * q.r * 0.5, y: q.y + Math.sin(a) * q.r * 0.5 * 0.9, a: a };
     for (yy = Math.max(2, Math.floor(by - e)); yy <= Math.min(GH - 3, Math.ceil(by + e)); yy++) for (xx = Math.max(2, Math.floor(bx - e)); xx <= Math.min(GW - 3, Math.ceil(bx + e)); xx++) { var d = Math.hypot(xx + 0.5 - bx, yy + 0.5 - by), pp = yy * GW + xx, cap = Math.round((d - br) * 100); if (cap < E[pp]) E[pp] = Math.max(-1000, cap); }
   });
+  /* Inland water, a trial (Robin, 2026-11-10: "consider if we can have waterfalls/rivers/lakes in land"; docs/inland-water.md): only where a page asks for it (o.inland; the game does not yet). A lake is a steep-sided hollow in the land, so the grass runs to the water's edge with no beach, and a river a chain of such hollows wandering from a lake to the nearest coast. Being water to every rule, a lake is waded, swum and fished as the sea is with nothing new written. Placed by hash from the island's seed; no draw is taken. */
+  w.inland = [];
+  if (o.inland) isles.forEach(function (q, qi) {
+    if (q.r < (o.inland.minR || 70)) return; var sd = (q.seed || qi * 13 + 5) % 9973, nL = o.inland.lakes != null ? o.inland.lakes : 1, k, lakes = [];
+    var carve = function (cx, cy, rad, wob, deep) { var e = Math.ceil(rad + 5), xx, yy; for (yy = Math.max(2, Math.floor(cy - e)); yy <= Math.min(GH - 3, Math.ceil(cy + e)); yy++) for (xx = Math.max(2, Math.floor(cx - e)); xx <= Math.min(GW - 3, Math.ceil(cx + e)); xx++) { var dd = Math.hypot(xx + 0.5 - cx, (yy + 0.5 - cy) * 1.15), rr = rad * (1 + (vnoise(xx / 6.3, yy / 6.3, sd + 60) - 0.5) * wob), pp = yy * GW + xx; if (dd >= rr + 3) continue; var cap = Math.round(dd < rr ? Math.max(-(deep || 240), (dd - rr) * (deep > 200 ? 75 : 130)) : (dd - rr) * 950); if (cap < E[pp]) E[pp] = cap; } };   /* (a field of distance: under the water it falls gently to its depth, on the bank it rises steeply, so the shore is one smooth line between the tiles and the sand at its edge is a thin rim) */
+    for (k = 0; k < nL; k++) { var a = hash(sd, k, 201) * 6.283, d = (0.18 + hash(sd, k, 202) * 0.3) * q.r, rad = Math.max(3.2, Math.min(6.5, q.r * (0.02 + hash(sd, k, 203) * 0.014))), cx = q.x + Math.cos(a) * d, cy = q.y + Math.sin(a) * d * 0.9; carve(cx, cy, rad, 0.5, 2000); carve(cx + rad * 0.7, cy + rad * 0.25, rad * 0.62, 0.5, 2000); lakes.push({ x: cx, y: cy, r: rad }); w.inland.push({ kind: 'lake', isle: qi, x: (cx + 0.5) * T, y: (cy + 0.5) * T, r: rad * T }); }
+    if (o.inland.river && lakes.length) { var L0 = lakes[0], ra = Math.atan2((L0.y - q.y) / 0.9, L0.x - q.x), len = q.r * 1.25 - Math.hypot(L0.x - q.x, (L0.y - q.y) / 0.9), n = Math.ceil(len / 0.6), pts = [], j; for (j = 0; j <= n; j++) { var u = j / n, wv = Math.sin(u * 9 + sd) * 2.6 * Math.sin(u * 3.14) + Math.sin(u * 23 + sd * 2) * 0.8, rx = L0.x + Math.cos(ra) * (L0.r * 0.6 + len * u) - Math.sin(ra) * wv, ry = L0.y + (Math.sin(ra) * (L0.r * 0.6 + len * u) + Math.cos(ra) * wv) * 0.9; carve(rx, ry, 1.25 + u * 0.7 + Math.sin(u * 31) * 0.12, 0.3, 130); if (j % 6 === 0) pts.push([(rx + 0.5) * T, (ry + 0.5) * T]); } w.inland.push({ kind: 'river', isle: qi, pts: pts }); }
+  });
   w.E = E;
   /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
      the nearest island's biome, with noise on top so a lowland island keeps pine groves and the first biome gets a warm patch or two */
@@ -11161,7 +11169,7 @@ if (typeof module !== 'undefined') module.exports = Sea;
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 3;                                       // the generator's version (2: the grammar of 2026-10-22); a save made under another should not keep its villages' walls
+var VERSION = 4;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -12048,21 +12056,74 @@ function make(seed, site, opts) {
     }
   }
   if (G.wear && !V.ruin) {
-    var traffic = {}, gateT = gateX != null ? [gateX, ey1] : (shore === 's' ? [Math.floor(focus[0] / T), ty + h - 1] : null);
+    // (2026-11-10, Colin, AD; Robin via Clive, GD: "the village paths are blocky", a grid of right-angled lanes.) Each household's ways
+    // are found on the tile grid with eight neighbours (a diagonal step only where both sides are open and no wall stands between) and
+    // a pull toward ground already trodden, so the ways share a few trunks as feet do. Each way is then drawn as a curve: the stretches
+    // walked often enough (G.wearAt) taken one at a time, only the ground no earlier way has painted, their stair-steps taken out (a
+    // point within most of a tile of the straight line dropped, never across a wall, a floor or the stakes), and laid as road() dabs
+    // that wander a little, wider where more feet go. Where many ways end (the well, the fire, a busy door) the ground is a worn apron.
+    var traffic = {}, ends = {}, ways = [], gateT = gateX != null ? [gateX, ey1] : (shore === 's' ? [Math.floor(focus[0] / T), ty + h - 1] : null);
+    var painted = {}, pi5; for (pi5 = 0; pi5 < V.paints.length; pi5++) { var pa5 = V.paints[pi5]; if (pa5.kind !== 1 && pa5.kind !== 2) continue; var rk5 = key(Math.floor(pa5.x / T), Math.floor(pa5.y / T)); if (!V.floors[rk5]) { traffic[rk5] = 3; painted[rk5] = 1; } }   // the streets, lanes and yards already laid count as trodden ground: the ways join them and leave them, never run beside them
+    var open2 = function (x2, y2) { return passable(x2, y2) && !stakeTiles[key(x2, y2)]; };
+    var step2 = function (ax, ay, bx2, by2) {             // may one step go from tile a to the neighbouring tile b?
+      if (!open2(bx2, by2)) return false;
+      if (ax === bx2 || ay === by2) return !wallBetween(ax, ay, bx2, by2);
+      return open2(bx2, ay) && open2(ax, by2) && !wallBetween(ax, ay, bx2, ay) && !wallBetween(bx2, ay, bx2, by2) && !wallBetween(ax, ay, ax, by2) && !wallBetween(ax, by2, bx2, by2);
+    };
+    function ways8(from, targets, each) {                 // a cheapest-way search from one tile to many (a binary heap): a step costs its length, less on trodden ground
+      var start = key(from[0], from[1]), best = {}, prev = {}, heap = [[0, from[0], from[1]]], left = 0, want = {}, pops = 0, k2;
+      targets.forEach(function (t) { var tk = key(t[0], t[1]); if (!want[tk]) left++; want[tk] = (want[tk] || 0) + 1; });
+      best[start] = 0; prev[start] = null;
+      function push(e) { heap.push(e); var i = heap.length - 1; while (i > 0) { var pi = (i - 1) >> 1; if (heap[pi][0] <= heap[i][0]) break; var t0 = heap[pi]; heap[pi] = heap[i]; heap[i] = t0; i = pi; } }
+      function pop() { var top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; var i = 0; for (;;) { var l = i * 2 + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; var t1 = heap[m]; heap[m] = heap[i]; heap[i] = t1; i = m; } } return top; }
+      while (heap.length && left > 0 && pops < 40000) {
+        var c = pop(), ck = key(c[1], c[2]); pops++; if (c[0] > best[ck]) continue;
+        if (want[ck]) { left--; var path = [], at = ck; while (at) { var pq = at.split(','); path.push([+pq[0], +pq[1]]); at = prev[at]; } each(path.reverse(), want[ck]); want[ck] = 0; }
+        for (k2 = 0; k2 < 8; k2++) {
+          var dx2 = [1, -1, 0, 0, 1, 1, -1, -1][k2], dy2 = [0, 0, 1, -1, 1, -1, 1, -1][k2], nx = c[1] + dx2, ny = c[2] + dy2, nk = key(nx, ny);
+          if (!step2(c[1], c[2], nx, ny)) continue;
+          var tc = traffic[nk] || 0, cst = c[0] + (dx2 && dy2 ? 1.414 : 1) * (tc >= 3 ? 0.35 : tc >= 1 ? 0.55 : 1);
+          if (best[nk] === undefined || cst < best[nk] - 1e-9) { best[nk] = cst; prev[nk] = ck; push([cst, nx, ny]); }
+        }
+      }
+    }
     V.folk.forEach(function (f, fi) {
       var from = [Math.floor(f.x / T), Math.floor(f.y / T)], tg = [];
-      f.spots.forEach(function (s) { if (s[2] === 'door') return; tg.push([Math.floor(s[0] / T), Math.floor(s[1] / T)]); });
+      var Y = V.yard, ft = [Math.floor(focus[0] / T), Math.floor(focus[1] / T)];
+      f.spots.forEach(function (s) { if (s[2] === 'door') return; var sx6 = Math.floor(s[0] / T), sy6 = Math.floor(s[1] / T); if (Y && sx6 >= Y.x - 1 && sx6 <= Y.x + Y.w && sy6 >= Y.y - 1 && sy6 <= Y.y + Y.h) { sx6 = ft[0]; sy6 = ft[1]; } tg.push([sx6, sy6]); });   // (a spot on the common is walked to from its middle: the ways meet there as spokes, not a fan of ends)
       if (gateT && fi % 3 === 0) tg.push(gateT);
-      routes(from, tg, function (path, wgt) { path.forEach(function (p) { var pk = key(p[0], p[1]); traffic[pk] = (traffic[pk] || 0) + wgt; }); });
+      ways8(from, tg, function (path, wgt) { path.forEach(function (p) { var pk = key(p[0], p[1]); traffic[pk] = (traffic[pk] || 0) + wgt; }); ways.push(path); var ek = key(path[path.length - 1][0], path[path.length - 1][1]); ends[ek] = (ends[ek] || 0) + wgt; });
     });
-    var k6b, fill2 = {}; for (k6b in traffic) { if (traffic[k6b] < G.wearAt) continue; var pq3 = k6b.split(','), tx3 = +pq3[0], ty3 = +pq3[1]; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (dd) { var nk2 = key(tx3 + dd[0], ty3 + dd[1]); if ((traffic[nk2] || 0) >= G.wearAt) return; var nb = 0; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d2) { if ((traffic[key(tx3 + dd[0] + d2[0], ty3 + dd[1] + d2[1])] || 0) >= G.wearAt) nb++; }); if (nb >= 2) fill2[nk2] = G.wearAt; }); }
-    for (k6b in fill2) traffic[k6b] = Math.max(traffic[k6b] || 0, fill2[k6b]);   // (no lone tile of grass inside a worn way: the game's ground is a field of tiles, and a checkerboard read as tiles, the Art Director's review of 2026-10-22)
-    var k5; for (k5 in traffic) {                      // a worn tile, and the ground along the way to the next worn tile, as one ragged stroke off the tile grid (the Art Director's review, 2026-10-22: the earth left grass in square patches)
-      var tcnt = traffic[k5]; if (tcnt < G.wearAt) continue; var pq2 = k5.split(','), wtx = +pq2[0], wty = +pq2[1], wx = (wtx + 0.5) * T + (R() - 0.5) * 10, wy = (wty + 0.5) * T + (R() - 0.5) * 10, wr = 6 + Math.min(7, tcnt * 0.9); if (V.floors[k5]) continue;
-      dab(wx, wy, wr * (0.8 + R() * 0.5), 2);
-      if ((traffic[key(wtx + 1, wty)] || 0) >= G.wearAt && !V.floors[key(wtx + 1, wty)]) strokeTo([wx, wy], [(wtx + 1.5) * T + (R() - 0.5) * 10, wy + (R() - 0.5) * 12], wr * 0.9, 2);
-      if ((traffic[key(wtx, wty + 1)] || 0) >= G.wearAt && !V.floors[key(wtx, wty + 1)]) strokeTo([wx, wy], [wx + (R() - 0.5) * 12, (wty + 1.5) * T + (R() - 0.5) * 10], wr * 0.9, 2);
-      if (tcnt >= 10 && G.pathGravel) dab(wx, wy, 5, 1);
+    function clearLine(a2, b2) {                          // does the straight line between two tile centres keep to open ground, crossing no wall?
+      var n2 = Math.max(1, Math.ceil(Math.hypot(b2[0] - a2[0], b2[1] - a2[1]) * 5)), px2 = a2[0], py2 = a2[1], i2;
+      for (i2 = 1; i2 <= n2; i2++) { var u2 = i2 / n2, cx2 = Math.round(a2[0] + (b2[0] - a2[0]) * u2), cy2 = Math.round(a2[1] + (b2[1] - a2[1]) * u2); if (cx2 === px2 && cy2 === py2) continue; if (Math.abs(cx2 - px2) > 1 || Math.abs(cy2 - py2) > 1 || !step2(px2, py2, cx2, cy2)) return false; px2 = cx2; py2 = cy2; }
+      return true;
+    }
+    function simplify(pts, i0, i1, out) {                 // the stair-steps out: Douglas-Peucker, most of a tile, a shortcut only where the line is clear
+      var a2 = pts[i0], b2 = pts[i1], dx3 = b2[0] - a2[0], dy3 = b2[1] - a2[1], L3 = Math.hypot(dx3, dy3) || 1, far = -1, fd = 0, i3;
+      for (i3 = i0 + 1; i3 < i1; i3++) { var d3 = Math.abs((pts[i3][0] - a2[0]) * dy3 - (pts[i3][1] - a2[1]) * dx3) / L3; if (d3 > fd) { fd = d3; far = i3; } }
+      if (far >= 0 && (fd > 0.8 || !clearLine(a2, b2))) { simplify(pts, i0, far, out); simplify(pts, far, i1, out); } else out.push(i1);
+    }
+    ways.forEach(function (path) {                        // each way's worn stretches, only the ground not painted yet, one tile of overlap to join
+      var i, runs = [], cur = null;
+      for (i = 0; i < path.length; i++) {
+        var pk = key(path[i][0], path[i][1]), worn = (traffic[pk] || 0) >= G.wearAt && !V.floors[pk], fresh = worn && !painted[pk];
+        if (fresh) { if (!cur) { cur = []; if (i > 0 && (traffic[key(path[i - 1][0], path[i - 1][1])] || 0) >= G.wearAt) cur.push(path[i - 1]); } cur.push(path[i]); }
+        else if (cur) { if (worn) cur.push(path[i]); runs.push(cur); cur = null; }
+      }
+      if (cur) runs.push(cur);
+      runs.forEach(function (run) {
+        run.forEach(function (p) { painted[key(p[0], p[1])] = 1; });
+        if (run.length < 2) { var p0 = run[0], t0 = traffic[key(p0[0], p0[1])] || 0; dab((p0[0] + 0.5) * T + (R() - 0.5) * 8, (p0[1] + 0.5) * T + (R() - 0.5) * 8, 6 + Math.min(6, t0 * 0.7), 2); return; }
+        var keepI = [0]; simplify(run, 0, run.length - 1, keepI);
+        var pts2 = keepI.map(function (ii, n4) { var q = run[ii], tq = traffic[key(q[0], q[1])] || 0, inner = n4 > 0 && n4 < keepI.length - 1; return [(q[0] + 0.5) * T + (inner ? (R() - 0.5) * 8 : 0), (q[1] + 0.5) * T + (inner ? (R() - 0.5) * 8 : 0), 5 + Math.min(6, (tq - 1) * 0.8)]; });
+        road(pts2, 2);
+        if (G.pathGravel) run.forEach(function (q) { if ((traffic[key(q[0], q[1])] || 0) >= 10 && R() < 0.5) dab((q[0] + 0.5) * T + (R() - 0.5) * 10, (q[1] + 0.5) * T + (R() - 0.5) * 10, 5, 1); });
+      });
+    });
+    var ek2; for (ek2 in ends) {                           // a worn apron where many ways end: the well, the fire, a busy door
+      if (ends[ek2] < 3 || V.floors[ek2]) continue; var eq = ek2.split(','), ex = (+eq[0] + 0.5) * T, ey = (+eq[1] + 0.5) * T, er = 9 + Math.min(9, ends[ek2] * 0.8), k7;
+      dab(ex, ey, er, 2); for (k7 = 0; k7 < 4; k7++) { var ea = R() * 6.28; dab(ex + Math.cos(ea) * er * 0.7, ey + Math.sin(ea) * er * 0.5, er * (0.4 + R() * 0.3), 2); }
     }
   }
   // ---- doorways, gates and the units' gaps kept clear: nothing solid within a tile and a half of them ----
