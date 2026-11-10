@@ -47,7 +47,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.15 | **Wolf-skin gear**: a cloak, a hood and a lined tunic; a little more armor than leather each, and wolves notice you from less far. | Not built (art: Colin, AD) |
 | 2.16 | **Barter** at the trading hamlet: it takes flint, wolf pelts and deer leather; it gives salt and what a loom needs. | Not built (Old Aslak's board is the model) |
 | 2.17 | **The loom**, a new bench at home: sailcloth and more woven from **wild flax** gathered on the islands round. | Not built (art: Colin, AD) |
-| 2.18 | **The old pines** (Robin's yes, 2026-11-10: on two of the islands round and a few at the mountain's foot; a log is carried and towed): the big-log tree needs at least a flint axe; gives single, bigger logs for the mast, a sitting log, and thicker log walls and floors. | Not built (art: Colin, AD) |
+| 2.18 | **The old pines and the big log** (Robin, 2026-11-10): a flint axe or better bites (a stone axe: "The axe will not bite"); the felled trunk gives one big log; E shoulders it and sets it down; with an axe in hand E splits it into 6 timber; by your boat E ties it behind (two at most, each slowing her), and where you live E unties them. **Log walls and floors, the sitting log** from timber. | The log Built (felled, split and shouldered in the pane; the tow by script only, not seen on the water); the log pieces Not built |
 | 2.19 | **Salt**: the better dishes ask for it. | Not built |
 | 2.20 | **The healing herb** from the mountain: a healing drink. | Not built |
 | 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |
@@ -90,6 +90,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 3, first half: the old pine's big log (flint axe, shoulder, split into timber, tow).
 - 2026-11-10: step 2 built: flint is a thing of its own; the first tools are now stone (they were called flint); flint tools, weapons and arrows. The elm and the old pine draw as Colin, AD's trees.
 - 2026-11-10: step 1's second half built: Saltvik with Jorunn, Tangholm with Gamli, the ruin Ulfarstad, the names on the map, the Old Man; no jarl's seat in home water (D47). Robin: villagers with things to do (4.7).
 - 2026-11-10: step 1's first half built: every island round has its role, flint on its beaches, flax on three or more, old pines on two and at the mountain's foot, elms on the elm island (`tests/isles.js`, ten seeds). Robin: clues that leave a question mark on the map (2.21).
