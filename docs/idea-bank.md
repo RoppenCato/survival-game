@@ -769,3 +769,7 @@ What would carry over to a 3D version: the design (chapters, raids, runes, the h
 studio way of working. The code would not: a 3D game is a rewrite. Start small, as here: one island, the hero moving and
 fighting, day and night, then a chapter at a time. Offered: a tiny Godot test project (one island, the hero walking, the camera
 following) to try it in an afternoon.
+
+## Rune upgrading: have it or not (Robin, 2026-11-10)
+
+Switched off on 2026-11-10 (`Runes2.OPTS.upgrade`): Robin found that upgrading "makes things a little complicated" and wants to think later about whether runes should upgrade at all. Open: tiers by use, tiers by the blood's rank, both, or one fixed strength a rune. Bear strength's 'two beasts at once' was written as a third tier and waits on this.

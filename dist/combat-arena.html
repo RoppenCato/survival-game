@@ -2368,7 +2368,7 @@ var LIST = [
 ];
 var KIND_OF = { bash: 'combat', charge: 'combat', dash: 'movement', roll: 'movement', thorsFell: 'gathering', thorsWrath: 'combat', bloodlust: 'combat', rushStep: 'movement', catFoot: 'raiding', stormsEye: 'combat', keenEye: 'raiding', hammer: 'combat', thickHide: 'combat' };
 var BY = {}; LIST.forEach(function (r) { if (!r.kind) r.kind = KIND_OF[r.id] || 'combat'; if (!r.status) r.status = 'built'; BY[r.id] = r; });
-var TIERS = 3, GROW = [0, 50, 150], OPTS = { includeData: false };   /* includeData: the storm offers the runes not yet built too (the editors; never the game) */                 // uses at which a rune reaches tier II and III by itself
+var TIERS = 3, GROW = [0, 50, 150], OPTS = { includeData: false, upgrade: false };   /* upgrade (Robin, 2026-11-10: "we can disable upgrading runes for now ... It makes things a little complicated"): off, every rune is at its first tier, use grows nothing and the storm never offers a rune you have; the tiers, their numbers and what a save holds are kept for the day it is switched on again */   /* includeData: the storm offers the runes not yet built too (the editors; never the game) */                 // uses at which a rune reaches tier II and III by itself
 var RANKS = [null,                                 // the ranks of blood (Robin, 2026-10-23): how many stones rise from it and at what tier; the fifth rank draws on the legendary pool when it has runes
   { id: 1, name: 'thin blood', n: 1, tier: 1 },      // a hen, a hare, a fish, an adder: one stone, take it or leave it
   { id: 2, name: 'red blood', n: 2, tier: 1 },       // a deer, a boar, the farm's beasts: two
@@ -2382,7 +2382,7 @@ var MARKS = { struck: { t: 10, col: '#ffe9a0' }, bleeding: { t: 20, col: '#c8322
 function fresh() { return { lib: {}, bound: {}, uses: {}, blood: {} }; }
 function start(st) { st = st || fresh(); ['bash', 'dash'].forEach(function (id) { delete st.lib[id]; delete st.uses[id]; for (var s in st.bound) if (st.bound[s] === id) delete st.bound[s]; }); return st; }   /* the Bash and the Dash are base abilities now (Robin, 2026-10-26), so a hero starts with no rune and an older save's two are taken back; the first runes come at the first blót */
 function known(st, id) { return !!(st && st.lib && st.lib[id]); }
-function tierOf(st, id) { if (!known(st, id)) return 0; var t = st.lib[id], u = st.uses[id] || 0, g = 1; while (g < TIERS && u >= GROW[g]) g++; return Math.max(t, g); }   // the tier given, or the one use has reached
+function tierOf(st, id) { if (!known(st, id)) return 0; if (!OPTS.upgrade) return 1; var t = st.lib[id], u = st.uses[id] || 0, g = 1; while (g < TIERS && u >= GROW[g]) g++; return Math.max(t, g); }   // the tier given, or the one use has reached
 function learn(st, id, tier) { if (!BY[id]) return false; var t = Math.max(1, Math.min(TIERS, tier || 1)); if (!st.lib[id] || st.lib[id] < t) st.lib[id] = t; return true; }
 function fits(st, slot) { return LIST.filter(function (r) { return r.slot === slot && known(st, r.id); }); }
 function bound(st, slot) { return st && st.bound ? st.bound[slot] || null : null; }
@@ -2401,8 +2401,8 @@ function spend() {}
 function readyAll() {}
 // the storm's offer: so many stones as the blood's rank brings, from the sacrifice pool, at the rank's tier; a rune known already is offered one tier up, never twice; the fifth rank's stones come from the legendary pool first
 function offer(st, rank, R) {
-  R = R || Math.random; var rk = typeof rank === 'object' ? rank : RANKS[Math.max(1, Math.min(RANKS.length - 1, rank || 1))], n = rk.n, tier = Math.max(1, Math.min(TIERS, rk.tier));
-  var pool = LIST.filter(function (r) { return (OPTS.includeData || r.status !== 'data') && (r.pool === 'storm' || (rk.legend && r.pool === 'legend')) && (!known(st, r.id) || (tierOf(st, r.id) < TIERS)); });   /* a rune known already is offered one tier up, whatever the blood's tier */
+  R = R || Math.random; var rk = typeof rank === 'object' ? rank : RANKS[Math.max(1, Math.min(RANKS.length - 1, rank || 1))], n = rk.n, tier = OPTS.upgrade ? Math.max(1, Math.min(TIERS, rk.tier)) : 1;
+  var pool = LIST.filter(function (r) { return (OPTS.includeData || r.status !== 'data') && (r.pool === 'storm' || (rk.legend && r.pool === 'legend')) && (!known(st, r.id) || (OPTS.upgrade && tierOf(st, r.id) < TIERS)); });   /* a rune known already is offered one tier up, whatever the blood's tier */
   var out = [], guard = 60; if (rk.legend) { var leg = pool.filter(function (r) { return r.pool === 'legend'; }); while (out.length < n && leg.length && guard-- > 0) { var li = Math.floor(R() * leg.length), lr = leg.splice(li, 1)[0]; pool.splice(pool.indexOf(lr), 1); out.push({ id: lr.id, tier: tier }); } }
   while (out.length < n && pool.length && guard-- > 0) { var i = Math.floor(R() * pool.length), r = pool.splice(i, 1)[0]; out.push({ id: r.id, tier: known(st, r.id) ? Math.min(TIERS, Math.max(tier, tierOf(st, r.id) + 1)) : tier }); }
   if (out.length < n) LIST.filter(function (r) { return (OPTS.includeData || r.status !== 'data') && r.pool === 'world' && !known(st, r.id); }).slice(0, n - out.length).forEach(function (r) { out.push({ id: r.id, tier: tier }); });   // the pool run dry: the world's runes come through the storm too

@@ -11,6 +11,7 @@ const { createCanvas } = require('@napi-rs/canvas');
 global.__mk = (w, h) => createCanvas(w, h);
 global.GameArt = require('../src/art.js'); global.Items = require('../src/items.js');
 const Combat = require('../src/combat.js'), Runes2 = global.Runes2 = require('../src/runes2.js');
+Runes2.OPTS.upgrade = true;   // (as above: the tiers stay under test while upgrading is off in the game)
 Combat.api.roster = []; Combat.init(GameArt.lib);
 const DT = 1 / 60, SEEDS = +process.argv[2] || 40, SECS = +process.argv[3] || 60;
 let rs = 1; function rnd() { rs = (rs * 16807) % 2147483647; return (rs - 1) / 2147483646; }

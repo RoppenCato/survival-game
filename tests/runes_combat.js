@@ -5,6 +5,7 @@ const { createCanvas } = require('@napi-rs/canvas');
 global.__mk = (w, h) => createCanvas(w, h);
 global.GameArt = require('../src/art.js'); global.Items = require('../src/items.js');
 const lib = GameArt.lib, Combat = require('../src/combat.js'), Runes2 = global.Runes2 = require('../src/runes2.js');
+Runes2.OPTS.upgrade = true;   // the tiers are tested as they will be when upgrading is switched on again (off in the game: Robin, 2026-11-10)
 Combat.api.roster = []; Combat.init(lib);
 const DT = 1 / 60; let bad = 0; const EV = [];
 function ok(c, s) { if (!c) bad++; console.log((c ? '  ' : '  !! ') + s); }

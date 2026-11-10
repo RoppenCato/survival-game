@@ -1,6 +1,7 @@
 // The runes reworked (2026-10-23, src/runes2.js): the library, the slots, binding, the blood charge, growth by use, the storm's offer by
 // the animal's tier.   node tests/runes2.js
 const R = require('../src/runes2.js');
+R.OPTS.upgrade = true;   // the tiers are tested as they will be when upgrading is switched on again (it is off in the game: Robin, 2026-11-10)
 function ok(c, s) { console.log((c ? '  ' : '  !! ') + s); }
 let st = R.start();
 ok(!R.known(st, 'bash') && !R.bound(st, 'guardBlow') && !R.bound(st, 'dash') && Object.keys(st.lib).length === 0, 'the start: no rune known; the Bash and the Dash are base abilities (Robin, 2026-10-26)');
