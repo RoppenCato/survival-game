@@ -38,7 +38,7 @@ Last updated: 2026-11-10.
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
 | Colin, AD | Chapter 1's new things (asked 2026-11-10): flint gear, the old pine and its log, log walls and floors, the loom, wild flax, the wolf-skin cloak, hood and tunic, the bear rug and cloak, the yew and the yew bow, roseroot, the claim stone lying, carved, reddened and standing, salt | 2026-11-10 |
-| Alistair, LD | Chapter 1's new people and names (asked 2026-11-10): the trading hamlet and its trader, the southern trader, the raided ruin, the yew island and its bear, the fisherman's island, lines for the claim stone and the loom | 2026-11-10 |
+| Alistair, LD | Nothing: handoff 24 (2026-11-10) has chapter 1's people, places and lines, copied into `assets/lore/` | |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 
 ## After that
