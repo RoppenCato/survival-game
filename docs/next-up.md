@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 and 2 are built (but for the spring, bay and hill). **Next: villagers with things to do (Robin, 2026-11-10), then step 3 (the big log, log and elm pieces), step 4 (Saltvik's barter, the loom, the ship's price).**
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 and 2 are built (but for the spring, bay and hill), and the villagers have their day. **Next: step 3 (the big log carried and towed, log and elm pieces), step 4 (Saltvik's barter, the loom, the ship's price).**
 2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin

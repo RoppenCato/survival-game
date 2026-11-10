@@ -76,7 +76,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 4.4 | **The interface**: the quests in the book, the season dial, the map of several islands. | Built |
 | 4.5 | **Music, sound and effects**: night and danger music on the big island, the cave, the blót, fishing, the boat under sail. | Built (the blót's sounds and the fishing picks not yet judged by ear) |
 | 4.6 | **The day and night**: night with wolves, the torch's light, dusk at the blót. | Built |
-| 4.7 | **Villagers with things to do** (Robin, 2026-11-10: "some hang around in communion areas, some do some work and so on. So that it feels more alive"): patterns of behaviour round a village. | Not built (folk have spots, jobs and idles today; what is missing is to be looked at) |
+| 4.7 | **Villagers with things to do** (Robin, 2026-11-10: "some hang around in communion areas, some do some work and so on. So that it feels more alive"): workers, idlers and rovers by name; the fire to stand round, the well to talk at, the food table, the trough, the field, the stones, the shore, gathering outside and carrying it home; everybody drawn to the fire and the seats in the evening; two with nothing to do turn to each other; children run about the green. | Built (a village simulated two minutes in the pane and looked at: a knot at the fire, one at the well, one at the table, two talking by a fence; about half are walking at any moment) |
 
 ## 5. The foundations
 

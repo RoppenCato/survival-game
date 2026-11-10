@@ -18182,7 +18182,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (m.role && m.vi != null) { var rx0 = roleLook(m, sp); if (rx0.apron || rx0.strawHat || rx0.kerchief) x = Object.assign({}, x || {}, rx0); if (ROLE_X[m.role] && ROLE_X[m.role].grey) sp = Object.assign({}, sp, { col: Object.assign({}, sp.col || {}, { hair: '#b9b2a6' }) }); }   /* (a villager: his calling's clothes) */
     return (m.look = Sprites.lookOf(sp, x));
   }
-  var JOB_CLIP = { chop: ['chop', 0.8, { kind: 'axe', tint: '#9ca3ad' }], smith: ['hammer', 0.6, { kind: 'hammer', tint: '#9ca3ad' }], scavenge: ['pickup', 0.45], sweep: ['idle_look', 1], hang: ['interact', 0.7], fish: ['idle', 1], carry: ['carry', 1, { kind: 'bucket' }, 'hold'], pray: ['kneel', 1, null, 'hold'] }, HIRD_CLIP = { woodcutter: JOB_CLIP.chop, crafter: ['saw', 0.6, { kind: 'saw', tint: '#9ca3ad' }], cook: ['interact', 0.6] };   /* (the work clips of step 5B, 2026-10-21: the smith hammers at the forge, the hird's crafter saws at the bench, the well is the bucket, the priest kneels at the altar (held), the weaver and the net mender sit at their work) */
+  var JOB_CLIP = { chop: ['chop', 0.8, { kind: 'axe', tint: '#9ca3ad' }], smith: ['hammer', 0.6, { kind: 'hammer', tint: '#9ca3ad' }], scavenge: ['pickup', 0.45], sweep: ['idle_look', 1], hang: ['interact', 0.7], fish: ['idle', 1], carry: ['carry', 1, { kind: 'bucket' }, 'hold'], pray: ['kneel', 1, null, 'hold'], warm: ['idle_look', 0.7], gossip: ['idle', 1], field: ['pickup', 0.4], feed: ['interact', 0.5], forage: ['pickup', 0.4], sea: ['idle', 1], gaze: ['idle_look', 0.6], eat: ['interact', 0.45] }, HIRD_CLIP = { woodcutter: JOB_CLIP.chop, crafter: ['saw', 0.6, { kind: 'saw', tint: '#9ca3ad' }], cook: ['interact', 0.6] };   /* (the work clips of step 5B, 2026-10-21: the smith hammers at the forge, the hird's crafter saws at the bench, the well is the bucket, the priest kneels at the altar (held), the weaver and the net mender sit at their work) */
   function drawPerson(c, m) {
     if (!PEOPLE || !Sprites.peopleReady(PEOPLE)) { m.spr = false; return false; }
     var look = personLook(m), ph0 = m.ph0 || (m.ph0 = 1 + Math.random() * 9), st = { face: m.face, clip: 'idle', t: clock + ph0 }, J = null;
@@ -21724,6 +21724,40 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // carry water from the well home, sweep the doorstep, hang the catch, fish at the shore, hammer by the smithy; lib.jobPose)
   var IDLE_W = [['rest', 5], ['hips', 2], ['crossed', 2], ['scratch', 1], ['look', 3], ['stretch', 1]];
   function pickIdle(f) { var tot = 0, i; IDLE_W.forEach(function (q) { tot += q[1] + (f.child && q[0] === 'look' ? 3 : 0); }); var r = Math.random() * tot; for (i = 0; i < IDLE_W.length; i++) { r -= IDLE_W[i][1] + (f.child && IDLE_W[i][0] === 'look' ? 3 : 0); if (r <= 0) return IDLE_W[i][0]; } return 'rest'; }
+  /* The village's day (Robin, 2026-11-10: "some hang around in communion areas, some do some work and so on. So that it feels more alive"; the patterns and the numbers mine). Each villager has a bent by his name, a worker, an idler or a rover (a thrall always works, a child plays), and the place has things in common that anyone may go to beside his own spots: the big fire to stand round, the well to talk at, the food table, the trough and the haystack to see to, the field by the scarecrow to weed, the stones to look at, the shore to look out from, and the ground outside to gather on and carry home from. What he goes to is drawn by his bent; in the evening everybody is drawn to the fire and the seats. Two with nothing to do who stand near each other turn to each other and stay a while. */
+  var FOLK_DAY = { worker: { job: 5, plain: 1, sit: 1, warm: 0.6, gossip: 0.5, eat: 0.5, field: 3, feed: 3, forage: 2.5, sea: 0.4, gaze: 0.3 }, idler: { job: 1, plain: 1.5, sit: 3, warm: 3, gossip: 2.5, eat: 1.5, field: 0.3, feed: 0.4, forage: 0.2, sea: 1, gaze: 1 }, rover: { job: 2, plain: 1, sit: 1, warm: 1.5, gossip: 1, eat: 1, field: 1, feed: 1, forage: 2, sea: 3, gaze: 2.5 }, evening: { warm: 4, sit: 3, gossip: 1.5, eat: 2, field: 0.2, forage: 0, sea: 0.5 }, chatNear: 34, chatFor: [5, 10] };
+  var folkCommon = {}, FOLK_LONG = { warm: 1, gossip: 1, eat: 1, field: 1, feed: 1, sea: 1, gaze: 1, forage: 1 };
+  function folkCommons(vi) {
+    if (folkCommon[vi]) return folkCommon[vi]; var v = villages[vi], V = v && v.V, L = []; folkCommon[vi] = L; if (!V || V.ruin) return L;
+    var its = (V.items || []).concat(V.props || []), near = function (nm, to) { var b = null, bd = 1e9; its.forEach(function (q) { if ((q.name || q.kind) !== nm || q.x == null) return; var d = to ? Math.hypot(q.x - to[0], q.y - to[1]) : 0; if (d < bd) { bd = d; b = q; } }); return b; };
+    var ring = function (q, n, r, tag, a0) { for (var k = 0; k < n; k++) { var a = (a0 || 0) + k / n * 6.283, x = q.x + Math.cos(a) * r, y = q.y + Math.sin(a) * r * 0.62; if (isLand(x, y)) L.push({ x: x, y: y, tag: tag, fx: q.x, fy: q.y }); } };
+    var fire = near('firePit', V.focus) || near('campfire', V.focus); if (fire) ring(fire, 7, 31, 'warm', 0.4);
+    var well = near('woodenWell', V.focus) || near('well', V.focus); if (well) ring(well, 3, 26, 'gossip', 2.2);
+    var tab = near('foodTable', V.focus); if (tab) ring(tab, 2, 22, 'eat', 1.2);
+    ['trough', 'haystack'].forEach(function (nm) { var q = near(nm, V.focus); if (q) ring(q, 1, 20, 'feed', 1.57); });
+    var sc = near('scarecrow', V.focus); if (sc) ring(sc, 4, 44, 'field', 0.8);
+    ['runestone', 'thingRing'].forEach(function (nm) { var q = near(nm, V.focus); if (q) ring(q, 2, 30, 'gaze', 1.0); });
+    if (v.jetty && v.jetty.root) { var jr = v.jetty.root, jx = (jr[0] + 0.5) * T, jy = (jr[1] + 0.5) * T; for (var k2 = 0; k2 < 2; k2++) if (isLand(jx + (k2 ? 26 : -22), jy - 10)) L.push({ x: jx + (k2 ? 26 : -22), y: jy - 10, tag: 'sea', fx: jx + (k2 ? 26 : -22), fy: jy + 400 }); }
+    var cx = (V.tx + V.w / 2) * T, cy = (V.ty + V.h / 2) * T, R0 = kit.rng(v.seed * 13 + 5); for (var k3 = 0; k3 < 6; k3++) { var a3 = R0() * 6.283, x3 = cx + Math.cos(a3) * (V.w / 2 + 3 + R0() * 4) * T, y3 = cy + Math.sin(a3) * (V.h / 2 + 3 + R0() * 4) * T; if (isLand(x3, y3) && isLand(x3 + 30, y3) && isLand(x3 - 30, y3)) L.push({ x: x3, y: y3, tag: 'forage', fx: x3, fy: y3 + 40 }); }
+    return L;
+  }
+  function folkBent(f) { if (f.bent) return f.bent; var h = nameHash(f.name || 'x') % 100; f.bent = f.child ? 'child' : f.role === 'thrall' ? 'worker' : h < 45 ? 'worker' : h < 75 ? 'idler' : 'rover'; return f.bent; }
+  function folkPick(f) {
+    var bent = folkBent(f), V = villages[f.vi] && villages[f.vi].V;
+    if (bent === 'child') { if (!V || !V.green || Math.random() < 0.2) return f.spots[Math.floor(Math.random() * f.spots.length)];   /* play: about the green at a run, now and then after another child */
+      var mate = Math.random() < 0.35 ? folk.filter(function (g) { return g !== f && g.child && g.vi === f.vi && !g.hidden && !g.dead; })[0] : null, gx = mate ? mate.x + (Math.random() - 0.5) * 30 : (V.green.x + Math.random() * V.green.w) * T + (Math.random() - 0.5) * 120, gy = mate ? mate.y + (Math.random() - 0.5) * 20 : (V.green.y + Math.random() * V.green.h) * T + (Math.random() - 0.5) * 90; return isLand(gx, gy) ? { x: gx, y: gy, tag: 'play' } : f.spots[0]; }
+    var W = FOLK_DAY[bent] || FOLK_DAY.rover, eve = isEvening() ? FOLK_DAY.evening : null, opts = [], tot = 0, wt = function (kind) { var k = W[kind] != null ? W[kind] : 1; if (eve && eve[kind] != null) k *= eve[kind]; return k; };
+    f.spots.forEach(function (q) { var k = q.sit ? wt('sit') : q.tag && q.tag !== 'door' ? wt('job') * (eve ? 0.4 : 1) : wt('plain'); opts.push([q, k]); tot += k; });
+    if (f.role !== 'guard' && !f.godi && !f.aslak && !f.fishTeacher && !f.trader) folkCommons(f.vi).forEach(function (q) { var k = wt(q.tag) * 0.5; if (k > 0) { opts.push([q, k]); tot += k; } });   /* (those the player comes looking for keep to their own spots) */
+    tot = 0; opts.forEach(function (o) { o[1] *= 1 / (1 + Math.hypot(o[0].x - f.x, o[0].y - f.y) / 220); tot += o[1]; });   /* (nearer things draw more: a village where everybody is always walking across it is not alive, it is busy) */
+    var r = Math.random() * tot; for (var i = 0; i < opts.length; i++) { r -= opts[i][1]; if (r <= 0) return opts[i][0]; } return f.spots[0];
+  }
+  function folkChat(f, dt) {
+    if (f.chat) { f.chat.t -= dt; var g0 = f.chat.g; if (f.chat.t <= 0 || g0.moving || g0.hidden || g0.dead || g0.fleeing) { f.chat = null; return; } var want = Math.atan2(g0.y - f.y, g0.x - f.x), diff = ((want - f.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; f.face += diff * Math.min(1, dt * 4); return; }
+    f.chatCk = (f.chatCk || 0) - dt; if (f.chatCk > 0 || f.chatOff > clock) return; f.chatCk = 0.8 + Math.random() * 0.6;
+    for (var i = 0; i < folk.length; i++) { var g = folk[i]; if (g === f || g.vi !== f.vi || g.moving || g.hidden || g.dead || g.job || g.sitting || g.child || g.chat || g.fleeing || g.armed) continue; var d = Math.hypot(g.x - f.x, g.y - f.y); if (d > FOLK_DAY.chatNear || d < 8) continue;
+      var tm = FOLK_DAY.chatFor[0] + Math.random() * (FOLK_DAY.chatFor[1] - FOLK_DAY.chatFor[0]); f.chat = { g: g, t: tm }; g.chat = { g: f, t: tm }; f.wait = Math.max(f.wait, tm); g.wait = Math.max(g.wait || 0, tm); f.chatOff = g.chatOff = clock + tm + 25; return; }
+  }
   function folkTick(dt) {
     var P = hero(), i;
     for (i = 0; i < villages.length; i++) { var vv = villages[i]; if (!vSeen(i) && Math.hypot(P.x - (vv.tx + vv.w / 2) * T, P.y - (vv.ty + vv.h / 2) * T) < 460) { if (!seen.vill) seen.vill = {}; seen.vill[i] = 1; if (i === 0) seen.hamlet = 1; toast(vv.name + ': marked on your chart'); save(); } }
@@ -21762,10 +21796,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
         continue;
       }
       if (!f.target) {
-        f.wait -= dt; if (f.wait > 0) { f.moving = false; continue; }
-        if (f.job && f.job.kind === 'carry') { f.carrying = true; }                                               // water drawn: carry it home
+        f.wait -= dt; if (f.wait > 0) { f.moving = false; if (!f.job && !f.sitting && !f.child) folkChat(f, dt); continue; }
+        if (f.job && (f.job.kind === 'carry' || f.job.kind === 'forage')) { f.carrying = true; }                                               // water drawn: carry it home
         f.job = null; f.sitting = false;
-        var tg = f.carrying ? f.spots[0] : f.spots[Math.floor(Math.random() * f.spots.length)];
+        var tg = f.carrying ? f.spots[0] : folkPick(f);
         function taken(q) { return (q.sit && folk.some(function (g) { return g !== f && ((g.target === q) || (g.sitting && Math.abs(g.x - q.x) < 2 && Math.abs(g.y - q.y) < 2)); })) || (q.tag && q.tag !== 'sit' && q.tag !== 'door' && folk.some(function (g) { return g !== f && g.target === q; })); }   // one on a log, one at a job spot at a time
         if (taken(tg)) { var free = f.spots.filter(function (q) { return q !== tg && !taken(q); }); tg = free.length ? free[Math.floor(Math.random() * free.length)] : f.spots[0]; }   /* (another free spot, not always the door: three thralls of a house stood in a knot at it, 2026-10-23) */
         if (!tg.sit && !tg.tag) { if (!f.off) { var oa = (f.name || '').split('').reduce(function (h, ch) { return (h * 31 + ch.charCodeAt(0)) % 997; }, 7) / 997 * 6.283, orr = 10 + ((f.name || '').length % 5) * 3; f.off = { x: Math.cos(oa) * orr, y: Math.sin(oa) * orr * 0.6 }; } tg = { x: tg.x + f.off.x, y: tg.y + f.off.y, tag: tg.tag, sit: tg.sit }; }   /* (a plain standing spot is stood by each in his own place beside it, so no two stand on one point) */
@@ -21776,12 +21810,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var tag = dist < 6 ? f.target.tag : null; f.sitting = dist < 6 && !!f.target.sit;
         if (f.sitting) { f.x = f.target.x; f.y = f.target.y; f.face = Math.PI / 2; }
         if (f.carrying) f.carrying = false;
-        if (tag && tag !== 'sit' && tag !== 'door') { f.job = { kind: tag, t: 0 }; f.x = f.target.x; f.y = f.target.y; f.face = tag === 'hang' ? -Math.PI / 2 : Math.PI / 2; f.wait = (tag === 'carry' ? 3 : 8) + Math.random() * 8; }
+        if (tag && tag !== 'sit' && tag !== 'door') { f.job = { kind: tag, t: 0 }; f.x = f.target.x; f.y = f.target.y; f.face = tag === 'hang' ? -Math.PI / 2 : Math.PI / 2; if (ftg.fx != null) f.face = Math.atan2(ftg.fy - f.y, ftg.fx - f.x); f.wait = (tag === 'carry' ? 3 : tag === 'play' ? 0.4 : FOLK_LONG[tag] ? 14 : 8) + Math.random() * (tag === 'play' ? 1.6 : FOLK_LONG[tag] ? 14 : 8); if (tag === 'play') f.job = null; }
         else f.wait = (f.sitting ? 12 : 3) + Math.random() * 6;
         f.target = null; f.moving = false; f.idle.t = 0; f.idle.dur = 2 + Math.random() * 4; continue;
       }
-      f.folk = true; if (!navMove(f, f.target.x, f.target.y, f.carrying ? 30 : 38, dt)) { f.moving = false; if (f.noWay > 2) { f.noWay = 0; f.target = null; f.wait = 1 + Math.random() * 2; } continue; }   /* (no way to it: he thinks of somewhere else) */
-      f.moving = true; f.ph += dt * 7;
+      f.folk = true; if (!navMove(f, f.target.x, f.target.y, f.carrying ? 30 : f.target.tag === 'play' ? 66 : 38, dt)) { f.moving = false; if (f.noWay > 2) { f.noWay = 0; f.target = null; f.wait = 1 + Math.random() * 2; } continue; }   /* (no way to it: he thinks of somewhere else) */
+      f.moving = true; f.ph += dt * (f.target && f.target.tag === 'play' ? 11 : 7);
     }
     // room for each other (2026-10-13: with everybody finding the same way round the fire and the well, the people who stopped to
     // watch you stood in one heap): two of a village nearer than a step apart ease apart, the one who is walking giving way
