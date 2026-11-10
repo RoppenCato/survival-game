@@ -8,12 +8,12 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: step 1 is built but for the spring, bay and hill; **step 2 (flint gear) is next**, then villagers with things to do (Robin, 2026-11-10), then step 3.
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 and 2 are built (but for the spring, bay and hill). **Next: villagers with things to do (Robin, 2026-11-10), then step 3 (the big log, log and elm pieces), step 4 (Saltvik's barter, the loom, the ship's price).**
 2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin
 
-**To play (chapter 0, twelve items; `/dev/` or `npm start`):**
+**To play (chapter 0, thirteen items; `/dev/` or `npm start`):**
 
 1. Arnor's workbench: in his broken house no recipe can be made; once the house is mended, the bow and the quiver can.
 2. The bow and the quiver are made at the workbench; arrows by hand or there, once a quiver is worn (2b.3).
@@ -26,7 +26,8 @@ Last updated: 2026-11-10.
 9. Save and load at several steps, once from a file (3.1).
 10. The error log empty after the run: Escape, Admin, download `errorlog.txt` (needs `npm start`) (3.2).
 11. The hero in the undyed shirt from the wreck on, and wild herbs and fallen trees as pictures (4.2, 4.4).
-12. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
+12. The first tools are called Stone Axe, Stone Pickaxe and Stone Knife (4.5).
+13. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
 **To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22, D46 (the bear's rune) and D47 (the jarl's seat in home water) for chapter 1.
 
@@ -38,7 +39,7 @@ Last updated: 2026-11-10.
 | Colin, AD | The blót's ritual clips and props (the cut-scene uses stand-ins) | 2026-10-29 |
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
-| Colin, AD | Chapter 1's art still to come: the elm, its bow and pieces, the old bear's look, his cape and rug. Also delivered and copied in: the wolf-skin tunic, hood and cloak, the claim stone's pictures and three clips, roseroot. Delivered 2026-11-10 and copied in: the shirt, herbs, fallen trees, flint gear and arrows, the old pine with its log, the log wall and floor, the loom and wild flax | 2026-11-10 |
+| Colin, AD | Chapter 1's art still to come: the Old Man's look, his cape and rug. Everything else asked on 2026-11-10 is delivered and copied in | 2026-11-10 |
 | Alistair, LD | Nothing: handoffs 24 to 27 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 

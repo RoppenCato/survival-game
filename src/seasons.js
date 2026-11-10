@@ -159,7 +159,7 @@
 
   // gradeSprite by composites (2026-10-23): the season's colours laid on with blend modes (the hue of the season on the leaves; browns,
   // whites and the ink change little under a hue blend, having little colour), winter's snow as a band under the upper edges. null = not drawn.
-  var PLANT = { oak: 1, birch: 1, pine: 1, bush: 1, berryBush: 1, tallGrass: 1, wildHerbs: 1, fern: 1, juniper: 1, heather: 1, reeds: 1, grass: 1 };   // what takes the season's colours (rocks, tents, carts keep theirs)
+  var PLANT = { elm: 1, oak: 1, birch: 1, pine: 1, bush: 1, berryBush: 1, tallGrass: 1, wildHerbs: 1, fern: 1, juniper: 1, heather: 1, reeds: 1, grass: 1 };   // what takes the season's colours (rocks, tents, carts keep theirs)
   var TRUNK = { oak: 0.74, birch: 0.5 };                          // where the crown ends and the bare trunk begins, as a share of the picture's height: the colour fades out down it
   function overFillDown(g, src, w, h, op, col, a, y1) { var gr = g.createLinearGradient(0, h * (y1 - 0.12), 0, h * y1); gr.addColorStop(0, col.replace('hsl(', 'hsla(').replace(')', ',' + a + ')')); gr.addColorStop(1, col.replace('hsl(', 'hsla(').replace(')', ',0)'));
     g.globalCompositeOperation = op; g.fillStyle = gr; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-over'; }

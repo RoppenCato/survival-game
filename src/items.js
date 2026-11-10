@@ -38,7 +38,8 @@ var KINDS = {
 };
 var MATS = {
   wood: { name: 'Wooden', face: '#b98a5a', dark: '#8a5a3a', edge: '#e9cfa0', glow: '255,230,170', power: 0.7, grain: true },
-  flint: { name: 'Flint', face: '#6e6a6a', dark: '#3f3b3c', edge: '#b9b4b0', glow: '220,220,230', power: 0.85 },
+  stone: { name: 'Stone', face: '#6e6a6a', dark: '#3f3b3c', edge: '#b9b4b0', glow: '220,220,230', power: 0.85 },   /* field stone on a haft: the first tools (chapter 0's; they were called flint until 2026-11-10, when flint became a thing of its own found on the beaches of the islands round: Robin) */
+  flint: { name: 'Flint', face: '#4c484b', dark: '#2a2729', edge: '#cfc9c2', glow: '220,220,230', power: 0.95 },   /* knapped flint: chapter 1's tools and weapons, a step over stone and under copper (the number mine) */
   copper: { name: 'Copper', face: '#c8784a', dark: '#8a4a2a', edge: '#f0b48a', glow: '255,170,110', power: 1 },
   bronze: { name: 'Bronze', face: '#b8903f', dark: '#7a5a22', edge: '#efd27a', glow: '255,210,120', power: 1.15 },
   iron: { name: 'Iron', face: '#9ca3ad', dark: '#5c636c', edge: '#e6ebf2', glow: '200,220,255', power: 1.3, armor: 2.2 },   // armor: how much more a worn piece of it turns aside than leather (2026-10-07)
@@ -79,6 +80,7 @@ function desc(it) {
   else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
+  else if (it.mat === 'stone') bits.push('A field stone lashed to a haft. It does the work, slowly.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
   else if (it.mat === 'bronze') bits.push('Bronze, the metal of the old heroes. Heavy and sure.');
   else if (it.mat === 'iron' && it.kind === 'tunic') bits.push('Thousands of iron rings, each riveted to four others, over a padded shirt. A spear point slides off it; a blow still bruises.');
@@ -240,6 +242,7 @@ function tintCanvas(im, tint) {
 function iconImage(c, it, s) {
   var set = SPR.imgs && (it.kind === 'sword' && it.mat === 'wood' && SPR.imgs.ashSword ? SPR.imgs.ashSword : SPR.imgs[it.kind]); if (!set) return false;   /* the Wooden Sword's own icon (Colin, AD's sword_ash, 2026-10-26) */
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
+  if (it.mat === 'flint' && ok(set.flint)) { var sf = (s || 14) * 1.42; c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(set.flint, -sf / 2, -sf / 2, sf, sf); c.restore(); return true; }   /* a flint thing's own icon (Colin, AD's <kind>_flint, 2026-11-10: one picture, no tint, turned as the others are) */
   if (!ok(wood) && !ok(metal)) return false;
   var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
   c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were

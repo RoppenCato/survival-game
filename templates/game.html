@@ -382,7 +382,7 @@ __COMBAT__
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
-  var TREE_WOOD = { oak: 14, pine: 11, birch: 9, beech: 13, ash: 11, apple: 6, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, chalkRock: 3, boulder: 5 }, BUSH_FIBER = 3, BERRIES = 3;   /* (fiber 3 a bush since 2026-10-14, was 2: the chain to the raft wants about 22; the cutting itself reads src/gather.js's BUSH_FIBER, keep the two alike) */
+  var TREE_WOOD = { oak: 14, elm: 14, oldPine: 16, pine: 11, birch: 9, beech: 13, ash: 11, apple: 6, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, chalkRock: 3, boulder: 5 }, BUSH_FIBER = 3, BERRIES = 3;   /* (fiber 3 a bush since 2026-10-14, was 2: the chain to the raft wants about 22; the cutting itself reads src/gather.js's BUSH_FIBER, keep the two alike) */
   /* What the world gives, times a switch (2026-10-14, Robin: a parameter to treble it when testing): Admin's "Threefold drops" (ADMIN.triple)
      multiplies every drop of gathering, of beasts, of berries, of the weir and of the veins. Nothing made or bought is touched. */
   function yieldK() { return ADMIN.triple ? 3 : 1; }
@@ -413,9 +413,10 @@ __COMBAT__
     if (it && it.kind === 'axe' && Combat.axeOut && Combat.axeOut()) it = null;   /* the Throwing axe in flight: the hand empty */
     var lk = it ? (it.kind === 'maul' && M.layers.indexOf('maulWood') < 0 ? 'club' : it.kind) : null;   /* (the maul in the club's hand until Colin, AD's layers) */
     if (it && it.kind === 'sword' && it.mat === 'wood' && M.layers.indexOf('ashSword') >= 0) { out.push('ashSword'); lk = null; }   /* the Wooden Sword: Colin, AD's ash sword in place of the sword's wood and metal, untinted (2026-10-26) */
+    if (it && lk && it.mat === 'flint' && M.layers.indexOf(lk + 'Flint') >= 0) { out.push(lk + 'Flint'); lk = null; }   /* a flint thing: Colin, AD's own layer, haft and all, alone and untinted (2026-11-10) */
     if (it && lk && M.layers.indexOf(lk + 'Wood') >= 0) out.push(lk + 'Wood');
     if (it && lk && M.layers.indexOf(lk + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: lk + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
-    if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : M.layers.indexOf('arrowNockWood') >= 0 ? 'arrowNockWood' : 'arrowNock';   /* (the wooden arrow on the string, Colin, AD's arrowNockWood: every arrow is wooden yet) */ if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
+    if (lk === 'bow') { var twin = R2 && Runes2.bound(R2, 'shot') === 'twinShot' && Runes2.ready(R2, 'shot'), al = twin ? 'arrowTwin' : arrowNow() === 'arrowFlint' && M.layers.indexOf('arrowNockFlint') >= 0 ? 'arrowNockFlint' : M.layers.indexOf('arrowNockWood') >= 0 ? 'arrowNockWood' : 'arrowNock';   /* (the wooden arrow on the string, Colin, AD's arrowNockWood: every arrow is wooden yet) */ if (M.layers.indexOf(al) >= 0) out.push(al); }   /* the arrow on the string from the nock to the loose (Colin, AD's layers on the bow clips, 2026-10-24; two while the Twin shot is ready) */
     if (shieldHeld()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
     return out;
   }
@@ -1705,16 +1706,22 @@ __COMBAT__
     /* (the gambeson is gone from the bench, Robin 2026-10-31: strictly better than the leather tunic, no reason for one; the padded material stays for older saves and a later place) */
     { id: 'mailShirt', cat: 'armour', out: { item: ['tunic', 'iron'] }, needs: { ironBar: 6, leather: 2 }, at: 'bench', key: 'ironBar' },
     { id: 'ironHelm', cat: 'armour', out: { item: ['helmet', 'iron'] }, needs: { ironBar: 2, leather: 1 }, at: 'bench', key: 'ironBar' },
-    { id: 'flintAxe', cat: 'tool', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },
+    { id: 'stoneAxe', cat: 'tool', out: { item: ['axe', 'stone'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },   /* the first tools are stone (they were called flint until 2026-11-10; flint is chapter 1's, below) */
     { id: 'torch', cat: 'supply', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
-    { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
-    { id: 'flintPick', cat: 'tool', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
+    { id: 'stoneKnife', cat: 'tool', out: { item: ['knife', 'stone'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
+    { id: 'stonePick', cat: 'tool', out: { item: ['pick', 'stone'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
+    /* Flint gear (Robin, 2026-11-10: chapter 1's new gear; flint lies on the beaches of the islands round, never on the big island, so it is a reason to sail; the costs mine): tools by hand, the sword at a bench, arrows by hand or at a bench once a quiver is worn */
+    { id: 'flintAxe', cat: 'tool', out: { item: ['axe', 'flint'] }, needs: { wood: 3, flint: 2, fiber: 1 }, at: 'hand', key: 'flint' },
+    { id: 'flintPick', cat: 'tool', out: { item: ['pick', 'flint'] }, needs: { wood: 3, flint: 3, fiber: 1 }, at: 'hand', key: 'flint' },
+    { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, flint: 1, fiber: 1 }, at: 'hand', key: 'flint' },
+    { id: 'flintSpear', cat: 'weapon', out: { item: ['spear', 'flint'] }, needs: { wood: 4, flint: 2, fiber: 2 }, at: 'hand', key: 'flint' },
+    { id: 'flintArrows', cat: 'supply', out: { stack: ['arrowFlint', 5] }, needs: { flint: 1, wood: 1, fiber: 1 }, at: 'hand', key: 'flint' },   /* five for a flint, a wood and a fibre, a quarter more damage (Robin, 2026-11-10) */
     { id: 'woodSword', cat: 'weapon', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },   /* the Wooden Sword (Robin, 2026-10-26: the Strong Stick renamed, a sword not a blunt weapon) */
     { id: 'trapTripper', cat: 'supply', out: { stack: ['trapTripper', 1] }, needs: { wood: 2, stone: 3, fiber: 2 }, at: 'trapper', key: 'trapper' },   /* the Trapper's traps (Robin, 2026-10-24): made at the trapper's bench; the costs mine */
     { id: 'trapPoison', cat: 'supply', out: { stack: ['trapPoison', 1] }, needs: { stone: 2, berries: 3, fiber: 1 }, at: 'trapper', key: 'trapper' },   /* (a clay pot of crushed troll-berries: Alistair, LD's thing.troll-berry-pot, handoff 12, Robin's yes of 2026-10-24) */
     { id: 'woodRod', cat: 'tool', out: { item: ['rod', 'wood'] }, needs: { wood: 3, fiber: 3 }, at: 'hand', key: 'fiber', taught: 'fishTaught' }   /* (the rod after the fisherman's lesson, chapter 1) */,   /* the first rod (Robin, 2026-10-24: a basic fishing system): hazel, a fiber line and a bone hook, by hand; the costs mine */
     { id: 'cudgel', cat: 'tool', out: { item: ['cudgel', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'wood' },   /* the cudgel (Robin, 2026-10-23): knocks a weakened beast out, to carry it to the altar */
-    { id: 'flintSpear', cat: 'weapon', out: { item: ['spear', 'flint'] }, needs: { wood: 4, stone: 2, fiber: 2 }, at: 'hand', key: 'stone' },   /* (chapter 1's one new weapon, long in the reach, for the wolves; the cost mine) */
+    { id: 'stoneSpear', cat: 'weapon', out: { item: ['spear', 'stone'] }, needs: { wood: 4, stone: 2, fiber: 2 }, at: 'hand', key: 'stone' },   /* (chapter 1's one new weapon, long in the reach, for the wolves; the cost mine) */
     { id: 'learnShipwright', cat: 'lesson', out: { learn: 'shipwright', name: 'The shipwright\u2019s craft', icon: 'wood', text: 'A shipyard on your own shore, and the rowboat built in it' }, needs: { wood: 10, fiber: 6, leather: 2, sinew: 1 }, at: 'aslak' },   /* Old Aslak's lessons (Robin, 2026-10-29: "trade materials to learn shipwright, and some customizations with other materials ... Not much"; what each costs mine) */
     { id: 'learnSail', cat: 'lesson', out: { learn: 'sailBoat', name: 'A sail', icon: 'fiber', text: 'The small karve, with a mast and a square sail: the boat that leaves home water' }, needs: { fiber: 12, leather: 3, antler: 1 }, at: 'aslak', taught: 'shipwright' },
     { id: 'learnDyes', cat: 'lesson', out: { learn: 'lookDyes', name: 'Dyes for the sail', icon: 'berries', text: 'Every colour for the sail, from berries and the cave\u2019s mushrooms' }, needs: { berries: 8, mushroom: 2 }, at: 'aslak', taught: 'shipwright' },
@@ -1724,7 +1731,7 @@ __COMBAT__
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, sinew: 1 }, at: 'bench', key: 'sinew' },   /* its string a boar's sinew (Robin, 2026-10-28) */
     { id: 'quiver', cat: 'armour', out: { item: ['quiver', 'leather'] }, needs: { leather: 1, fiber: 2 }, at: 'bench', key: 'leather' },   /* at the workbench, as the bow (Robin, 2026-10-31): the arrows are carried in it, so the bow wants one */
     { id: 'woodArrows', cat: 'supply', out: { stack: ['arrow', 5] }, needs: { wood: 1, fiber: 1 }, at: 'hand', key: 'fiber' },   /* simple wooden arrows, five at a time (Robin, 2026-10-26: arrows made and used up; the numbers mine) */
-    { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
+    { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, flint: 4, fiber: 2 }, at: 'bench', key: 'flint' },
     { id: 'arrows15', cat: 'supply', out: { arrows: 15 }, needs: { wood: 4, fiber: 2 }, at: 'bench', key: 'fiber' },
     { id: 'woodShield', cat: 'weapon', out: { item: ['shield', 'wood'] }, needs: { wood: 5, leather: 1 }, at: 'bench', key: 'leather' },
     // the first set of armour takes nine leather: a few deer and boars
@@ -1736,8 +1743,8 @@ __COMBAT__
   ];
   // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
   // bow, leather for armour); until then it is not shown at all. Taught recipes (the raft) wait for the teaching.
-  var STARTER_HIDE = { flintKnife: 1, flintSword: 1, leatherHelmet: 1, leatherCloak: 1, flintSpear: 1 };   /* (2026-10-26, Robin: the flint sword goes; the outfit only a shirt, trousers and leather shoes) */   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
-  function known(r) { if (r.out && r.out.learn) return !seen[r.out.learn] && (!r.taught || !!seen[r.taught]); if (STARTER_HIDE[r.id] && !seen.left) return false; if ((r.id === 'woodArrows' || r.id === 'arrows15') && !equip.quiver) return false;   /* (not at sea on the way: only once ashore on another island; no arrows without a quiver to hold them: Robin, 2026-10-31) */ if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
+  var STARTER_HIDE = { stoneKnife: 1, leatherHelmet: 1, leatherCloak: 1, stoneSpear: 1 };   /* (2026-10-26, Robin: the flint sword goes; the outfit only a shirt, trousers and leather shoes) */   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
+  function known(r) { if (r.out && r.out.learn) return !seen[r.out.learn] && (!r.taught || !!seen[r.taught]); if (STARTER_HIDE[r.id] && !seen.left) return false; if ((r.id === 'woodArrows' || r.id === 'arrows15' || r.id === 'flintArrows') && !equip.quiver) return false;   /* (not at sea on the way: only once ashore on another island; no arrows without a quiver to hold them: Robin, 2026-10-31) */ if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
   var STARTER_DISH = { cookedMeat: 1, roastBoar: 1, roastVenison: 1 };
   function dishKnown(d) { if (onStarter() && !STARTER_DISH[d.id]) return false; if (d.taught && !seen[d.taught]) return false; if (d.learn && !(seen.dishes && seen.dishes[d.id])) return false;   /* (a dish learnt at a village's pot: Robin, 2026-10-29) */   /* on the starter island only roast meat (Robin, 2026-10-28: meat is food from the start; the better dishes are the village's) */ for (var k in d.needs) if (!seen[k]) return false; return true; }
   function recipeName(r) { if (r.out.learn) return r.out.name; return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? (r.out.stack[0] === 'torch' ? r.out.stack[1] + ' torches' : NAMES[r.out.stack[0]]) : r.out.arrows + ' wood arrows')); }
@@ -2260,7 +2267,7 @@ __COMBAT__
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
   var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, sinew: 0, boarMeat: 0, venison: 0, wolfPelt: 0, mushroom: 0, angelica: 0, hogniAdze: 0, roastBoar: 0, roastVenison: 0, boarStew: 0, venisonBerries: 0, angelicaBroth: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'sinew', 'wolfPelt', 'hogniAdze', 'berries', 'mushroom', 'angelica', 'boarMeat', 'venison', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
-  var NAMES = { arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', sinew: 'Sinew', boarMeat: 'Boar meat', venison: 'Venison', wolfPelt: 'Wolf pelt', mushroom: 'Mushroom', angelica: 'Angelica', hogniAdze: 'Hogni\u2019s adze', roastBoar: 'Spit-roast boar', roastVenison: 'Venison on the spit', boarStew: 'Boar and mushroom stew', venisonBerries: 'Venison with berries', angelicaBroth: 'Angelica broth', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var NAMES = { flint: 'Flint', arrowFlint: 'Flint arrow', arrow: 'Wooden arrow', trapTripper: 'Tripper trap', trapPoison: 'Poison trap', feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', sinew: 'Sinew', boarMeat: 'Boar meat', venison: 'Venison', wolfPelt: 'Wolf pelt', mushroom: 'Mushroom', angelica: 'Angelica', hogniAdze: 'Hogni\u2019s adze', roastBoar: 'Spit-roast boar', roastVenison: 'Venison on the spit', boarStew: 'Boar and mushroom stew', venisonBerries: 'Venison with berries', angelicaBroth: 'Angelica broth', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
@@ -4822,7 +4829,7 @@ __COMBAT__
     P.weapon = it && !tool && Items.KINDS[it.kind].ranged ? 'ranged' : 'melee';
   }
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
-    if (kind === 'arrow') { var qleft = quiverAdd('arrow', n); recount && recount(); save(); return qleft; }   /* arrows go to the quiver, outside the bag (Robin, 2026-10-26) */
+    if (kind === 'arrow' || kind === 'arrowFlint') { var qleft = quiverAdd(kind, n); recount && recount(); save(); return qleft; }   /* arrows go to the quiver, outside the bag (Robin, 2026-10-26) */
     var i, s, take; noteSeen(kind); if (FISH_KINDS[kind]) noteSeen('fish'); if (kind === 'charcoal' || kind === 'honey') deed(kind, n);
     for (i = 0; i < SLOTS && n > 0; i++) { s = slots[i]; if (s && s.kind === kind && s.n < STACK) { take = Math.min(n, STACK - s.n); s.n += take; n -= take; } }
     for (var k2 = 0; k2 < SLOTS && n > 0; k2++) { i = (BAG0 + k2) % SLOTS; if (!slots[i]) { take = Math.min(n, STACK); slots[i] = { kind: kind, n: take }; n -= take; } }   // the bag rows first, then the bars
@@ -5292,7 +5299,7 @@ __COMBAT__
     else drawDropIcon(c, e.r.out.icon || (e.r.out.stack ? e.r.out.stack[0] : (e.r.out.raft ? 'raft' : 'arrow')), 0, 0, 1.3);
     c.restore();
   }
-  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone and flint. Knapped it takes an edge; stacked it holds a fire.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', sinew: 'From along a boar\u2019s back. Dried and twisted, it makes a bowstring.', boarMeat: 'Dark and fat-rimmed. Good on the spit, better in a pot.', venison: 'Lean meat from the deer. It wants something sweet beside it.', wolfPelt: 'A grey pelt, thick for the winter.', mushroom: 'Pale caps from the cave\u2019s dark. They grow where nothing else will.', angelica: 'Kvann, the tall green umbel. Its stalks are eaten and its leaves go in the broth.', hogniAdze: 'A shipwright\u2019s adze, the haft worn to the shape of a hand.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
+  var STACK_TALE = { trapTripper: 'An iron jaw on a spring of bent wood. Thrown down, it sets itself, and whoever steps on it stays where he stands.', trapPoison: 'A clay pot of crushed troll-berries. It breaks underfoot, and whatever stepped on it does not run far.', wood: 'Branches and split logs. Walls, hafts, fires: most of what stands in a steading was this once.', stone: 'Field stone. Shaped it takes an edge of a kind; stacked it holds a fire.', flint: 'A nodule from a beach, dark and glassy inside. Knapped, it cuts like nothing else you have.', arrowFlint: 'A shaft with a knapped flint head. It bites deeper than a wooden point.', fiber: 'Grass and bast, twisted into cord. It binds an axe head, strings a bow, lashes logs together.', hide: 'A raw hide, stiff and rank.', leather: 'A hide scraped and worked soft. Clothes, straps, a rug for the floor.', copper: 'Green-stained ore. With charcoal in a furnace it runs red.', charcoal: 'Wood burnt slowly without air. It burns hotter than wood: hot enough for metal.', eggs: 'From a nest in a felled tree. Good as they are.', honey: 'Wild honey, bees and all. Sweet, and it keeps for ever.', antler: 'Shed or taken. Hard as bone and easier to carve.', sinew: 'From along a boar\u2019s back. Dried and twisted, it makes a bowstring.', boarMeat: 'Dark and fat-rimmed. Good on the spit, better in a pot.', venison: 'Lean meat from the deer. It wants something sweet beside it.', wolfPelt: 'A grey pelt, thick for the winter.', mushroom: 'Pale caps from the cave\u2019s dark. They grow where nothing else will.', angelica: 'Kvann, the tall green umbel. Its stalks are eaten and its leaves go in the broth.', hogniAdze: 'A shipwright\u2019s adze, the haft worn to the shape of a hand.', snakeBlood: 'An adder\u2019s blood, dark red. It reddens the runes cut in a stone.', meat: 'Raw. A fire makes a meal of it.', herring: Fishing.FISH.herring.line, perch: Fishing.FISH.perch.line, cod: Fishing.FISH.cod.line, pike: Fishing.FISH.pike.line, salmon: Fishing.FISH.salmon.line, grilledFish: 'A fish grilled on a flat stone by the fire. Good, and quick.', fishSoup: 'Two fish boiled with berries: the fisherman\u2019s soup, it warms the whole night.', smokedFish: 'Fish hung in charcoal smoke until it keeps. Food for a long journey.', torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', silver: 'Hack-silver: coins, cut rings and bits of bar, weighed out by the ounce. Every trader in the south takes it.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
   function infoText(e) {                    // the tale: a dish's line, a thing's own description
     if (e.r && e.r.out.learn) return e.r.out.text || '';
     if (e.dish) return e.dish.text + '.';
@@ -5708,13 +5715,16 @@ __COMBAT__
   }
   // the bag: cell size, where it sits when open (right side, under the chart, clear of the hero), how far it has slid in
   /* ---------- the quiver: three arrow slots, outside the bag; the bow shoots the active one ---------- */
-  var ARROWS = { arrow: { name: 'Wood arrow' } }, QCAP = 99, quiver = { slots: [{ kind: 'arrow', n: 20 }, null, null], sel: 0 };
+  var ARROWS = { arrow: { name: 'Wood arrow' }, arrowFlint: { name: 'Flint arrow', dmgK: 1.25, pic: 'arrowFlint', nock: 'arrowNockFlint' } }, QCAP = 99, quiver = { slots: [{ kind: 'arrow', n: 20 }, null, null], sel: 0 };
   function quiverCount() { var s = quiver.slots[quiver.sel]; return s ? s.n : 0; }
+  function quiverBest() { var b = -1, i; for (i = 0; i < 3; i++) { var s = quiver.slots[i]; if (s && s.n > 0 && (b < 0 || ((ARROWS[s.kind] || {}).dmgK || 1) > ((ARROWS[quiver.slots[b].kind] || {}).dmgK || 1))) b = i; } if (b >= 0) quiver.sel = b; }   /* the bow takes the best arrows it has first (mine, 2026-11-10: there is no key to choose yet) */
+  function arrowNow() { var s = quiver.slots[quiver.sel]; return s && ARROWS[s.kind] ? s.kind : 'arrow'; }
+  Combat.api.arrowKind = arrowNow;
   function quiverAdd(kind, n) {            // into the slot of that kind, else an empty one; returns what did not fit
     var i, s;
     for (i = 0; i < 3 && n > 0; i++) { s = quiver.slots[i]; if (s && s.kind === kind && s.n < QCAP) { var take = Math.min(n, QCAP - s.n); s.n += take; n -= take; } }
     for (i = 0; i < 3 && n > 0; i++) if (!quiver.slots[i]) { quiver.slots[i] = { kind: kind, n: Math.min(n, QCAP) }; n -= QCAP; }
-    return Math.max(0, n);
+    quiverBest(); return Math.max(0, n);
   }
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
   var noArrowT = 0;
@@ -5733,7 +5743,7 @@ __COMBAT__
   };
   function onShootArrow() {
     var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
-    if (s.n <= 0) { quiver.slots[quiver.sel] = null; for (var i = 0; i < 3; i++) if (quiver.slots[i]) { quiver.sel = i; break; } }
+    if (s.n <= 0) { quiver.slots[quiver.sel] = null; for (var i = 0; i < 3; i++) if (quiver.slots[i]) { quiver.sel = i; break; } quiverBest(); }
     save();
   };
   Combat.api.onArrowLand = function (x, y) { };   /* (no arrows lie to be picked up while there is no quiver) */
@@ -6151,7 +6161,7 @@ __COMBAT__
   Combat.api.onDeed = function (kind) { };
   Combat.api.mods = function () {
     var carryK = carrying ? (runeHas('strongBack') ? runeN('strongBack', 'carryK') : 0.7) : 1;   /* a heavy thing on the back slows less under the Strong back, not at all under the Heavy back */
-    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: 1, speed: carryK * (sugarT > 0 ? runeN('greenThumb', 'speed') || 1.1 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : wade.on && !ADMIN.fly ? SWIM.wade : 1), crit: 0, stealth: 1, arrow: 1,
+    return { dmg: ADMIN.oneshot ? 1000 : 1, sprintCost: 1, speed: carryK * (sugarT > 0 ? runeN('greenThumb', 'speed') || 1.1 : 1) * (ADMIN.fly ? 2.6 : 1) * (swim.on && !ADMIN.fly ? (swim.spent ? SWIM.spent : swimSpeed()) : wade.on && !ADMIN.fly ? SWIM.wade : 1), crit: 0, stealth: 1, arrow: (ARROWS[arrowNow()] || {}).dmgK || 1,
       stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: 0, charge: 0, roll: 0, heavyblow: 0 };   /* (the runes' own switches live in the engine now, Runes2: these are the page's buffs) */
   };
   Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
@@ -6331,16 +6341,16 @@ __COMBAT__
     var h = Sprites.hand(sprHero, sprHero.last, face, 0, Sprites.scaleOf(localStorage) * (sprHero.meta.scale || 1)), im = STACK_IMG[PT.throwQ.trap === 'poison' ? 'trapPoison' : 'trapTripper']; if (h && im && im.complete && im.naturalWidth) c.drawImage(im, x + h[0] - 4.5, y + h[1] - 4.5, 9, 9);
   };
   Combat.api.drawArrow = function (c, pr) {   /* the wooden arrow in flight (Colin, AD's, 2026-10-26): pointing along +x, turned to the flight angle */
-    var sp = World.IMAGES.arrowWood && sprite('arrowWood'); if (!sp || !sp.cv || sp.w <= 1) return false;
+    var an = pr.ammo === 'arrowFlint' && World.IMAGES.arrowFlint ? 'arrowFlint' : 'arrowWood', sp = World.IMAGES[an] && sprite(an); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(pr.x, pr.y * K - 10); c.rotate(Math.atan2(Math.sin(pr.ang) * K, Math.cos(pr.ang))); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
   };
   Combat.api.drawStuckArrow = function (c, st, x, y, dy, ang) {   /* stuck: in a wall or a tree facing the eye, in the turf steep or low, broken on stone; in a body the engine's drawn arrow */
-    if (st.surf === 'body' || !World.IMAGES.arrowWood) return false; var flip = Math.cos(st.ang) < 0, name = st.drop || st.surf === 'stone' ? 'arrowWoodBroken' : st.surf === 'wood' ? 'arrowWoodWall' : (Math.abs(Math.sin(st.ang)) > 0.6 ? 'arrowWoodGround_0' : 'arrowWoodGround_1'), sp = sprite(name); if (!sp || !sp.cv || sp.w <= 1) return false;
+    if (st.surf === 'body' || !World.IMAGES.arrowWood) return false; var flip = Math.cos(st.ang) < 0, ab = st.ammo === 'arrowFlint' && World.IMAGES.arrowFlint ? 'arrowFlint' : 'arrowWood', name = st.drop || st.surf === 'stone' ? ab + 'Broken' : st.surf === 'wood' ? ab + 'Wall' : (Math.abs(Math.sin(st.ang)) > 0.6 ? ab + 'Ground_0' : ab + 'Ground_1'), sp = sprite(name); if (!sp || !sp.cv || sp.w <= 1) return false;
     c.save(); c.translate(x, y); if (flip) c.scale(-1, 1); c.drawImage(sp.cv, sp.l, sp.t, sp.w, sp.h); c.restore(); return true;
   };
   function arrowPickTick() {                 /* an arrow standing in wood or earth is picked up again by walking over it; one broken on stone or in a body is lost (mine) */
     var W2 = Combat.dbg().W, P = hero(); if (!W2.stuck || !W2.stuck.length) return;
-    for (var i = W2.stuck.length - 1; i >= 0; i--) { var st = W2.stuck[i]; if (st.on || st.drop || st.surf === 'stone' || st.reflected || st.t < 0.6) continue; if (Math.hypot(st.x - P.x, st.y - P.y) > 16) continue; if (quiverAdd('arrow', 1) > 0) continue; W2.stuck.splice(i, 1); sfx('pick'); save(); }
+    for (var i = W2.stuck.length - 1; i >= 0; i--) { var st = W2.stuck[i]; if (st.on || st.drop || st.surf === 'stone' || st.reflected || st.t < 0.6) continue; if (Math.hypot(st.x - P.x, st.y - P.y) > 16) continue; if (quiverAdd(st.ammo && ARROWS[st.ammo] ? st.ammo : 'arrow', 1) > 0) continue; W2.stuck.splice(i, 1); sfx('pick'); save(); }
   }
   var hdSleep = Combat.api.heroSprite; if (hdSleep) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (sleep && !sleep.up && sleep.bd && sleep.bd.name === 'strawBed' && World.IMAGES.strawBed_sleeper) return; hdSleep(c, x, y, face, an, dashing); };   /* (he is the shape under the blanket while he sleeps in the straw bed) */
   Combat.api.drawFireArrow = function (c, pr) {   /* in flight: the loop at 12 fps, pointing along +x, turned to the flight angle as drawProj turns the drawn one */
@@ -6991,7 +7001,7 @@ __COMBAT__
   function layArm(kind, mat, x, y, vi) { if (!isLand(x, y)) return; drops.push({ kind: 'item', item: Items.make(kind, mat), x: x, y: y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: (x * 7 + y) % 6.283, lie: 1, own: vi, keep: 1 }); }
   function layArms(v, vi) {                // what lies about a place for the taking: an axe at the block, a spear by a rack, the smith's blade
     var V2 = v.V, mat = v.biome === 1 ? 'iron' : 'copper', n = 0;
-    (V2.props || []).forEach(function (p) { if (p.name === 'choppingBlock') layArm('axe', v.biome === 1 ? 'iron' : 'flint', p.x + 11, p.y + 6, vi); });   /* (a household's own axe: flint where copper is the new metal, so a village is not a free forge) */
+    (V2.props || []).forEach(function (p) { if (p.name === 'choppingBlock') layArm('axe', v.biome === 1 ? 'iron' : 'stone', p.x + 11, p.y + 6, vi); });   /* (a household's own axe: flint where copper is the new metal, so a village is not a free forge) */
     V2.items.forEach(function (it) { if (it.name === 'shieldRack' && n < 2) { n++; layArm('spear', mat, it.x + 13, it.y + 9, vi); } });
     V2.lots.forEach(function (l) { if (l.id === 'smithy') layArm('sword', mat, (l.x + l.w * 0.5) * T + 6, (l.y + l.h * 0.55) * T, vi); });
   }
@@ -8400,7 +8410,7 @@ __COMBAT__
   function msScene() {                     // a fresh start at the wreck by day, the reminders done, tools in the bag
     var P = hero(); day.t = 300; caveFade = 0; noSave = true;
     seen.met = 1; seen.build = 1; seen.bar = 1; seen.fiber = 1; seen.pried = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
-    ['axe', 'knife', 'pick'].forEach(function (k) { if (!barPut(Items.make(k, 'flint'))) addThing(Items.make(k, 'flint')); });
+    ['axe', 'knife', 'pick'].forEach(function (k) { if (!barPut(Items.make(k, 'stone'))) addThing(Items.make(k, 'stone')); });
     hand = -1; recount(); toCamp(); P.face = Math.PI / 2;
     var isl = w.isles[isleAt(home.x, home.y)] || w.isles[0], ix = isl.x * T, iy = isl.y * T, dd = Math.hypot(ix - home.x, iy - home.y) || 1;
     msClear(home.x + (ix - home.x) / dd * 140, home.y + (iy - home.y) / dd * 140, 0);   /* a few tiles inland from the wreck, on open meadow */

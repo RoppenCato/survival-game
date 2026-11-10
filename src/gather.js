@@ -47,7 +47,7 @@ function spotHit(G, o, t, hero) {              // does a blow from where the her
 function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.round(o.x) + 1, Math.round(o.y), 4) * 6.283; }
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
-var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
+var TREE_WOOD = { oak: 14, elm: 14, oldPine: 16, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
 function treeLen(s, o) { return s.h * (s.fixed ? 1 : (o.s || 1)) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
@@ -67,7 +67,7 @@ function hit(G, o, ctx) {
   }
   if (o.hp <= 0) {
     o.dying = 0; out.felled = o.kind === 'tree'; out.broke = o.kind !== 'tree';
-    if (o.kind === 'stone' && ev) { if (ev.chip) { ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); ev.chip(o.x, o.y, 4, '#c9c2b4', 10, 60); } if (ev.decal) ev.decal({ k: 'rubble', x: o.x, y: o.y + 1, r: 6 + 6 * (o.s || 1) * (ROCK_STONE[o.name] || 3) / 3, seed: Math.round(o.x * 7 + o.y * 13) }); if (ev.drop) ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); }
+    if (o.kind === 'stone' && ev) { if (ev.chip) { ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); ev.chip(o.x, o.y, 4, '#c9c2b4', 10, 60); } if (ev.decal) ev.decal({ k: 'rubble', x: o.x, y: o.y + 1, r: 6 + 6 * (o.s || 1) * (ROCK_STONE[o.name] || 3) / 3, seed: Math.round(o.x * 7 + o.y * 13) }); if (ev.drop) { if (o.is === 'flint') ev.drop('flint', o.x, o.y, 1); else ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); } }   /* (a flint nodule gives one flint: chapter 1) */
     else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, BERRIES); ev.drop('fiber', o.x, o.y, 1); } else ev.drop('fiber', o.x, o.y, BUSH_FIBER); }   // (BUSH_FIBER 3 since 2026-10-14, was 2; the page's own constants of the same names were never read here)
   }
   return out;
@@ -230,7 +230,7 @@ function drawRubble(c, d) {
 }
 var BARK = { oak: ['#7a5636', '#4a3220', '#c9a070'], pine: ['#6b4a3a', '#3f2a1c', '#c99a70'], birch: ['#e8e4dc', '#5a5650', '#d9c9a6'] };
 // a felled trunk lying along the ground, its cut end toward where it fell from; shorter as the logs come off
-var TRUNK_W = { oak: 1.2, beech: 1.15, pine: 0.9, ash: 0.9, apple: 0.8, birch: 0.7, struckTree: 1, dwarfBirch: 0.6 };   /* how thick a felled trunk lies, by tree (2026-10-14: a trunk scaled by the tree's bake was fatter than the hero is tall) */
+var TRUNK_W = { elm: 1.2, oldPine: 1.3, oak: 1.2, beech: 1.15, pine: 0.9, ash: 0.9, apple: 0.8, birch: 0.7, struckTree: 1, dwarfBirch: 0.6 };   /* how thick a felled trunk lies, by tree (2026-10-14: a trunk scaled by the tree's bake was fatter than the hero is tall) */
 function drawTrunk(c, o, pic) {
   if (o.len0 == null) o.len0 = o.len;                   // its length when it fell: the stump end stays put, the logs come off the far end
   if (pic && pic.cv && pic.w > 2) {                      // the tree's own trunk picture (2026-10-20; Robin: the logs "getting smaller as they break" looked poor, so the trunk loses length, never thickness)

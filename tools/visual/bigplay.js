@@ -21,7 +21,7 @@ window.BI = (function () {
   BI.go = function () {                       // the hero on the big island, 1000 units west of the first village, with the first tools
     var d = D(), p = P(), w = W(), v = village0(), cy = (v.ty + v.h / 2) * 32, x = v.tx * 32 - 1000; while (!w.isLand(x, cy) && x < v.tx * 32) x += 32;
     d.addItem('wood', 24); d.addItem('stone', 12); d.addItem('fiber', 12); d.addItem('berries', 6);
-    ['flintAxe', 'flintPick', 'woodClub', 'woodBow'].forEach(function (id) { var r = d.recipes2.filter(function (q) { return q.id === id; })[0]; if (r) d.craft(r); for (var i = 0; i < 200; i++) d.tick(1 / 60); });
+    ['stoneAxe', 'stonePick', 'woodClub', 'woodBow'].forEach(function (id) { var r = d.recipes2.filter(function (q) { return q.id === id; })[0]; if (r) d.craft(r); for (var i = 0; i < 200; i++) d.tick(1 / 60); });
     d.seen.build = 1; d.seen.raft = 1; d.seen.slept = 1; p.x = x; p.y = cy; step(30);
     return 'on the big island at ' + Math.round(p.x) + ',' + Math.round(p.y) + ', ' + v.name + ' (' + v.arch + ') 1000 units east; ' + JSON.stringify(ST.inv());
   };

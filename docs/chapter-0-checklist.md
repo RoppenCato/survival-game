@@ -97,6 +97,7 @@ wrong with the rest.
 | 4.2 | **The basic outfit is the undyed shirt** (Robin, 2026-11-10; Colin, AD's `shirt`): the hero wears it from the wreck; the tunic goes on only with something worn on the chest (mine). | Built (seen in the pane) |
 | 4.3 | **The steading's other houses** stay ruin through chapter 0; **Arnor has mended them once you have landed on another island** (Robin, 2026-11-10: "Arnor fixed them"). That is chapter 1's (its checklist, 1.16). | Checked for chapter 0 (they are ruin) |
 | 4.4 | **Wild herbs and fallen trees as pictures** (Robin, 2026-11-10; Colin, AD's four herbs and two fallen trees), no code drawings left near the start; bird nests gone. | Built (the herbs seen in the pane) |
+| 4.5 | **The first tools are stone** (2026-11-10, with chapter 1's flint: the Stone Axe, Stone Pickaxe and Stone Knife; they were called flint; their numbers and look are unchanged). | Built (seen in the crafting list in the pane) |
 
 ## What changed (newest first)
 

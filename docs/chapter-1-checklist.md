@@ -41,9 +41,9 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.7 | **The year**: the first summer four days, autumn's look, what a season gives. | Built |
 | 2.8 | **Piers and the shipyard**: built from the beach, the boat launched into free water, taken down safely. | Built |
 | 2.9 | **Ship looks** from Old Aslak's lessons: sail colours and patterns, shield paints, stem heads; Refit. | Built |
-| 2.12 | **Flint tools**: a flint axe and pick, faster than wood and stone. | Not built (the flint kinds exist in the code; recipes, numbers and where flint comes from are new) |
-| 2.13 | **Flint weapons**: the flint sword and knife beside the spear. | Not built (both exist, hidden; to open and tune) |
-| 2.14 | **Flint arrows** in the quiver, beside wooden ones: five for a flint, a wood and a fibre, a quarter more damage. | Not built |
+| 2.12 | **Flint tools**: a flint axe and pick (and knife), a step over the stone ones (chop 1.9 against 1.7). Made by hand from wood, flint and fibre. | Built (made and held in the pane; Colin, AD's layers and icons) |
+| 2.13 | **Flint weapons**: the flint sword (at a bench) and knife beside the spear, and a flint spear. | Built (the sword not tried in a fight) |
+| 2.14 | **Flint arrows** in the quiver, beside wooden ones: five for a flint, a wood and a fibre, a quarter more damage; the bow takes the best arrows first; each sticks and is picked up again as its own kind. | Built (made by script; not shot in the pane) |
 | 2.15 | **Wolf-skin gear**: a cloak, a hood and a lined tunic; a little more armor than leather each, and wolves notice you from less far. | Not built (art: Colin, AD) |
 | 2.16 | **Barter** at the trading hamlet: it takes flint, wolf pelts and deer leather; it gives salt and what a loom needs. | Not built (Old Aslak's board is the model) |
 | 2.17 | **The loom**, a new bench at home: sailcloth and more woven from **wild flax** gathered on the islands round. | Not built (art: Colin, AD) |
@@ -60,7 +60,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | --- | --- | --- |
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
 | 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island (Tangholm, Gamli's hut), the trading hamlet (Saltvik, Jorunn), the elm island (Almey). | Built: the islands, their names on the map, the places and the two people (`tests/isles.js`; seen in the pane: Ulfarstad). Jorunn's barter is 2.16 |
-| 3.6 | **Flint on the beaches of every island round**, never on the big island or the starter island. | Built in the world (`tests/isles.js`); it is a small rock that gives stone until step 2 makes flint a thing of its own |
+| 3.6 | **Flint on the beaches of the islands round**, never on the big island, the starter island or Saltvik's own beach: a nodule gives one flint. | Built (`tests/isles.js`; picked up in the pane) |
 | 3.7 | **The elm island** (Robin, 2026-11-10: no yew anywhere in the game; the name is Alistair, LD's, Barlindey goes): **elm for a better bow, and new building options from it, a floor, walls and more**. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | The Old Man Built (on the ruin's island, 132 health, 55 a blow, slower; once dead he stays dead; seen in the pane); the elm bow, the elm pieces, the cape, the rug and the rune Not built |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
 | 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **a healing herb** gathered only up there (2.20). | The cave Built; the lookout opening the map and the herb Not built |
@@ -90,6 +90,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 2 built: flint is a thing of its own; the first tools are now stone (they were called flint); flint tools, weapons and arrows. The elm and the old pine draw as Colin, AD's trees.
 - 2026-11-10: step 1's second half built: Saltvik with Jorunn, Tangholm with Gamli, the ruin Ulfarstad, the names on the map, the Old Man; no jarl's seat in home water (D47). Robin: villagers with things to do (4.7).
 - 2026-11-10: step 1's first half built: every island round has its role, flint on its beaches, flax on three or more, old pines on two and at the mountain's foot, elms on the elm island (`tests/isles.js`, ten seeds). Robin: clues that leave a question mark on the map (2.21).
 - 2026-11-10: Robin on the bear: no island of its own, a named old bear as a miniboss, the best cape of the chapter and a rune (D46).

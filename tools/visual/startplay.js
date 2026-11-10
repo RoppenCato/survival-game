@@ -40,7 +40,7 @@ window.ST = (function () {
   function beasts(kind) { var G = Combat.dbg(), p = P(); return ((G.W && G.W.enemies) || []).filter(function (e) { return !e.dead && e.kind === kind; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); }
 
   ST.land = function () { draw(30); var pried = pry(); var k = {}; D().drops.forEach(function (q) { k[q.kind] = (k[q.kind] || 0) + 1; }); var f0 = ST.frames; pick(420); return 'pried ' + pried + ' planks from the wreck; ' + 'woke at ' + Math.round(P().x) + ',' + Math.round(P().y) + '; lying about: ' + JSON.stringify(k) + '; picked up in ' + Math.round((ST.frames - f0) / 60) + ' s: ' + JSON.stringify(inv()); };
-  ST.tools = function () { ['flintAxe', 'flintPick'].forEach(make); mode('gather'); return 'the first tools: ' + D().slots.filter(Boolean).filter(function (s) { return s.kind === 'item'; }).map(function (s) { return s.item.mat + ' ' + s.item.kind; }).join(', ') + '; left ' + JSON.stringify(inv()) + '; ' + clock(); };
+  ST.tools = function () { ['stoneAxe', 'stonePick'].forEach(make); mode('gather'); return 'the first tools: ' + D().slots.filter(Boolean).filter(function (s) { return s.kind === 'item'; }).map(function (s) { return s.item.mat + ' ' + s.item.kind; }).join(', ') + '; left ' + JSON.stringify(inv()) + '; ' + clock(); };
   ST.wood = function () {                                 // a tree from one side, then its trunk; then one the woodcutter's way (the back cut)
     mode('gather'); var out = [];
     [false, true].forEach(function (smart) {
