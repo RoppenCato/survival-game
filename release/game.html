@@ -6443,7 +6443,7 @@ function make(kit, opts) {
   /* Painted ground (2026-10-07, Robin: the tile paths were too mechanical): gravel and earth painted with a brush into cells a
      quarter tile wide (GQ), read as a smooth field with noise on top, so every edge is ragged and no two strokes look alike. It is
      painted into the ground pieces at bake time; painting forgets the pieces it touches so they bake again. */
-  var GQ = 8; w.ground = {}; w.groundRev = 0;   /* (groundRev counts the paintings, so a thing's cached 'am I on grass' knows when to look again) */
+  var GQ = 8, PAINT_WARP = 26; w.ground = {}; w.groundRev = 0;   /* (groundRev counts the paintings, so a thing's cached 'am I on grass' knows when to look again) */
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) stale[ck] = 1; }   // the old piece stays on screen until drawGround has baked the new one (2026-10-08: baking every touched piece at once made painting stutter)   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
@@ -6492,28 +6492,32 @@ function make(kit, opts) {
     return g(i, j) * (1 - u) * (1 - v) + g(i + 1, j) * u * (1 - v) + g(i, j + 1) * (1 - u) * v + g(i + 1, j + 1) * u * v;
   }
   function groundInChunk(cx, cy) {                        // any painted cell in the chunk (with a margin): the chunk's own cells are looked up, never the whole world's (2026-10-08: the bake took 80 ms a piece)
-    var qx0 = Math.floor((cx * CT * T - GQ * 2) / GQ), qx1 = Math.floor(((cx + 1) * CT * T + GQ * 2) / GQ), qy0 = Math.floor((cy * CT * T - GQ * 2) / GQ), qy1 = Math.floor(((cy + 1) * CT * T + GQ * 2) / GQ), qx, qy;
+    var qx0 = Math.floor((cx * CT * T - GQ * 5) / GQ), qx1 = Math.floor(((cx + 1) * CT * T + GQ * 5) / GQ), qy0 = Math.floor((cy * CT * T - GQ * 5) / GQ), qy1 = Math.floor(((cy + 1) * CT * T + GQ * 5) / GQ), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) if (w.ground[qx + ',' + qy]) return true;
     return false;
   }
   function paintGroundInto(c, cx, cy, W2, H2) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
-    var ox = Math.floor((cx * W2) / GQ) - 3, oy = Math.floor((cy * H2 / K) / GQ) - 3, nx = Math.ceil(W2 / GQ) + 7, ny = Math.ceil(H2 / K / GQ) + 7, G = new Uint8Array(nx * ny), gi, gj, wk = new Float32Array(10);
+    var ox = Math.floor((cx * W2) / GQ) - 5, oy = Math.floor((cy * H2 / K) / GQ) - 5, nx = Math.ceil(W2 / GQ) + 11, ny = Math.ceil(H2 / K / GQ) + 11, G = new Uint8Array(nx * ny), gi, gj, wk = new Float32Array(10);
     for (gj = 0; gj < ny; gj++) for (gi = 0; gi < nx; gi++) G[gj * nx + gi] = w.ground[(ox + gi) + ',' + (oy + gj)] || 0;   // the chunk's painted cells, once
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
-      var fx = wx / GQ - 0.5, fy = wy / GQ - 0.5, ci = Math.floor(fx), cj = Math.floor(fy), u = fx - ci, v = fy - cj, li = ci - ox, lj = cj - oy, b0 = lj * nx + li;
+      var wxw = wx + (vnoise(wx / 46, wy / 46, 911) - 0.5) * PAINT_WARP + (vnoise(wx / 17, wy / 17, 913) - 0.5) * PAINT_WARP * 0.35, wyw = wy + (vnoise(wx / 46 + 31.7, wy / 46 + 17.3, 912) - 0.5) * PAINT_WARP + (vnoise(wx / 17 + 9.1, wy / 17 + 4.3, 914) - 0.5) * PAINT_WARP * 0.35;   /* the cells are read through a slow wander of the ground itself, so a path laid along the tiles has no straight edge and no square corner (Robin's rule: ground never looks square; 2026-11-10, the villages' paths were stair-stepped) */
+      var fx = wxw / GQ - 0.5, fy = wyw / GQ - 0.5, ci = Math.floor(fx), cj = Math.floor(fy), u = fx - ci, v = fy - cj, li = ci - ox, lj = cj - oy, b0 = lj * nx + li;
       wk[0] = wk[1] = wk[2] = wk[3] = wk[4] = wk[5] = wk[6] = wk[7] = wk[8] = 0; wk[G[b0]] += (1 - u) * (1 - v); wk[G[b0 + 1]] += u * (1 - v); wk[G[b0 + nx]] += (1 - u) * v; wk[G[b0 + nx + 1]] += u * v;   // the field of each kind, read between the cells
       var fg = wk[1] + (n1v - 0.5) * 0.55, fe = wk[2] + (n1v - 0.5) * 0.55, fm = wk[3] + (n1v - 0.5) * 0.6, ff = wk[4] + (n1v - 0.5) * 0.4, fc = wk[5] + (n1v - 0.5) * 0.5, fw = wk[6] + (n1v - 0.5) * 0.6, fa = wk[7] + (n1v - 0.5) * 0.5, fs = wk[8] + (n1v - 0.5) * 0.4, r = 0, g = 0, b = 0, a = 0, f = 0, ak = 1;
-      if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
-      else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
+      var trod = 0;
+      if (fg > 0.5) { f = fg; trod = 1; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
+      else if (fe > 0.5) { f = fe; trod = 1; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
       else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
       else if (ff > 0.5) { f = ff; var fur = Math.sin(wy * 0.9) * 0.5 + 0.5; r = 118 + (n2v - 0.5) * 24 - fur * 26; g = 88 + (n2v - 0.5) * 20 - fur * 22; b = 56 + (n2v - 0.5) * 16 - fur * 14; }   // a ploughed field: dark furrows east to west
       else if (fc > 0.5) { f = fc; r = 214 + (n2v - 0.5) * 30; g = 210 + (n2v - 0.5) * 28; b = 196 + (n2v - 0.5) * 26; }   // chalk: pale, almost white
       else if (fw > 0.5) { f = fw; var gl = n2v > 0.82 ? 1 : 0; r = 70 + (n2v - 0.5) * 20 + gl * 60; g = 96 + (n2v - 0.5) * 24 + gl * 70; b = 64 + (n2v - 0.5) * 20 + gl * 90; }   // marsh: dark olive with glints of standing water
       else if (fa > 0.5) { f = fa; var fl = n2v > 0.86 ? 1 : 0; r = 74 + (n2v - 0.5) * 20 + fl * 110; g = 68 + (n2v - 0.5) * 18 + fl * 110; b = 63 + (n2v - 0.5) * 16 + fl * 100; ak = 0.7; }   // ash (kind 7; the Art Director's paint, 2026-10-20): grey at 70% with pale flecks: a burnt hall's floor, a ring round a fire pit
       else if (fs > 0.5) { f = fs; r = 43 + (n2v - 0.5) * 12; g = 37 + (n2v - 0.5) * 10; b = 34 + (n2v - 0.5) * 10; ak = 0.45; }   // soot (kind 8): a dark strip at the foot of a wall a fire licked, at 45%
-      if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255 * ak; }
+      if (f > 0.5 && trod) { var edT = Math.min(1, (f - 0.5) / 0.3), tk = (1 - edT) * (n2v > 0.62 ? 0.35 : 0.8); r += (156 - r) * tk; g += (152 - g) * tk; b += (90 - b) * tk; if (f > 0.9) { var hd = Math.min(1, (f - 0.9) / 0.1) * (0.5 + n1v * 0.5); r += 13 * hd; g += 11 * hd; b += 8 * hd; } a = 255; }   /* a trodden path (Colin, AD, 2026-11-10): no ink line at its edge; the earth thins into trampled grass, paler and yellower, with specks of earth through it; down its middle the harder-trodden, lighter line */
+      else if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255 * ak; }
+      else { var ft = Math.max(fg, fe); if (ft > 0.24) { var tf = Math.min(1, (ft - 0.24) / 0.26); r = 152 + (n2v - 0.5) * 30; g = 154 + (n2v - 0.5) * 26; b = 92 + (n2v - 0.5) * 20; a = tf * (n2v > 0.3 ? 200 : 90); } }   /* (the trampled band outside it: shorter, paler grass, a third of a tile wide, broken by the grain) */
       d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
     }
     gc.putImageData(img, 0, 0); c.drawImage(gv, 0, 0, W2, H2);
@@ -21957,6 +21961,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
         for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
         if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
+        if (V2.ruin && /^(campfire|firePit|stoneHearth|hearth|lantern|torchBracket)$/.test(it.name)) it.cold = true;   /* nobody keeps a fire in an abandoned place (2026-11-10: Ulfarstad's yard fire burned) */
         B.items.push(it);
       });
       V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
@@ -22006,7 +22011,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var EADRIC = { every: 3, on: 1 };   /* Eadric the copper-man (Alistair, LD's person.eadric; a glimpse of chapter 2, Robin 2026-11-10): at Saltvik one day in three, with words and nothing to swap for what you have. He is one of Saltvik's own people in look until Colin, AD dresses him */
   function eadricTick() { var sv = villages.findIndex(function (v) { return v.role === 'hamlet'; }); if (sv < 0) return; var ed = folk.filter(function (f) { return f.eadric; })[0]; if (!ed) { ed = folk.filter(function (f) { return f.vi === sv && !f.trader && !f.child && !f.dead; })[0]; if (!ed) return; ed.eadric = true; ed.name = 'Eadric'; } var here = day.n % EADRIC.every === EADRIC.on; if (!here && !ed.gone) { ed.gone = true; ed.hidden = true; } else if (here && ed.gone) { ed.gone = false; ed.hidden = false; ed.abed = false; } }
   function ulfarTick() { if (seen.ruinSeen >= 2) return; var rv = villages.filter(function (v) { return v.name === 'Ulfarstad'; })[0]; if (!rv) return; var P = hero(), cx = (rv.tx + rv.w / 2) * T, cy = (rv.ty + rv.h / 2) * T; if (Math.hypot(P.x - cx, P.y - cy) > 520) return; var L = loreLines('line.ruin.seen', []); if (!seen.ruinSeen) { seen.ruinSeen = 1; seen.ruinT = clock; if (L[0]) sayAt(P.x + 30, P.y - 20, 'A quern', L[0], 7); save(); } else if (clock - (seen.ruinT || 0) > 9) { seen.ruinSeen = 2; if (L[1]) sayAt(P.x - 30, P.y - 10, 'A grave', L[1], 7); save(); } }   /* what is seen in Ulfar's ruin (the lore's line.ruin.seen), once */
-  function clueTick() { eadricTick(); ulfarTick(); if (!seen.deepWater && raft && raft.aboard && Yard.rigged(raft.kind) && w.swellAt && w.swellAt(raft.x, raft.y) > 0.5) { seen.deepWater = 1; save(); }   /* out in the deeper waters under her own sail: chapter 1's end */ if (clueFor !== folk && folk.length) { clueFor = folk; cluesMake(); }   /* (dealt once the people and the islands' names are there, and again when the people are made anew) */
+  function clueTick() { eadricTick(); ulfarTick(); if (!seen.deepWater && raft && raft.aboard && Yard.rigged(raft.kind) && w.swellAt && w.swellAt(raft.x, raft.y) > 0.5) { seen.deepWater = 1; save(); }   /* out in the deeper waters under her own sail: chapter 1's end */ if (clueFor !== folk && folk.length) { clueFor = folk; cluesMake(); villages.forEach(function (v) { if (!v.V || !v.V.ruin) return; var x0 = v.tx * T, y0 = v.ty * T, x1 = (v.tx + v.w) * T, y1 = (v.ty + v.h) * T; B.items.forEach(function (it) { if (it.x > x0 && it.x < x1 && it.y > y0 && it.y < y1 && /^(campfire|firePit|stoneHearth|hearth|lantern|torchBracket)$/.test(it.name)) it.cold = true; }); }); }   /* (and an older save's ruins lose their fires: nobody keeps one there) */   /* (dealt once the people and the islands' names are there, and again when the people are made anew) */
     var cs = seen.clues, P = hero(), k; if (!cs) return; for (k in cs) if (!cs[k].done && Math.hypot(P.x - cs[k].x, P.y - cs[k].y) < cs[k].r) { cs[k].done = 1; save(); } }
   function folkMark(f) {   /* ! where a quest is to be had, ? where one can be handed in (Robin, 2026-10-31), over the others who give them: Old Aslak, Hallveig, Gamli, Jorunn */
     if (SCENE || !CAVE_WOLVES || f.dead || talkWin) return null; var qs = seen.quests || {};
