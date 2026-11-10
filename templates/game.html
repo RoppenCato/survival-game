@@ -2950,8 +2950,8 @@ __COMBAT__
       var len = sd, n = Math.ceil(len / BRIDGE_WAY.step), ux = (best.x - st.x) / len, uy = (best.y - st.y) / len, nx = -uy, ny = ux, ph = hs(0, 1) * 6.283, k, x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
       for (k = 0; k <= n; k++) { var u = k / n, env = Math.sin(u * Math.PI), off = env * (Math.sin(u * 5 + ph) * BRIDGE_WAY.wander + Math.sin(u * 13 + ph * 2) * 8), px = st.x + ux * len * u + nx * off, py = st.y + uy * len * u + ny * off, push = 0;
         around(px, py, function (o) { if (o.r > 4 && Math.hypot(o.x - px, o.y - py) < o.r + 14) push = ((o.x - px) * nx + (o.y - py) * ny) > 0 ? -1 : 1; }); if (push) { px += nx * push * 22; py += ny * push * 22; }
-        if (!isLand(px, py)) continue; var ends = u < 0.06 || u > 0.94, patch = Math.sin(u * len / 46 + ph * 3) + (hs(k, 2) - 0.5) * 1.2;   /* (bare where the feet bunch up at each end; between, patches that come and go) */
-        if (!ends && patch < 0.15) continue; w.dabGround(px, py, ends ? 8 : 4 + hs(k, 3) * 3, 2); x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); }
+        if (!isLand(px, py)) continue; var ends = u < 0.06 || u > 0.94, patch = Math.sin(u * len / 15 + ph * 3) + (hs(k, 2) - 0.5) * 1.2;   /* (bare where the feet bunch up at each end; between, patches that come and go) */
+        var thin = !ends && patch < 0.15; if (thin && k % 2) continue; w.dabGround(px, py, ends ? 8 : thin ? 2 + hs(k, 3) : 4 + hs(k, 3) * 3, 2);   /* (Colin, AD, the same day: the patches about three tiles apart, and in the gaps a thread every other step, so the eye joins it into one way) */ x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); }
       if (x1 > x0 - 1) w.repaint(x0 - 40, y0 - 40, x1 + 40, y1 + 40); v.bridgeWay = { to: best.bi, len: Math.round(len / T) };
     });
   }
