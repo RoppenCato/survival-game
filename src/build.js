@@ -1060,7 +1060,7 @@ function drawRoof(c, room, a, C, dy) {
     }
     // a facet of the roof: fill, the material's rows following it, grain
     function facet(pts, tone, rows, eave) {   // eave: the side its eave is on ('s', 'n', 'w', 'e'), for the thatch's courses
-      var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
+      var d = ink(c, pts, mix(r.col, tone > 0 ? '#ffe7a8' : '#1b2440', Math.abs(tone)), { wob: 0, flat: true, noLine: true });   /* the lit slope warmer and lighter, the shade slope cooler, bluer and about a quarter darker, so a roof reads as a form and not a plane (Colin, AD, 2026-11-10: the biggest win for the villages' roofs; the shade was a brown-black at 0.12 to 0.26) */
       c.save(); path(c, d); c.clip();
       var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; d.forEach(function (p) { bx0 = Math.min(bx0, p[0]); by0 = Math.min(by0, p[1]); bx1 = Math.max(bx1, p[0]); by1 = Math.max(by1, p[1]); });
       if (kind === 1) {                                      // straw in rows along the eave: level on the slopes, down the hips; every other course a shade darker, so the roof reads as laid thatch and not a wash (the studio, 2026-10-20)
@@ -1119,7 +1119,7 @@ function drawRoof(c, room, a, C, dy) {
       c.strokeStyle = 'rgba(22,28,50,' + DEPTH.gable.bandA + ')'; c.lineWidth = DEPTH.gable.band; c.beginPath(); c.moveTo(left + ov + 2, bot - ov * K + 1); c.lineTo(cx, bot - rh + 2); c.lineTo(right - ov - 2, bot - ov * K + 1); c.stroke(); c.restore();
       var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
       path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
-      facet(slopeL, 0.14, 'v', 'w'); facet(slopeR, -0.26, 'v', 'e');
+      facet(slopeL, 0.2, 'v', 'w'); facet(slopeR, -0.3, 'v', 'e');
       if (kind === 1) thatchWeather(c, [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]], [[left, top, left, bot, 1], [right, top, right, bot, -1]], [[left + Wd * 0.18, bot - D * 0.35], [right - Wd * 0.2, bot - D * 0.6]], seed, a);
       eaveEdge(left, bot, cx, bot - rh); eaveEdge(cx, bot - rh, right, bot);                                                // the bargeboards' edge over the gable
       stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], r.ridge, 2.6); stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], INK.line, 0.8);
@@ -1137,12 +1137,12 @@ function drawRoof(c, room, a, C, dy) {
       eaveEdge(left, bot, right, bot);
       if (kind === 1) {                        // thatch: the facets inside a softened outline, the hips rounded (no ruled line down them), weathered
         var rOut = roundCorners(outline, 4.5); c.save(); path(c, rOut); c.clip();
-        facet(far, 0.14, 'h', 'n'); facet(hipL, 0.04, 'v', 'w'); facet(hipR, -0.3, 'v', 'e'); facet(near, -0.12, 'h', 's');
+        facet(far, 0.2, 'h', 'n'); facet(hipL, 0.08, 'v', 'w'); facet(hipR, -0.32, 'v', 'e'); facet(near, -0.22, 'h', 's');
         [[[left, bot], [left + hip, ridgeY]], [[right, bot], [right - hip, ridgeY]], [[left, top], [left + hip, ridgeY]], [[right, top], [right - hip, ridgeY]]].forEach(function (hl2, hi) { stroke(c, hl2, hi < 2 ? 'rgba(60,44,20,0.16)' : 'rgba(255,240,200,0.12)', 3.4); });
         thatchWeather(c, outline, [[left, bot, right, bot, 0], [left, top, left, bot, 1], [right, top, right, bot, -1]], [[left + hip + (right - left - 2 * hip) * 0.2, bot - (bot - ridgeY) * 0.3], [right - hip - (right - left - 2 * hip) * 0.15, bot - (bot - ridgeY) * 0.55], [left + Wd * 0.5, bot - (bot - ridgeY) * 0.15]], seed, a);
         c.restore(); path(c, rOut); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, rOut, 2.4);
       } else {
-      facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
+      facet(far, 0.2, 'h'); facet(hipL, 0.08, 'v'); facet(hipR, -0.32, 'v'); facet(near, -0.22, 'h');
       stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
       stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
       path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
