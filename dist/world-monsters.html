@@ -2486,7 +2486,7 @@ function make(kit, opts) {
     for (yy = Math.max(2, Math.floor(by - e)); yy <= Math.min(GH - 3, Math.ceil(by + e)); yy++) for (xx = Math.max(2, Math.floor(bx - e)); xx <= Math.min(GW - 3, Math.ceil(bx + e)); xx++) { var d = Math.hypot(xx + 0.5 - bx, yy + 0.5 - by), pp = yy * GW + xx, cap = Math.round((d - br) * 100); if (cap < E[pp]) E[pp] = Math.max(-1000, cap); }
   });
   /* Inland water, a trial (Robin, 2026-11-10: "consider if we can have waterfalls/rivers/lakes in land"; docs/inland-water.md): only where a page asks for it (o.inland; the game does not yet). A lake is a steep-sided hollow in the land, so the grass runs to the water's edge with no beach, and a river a chain of such hollows wandering from a lake to the nearest coast. Being water to every rule, a lake is waded, swum and fished as the sea is with nothing new written. Placed by hash from the island's seed; no draw is taken. */
-  w.inland = [];
+  w.inland = []; var FR = o.inland ? new Uint8Array(GW * GH) : null;   /* fresh water by the tile: 1 a lake, 2 a river (land that inland water was carved from, and its bank), for the painter's fresh-water look and whoever asks (w.fresh) */
   /* In the game since Robin's yes of 2026-11-10 (o.inland.auto): "Both" lakes and rivers, on the big island and on some of the islands round, "not all the islands, they can be varying sizes too", a river to the sea or "from one lake to another". The starter island has none (chapter 0 is as it was). A river is shallow all the way (waded anywhere, never swum); a lake is deep in its middle. Nothing lies on the mountain. */
   if (o.inland) isles.forEach(function (q, qi) {
     var IN = o.inland, sd = (q.seed || qi * 13 + 5) % 9973, nL, wantRiver, k, lakes = [], bigI = qi === 1, mAt = null, mKeep = 0;
@@ -2494,14 +2494,14 @@ function make(kit, opts) {
     else { if (q.r < (IN.minR || 70)) return; nL = IN.lakes != null ? IN.lakes : 1; wantRiver = !!IN.river; }
     if (o.mountain != null && o.mountain !== false && qi === (o.mountain === true ? 0 : o.mountain)) { var mo2 = o.mountainOpts || {}; if (mo2.at) { mAt = [q.x + mo2.at[0] * q.r, q.y + mo2.at[1] * q.r]; mKeep = ((mo2.r || 0.5) + 0.1) * q.r; } else { mAt = [q.x, q.y - q.r * 0.6]; mKeep = q.r * 0.6; } }
     var clearM = function (x, y, pad) { return !mAt || Math.hypot(x - mAt[0], y - mAt[1]) > mKeep + (pad || 0); };
-    var carve = function (cx, cy, rad, wob, deep) { var e = Math.ceil(rad + 5), xx, yy; for (yy = Math.max(2, Math.floor(cy - e)); yy <= Math.min(GH - 3, Math.ceil(cy + e)); yy++) for (xx = Math.max(2, Math.floor(cx - e)); xx <= Math.min(GW - 3, Math.ceil(cx + e)); xx++) { var dd = Math.hypot(xx + 0.5 - cx, (yy + 0.5 - cy) * 1.15), rr = rad * (1 + (vnoise(xx / 6.3, yy / 6.3, sd + 60) - 0.5) * wob), pp = yy * GW + xx; if (dd >= rr + 3) continue; var cap = Math.round(dd < rr ? Math.max(-(deep || 240), (dd - rr) * (deep > 200 ? 75 : 130)) : (dd - rr) * 950); if (cap < E[pp]) E[pp] = cap; } };   /* (a field of distance: under the water it falls gently to its depth, on the bank it rises steeply, so the shore is one smooth line between the tiles and the sand at its edge is a thin rim) */
+    var carve = function (cx, cy, rad, wob, deep) { var e = Math.ceil(rad + 5), xx, yy; for (yy = Math.max(2, Math.floor(cy - e)); yy <= Math.min(GH - 3, Math.ceil(cy + e)); yy++) for (xx = Math.max(2, Math.floor(cx - e)); xx <= Math.min(GW - 3, Math.ceil(cx + e)); xx++) { var dd = Math.hypot(xx + 0.5 - cx, (yy + 0.5 - cy) * 1.15), rr = rad * (1 + (vnoise(xx / 6.3, yy / 6.3, sd + 60) - 0.5) * wob), pp = yy * GW + xx; if (dd >= rr + 3) continue; if ((E[pp] > 0 || FR[pp]) && FR[pp] !== 1) FR[pp] = deep > 200 ? 1 : 2; var cap = Math.round(dd < rr ? Math.max(-(deep || 240), (dd - rr) * (deep > 200 ? 75 : 130)) : (dd - rr) * 950); if (cap < E[pp]) E[pp] = cap; } };   /* (a field of distance: under the water it falls gently to its depth, on the bank it rises steeply, so the shore is one smooth line between the tiles and the sand at its edge is a thin rim) */
     for (k = 0; k < nL; k++) { var t2, got = null; for (t2 = 0; t2 < 14 && !got; t2++) { var a = hash(sd, k * 16 + t2, 201) * 6.283, d = (0.15 + hash(sd, k * 16 + t2, 202) * 0.4) * q.r, hr = hash(sd, k, 203), rad = IN.auto ? (bigI ? 3 + hr * hr * 7 : 2.4 + hr * 3) : Math.max(3.2, Math.min(6.5, q.r * (0.02 + hr * 0.014))), cx = q.x + Math.cos(a) * d, cy = q.y + Math.sin(a) * d * 0.9, ok = clearM(cx, cy, rad + 4) && E[Math.floor(cy) * GW + Math.floor(cx)] > 40; lakes.forEach(function (l2) { if (Math.hypot(l2.x - cx, l2.y - cy) < l2.r + rad + 10) ok = false; }); if (ok) got = { x: cx, y: cy, r: rad }; }
       if (!got) continue; carve(got.x, got.y, got.r, 0.5, 2000); carve(got.x + got.r * 0.7, got.y + got.r * 0.25, got.r * 0.62, 0.5, 2000); lakes.push(got); w.inland.push({ kind: 'lake', isle: qi, x: (got.x + 0.5) * T, y: (got.y + 0.5) * T, r: got.r * T }); }
     var river = function (x0, y0, x1, y1, w0, w1, dry) { var len = Math.hypot(x1 - x0, y1 - y0), ra = Math.atan2(y1 - y0, x1 - x0), n = Math.ceil(len / 0.6), pts = [], j2; for (j2 = 0; j2 <= n; j2++) { var u = j2 / n, wv = Math.sin(u * 9 + sd) * 2.6 * Math.sin(u * 3.14) + Math.sin(u * 23 + sd * 2) * 0.8 * Math.sin(u * 3.14), rx = x0 + Math.cos(ra) * len * u - Math.sin(ra) * wv, ry = y0 + Math.sin(ra) * len * u + Math.cos(ra) * wv; if (!clearM(rx, ry, 3)) return null; if (!dry) carve(rx, ry, w0 + u * (w1 - w0) + Math.sin(u * 31) * 0.12, 0.3, 130); if (j2 % 6 === 0) pts.push([(rx + 0.5) * T, (ry + 0.5) * T]); } return pts; };
     if (wantRiver && lakes.length) { var L0 = lakes[0], base = Math.atan2((L0.y - q.y) / 0.9, L0.x - q.x), far = q.r * 1.25 - Math.hypot(L0.x - q.x, (L0.y - q.y) / 0.9), tr, done = false; for (tr = 0; tr < 7 && !done; tr++) { var ang = base + (tr % 2 ? 1 : -1) * Math.ceil(tr / 2) * 0.45, sx = L0.x + Math.cos(ang) * L0.r * 0.6, sy = L0.y + Math.sin(ang) * L0.r * 0.6 * 0.9, ex = L0.x + Math.cos(ang) * (L0.r * 0.6 + far), ey = L0.y + Math.sin(ang) * (L0.r * 0.6 + far) * 0.9; if (river(sx, sy, ex, ey, 1.25, 1.95, true)) { w.inland.push({ kind: 'river', isle: qi, pts: river(sx, sy, ex, ey, 1.25, 1.95) }); done = true; } } }
     if (IN.auto && lakes.length > 2 && river(lakes[1].x, lakes[1].y, lakes[2].x, lakes[2].y, 1.2, 1.2, true)) w.inland.push({ kind: 'river', isle: qi, between: true, pts: river(lakes[1].x, lakes[1].y, lakes[2].x, lakes[2].y, 1.2, 1.2) });   /* (a river from one lake to another: Robin) */
   });
-  w.E = E;
+  w.E = E; w.fresh = function (wx, wy) { if (!FR) return 0; var fx = Math.floor(wx / T), fy = Math.floor(wy / T); return fx < 0 || fy < 0 || fx >= GW || fy >= GH ? 0 : FR[fy * GW + fx]; };
   /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
      the nearest island's biome, with noise on top so a lowland island keeps pine groves and the first biome gets a warm patch or two */
   function climateT(tx, ty) {                                // warm and wet at a tile (the waters' climate field; see ANCHORS)
@@ -3175,7 +3175,8 @@ function make(kit, opts) {
     c.setTransform(2, 0, 0, 2, 0, 0);
     for (yy = 0; yy < CT; yy++) for (xx = 0; xx < CT; xx++) c.drawImage(tile('grass', cx * CT + xx, cy * CT + yy), xx * T, yy * TS, T + 0.3, TS + 0.3);
     var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1), SFt = mtn ? new Float32Array(n1 * n1) : null, HTt = mtn ? new Float32Array(n1 * n1) : null, SNt = mtn ? new Float32Array(n1 * n1) : null, sfv = 0, htv = 0, snv = 0;
-    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy);
+    var FLk = FR ? new Float32Array(n1 * n1) : null, FRv = FR ? new Float32Array(n1 * n1) : null, anyF = false;
+    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); if (FR && gx >= 0 && gy >= 0 && gx < GW && gy < GH) { var fv0 = FR[gy * GW + gx]; if (fv0) { anyF = true; if (fv0 === 1) FLk[jj * n1 + ii] = 1; else FRv[jj * n1 + ii] = 1; } } BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy);
       if (mtn) { SFt[jj * n1 + ii] = fbm(gx / 3.1, gy / 3.1, s + 141); HTt[jj * n1 + ii] = fbm(gx / 3.7, gy / 2.7, s + 142); SNt[jj * n1 + ii] = fbm(gx / 3.3, gy / 1.5, s + 143); } }   // the fells' soft patches, the heather's drifts, the snow's fields: a value a tile, read between the tiles
     var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0, tP = pnow(), LM = new Uint8Array(W2 * H2);   // LM: the grass pixels, for the climate's tint
     /* The mountains in this piece. Everything is worked out on a sheet wider and taller than the piece (MG to each side, PADR
@@ -3397,7 +3398,7 @@ function make(kit, opts) {
         var n1v = noise[((wy & 127) << 7) | (wx & 127)], n2v = noise[(((wy * 2) & 127) << 7) | ((wx * 2) & 127)];
         var e = EE[q] * w00 + EE[q + 1] * w10 + EE[q + n1] * w01 + EE[q + n1 + 1] * w11 + (n1v - 0.5) * 0.5;
         var qe = lev ? (py + PADR) * LW + px + MG : 0, Lp = lev ? lev[qe] : 0;
-        var r, g, b, a = 255;
+        var r, g, b, a = 255, mlk = 0, mrv = 0, mfr = 0; if (anyF) { mlk = FLk[q] * w00 + FLk[q + 1] * w10 + FLk[q + n1] * w01 + FLk[q + n1 + 1] * w11; mrv = FRv[q] * w00 + FRv[q + 1] * w10 + FRv[q + n1] * w01 + FRv[q + n1 + 1] * w11; mfr = Math.min(1, mlk + mrv); }
         if (e < 0 && !Lp) {                                 // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
           /* the shore blended (Colin, AD's recipe, 2026-10-24): the shallows graded from clear water over sand through turquoise to teal at the wading line, a soft ragged drop on wadeDepth that wanders along the coast with a shade where the shelf falls, the deep darkening far out, and a thin swash film in place of the white lip; the wade rule (isWade, wadeDepth) is untouched: the light water is waded, the dark swum */
           var wdp = wadeDepth(wx * 0.5, wy * 0.5), f = Math.min(1, e / wdp), big = nsm(wx, wy, 55.6);   /* (Colin, AD's mock gives nsm a frequency, the game's a scale: his 0.018, 0.03, 0.08, 0.04 and 0.09 are 55.6, 33.3, 12.5, 25 and 11.1 here) */
@@ -3412,9 +3413,16 @@ function make(kit, opts) {
           var tx2 = (n2v - 0.5) * 8; r += tx2; g += tx2; b += tx2;
           var film = sstep(-0.42, 0.0, e) * sstep(0.25, 0.55, n2v * 0.6 + nsm(wx, wy, 12.5) * 0.4 + (e + 0.42) * 0.9) * 0.55;   // the swash: a thin lighter film, ragged at its top; no white line
           r += (P.film[0] - r) * film; g += (P.film[1] - g) * film; b += (P.film[2] - b) * film;
+          if (mfr > 0) {   /* fresh water (Colin, AD's look, out/freshwater, 2026-11-10; Robin's yes to lakes and rivers): a lake calm and darker toward a peaty middle, the shallow bottom seen through at its edge, the banks lying in it just inside the shore; a river's shallows, its channel and its core; blended into the sea's colours where a river meets it */
+            var dl = Math.min(1, -e / 3.0), LR = dl < 0.1 ? [140 + (124 - 140) * dl / 0.1, 140 + (148 - 140) * dl / 0.1, 94 + (104 - 94) * dl / 0.1] : dl < 0.32 ? [124 + (95 - 124) * (dl - 0.1) / 0.22, 148 + (134 - 148) * (dl - 0.1) / 0.22, 104 + (120 - 104) * (dl - 0.1) / 0.22] : dl < 0.58 ? [95 + (75 - 95) * (dl - 0.32) / 0.26, 134 + (113 - 134) * (dl - 0.32) / 0.26, 120 + (108 - 120) * (dl - 0.32) / 0.26] : [75 + (63 - 75) * (dl - 0.58) / 0.42, 113 + (100 - 113) * (dl - 0.58) / 0.42, 108 + (98 - 108) * (dl - 0.58) / 0.42];
+            var dv = Math.min(1, -e / 1.25), RVc = dv < 0.32 ? [128 + (98 - 128) * dv / 0.32, 144 + (133 - 144) * dv / 0.32, 106 + (122 - 106) * dv / 0.32] : dv < 0.62 ? [98 + (82 - 98) * (dv - 0.32) / 0.3, 133 + (118 - 133) * (dv - 0.32) / 0.3, 122 + (112 - 122) * (dv - 0.32) / 0.3] : [82 + (74 - 82) * (dv - 0.62) / 0.38 * 0.7, 118 + (105 - 118) * (dv - 0.62) / 0.38 * 0.7, 112 + (106 - 112) * (dv - 0.62) / 0.38 * 0.7];
+            var kl = mlk / (mlk + mrv), fr0 = LR[0] * kl + RVc[0] * (1 - kl), fg0 = LR[1] * kl + RVc[1] * (1 - kl), fb0 = LR[2] * kl + RVc[2] * (1 - kl), refl = Math.max(0, 1 - (-e) / 0.2) * (0.2 * kl + 0.1 * (1 - kl)), ftx = (n2v - 0.5) * 5 + (big - 0.5) * 6;
+            fr0 += (38 - fr0) * refl + ftx; fg0 += (58 - fg0) * refl + ftx; fb0 += (46 - fb0) * refl + ftx;
+            r += (fr0 - r) * mfr; g += (fg0 - g) * mfr; b += (fb0 - b) * mfr;
+          }
         } else {
           var bw = BW[q] * w00 + BW[q + 1] * w10 + BW[q + n1] * w01 + BW[q + n1 + 1] * w11, eg = e + (n2v - 0.5) * 0.7;
-          if (eg < bw && !Lp) {                             // beach: wet and dark by the water, pale and dry higher up, soft dunes (never on the fells: a sea cliff's top is turf)
+          if (eg < bw && !Lp && mfr < 0.5) {                             // beach: wet and dark by the water, pale and dry higher up, soft dunes (never on the fells: a sea cliff's top is turf)
             var reach = 0.42 + (nsm(wx, wy, 25) - 0.5) * 0.35, dry = sstep(0.0, reach + 0.6, e);   // the wet sand a broader, softer, cooler band with a ragged top (Colin, AD's recipe, 2026-10-24)
             var dune = (n1v - 0.5) * 18 + Math.sin((wx * 0.33 + wy * 0.95) * 0.2 + n1v * 6) * 4;
             r = P.wets[0] + (P.sand[0] - P.wets[0]) * dry + dune; g = P.wets[1] + (P.sand[1] - P.wets[1]) * dry + dune; b = P.wets[2] + (P.sand[2] - P.wets[2]) * dry + dune * 0.8;
@@ -3427,6 +3435,7 @@ function make(kit, opts) {
         }
         if (mfr && !Lp && a < 200) { var ma0 = mfr[(py + PADR) * LW + px + MG]; if (ma0 > 2) { var apk = (ma0 - 2) / 36; if (apk > 1) apk = 1; apk = apk * apk * (3 - 2 * apk); var sf0 = SFt[q] * w00 + SFt[q + 1] * w10 + SFt[q + n1] * w01 + SFt[q + n1 + 1] * w11, ta0 = (58 + sf0 * 70) * apk * (0.55 + n1v * 0.9), at0 = a + ta0; r = (r * a + 168 * ta0) / at0; g = (g * a + 164 * ta0) / at0; b = (b * a + 96 * ta0) / at0; a = Math.min(255, at0); } }   // the approach: the low ground dries toward the foothills' turf as it nears them
         if (lev && (Lp || FN[qe] || EN[qe] || WN[qe] || HN[qe] || BD[qe] < 110 || rampsHere.length || fallsHere.length)) { if (Lp) { sfv = SFt[q] * w00 + SFt[q + 1] * w10 + SFt[q + n1] * w01 + SFt[q + n1 + 1] * w11; htv = HTt[q] * w00 + HTt[q + 1] * w10 + HTt[q + n1] * w01 + HTt[q + n1 + 1] * w11; snv = SNt[q] * w00 + SNt[q + 1] * w10 + SNt[q + n1] * w01 + SNt[q + n1 + 1] * w11; } mountainPixel(px, py, wx, wy, n1v, n2v, e, qe, Lp); }
+        if (mfr >= 0.5 && e >= 0 && e < 0.7 && !Lp) { var wl = 0.75 * (1 - e / 0.7); r += (58 - r) * wl; g += (52 - g) * wl; b += (34 - b) * wl; }   /* the thin dark wet line on a fresh-water shore, grass right to it, no sand (Colin, AD) */
         d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
       }
     }
@@ -3857,7 +3866,7 @@ function make(kit, opts) {
       var lx0 = Math.max(0, Math.floor((cam.x - hw) / T) - 1), lx1 = Math.min(GW - 2, Math.ceil((cam.x + hw) / T)), ly0 = Math.max(0, Math.floor((cam.y - hh) / TS) - 1), ly1 = Math.min(GH - 2, Math.ceil((cam.y + hh) / TS));
       var lw = lx1 - lx0 + 2, lh = ly1 - ly0 + 2, F = new Float32Array(lw * lh), any = false, yy, xx;
       for (yy = 0; yy < lh; yy++) for (xx = 0; xx < lw; xx++) {
-        var ev = E[(ly0 + yy) * GW + lx0 + xx] / 100; if (ev > -3 && ev < 1) any = true;
+        var ev = E[(ly0 + yy) * GW + lx0 + xx] / 100; if (FR && FR[(ly0 + yy) * GW + lx0 + xx]) ev = 9;   /* (no surf on a lake or a river) */ if (ev > -3 && ev < 1) any = true;
         F[yy * lw + xx] = ev + Math.sin((lx0 + xx) * 0.9 + clock * 0.7) * Math.cos((ly0 + yy) * 0.8 - clock * 0.5) * 0.14;
       }
       if (any) for (var wv = 0; wv < 2; wv++) {
@@ -4038,6 +4047,14 @@ function make(kit, opts) {
       (rm.gap ? [[rm.x1 + 30, rm.y1 + 4]] : [[rm.x1 + 38, rm.y1 - 6], [rm.x0 - 38, rm.y0 + 10]]).forEach(function (q) { if (w.flatAt(q[0], q[1], 12)) w.addProp({ name: 'cairn', x: q[0], y: q[1], s: 0.9, r: 8, v: Math.floor(R() * 3) }); });
     });
     w.stats.round = plantRound();
+    /* what stands by fresh water (Colin, AD's pieces, 2026-11-10): lily pads in a lake's shallows in clusters, reeds in its bays, mossy stones on a river's banks; by hash, no draw taken */
+    (w.inland || []).forEach(function (q, qi) {
+      if (q.kind === 'lake') { var na = Math.max(10, Math.round(q.r / 9)), ia; for (ia = 0; ia < na; ia++) { var aa = ia / na * 6.283 + hash(qi, ia, 901), sd2 = 0, st; for (st = 8; st < q.r * 1.9; st += 6) if (w.isLand(q.x + Math.cos(aa) * st, q.y + Math.sin(aa) * st * 0.87)) { sd2 = st; break; } if (!sd2) continue; var hv = hash(qi, ia, 902), ux = Math.cos(aa), uy = Math.sin(aa) * 0.87;
+          if (hv < 0.34 && IMAGES.lilyPads_1) { var nc = 1 + Math.floor(hash(qi, ia, 903) * 3), ic; for (ic = 0; ic < nc; ic++) { var lx2 = q.x + ux * (sd2 - 26 - ic * 13) + (hash(qi, ia, 910 + ic) - 0.5) * 30, ly2 = q.y + uy * (sd2 - 26 - ic * 13) + (hash(qi, ia, 920 + ic) - 0.5) * 22; if (!w.isLand(lx2, ly2) && w.isWater(lx2, ly2)) w.addProp({ name: 'lilyPads', x: lx2, y: ly2, s: 1, r: 0, v: Math.floor(hash(qi, ia, 930 + ic) * 3), flat: true }); } }
+          else if (hv < 0.62 && kit.PROPS.reeds) { var rx2 = q.x + ux * (sd2 + 5), ry2 = q.y + uy * (sd2 + 5); if (w.isLand(rx2, ry2)) w.addProp({ name: 'reeds', x: rx2, y: ry2, s: 1, r: 0, v: ia % 3 }); }
+          else if (hv > 0.9 && IMAGES.bankStones_1) { var bx3 = q.x + ux * (sd2 + 3), by3 = q.y + uy * (sd2 + 3); w.addProp({ name: 'bankStones', x: bx3, y: by3, s: 1, r: 5, v: ia % 3 }); } } }
+      else if (q.pts) q.pts.forEach(function (p, pi) { if (pi < 1 || hash(qi, pi, 940) > 0.5) return; var sg = hash(qi, pi, 941) < 0.5 ? -1 : 1, nx = q.pts[pi][1] - q.pts[pi - 1][1], ny = -(q.pts[pi][0] - q.pts[pi - 1][0]), ln = Math.hypot(nx, ny) || 1, dd2; nx = nx / ln * sg; ny = ny / ln * sg; for (dd2 = 20; dd2 < 110; dd2 += 5) { var sx2 = p[0] + nx * dd2, sy2 = p[1] + ny * dd2; if (w.isLand(sx2, sy2)) { if (!w.fresh(sx2, sy2)) break; if (hash(qi, pi, 942) < 0.55 && IMAGES.bankStones_1) w.addProp({ name: 'bankStones', x: sx2 + nx * 3, y: sy2 + ny * 3, s: 1, r: 5, v: pi % 3 }); else if (kit.PROPS.reeds) w.addProp({ name: 'reeds', x: sx2 + nx * 5, y: sy2 + ny * 5, s: 1, r: 0, v: pi % 3 }); break; } } });
+    });
     return w.stats;
   };
   // 5b. the peaks (2026-10-12): the Blender peaks stood on the ground nobody can walk. A peak goes only where everything under

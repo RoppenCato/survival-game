@@ -70,6 +70,8 @@ more gets one lake a little over half the time (not the fisher's, nor one with a
 a river. None on the starter island and nothing on the mountain. A river is shallow all the way, waded anywhere; a lake is deep
 in its middle. `tests/isles.js` checks ten seeds. The save's layout key moved (`h3`), so an older save is dropped once.
 
+**The fresh-water look, first pass (Colin, AD's `out/freshwater`, copied to `assets/props/freshwater`, 2026-11-10):** painted by the ground painter from a tile mask (`w.fresh`: 1 a lake, 2 a river): no sand rim, no surf, no gulls or sea life; grass to a thin dark wet line; a lake from olive at its edge to a peaty middle with the banks lying in it; a river's shallows, channel and core; lily pads in a lake's shallows, reeds, mossy bank stones. **Not yet from his list:** the sky streaks, glints and fish rings on a lake, the river's current and riffles, tufts leaning over the edge, a ford with its gravel bar and stepping stones, the night's version, ducks or a swan.
+
 **Still to do:** the fresh-water look (it is the sea's water, with a sand rim and gulls), banks and reeds, a river from the
 mountain's waterfall, a plank bridge, the spring on a home island, lake ice in winter, boats.
 

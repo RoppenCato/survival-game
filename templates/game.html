@@ -2917,11 +2917,12 @@ __COMBAT__
   function trimTick(dt) {                  /* the hero's and the people's sheets of clips not drawn for two minutes let go (2026-10-21: the kit warmed eleven clips at the start and kept every clip ever used; now the resident set is what the last minutes used) */
     if ((trimT += dt) < 5) return; trimT = 0; if (sprHero) Sprites.trim(sprHero, KEEP_HERO, 120); if (PEOPLE) Sprites.trim(PEOPLE, KEEP_PEOPLE, 120);
   }
+  function seaW(x, y) { return w.isWater(x, y) && !(w.fresh && w.fresh(x, y)); }   /* the sea's water, not a lake's or a river's: no gulls, seals or whales inland (Colin, AD, 2026-11-10) */
   function seaTick(dt) {
     if (inCave || SCENE) { seaEnv = null; return; }
     var z = cam.z || zoom, P = hero();
-    if ((shoreT -= dt) <= 0) { shoreT = 2; shorePt = null; var bd = 1e9; for (var a = 0; a < 6.283; a += 0.5236) for (var dd = 60; dd <= 360 && dd < bd; dd += 40) { var sx = P.x + Math.cos(a) * dd, sy = P.y + Math.sin(a) * dd; if (w.isWater(sx, sy) !== w.isWater(P.x, P.y)) { if (dd < bd) { bd = dd; shorePt = { x: sx, y: sy }; } break; } } }
-    seaEnv = { x: cam.x, y: cam.y / K, hw: 200 / z, hh: 125 / z / K, z: z, wind: { a: wind.a, s: wind.s }, water: function (x, y) { return x > 0 && y > 0 && x < WX && y < WY && w.isWater(x, y); }, night: light(), ship: raft && raft.aboard && Yard.isShip(raft.kind) ? { x: raft.x, y: raft.y } : null, shore: shorePt };
+    if ((shoreT -= dt) <= 0) { shoreT = 2; shorePt = null; var bd = 1e9; for (var a = 0; a < 6.283; a += 0.5236) for (var dd = 60; dd <= 360 && dd < bd; dd += 40) { var sx = P.x + Math.cos(a) * dd, sy = P.y + Math.sin(a) * dd; if (seaW(sx, sy) !== seaW(P.x, P.y)) { if (dd < bd) { bd = dd; shorePt = { x: sx, y: sy }; } break; } } }
+    seaEnv = { x: cam.x, y: cam.y / K, hw: 200 / z, hh: 125 / z / K, z: z, wind: { a: wind.a, s: wind.s }, water: function (x, y) { return x > 0 && y > 0 && x < WX && y < WY && seaW(x, y); }, night: light(), ship: raft && raft.aboard && Yard.isShip(raft.kind) ? { x: raft.x, y: raft.y } : null, shore: shorePt };
     Sea.tick(sea, dt, seaEnv);
   }
   function raftTick(dt) {

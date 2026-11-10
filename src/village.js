@@ -158,6 +158,7 @@ function make(seed, site, opts) {
   function pieces(l) {
     var b = BUILD[l.id], U = l.u || {}, m = l.mstep != null ? wallOf(l.mstep) : l.big ? wallOf(0) : (l.id === 'house' ? wallOf(1) : (l.id === 'store' || l.id === 'bath' ? 1 : 2)), roof = roofOf(!!l.big), x, y;
     if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4; if (l.id === 'church') { m = 6; roof = 4; }
+    if (!lowland && (l.id === 'byre' || l.id === 'boathouse')) roof = 0;   // turf on the byres and the boathouses, so they tell apart from the thatched houses from above (Robin, 2026-11-10, via Clive, GD: yes)
     var dx = l.door === 's' || l.door === 'n' ? l.x + 1 + Math.floor(R() * Math.max(1, l.w - 2)) : -1, dy = l.door === 'e' || l.door === 'w' ? (l.h > 2 ? l.y + 1 + Math.floor(R() * (l.h - 2)) : l.y + Math.floor(R() * l.h)) : -1;   // (a door in an end wall keeps off its corners: the long walls are where things stand)
     if (l.w <= 2 && (l.door === 's' || l.door === 'n')) dx = l.x + Math.floor(R() * l.w);
     var gaps = V.ruin || l.ruin ? Math.max(1, Math.floor((l.w + l.h) * 0.35)) : 0, gapAt = {}; if (gaps) for (var g = 0; g < gaps; g++) gapAt[Math.floor(R() * (l.w * 2 + l.h * 2))] = 1;
