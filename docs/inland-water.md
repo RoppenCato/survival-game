@@ -75,3 +75,12 @@ in its middle. `tests/isles.js` checks ten seeds. The save's layout key moved (`
 **Still to do:** the fresh-water look (it is the sea's water, with a sand rim and gulls), banks and reeds, a river from the
 mountain's waterfall, a plank bridge, the spring on a home island, lake ice in winter, boats.
 
+## Built on 2026-11-10, after Robin's "Do all of them"
+
+- **A ford** on every river about halfway down: a row of flat stepping stones drawn in code, the water breaking pale below each (Colin, AD may give pictures).
+- **A spring** on a home island that has more of one thing and no feature: a pool of 1.5 tiles and a brook to the sea; no ducks on it.
+- **Tall grass** at a lake's edge, leaning in. **By night** the fresh-water marks at half.
+- **A drake and a hen** on a river's lower reach. **Fish:** a river is the salmon's water, a lake has perch and pike.
+- **No lake on the hamlet's or the ruin's island** (a lake had pushed Saltvik off its island).
+
+**Still not built:** a river from the mountain's waterfall (the big island's mountain has no waterfall on any seed tried, so there is nothing for it to come from), a plank bridge (asked of Colin, AD), streaks faster where a river narrows, gulls kept off the swans' shore, lake ice in winter, boats up a river (Robin: maybe).

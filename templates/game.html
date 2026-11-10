@@ -958,7 +958,7 @@ __COMBAT__
   }
   var carryPending = null;
   function carryRestore() { if (!carryPending || carrying || SCENE) return; var cp = carryPending, P = hero(); carryPending = null; var e = placeAnimal(cp.kind, 0, { x: P.x, y: P.y }); if (!e) return; if (cp.young) e.young = true; if (cp.ko && Combat.api.knockOut) Combat.api.knockOut(e); else { e.dead = true; e.hp = 0; e.deadT = 0; e.deadFor = BODY_LIE; } takeUpBeast(e); }
-  function zonesTick() { capTick(); hearthMigrate(); arnorBoatSea(); yearReset(); butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
+  function zonesTick() { capTick(); steadMendTick(); hearthMigrate(); arnorBoatSea(); yearReset(); butcherTableEnsure(); villageButchers(); villageAltar(); villageRiteTick(); arnorHomeTick(); carryRestore(); questTick();                   /* the first time a place counts, its name once; and an older save's homes get their sleeping place (once) */
     if (!B.zones) B.zones = [];
     if (!B.zonesV && roomInfo && !bDirty) { B.zonesV = 1; roomInfo.rooms.forEach(function (r, ri) { var bed = B.items.filter(function (it) { return it.bed && !(it.lvl || 0) && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) === ri; })[0]; if (!bed || placeAt(bed.x, bed.y) >= 0) return;
       var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (tl) { x0 = Math.min(x0, tl[0]); y0 = Math.min(y0, tl[1]); x1 = Math.max(x1, tl[0] + 1); y1 = Math.max(y1, tl[1] + 1); });
@@ -2530,7 +2530,7 @@ __COMBAT__
     if (st === 'wait') { var hq = arnorHouse(); return 'line.arnor.wait.' + (questDone('quest.arnor.house') || !hq ? 'meat' : houseGaps().length ? 'no-walls' : 'meat'); }   /* his wait follows his quests (2026-10-26: it still asked for your own home's bed, roof, fire, bench and rug from before chapter 0's rebuild, and said the rug line whatever lay on the floor): his house's walls, then a fire by its door, then his meat */
     if (st === 'teach') return 'line.arnor.teach';
     if (st === 'arrive') return 'line.arnor.arrive';
-    if (st === 'home') return npc && npc.sitting ? 'line.arnor.evening' : 'line.arnor.home';
+    if (st === 'home') return npc && npc.sitting ? 'line.arnor.evening' : !seen.arnorLoom && LORE['line.arnor.loom'] && B.items.some(function (it) { return it.loom; }) ? 'line.arnor.loom' : 'line.arnor.home';   /* (the loom stands: his word on it, once) */
     if (st === 'deer') return seen.arnorDeerTold && !(npc && npc.sitting) ? 'line.arnor.wait.deer' : 'line.arnor.deer';
     if (npc && npc.sitting && (st === 'mending' || st === 'taught' || st === 'deer' && npc.line >= loreLines('line.arnor.deer').length)) return 'line.arnor.evening';   /* by the fire of an evening (LORE?) */
     if (st === 'mending') return 'line.arnor.supper';   /* (the supper line says the boat comes with the morning: Alistair, LD's question of 2026-10-28) */
@@ -2663,6 +2663,24 @@ __COMBAT__
     roofLater = { tx: vx + 14, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;
+  /* The steading mended (Robin, 2026-11-10: its other houses stay ruin until you have landed on another island, then stand mended, "Arnor fixed them"): once the hero has stood on another island and is far from the steading, the burnt hall is whole again (log walls, its door, a plank floor, a thatch roof, the ash and the charred beams gone, its posts sound), the hut's scorch and the plank house's axe marks are gone and the fence's gaps are closed. Once, kept in B. */
+  var STEAD_CHAR = /^(roofTree|charBeam[ABC]|charPile|ashHeap|charStump|charredBeam|burntHeap)$/;
+  function steadMendTick() {
+    if (!village || SCENE || B.steadMendV) return; var P = hero();
+    if (!seen.landedElse) { if (isleAt(P.x, P.y) !== 0 && isLand(P.x, P.y) && !(raft && raft.aboard)) { seen.landedElse = 1; save(); } return; }
+    if (Math.hypot(P.x - (village.tx + village.w / 2) * T, P.y - (village.ty + village.h / 2) * T) < 1500) return;
+    B.steadMendV = 1; var vx = village.tx, vy = village.ty, k = Build.key, x, y, e;
+    for (x = vx + 1; x < vx + 11; x++) { B.H[k(x, vy + 1)] = { t: 'wall', m: 0 }; B.H[k(x, vy + 8)] = { t: x === vx + 5 ? 'door' : Math.abs(x - vx - 5) > 1 && (x - vx - 1) % 3 === 1 ? 'window' : 'wall', m: 0 }; }
+    for (y = vy + 1; y < vy + 8; y++) { B.V[k(vx + 1, y)] = { t: y === vy + 2 ? 'window' : 'wall', m: 0 }; B.V[k(vx + 11, y)] = { t: 'wall', m: 0 }; }
+    for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) { if (B.ruin) delete B.ruin[x + ',' + y]; B.floors[k(x, y)] = 0; }
+    var clean = function (e) { if (!e) return; delete e.scorch; delete e.st; delete e.dmg; delete e.burnt; delete e.breach; delete e.broken; };
+    [[vx + 14, vy + 1], [vx + 14, vy + 9]].forEach(function (h) { var ex, ey; for (ex = h[0]; ex < h[0] + 6; ex++) { clean(B.H[k(ex, h[1])]); clean(B.H[k(ex, h[1] + 6)]); } for (ey = h[1]; ey < h[1] + 6; ey++) { clean(B.V[k(h[0], ey)]); clean(B.V[k(h[0] + 6, ey)]); } });
+    for (x = vx; x < vx + 8; x++) { e = B.H[k(x, vy + village.h)]; if (e) clean(e); else B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 }; }
+    Build.ensurePosts(B); for (y = vy + 1; y <= vy + 8; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (po) { delete po.burnt; delete po.snap; } }
+    var x0 = (vx - 1) * T, y0 = (vy - 1) * T, x1 = (vx + village.w + 1) * T, y1 = (vy + village.h + 1) * T;
+    decals = decals.filter(function (d) { return !(d.k === 'litter' && STEAD_CHAR.test(d.name) && d.x > x0 && d.x < x1 && d.y > y0 && d.y < y1); });
+    roofLaters.push({ tx: vx + 2, ty: vy + 2, m: 1, age: 0 }); bDirty = true; if (w.groundRev != null) w.groundRev++; save();
+  }
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
   var raft = null, leftChk = 0;
@@ -2923,7 +2941,8 @@ __COMBAT__
   function wbMake() {
     WBIRDS = []; wbWorld = w; if (!w.inland || !SEA_IMG.drake_e_0) { WBIRDS.named = true; return; } var m = null; try { m = wmap(); } catch (e0) {} WBIRDS.named = !!(m && m.isles && m.isles.some(function (qn) { return qn && qn.name; }));   /* (the names are given when the map is first prepared) */
     w.inland.forEach(function (q, qi) {
-      if (q.kind !== 'lake') return; var hs = function (k) { var x = Math.sin((qi + 1) * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+      if (q.kind === 'river' && !q.brook && q.pts && q.pts.length > 5) { var pm = q.pts[Math.floor(q.pts.length * 0.7)], rh = { x: pm[0], y: pm[1], r: 70, isle: q.isle, river: true }, ri3; if (wbWater(pm[0], pm[1], { lake: rh })) for (ri3 = 0; ri3 < 2; ri3++) WBIRDS.push({ kind: ri3 ? 'duck' : 'drake', lake: rh, x: pm[0] + ri3 * 9, y: pm[1] + ri3 * 4, a: ri3 * 2, tx: pm[0] + ri3 * 9, ty: pm[1] + ri3 * 4, wait: 1 + ri3, feed: 0, sp: 6, seed: 500 + qi * 7 + ri3, moving: false }); return; }   /* a pair on a river's slow lower reach (Colin, AD's list) */
+      if (q.kind !== 'lake' || q.spring) return; var hs = function (k) { var x = Math.sin((qi + 1) * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
       var nm = (m && m.isles && m.isles[q.isle] && m.isles[q.isle].name) || '', swans = /^Svan/.test(nm) ? 2 : (q.r > 7 * T && hs(1) < 0.5 ? 1 : 0), n = 2 + Math.floor(hs(2) * 4), i;
       function put(kind, k) { for (var t = 0; t < 14; t++) { var a = hs(k * 13 + t) * 6.283, d = (0.3 + hs(k * 17 + t + 5) * 0.45) * q.r, x = q.x + Math.cos(a) * d, y = q.y + Math.sin(a) * d * 0.87; if (wbWater(x, y)) { WBIRDS.push({ kind: kind, lake: q, x: x, y: y, a: a, tx: x, ty: y, wait: hs(k) * 4, feed: 0, sp: kind === 'swan' ? 6 : 6 + hs(k + 3) * 4, seed: k + qi * 31, moving: false }); return; } } }
       for (i = 0; i < n; i++) put(i % 2 ? 'duck' : 'drake', i + 1); for (i = 0; i < swans; i++) put('swan', 20 + i);
@@ -2936,7 +2955,7 @@ __COMBAT__
       for (k = 0; k < 2; k++) WBIRDS.push({ kind: 'swan', lake: home, x: best.x + k * 14 - 7, y: best.y + k * 5, a: k * 3, tx: best.x + k * 14 - 7, ty: best.y + k * 5, wait: 1 + k * 2, feed: 0, sp: 5, seed: 900 + k, moving: false });
     });
   }
-  function wbWater(x, y, b) { if (b && b.lake.sea) return w.isWater(x, y) && !w.isLand(x, y) && Math.hypot(x - b.lake.x, y - b.lake.y) < 64; return w.isWater(x, y) && !w.isLand(x, y) && w.fresh(x, y) === 1; }
+  function wbWater(x, y, b) { if (b && b.lake.sea) return w.isWater(x, y) && !w.isLand(x, y) && Math.hypot(x - b.lake.x, y - b.lake.y) < 64; if (b && b.lake.river) return w.isWater(x, y) && !w.isLand(x, y) && w.fresh(x, y) > 0 && Math.hypot(x - b.lake.x, y - b.lake.y) < 90; return w.isWater(x, y) && !w.isLand(x, y) && w.fresh(x, y) === 1; }
   function wbTick(dt) {
     if (inCave || SCENE) return; if (!WBIRDS || wbWorld !== w) wbMake(); else if (!WBIRDS.named && (wbRetry -= dt) < 0) { wbRetry = 3; wbMake(); }   /* (the islands' names come with the map, which is made a little after the world: until then the swan's isle is not known) */ if (!WBIRDS.length) return; var P = hero(), night = light() > 0.6;
     WBIRDS.forEach(function (b) {
@@ -3185,6 +3204,7 @@ __COMBAT__
   }
   function castReady(P) { return !fishing && !P.dead && !sleep && !inCave && !(raft && raft.aboard) && P.mode === 'gather' && rodInHand() && !invOpen && !menu; }
   function inlandWater(x, y) {             /* a lake: water with land within 40 tiles every way round (the sea opens on at least one side) */
+    var fq = w.fresh ? w.fresh(x, y) : 0; if (fq) return fq;   /* (a lake 1, a river 2: the world's own word, since 2026-11-10) */
     for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, hit = false; for (var s2 = 1; s2 <= 40; s2++) if (w.isLand(x + Math.cos(a) * s2 * T, y + Math.sin(a) * s2 * T)) { hit = true; break; } if (!hit) return false; }
     return true;
   }
@@ -4137,7 +4157,9 @@ __COMBAT__
     if (CAVE_WOLVES) {
       if (!seen.hogni && !(inv.hogniAdze > 0)) { L = loreLines('line.aslak.brother', ['Hogni went up the mountain three days back. After a crooked oak.']); k = seen.aslakB || 0; if (k < L.length) { f.say = L[k]; seen.aslakB = k + 1; } else { var W2 = loreLines('line.aslak.wait', ['Anything? No. Go on, then.']); f.say = W2[f.line % W2.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; } }
       else if (!seen.aslakShop) { L = loreLines('line.aslak.found', ['That\u2019s his adze.']); k = seen.aslakF || 0; if (k === 0 && inv.hogniAdze > 0) { takeItem('hogniAdze', 1); recount(); } f.say = L[Math.min(k, L.length - 1)]; seen.aslakF = k + 1; if (k + 1 >= L.length) seen.aslakShop = 1; }
-      else { var W3 = loreLines('line.aslak.craft', ['A ship\u2019s a tree that learned to swim. Bring me trees.']); f.say = W3[f.line % W3.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; }
+      else { var W3 = loreLines('line.aslak.craft', ['A ship\u2019s a tree that learned to swim. Bring me trees.']), CPn = loreLines('rumour.aslak.pines', []), CAl = CPn.concat(loreLines('rumour.aslak.sailcloth', [])), ck = seen.aslakClue || 0;   /* his two clues first, a line a talk (Alistair, LD's rumour.aslak.pines and rumour.aslak.sailcloth): the old pines' island gets its ? on the maps, the sailcloth marks nothing */
+        if (ck < CAl.length) { f.say = CAl[ck]; seen.aslakClue = ck + 1; if (ck < CPn.length) clueHeard(['rumour.aslak.pines', 'pines']); if (f.say.indexOf('{place}') >= 0) { wmap(); var spA = clueSpot('pines'); f.say = f.say.replace('{place}', spA ? spA.name : 'one of the islands'); } }
+        else { f.say = W3[f.line % W3.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; } }
       f.sayT = 6; save(); return;
     }
     if (ring && ring.metal === 'bronze' && !seen.aslakRing) { L = loreLines('line.aslak.ring'); k = seen.aslakRingI || 0; f.say = L[k] || ''; seen.aslakRingI = k + 1; if (k + 1 >= L.length) seen.aslakRing = 1; }
@@ -4149,9 +4171,12 @@ __COMBAT__
     var L = loreLines('line.fisherman.lesson'), k = f.fishK || 0; f.say = L[Math.min(k, L.length - 1)]; f.fishK = k + 1; f.sayT = 6; if (k + 1 >= L.length) { seen.fishTaught = 1; f.lines = loreLines('line.fisherman.after').slice(); note('The fisherman showed you how to fish'); } save(); }
   /* Clues (Robin, 2026-11-10: "leave clues from other npcs etc that leaves a questionmark where an island is"; the words Alistair, LD's lead rumours, handoffs 24 to 27): each villager of the big island has one clue among his lines; when he says it, the place it is about gets a ? on the maps, the newest unvisited one showing, until you have been there. Nothing is stated as a goal. */
   var CLUES = [['rumour.flint.beaches', null], ['rumour.almey.elm', 'elm'], ['rumour.old-man.age', 'bear'], ['rumour.flax.wild', 'ruin'], ['rumour.saltvik.trade', 'hamlet'], ['rumour.tangholm.gamli', 'fisher'], ['rumour.ulfarstad', 'ruin'], ['rumour.roseroot', 'mountain']], CLUE_TEXT = {};
-  function clueSpot(tag) { if (tag === 'mountain') { var lo = null; w.eachProp(function (o) { if (o.lookout && !lo) lo = o; }); return lo ? { x: lo.x, y: lo.y, r: 200, name: 'the mountain' } : null; } var qi = w.isles.findIndex(function (q) { return q.ring === 0 && (tag === 'bear' ? q.bear : q.role === tag); }); if (qi < 0) return null; if (tag === 'hamlet' || tag === 'fisher' || tag === 'ruin') { var vv = villages.filter(function (v) { return v.role === tag || (tag === 'ruin' && v.name === 'Ulfarstad'); })[0]; if (vv) return { x: (vv.tx + vv.w / 2) * T, y: (vv.ty + vv.h / 2) * T, r: 500, name: clueName(vv.isle) }; } var q2 = w.isles[qi]; return { x: q2.x * T, y: q2.y * T, r: q2.r * T * 1.05, name: clueName(qi) }; }
+  function clueSpot(tag) { if (tag === 'mountain') { var lo = null; w.eachProp(function (o) { if (o.lookout && !lo) lo = o; }); return lo ? { x: lo.x, y: lo.y, r: 200, name: 'the mountain' } : null; } var qi = w.isles.findIndex(function (q) { return q.ring === 0 && (tag === 'bear' ? q.bear : tag === 'pines' ? q.pines : q.role === tag); }); if (qi < 0) return null; if (tag === 'hamlet' || tag === 'fisher' || tag === 'ruin') { var vv = villages.filter(function (v) { return v.role === tag || (tag === 'ruin' && v.name === 'Ulfarstad'); })[0]; if (vv) return { x: (vv.tx + vv.w / 2) * T, y: (vv.ty + vv.h / 2) * T, r: 500, name: clueName(vv.isle) }; } var q2 = w.isles[qi]; return { x: q2.x * T, y: q2.y * T, r: q2.r * T * 1.05, name: clueName(qi) }; }
   function clueName(qi) { var q = WMAP && WMAP.isles && WMAP.isles[qi]; return q && q.name ? WMAP.nameOf('isle' + qi, q.name) : 'an island out there'; }
-  function cluesMake() { CLUE_TEXT = {}; if (!CAVE_WOLVES || SCENE) return; var n = 0; folk.forEach(function (f) { var v = villages[f.vi]; if (!v || v.isle !== 1 || f.child || f.aslak || f.godi || f.fishTeacher || f.trader || f.dead) return; var cl = CLUES[n++ % CLUES.length], ls = loreLines(cl[0], []).slice(0, 2); if (!ls.length) return;   /* ({place} is filled when the line is said: the islands' names come with the map) */ f.lines = f.lines.concat(ls); ls.forEach(function (t) { CLUE_TEXT[t] = cl; }); }); }
+  function cluesMake() { CLUE_TEXT = {}; if (!CAVE_WOLVES || SCENE) return; var n = 0; folk.forEach(function (f) { var v = villages[f.vi]; if (!v || v.isle !== 1 || f.child || f.aslak || f.godi || f.fishTeacher || f.trader || f.dead) return; var cl = CLUES[n++ % CLUES.length], ls = loreLines(cl[0], []).slice(0, 2); if (!ls.length) return;   /* ({place} is filled when the line is said: the islands' names come with the map) */ f.lines = f.lines.concat(ls); ls.forEach(function (t) { CLUE_TEXT[t] = cl; }); });
+    /* the whispers (Alistair, LD's whisper rumours, a glimpse of chapter 2: the south's walled town and its jarl, the north's caves and trolls, the sea that breathes; Robin's glimpses of 2026-11-10): one among the lines of every grown villager of home water, by his name; nothing is marked */
+    folk.forEach(function (f) { var v = villages[f.vi], q = v && w.isles[v.isle]; if (!v || !q || q.ring !== 0 || (v.V && v.V.ruin) || f.child || f.aslak || f.godi || f.fishTeacher || f.trader || f.eadric || f.dead || f.whisper) return; var hw = nameHash((f.name || 'x') + 'w'), wl = loreLines(WHISPERS[hw % WHISPERS.length], []); if (!wl.length) return; f.whisper = 1; f.lines = f.lines.concat([wl[(hw >> 3) % wl.length]]); }); }
+  var WHISPERS = ['rumour.south.town', 'rumour.south.tribute', 'rumour.north.trolls', 'rumour.trolls.north', 'rumour.the-swell', 'rumour.old-man.name'];
   function clueHeard(cl) { if (!cl[1]) return; if (!seen.clues) seen.clues = {}; if (seen.clues[cl[0]]) return; var sp = clueSpot(cl[1]); if (!sp) return; seen.clues[cl[0]] = { x: Math.round(sp.x), y: Math.round(sp.y), r: Math.round(sp.r), n: Object.keys(seen.clues).length + 1 }; save(); }
   function clueGoal() { var cs = seen.clues, best = null, k; if (!cs) return null; for (k in cs) if (!cs[k].done && (!best || cs[k].n > best.n)) best = cs[k]; return best ? { x: best.x, y: best.y, ch: '?' } : null; }
   var clueFor = null;
@@ -4169,7 +4194,7 @@ __COMBAT__
     return null;
   }
   function folkTalk(f) { if (f.aslak) { aslakTalk(f); return; } if (f.godi) { godiTalk(f); return; } if (f.fishTeacher && !seen.fishTaught) { fisherTalk(f); return; } var afterL = seen.oldManDead && !f.omd ? 'line.folk.old-man-dead' : seen.ruinSeen && !f.rnd && villages[f.vi] && villages[f.vi].isle === 1 ? 'line.folk.ruin' : null; if (afterL) { var al = loreLines(afterL, []); if (afterL === 'line.folk.ruin') f.rnd = 1; else f.omd = 1; if (al.length) { f.say = al[nameHash(f.name || 'x') % al.length]; f.sayT = 5; f.quietUntil = clock + FOLK_QUIET; return; } }   /* once each: what folk say after the Old Man is dead, and of Ulfar's place once you have seen it */
-    if (f.eadric) { var el = loreLines('line.eadric.talk', ['Silver buys it.']); f.say = el[f.line % el.length]; f.line++; f.sayT = 5; f.quietUntil = clock + FOLK_QUIET; return; }
+    if (f.eadric) { var el = loreLines('line.eadric.talk', ['Silver buys it.']).concat(loreLines('rumour.south.tribute', []).slice(0, 2));   /* (and what he has heard of the south's jarl: the lore's 'heard: villagers of home water, and Eadric') */ f.say = el[f.line % el.length]; f.line++; f.sayT = 5; f.quietUntil = clock + FOLK_QUIET; return; }
     f.say = f.lines[f.line % f.lines.length]; var clS = CLUE_TEXT[f.say]; if (clS) { clueHeard(clS); if (f.say.indexOf('{place}') >= 0) { wmap(); var spS = clS[1] ? clueSpot(clS[1]) : null; f.say = f.say.replace('{place}', spS ? spS.name : 'one of the islands'); } } f.line++; f.sayT = 5; f.quietUntil = clock + FOLK_QUIET; if (f.role === 'fisherman' && f.line >= 4 && !seen.fishTaught) { seen.fishTaught = 1; toast('The fisherman taught you his dishes'); save(); } }
   // the villagers' life (2026-10-07, Robin: they all stood the same way): each idles their own way (an idle from lib.IDLES, a new one every
   // few seconds, blended over a third of a second), sits at the fire, and works at the spots their role gave them (chop at the block,
@@ -4477,7 +4502,7 @@ __COMBAT__
     function unknown(q) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText('?', q.x, q.y + 3); c.fillStyle = '#f6e2b8'; c.fillText('?', q.x, q.y + 3); }
     stones().forEach(function (st) { var q = at(st.x, st.y), rr = reachOf(st) / T / step * sc; c.strokeStyle = 'rgba(255,230,160,0.6)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr, 0, 0, 7); c.stroke(); c.setLineDash([]); dot(q, '#f6e2b8', 2); label(q, st.named || 'Stead'); });
     var qh = at(home.x, home.y); dot(qh, '#ff9a3a'); label(qh, 'The wreck');
-    if (village) { var qv = at((village.tx + village.w / 2) * T, (village.ty + village.h / 2) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, 'The burnt steading'); } else unknown(qv); }
+    if (village) { var qv = at((village.tx + village.w / 2) * T, (village.ty + village.h / 2) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, B.steadMendV ? 'The steading' : 'The burnt steading'); } else unknown(qv); }
     villages.forEach(function (vv, vi) { if (!vSeen(vi)) return; var qm = at((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T); dot(qm, vv.arch === 'ruin' ? '#9a8a7a' : '#f0e2b0'); label(qm, vv.name); });
     if (caveMouth) { var qc = at(caveMouth.x, caveMouth.y); if (seen.cave) { dot(qc, '#a8a8b4'); label(qc, 'The cave'); } else unknown(qc); }
     caves.forEach(function (cv) { if (cv.kind !== 'troll' && placeSeen(cv.kind)) { var qo = at(cv.mouth.x, cv.mouth.y); dot(qo, cv.kind === 'sea' ? '#8fc0c8' : '#b89a78'); label(qo, CAVE_NAME[cv.kind][2]); } });
@@ -4520,7 +4545,7 @@ __COMBAT__
     var qs = arnorQuestTalk(); if (qs) { npc.say = qs; npc.sayT = 6; npc.quietUntil = 0; npc.st = null; return; }   /* (the home line as the house is done, the supper as the meal is given: Robin, 2026-10-27 and 2026-10-30) */
     var st = arnorState(), id = arnorLineId(st), L = loreLines(id), story = !LORE[id] || LORE[id].mode === 'sequence';
     if (npc.st !== st) { npc.st = st; npc.line = st === 'teach' && seen.homeSaid && L.length > 1 ? 1 : 0; }
-    if (!story) { npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5; npc.quietUntil = clock + TALK_QUIET; return; }
+    if (!story) { npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5; npc.quietUntil = clock + TALK_QUIET; if (id === 'line.arnor.loom') { seen.arnorLoom = 1; save(); } return; }
     if (npc.line >= L.length) { npc.quietUntil = clock + TALK_QUIET; return; }   // (told already; the state moves on as it ends, so this is only a guard)
     npc.say = L[npc.line]; npc.line++; npc.sayT = 6;
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
@@ -7938,7 +7963,7 @@ __COMBAT__
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
       if (caveMouth && caveMouth.pic && Math.abs(caveMouth.x - cam.x) < hw + 120 && Math.abs(caveMouth.foot * K - cam.y) < hh + 120) mouthPic(c, 'caveMouth');   /* the troll cave's mouth: part of the cliff (MOUTH) */
       if (seaEnv && !PERF.skip.waves) Sea.drawWater(c, sea, seaEnv);   /* the living sea's water (2026-10-21) */
-      if (!PERF.skip.waves) { w.drawWaves(c, cam, hw, hh, clock, spec.waves * (1 + 1.4 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)), spec.foam * (1 + 0.6 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)));   /* (the open sea past home's edge heaves: the swell that turns small boats, 2026-10-20) */ w.drawFalls(c, cam, hw, hh, clock); }
+      if (!PERF.skip.waves) { w.nightK = light(); w.drawWaves(c, cam, hw, hh, clock, spec.waves * (1 + 1.4 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)), spec.foam * (1 + 0.6 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)));   /* (the open sea past home's edge heaves: the swell that turns small boats, 2026-10-20) */ w.drawFalls(c, cam, hw, hh, clock); }
       if (!inCave && !PERF.skip.grass) w.drawGrass(c, cam, hw, hh, clock, seasonGrass());
       if (bDirty) rebuildRooms();
       bldShadows(c, hw, hh);   /* the buildings' and the walls' shadows, under the set pieces' */
@@ -8385,7 +8410,7 @@ __COMBAT__
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h3' + (typeof Village !== 'undefined' && Village.VERSION > 1 ? ':v' + Village.VERSION : ''); }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
+  function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h4' + (typeof Village !== 'undefined' && Village.VERSION > 1 ? ':v' + Village.VERSION : ''); }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }
   function toSpawn() { var P = hero(), lb = seen.bedAt && B.items.filter(function (it) { return it.bed && Math.abs(it.x - seen.bedAt.x) < 2 && Math.abs(it.y - seen.bedAt.y) < 2; })[0], sb = lb || (questDone('quest.arnor.house') ? B.items.filter(function (it) { return it.name === 'strawBed'; })[0] : null); if (!sb) { toCamp(); return; }   /* the bed he last slept in, if it still stands (the playtest of 2026-10-27: a fall on the big island woke him at Arnor's on the starter island, his boat across the sea) */ P.x = sb.x; P.y = sb.y + 18; P.vx = P.vy = 0; }   /* after a fall he wakes by the straw bed in Arnor's house once it is mended (Robin, 2026-10-26: "a basic spawnpoint until you build your own village"), else at the wreck */   // the hero starts in his wrecked boat on the beach
   function start(fresh) {

@@ -38,6 +38,7 @@ var Fishing = (function () {
   // lowland says the island is the second biome's. The weights favour the water each fish lives in.
   function table(depth, lowland, fresh) {
     var deep = Math.max(0, Math.min(1, (depth - 1.5) / 4)), shallow = 1 - deep, t = {};
+    if (fresh === 2) return { herring: 0, perch: FISH.perch.weight * 1.2, cod: 0, pike: 0.2, salmon: FISH.salmon.weight * 2.4 };   /* a river (2026-11-10): the salmon's water, perch in the slack, hardly a pike */
     if (fresh) return { herring: 0, perch: FISH.perch.weight * 1.6, cod: 0, pike: FISH.pike.weight * (0.6 + deep), salmon: FISH.salmon.weight * 0.6 };   /* a lake (2026-10-24): perch in its shallows, pike lurking deeper, a salmon now and then; no herring or cod */
     t.herring = FISH.herring.weight;
     t.perch = FISH.perch.weight * (0.25 + shallow) * (lowland ? 0.6 : 1);

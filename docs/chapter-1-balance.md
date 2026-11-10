@@ -54,3 +54,9 @@ leather two nights, Saltvik and the loom 15, flax 10, the pier, yard and ship 10
 - **Frame rate:** not measured: the pane ran in the background at about one frame a second. The game's own work a frame was
   10 ms aboard the karve at sea in the frame log (4 ms was measured on land on 2026-10-21); the decoded sheets stood at 337 MB
   with the hero kit's new layers. Both want a look on Robin's machine.
+
+## The run again, 2026-11-10 (after lakes and rivers)
+
+- The same seventeen steps, clean to the sail out. The ship still asks 20 wood, 12 timber, 4 sailcloth and 4 leather; six islands set foot on.
+- **Found:** a lake on the hamlet's island left no room for Saltvik, which was planned on the elm island instead (the script's step at Jorunn failed). No lake is made on the hamlet's or the ruin's island now, and `tests/isles.js` checks the island Saltvik and Ulfarstad stand on.
+- **The Old Man:** the hero standing by him for five seconds was killed (two blows of 55). With a flint spear, thrusting without rest, he fell in about 40 seconds and 50 thrusts (2.6 health a thrust on average, misses counted). First settings still; a suggestion waits in `docs/next-up.md`.

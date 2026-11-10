@@ -8,12 +8,16 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD), in order
 
-1. **The villages' look, with Colin, AD** (Robin, 2026-11-10; the plan is Colin, AD's list of that day, in his order): done on my side: paths with no straight edge and a trodden edge, roofs lit and shaded, no fire in a ruin. Next: wire his `BuildRoof` (thatch courses, ages, smoke) and place what he makes (the green's pieces, Saltvik's salt works, Gamli's hut and kit, the ruin's kit, the mound and the hill), each seen in the game.
-2. **What is left of chapter 1:** Old Aslak's two clues, Arnor's loom line, the whispered rumours of chapter 2, the steading's houses mended on your return, Eadric's own look.
-3. **Seen in the game:** the claim stone's acts at a real stone, a clue's `?`, the towed log on the water, the rune screens with upgrading off (Robin's play, or the pane).
+1. **The villages' look, with Colin, AD** (Robin, 2026-11-10): his list is closed and in the game (paths, roof ages, the green, Saltvik's salt works, Gamli's hut, the ruin, the mound and the hill). Mine still: grass tufts over the path edges, damp earth by the well.
+2. **What is left of chapter 1** (Robin, 2026-11-10: "Do all of them"; built the same day: Old Aslak's two clues, Arnor's loom line, the whispers of chapter 2, the steading mended on your return, the ford, the spring, river fish, ducks on rivers): Eadric's own look and a plank bridge (asked of Colin, AD); the sounds below; the crafting board's names cut short by the `new` mark (a look for Robin: it touches chapter 0's board).
+3. **Seen in the game, 2026-11-10, in the small pane:** a clue's `?` on the map, the turf roofs, the foothills, the rune screens with no tiers, the mended hall, the ford. By script only: the claim stone's acts, the log shouldered and split. Not seen: the towed log on the water, night on fresh water, a spring, a whisper said aloud.
 4. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 
 ## Waiting on Robin
+
+**Sounds of chapter 1 with no sound yet** (each wants a reference Robin likes before Derek, SD makes it): the loom's beat, an old pine falling and its log split, the claim stone carved and raised, the salt pans' boil, a river's run and a lake's lap, ducks and a swan, the Old Man's roar.
+
+**The Old Man, measured 2026-11-10:** a blow of his takes 55 of the hero's 100, so two blows kill; with a flint spear the fight is about 40 seconds and 50 thrusts with none of his blows landing twice. Mine to suggest: 40 a blow, so wolf-skin gear lets you take three. Yours to say.
 
 **To play (chapter 0, thirteen items; `/dev/` or `npm start`):**
 
