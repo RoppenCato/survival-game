@@ -51,10 +51,10 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.22 | **Log and elm pieces** on the Building board (Robin, 2026-11-10): the Big log wall (2 timber) and the Split log floor (1 timber), the Sitting log; the Elm board wall (2 elm wood) and floor (1), the Elm bench and table. Each shows once its material has been held. | Built (all placed and seen in the pane; the walls' corner ends and posts and the elm door not wired) |
 | 2.23 | **The elm bow**: elm gives elm wood, its own thing; the bow from 4 elm wood, a sinew and 2 fibre at a bench, stronger than the first bow (0.9 against 0.7). | Built (the recipe shows; not made or shot in the pane) |
 | 2.19 | **Salt**: the boar stew and the smoked fish ask for one each. | Built (not cooked in the pane) |
-| 2.20 | **The healing herb** from the mountain: a healing drink. | Not built |
-| 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |
+| 2.20 | **Roseroot** on the mountain's high ground only (E picks one), and **the roseroot drink** at any fire from 2 roseroot and 2 berries: 80 health at once. | Built (62 plants on the test world's mountain; the drink not cooked in the pane) |
+| 2.10 | **Quest marks**: `!` over Old Aslak until his story is told, over Hallveig when her quest can be had and `?` when you carry a wolf to her, `!` over Gamli until he has taught you and over Jorunn until you have traded. | Built (**not seen**: the pane was hidden) |
 | 2.11 | **Rumours** from villagers (trolls gone north, and more from the lore). | Built for two lines; surfacing the lore's rumours Not built |
-| 2.21 | **Clues steer you to the islands, subtly** (Robin, 2026-11-10): what people say leaves **a question mark on the map where the island is** ("Theres an old bear walking around the woods at X island, i'd be careful around that area", "I heard greater weapons can be created from flint"); nothing is stated as a goal. One clue at least for each island with a reason, for flint, flax, the old pines and the Old Man. | Not built (the lore has most of the lines) |
+| 2.21 | **Clues steer you to the islands, subtly** (Robin, 2026-11-10): each villager of the big island has one of the lore's clues among his lines (flint, Almey's elm, the Old Man, wild flax, Saltvik, Gamli on Tangholm, Ulfar's place, roseroot); when he says it, the place gets a `?` on the map and the minimap, the newest one you have not been to, until you go there. | Built to the dealing of the lines (16 lines dealt to the villagers); **the saying and the mark not verified**: the pane was hidden and a talk could not be driven |
 
 ## 3. The islands round
 
@@ -65,7 +65,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 3.6 | **Flint on the beaches of the islands round**, never on the big island, the starter island or Saltvik's own beach: a nodule gives one flint. | Built (`tests/isles.js`; picked up in the pane) |
 | 3.7 | **The elm island** (Robin, 2026-11-10: no yew anywhere in the game; the name is Alistair, LD's, Barlindey goes): **elm for a better bow, and new building options from it, a floor, walls and more**. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | The Old Man Built (on the ruin's island, 132 health, 55 a blow, slower; once dead he stays dead; seen in the pane); the elm bow, the elm pieces, the cape, the rug and the rune Not built |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
-| 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **a healing herb** gathered only up there (2.20). | The cave Built; the lookout opening the map and the herb Not built |
+| 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **the lookout cairn shows the islands round on the map** (they fade in the next time it opens); **roseroot** only up there (2.20). | Built (the lookout by stepping the game) |
 | 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): a southern trader with copper goods, a raided ruin, troll traces, rumours from villagers. | Troll traces Built; the trader, the ruin and the lore's rumours Not built |
 
 ## 4. The six areas, for what chapter 1 shows
@@ -92,6 +92,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 7 built (roseroot, the drink, the lookout) and step 8's core (clues that mark the map, quest marks over the other quest-givers).
 - 2026-11-10: step 5 built: wolf's blood, the claim stone's three acts and its name, wolf-skin gear.
 - 2026-11-10: step 4 built: Jorunn's swaps, salt, the loom and sailcloth, the sail ship's price.
 - 2026-11-10: step 3, second half: log and elm pieces on the Building board, elm wood and the elm bow.

@@ -30,6 +30,7 @@ seeds.forEach(seed => {
   want(at('ruin').length === 1 && at('ruin')[0].arch === 'ruin' && at('ruin')[0].name === 'Ulfarstad', 'Ulfarstad: ' + at('ruin').map(st => st.arch + ' ' + st.name));
   want(at('home').length === 0 && at('elm').length === 0, 'nobody on the homes or the elm island: ' + (at('home').length + at('elm').length));
   want(sites[0].isle === 1 && sites[0].arch !== 'ruin' && !sites.some(st => st.arch === 'seat'), 'the first village on the big island, no seat');
+  want((per[1].roseroot || 0) >= 3, 'roseroot on the mountain: ' + (per[1].roseroot || 0));
   want((per[1].oldPine || 0) >= 3, 'old pines at the mountain\'s foot: ' + (per[1].oldPine || 0)); want(bear === 1, 'the bear on ' + bear + ' islands');
   want(w.isles.some((q, j) => q.role === 'elm' && per[j].elm >= 10), 'elms on the elm island');
 });
