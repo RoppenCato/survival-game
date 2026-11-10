@@ -6171,6 +6171,8 @@ function make(kit, opts) {
       (rm.gap ? [[rm.x1 + 30, rm.y1 + 4]] : [[rm.x1 + 38, rm.y1 - 6], [rm.x0 - 38, rm.y0 + 10]]).forEach(function (q) { if (w.flatAt(q[0], q[1], 12)) w.addProp({ name: 'cairn', x: q[0], y: q[1], s: 0.9, r: 8, v: Math.floor(R() * 3) }); });
     });
     w.stats.round = plantRound();
+    /* a trodden way onto each end of a bridge (Colin, AD, 2026-11-10: the path should run onto the bridge's ends; no river runs through a village's ground on six seeds, so the way is the world's): bare earth from under the deck's end three tiles out, narrowing, with a small wander */
+    w.crossings(); w.bridges.forEach(function (b, bi) { [-1, 1].forEach(function (sg) { var ew = b.hw > b.hh, ex = b.x + (ew ? sg * b.hw : 0), ey = b.y + (ew ? 0 : sg * b.hh), d; for (d = -8; d <= 96; d += 8) { var wv = (hash(bi, d + 300 + sg, 61) - 0.5) * (d > 16 ? 12 : 2); w.dabGround(ex + (ew ? sg * d : wv), ey + (ew ? wv : sg * d), 13 - Math.max(0, d) * 0.07, 2); } }); });
     /* what stands by fresh water (Colin, AD's pieces, 2026-11-10): lily pads in a lake's shallows in clusters, reeds in its bays, mossy stones on a river's banks; by hash, no draw taken */
     (w.inland || []).forEach(function (q, qi) {
       if (q.kind === 'lake') { var na = Math.max(10, Math.round(q.r / 9)), ia; for (ia = 0; ia < na; ia++) { var aa = ia / na * 6.283 + hash(qi, ia, 901), sd2 = 0, st; for (st = 8; st < q.r * 1.9; st += 6) if (w.isLand(q.x + Math.cos(aa) * st, q.y + Math.sin(aa) * st * 0.87)) { sd2 = st; break; } if (!sd2) continue; var hv = hash(qi, ia, 902), ux = Math.cos(aa), uy = Math.sin(aa) * 0.87;
