@@ -23,7 +23,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.10 | **A home of your own** on an island you choose: a roofed sleeping place off the starter island. | Built |
 | 1.11 | **Arnor comes over** the morning after the blót and works about your home as its smith. | Built |
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
-| 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **It needs sailcloth from your loom, a big log for the mast and flint tools** (Robin, 2026-11-10), so it comes when most of the big island and the islands near it are done. | The ship Built; its new cost Not built |
+| 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **Its price** (Robin, 2026-11-10): 20 wood, 6 timber (a big log for the mast), 3 sailcloth from your loom, 4 leather, so it comes when most of the big island and the islands near it are done. | Built (the price by the ship test; not built at a yard in the pane) |
 | 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
 | 1.15 | **The first claim stone** at your home, of stone and a wolf's blood, no blót: laid flat, carved with E, filled with blood with E, raised with E; the place named; Arnor its only villager (Robin, 2026-11-10: carve held, fill one press, raise held). | The stone Built as a recipe (snake blood today); the three steps and the wolf's blood Not built |
 | 1.16 | **The steading's other houses mended by Arnor** once you have landed on another island: come back and they stand whole (Robin, 2026-11-10: "Arnor fixed them"). | Not built |
@@ -45,12 +45,12 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.13 | **Flint weapons**: the flint sword (at a bench) and knife beside the spear, and a flint spear. | Built (the sword not tried in a fight) |
 | 2.14 | **Flint arrows** in the quiver, beside wooden ones: five for a flint, a wood and a fibre, a quarter more damage; the bow takes the best arrows first; each sticks and is picked up again as its own kind. | Built (made by script; not shot in the pane) |
 | 2.15 | **Wolf-skin gear**: a cloak, a hood and a lined tunic; a little more armor than leather each, and wolves notice you from less far. | Not built (art: Colin, AD) |
-| 2.16 | **Barter** at the trading hamlet: it takes flint, wolf pelts and deer leather; it gives salt and what a loom needs. | Not built (Old Aslak's board is the model) |
-| 2.17 | **The loom**, a new bench at home: sailcloth and more woven from **wild flax** gathered on the islands round. | Not built (art: Colin, AD) |
+| 2.16 | **Barter** with Jorunn the salt-wife at Saltvik (E, Trade: a board as Old Aslak's): 2 flint for 3 salt, a wolf pelt for 4, a leather for 2; 6 flint, 2 wolf pelts and 4 leather for the loom's weights and weaving sword. She greets you in the lore's words. | Built (all four swaps made in the pane) |
+| 2.17 | **The loom**, a new bench at home (6 wood, 4 fibre and Jorunn's loom parts): E, Weave: 6 **wild flax** (2 a plant, pulled by hand) into a bolt of sailcloth. | Built (raised and woven at in the pane) |
 | 2.18 | **The old pines and the big log** (Robin, 2026-11-10): a flint axe or better bites (a stone axe: "The axe will not bite"); the felled trunk gives one big log; E shoulders it and sets it down; with an axe in hand E splits it into 6 timber; by your boat E ties it behind (two at most, each slowing her), and where you live E unties them. | Built (felled, split and shouldered in the pane; the tow not seen on the water) |
 | 2.22 | **Log and elm pieces** on the Building board (Robin, 2026-11-10): the Big log wall (2 timber) and the Split log floor (1 timber), the Sitting log; the Elm board wall (2 elm wood) and floor (1), the Elm bench and table. Each shows once its material has been held. | Built (all placed and seen in the pane; the walls' corner ends and posts and the elm door not wired) |
 | 2.23 | **The elm bow**: elm gives elm wood, its own thing; the bow from 4 elm wood, a sinew and 2 fibre at a bench, stronger than the first bow (0.9 against 0.7). | Built (the recipe shows; not made or shot in the pane) |
-| 2.19 | **Salt**: the better dishes ask for it. | Not built |
+| 2.19 | **Salt**: the boar stew and the smoked fish ask for one each. | Built (not cooked in the pane) |
 | 2.20 | **The healing herb** from the mountain: a healing drink. | Not built |
 | 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |
 | 2.11 | **Rumours** from villagers (trolls gone north, and more from the lore). | Built for two lines; surfacing the lore's rumours Not built |
@@ -92,6 +92,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 4 built: Jorunn's swaps, salt, the loom and sailcloth, the sail ship's price.
 - 2026-11-10: step 3, second half: log and elm pieces on the Building board, elm wood and the elm bow.
 - 2026-11-10: step 3, first half: the old pine's big log (flint axe, shoulder, split into timber, tow).
 - 2026-11-10: step 2 built: flint is a thing of its own; the first tools are now stone (they were called flint); flint tools, weapons and arrows. The elm and the old pine draw as Colin, AD's trees.

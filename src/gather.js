@@ -68,7 +68,7 @@ function hit(G, o, ctx) {
   if (o.hp <= 0) {
     o.dying = 0; out.felled = o.kind === 'tree'; out.broke = o.kind !== 'tree';
     if (o.kind === 'stone' && ev) { if (ev.chip) { ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); ev.chip(o.x, o.y, 4, '#c9c2b4', 10, 60); } if (ev.decal) ev.decal({ k: 'rubble', x: o.x, y: o.y + 1, r: 6 + 6 * (o.s || 1) * (ROCK_STONE[o.name] || 3) / 3, seed: Math.round(o.x * 7 + o.y * 13) }); if (ev.drop) { if (o.is === 'flint') ev.drop('flint', o.x, o.y, 1); else ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); } }   /* (a flint nodule gives one flint: chapter 1) */
-    else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, BERRIES); ev.drop('fiber', o.x, o.y, 1); } else ev.drop('fiber', o.x, o.y, BUSH_FIBER); }   // (BUSH_FIBER 3 since 2026-10-14, was 2; the page's own constants of the same names were never read here)
+    else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, BERRIES); ev.drop('fiber', o.x, o.y, 1); } else if (o.is === 'flax') ev.drop('flax', o.x, o.y, 2); else ev.drop('fiber', o.x, o.y, BUSH_FIBER); }   // (BUSH_FIBER 3 since 2026-10-14, was 2; the page's own constants of the same names were never read here)
   }
   return out;
 }

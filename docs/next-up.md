@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 to 3 are built (but for the spring, bay and hill, and the walls' corner pieces), and the villagers have their day. **Next: step 4 (Saltvik's barter, the loom, sailcloth, salt, the ship's price), step 5 (wolf's blood, the claim stone's three acts, wolf-skin gear).**
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 to 4 are built (small things left are listed there), and the villagers have their day. **Next: step 5 (wolf's blood, the claim stone's three acts, the cudgel only on a low-health wolf, wolf-skin gear), step 6 (the Old Man's cape, rug and rune), step 7 (the lookout, roseroot), step 8 (clues and marks), step 9 (the scripted run and the balance).**
 2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin
