@@ -18,14 +18,14 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.5 | **The cave**: wolves one or two at a time, mushrooms, the troll's traces each with a line, Hogni in the depths and his adze. | Built |
 | 1.6 | **The adze brought back**: the quest closes, Old Aslak's craft opens (lessons paid in things). | Built |
 | 1.7 | **Hallveig** gives the quest A wolf for the table. | Built |
-| 1.8 | **The wolf**: killed, or knocked out with the cudgel at low health; carried and laid on the village's altar. | Built (the cudgel only on a low-health wolf: Not built) |
+| 1.8 | **The wolf**: killed, or knocked out with the cudgel at low health; carried and laid on the village's altar. Butchered, it gives a pelt, a leather and **a bowl of its blood**. | Built (the cudgel never kills and its own blows are 1 each, so it only fells a wolf already near death: that was so already; the blood by the table's list) |
 | 1.9 | **The village's blót** at dusk once summer is due: the cut-scene, the first rune (ár), the season turned by morning. | Built (stand-in clips and props; Colin, AD's to come) |
 | 1.10 | **A home of your own** on an island you choose: a roofed sleeping place off the starter island. | Built |
 | 1.11 | **Arnor comes over** the morning after the blót and works about your home as its smith. | Built |
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
 | 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **Its price** (Robin, 2026-11-10): 20 wood, 6 timber (a big log for the mast), 3 sailcloth from your loom, 4 leather, so it comes when most of the big island and the islands near it are done. | Built (the price by the ship test; not built at a yard in the pane) |
 | 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
-| 1.15 | **The first claim stone** at your home, of stone and a wolf's blood, no blót: laid flat, carved with E, filled with blood with E, raised with E; the place named; Arnor its only villager (Robin, 2026-11-10: carve held, fill one press, raise held). | The stone Built as a recipe (snake blood today); the three steps and the wolf's blood Not built |
+| 1.15 | **The first claim stone** at your home (Robin, 2026-11-10): 6 stone on the Building board, shown once a wolf's blood was held; laid flat; E held about 4 s carves it; E pours the wolf's blood; E held 2 s raises it; the place is named after you (`Ketilstad`: your name + stad) in the map's lettering; Arnor, if he is by, has a line for each act. | Built (the three acts run through by stepping the game; the lettering and the standing stone seen; **the hero's three animations not watched**, the pane was hidden) |
 | 1.16 | **The steading's other houses mended by Arnor** once you have landed on another island: come back and they stand whole (Robin, 2026-11-10: "Arnor fixed them"). | Not built |
 
 ## 2. What chapter 1 adds
@@ -44,7 +44,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.12 | **Flint tools**: a flint axe and pick (and knife), a step over the stone ones (chop 1.9 against 1.7). Made by hand from wood, flint and fibre. | Built (made and held in the pane; Colin, AD's layers and icons) |
 | 2.13 | **Flint weapons**: the flint sword (at a bench) and knife beside the spear, and a flint spear. | Built (the sword not tried in a fight) |
 | 2.14 | **Flint arrows** in the quiver, beside wooden ones: five for a flint, a wood and a fibre, a quarter more damage; the bow takes the best arrows first; each sticks and is picked up again as its own kind. | Built (made by script; not shot in the pane) |
-| 2.15 | **Wolf-skin gear**: a cloak, a hood and a lined tunic; a little more armor than leather each, and wolves notice you from less far. | Not built (art: Colin, AD) |
+| 2.15 | **Wolf-skin gear** at the bench: the Wolf-skin Hood (1 leather, 1 pelt), the Wolf-lined Tunic (3 and 2), the Wolf-skin Cloak (2 and 2); 1.4 times leather's armor; each piece takes 12 in a hundred off how far a wolf notices you. | Built (the recipes show; **not worn or looked at in the pane**) |
 | 2.16 | **Barter** with Jorunn the salt-wife at Saltvik (E, Trade: a board as Old Aslak's): 2 flint for 3 salt, a wolf pelt for 4, a leather for 2; 6 flint, 2 wolf pelts and 4 leather for the loom's weights and weaving sword. She greets you in the lore's words. | Built (all four swaps made in the pane) |
 | 2.17 | **The loom**, a new bench at home (6 wood, 4 fibre and Jorunn's loom parts): E, Weave: 6 **wild flax** (2 a plant, pulled by hand) into a bolt of sailcloth. | Built (raised and woven at in the pane) |
 | 2.18 | **The old pines and the big log** (Robin, 2026-11-10): a flint axe or better bites (a stone axe: "The axe will not bite"); the felled trunk gives one big log; E shoulders it and sets it down; with an axe in hand E splits it into 6 timber; by your boat E ties it behind (two at most, each slowing her), and where you live E unties them. | Built (felled, split and shouldered in the pane; the tow not seen on the water) |
@@ -92,6 +92,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 5 built: wolf's blood, the claim stone's three acts and its name, wolf-skin gear.
 - 2026-11-10: step 4 built: Jorunn's swaps, salt, the loom and sailcloth, the sail ship's price.
 - 2026-11-10: step 3, second half: log and elm pieces on the Building board, elm wood and the elm bow.
 - 2026-11-10: step 3, first half: the old pine's big log (flint axe, shoulder, split into timber, tow).

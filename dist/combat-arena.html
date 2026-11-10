@@ -2486,6 +2486,7 @@ var MATS = {
   iron: { name: 'Iron', face: '#9ca3ad', dark: '#5c636c', edge: '#e6ebf2', glow: '200,220,255', power: 1.3, armor: 2.2 },   // armor: how much more a worn piece of it turns aside than leather (2026-10-07)
   silver: { name: 'Silver', face: '#d6dbe4', dark: '#8d94a0', edge: '#ffffff', glow: '220,235,255', power: 1.45 },
   gold: { name: 'Golden', face: '#e2b63a', dark: '#9a7418', edge: '#fff0a8', glow: '255,220,100', power: 1.6 },
+  wolf: { name: 'Wolf-skin', face: '#8d8a86', dark: '#55524e', edge: '#c9c6c0', glow: '230,230,240', power: 0.95, grain: true, armor: 1.4 },   /* leather lined and trimmed with wolf skin (Robin, 2026-11-10: stronger leather gear with wolf skin added; the number mine) */
   leather: { name: 'Leather', face: '#9a6a44', dark: '#5e3d26', edge: '#c9a07a', glow: '255,220,170', power: 0.9, grain: true, armor: 1 },
   wool: { name: 'Padded', face: '#c9bfa8', dark: '#8c8270', edge: '#ece6d6', glow: '255,240,220', power: 0.9, grain: true, armor: 1.35 },   // the gambeson: quilted wool and linen
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
@@ -2504,6 +2505,8 @@ function make(kind, mat, o) {
 function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Wooden Sword';     /* the first weapon (Robin, 2026-10-26: the Strong Stick renamed, a sword's traits but very weak) */
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
+  if (it.mat === 'elm' && it.kind === 'bow') return 'Elm Bow';
+  if (it.mat === 'wolf') return it.kind === 'helmet' ? 'Wolf-skin Hood' : it.kind === 'tunic' ? 'Wolf-lined Tunic' : it.kind === 'cloak' ? 'Wolf-skin Cloak' : 'Wolf-skin ' + it.kind;   /* (Robin, 2026-11-10: a cloak, a hood and a lined tunic) */
   if (it.mat === 'leather' && it.kind === 'boots') return 'Leather Shoes';
   if (it.kind === 'rod') return it.mat === 'wood' ? 'Hazel Rod' : 'Iron-hooked Rod';   /* the first rod has a hook of bone; the lowlands' a forged one (2026-10-24) */
   if (it.kind === 'cudgel') return 'Cudgel';

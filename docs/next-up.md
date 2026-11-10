@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 to 4 are built (small things left are listed there), and the villagers have their day. **Next: step 5 (wolf's blood, the claim stone's three acts, the cudgel only on a low-health wolf, wolf-skin gear), step 6 (the Old Man's cape, rug and rune), step 7 (the lookout, roseroot), step 8 (clues and marks), step 9 (the scripted run and the balance).**
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 to 5 are built (small things left are listed there), and the villagers have their day. **Next: step 6 (the Old Man's cape, rug and rune, with Colin, AD's drop), step 7 (the lookout opening the map, roseroot and the healing drink), step 8 (clues that mark the map, quest marks, the two traders' and the ruin's lines, the mended steading), step 9 (the scripted run and the balance).**
 2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin
