@@ -11551,7 +11551,7 @@ function make(seed, site, opts) {
     if (U.compact && R() < 0.5 && L0.y >= 2) prop({ name: 'midden', x: (L0.x + L0.w - 1) * T, y: (L0.y - 0.8) * T, solid: 8 });   // the midden behind the longhouse
     if (G.yardEarth) earthPatch(wc[0], wc[1], yw * T * 0.42, yh * T * 0.42, U.compact ? 0.75 : 0.85);
     L.front = [gxm - 2, gxm + 2]; L.wc = wc; L.big = L0;
-    if (U.h - (yy + yh) > 1.5) strokeTo([(gxm + 0.5) * T, U.h * T], [(gxm + 0.5) * T, (yy + yh) * T], 7, 2);   // the lane from the gap to the yard
+    if (U.h - (yy + yh) > 1.5) { var ly9 = U.h * T, ly8 = (yy + yh) * T, lx9 = (gxm + 0.5) * T; road([[lx9, ly9, 7], [lx9 + (R() - 0.5) * 18, (ly9 + ly8) / 2, 7], [lx9 + (R() - 0.5) * 8, ly8, 7]], 2); }   // the lane from the gap to the yard, bending a little (2026-11-10)
     C = old; return L;
   }
   /* plotUnit(U): a town's or a trading post's plot (Ribe, Hedeby, the burgage plot): narrow, its short side to the street; the house
@@ -11776,8 +11776,11 @@ function make(seed, site, opts) {
       V.spine.push({ cls: 'main', pts: wander(ix0, green.x - 1.5, sy) });
       V.spine.push({ cls: 'main', pts: wander(green.x + green.w + 1.5, ix1, sy) });
       var ry0 = green.y - 1.5, ry1 = green.y + green.h + 1.5, rx0 = green.x - 1.5, rx1 = green.x + green.w + 1.5;
-      V.spine.push({ cls: 'ring', pts: [[rx0, sy], [rx0, ry0], [rx1, ry0], [rx1, sy]] });
-      V.spine.push({ cls: 'ring', pts: [[rx0, sy], [rx0, ry1], [rx1, ry1], [rx1, sy]] });
+      // the ring round the green as a rounded loop that keeps clear of it (a squircle a little outside the green, its radius wavering),
+      // not a box with round corners (2026-11-10, Colin, AD; Robin via Clive, GD: the ways read as a grid)
+      var rcx = green.x + green.w / 2, rax = green.w / 2 + 1.8, rby = green.h / 2 + 1.8, ringArc = function (sgn) { var out = [], k8, N8 = 8; for (k8 = 0; k8 <= N8; k8++) { var t8 = Math.PI * (1 - k8 / N8), c8 = Math.cos(t8), s8 = Math.sin(t8), jr = k8 === 0 || k8 === N8 ? 1 : 1 + (R() - 0.5) * 0.08; out.push([rcx + rax * jr * Math.sign(c8) * Math.pow(Math.abs(c8), 2 / 3), sy + sgn * rby * jr * Math.pow(Math.abs(s8), 2 / 3)]); } out[0][0] = Math.min(out[0][0], rx0); out[N8][0] = Math.max(out[N8][0], rx1); return out; };
+      V.spine.push({ cls: 'ring', pts: ringArc(-1) });
+      V.spine.push({ cls: 'ring', pts: ringArc(1) });
     } else V.spine.push({ cls: 'main', pts: wander(ix0, ix1, sy) });
     var ay = isGreen ? green.y + green.h + 1.5 : yAt(V.spine[0], gx), byy = isGreen ? green.y - 1.5 : yAt(V.spine[0], bx);
     var HU = A.hall ? hallSpec() : null, hx = HU ? Math.round(green.x + green.w / 2 - HU.w / 2 + (R() - 0.5) * 6) : 0, hy = HU ? (isGreen ? green.y - 3 - HU.h : green.y - 2 - HU.h) : 0;
@@ -11961,7 +11964,8 @@ function make(seed, site, opts) {
   });
   V.units.forEach(function (u) {                       // each unit's lane from its gap to the nearest point of the spine
     if (u.plot) return; var best = null, bd = 1e9; spinePts.forEach(function (p) { var d = Math.hypot(p[0] * T - u.gapC[0], p[1] * T - u.gapC[1]); if (d < bd) { bd = d; best = p; } });
-    if (best && bd > 8) strokeTo(u.gapC, [best[0] * T, best[1] * T], rw * 0.5, 2);
+    if (best && bd > 8) { var bx9 = best[0] * T, by9 = best[1] * T, dx9 = bx9 - u.gapC[0], dy9 = by9 - u.gapC[1], bow9 = (R() - 0.5) * 0.3 * bd;   // a farm's lane bends a little on its way to the street, not a ruler line (2026-11-10)
+      road([[u.gapC[0], u.gapC[1], rw * 0.5], [u.gapC[0] + dx9 * 0.5 - dy9 / bd * bow9, u.gapC[1] + dy9 * 0.5 + dx9 / bd * bow9, rw * 0.5], [bx9, by9, rw * 0.5]], 2); }
   });
   var mainPl = V.spine.filter(function (q) { return q.cls === 'main'; });
   var inPl = A.family === 'single' ? V.spine[0] : (A.family === 'row' ? V.spine[0] : V.spine.filter(function (q) { return q.cls === 'main' && q.pts[0][1] > ty + h; })[0] || mainPl[0]), outPl = V.spine.filter(function (q) { return q.cls === 'lane' && q.pts[q.pts.length - 1][1] < ty; })[0];
@@ -12047,14 +12051,6 @@ function make(seed, site, opts) {
   function passable(x2, y2) { return x2 >= tx - 1 && y2 >= ty - 1 && x2 < tx + w + 1 && y2 < ty + h + 1 && !V.floors[key(x2, y2)]; }
   function wallBetween(x2, y2, nx, ny) { var e; if (ny < y2) e = V.H[key(x2, y2)]; else if (ny > y2) e = V.H[key(x2, ny)]; else if (nx < x2) e = V.V[key(x2, y2)]; else e = V.V[key(nx, y2)]; return e && e.t !== 'door' && e.t !== 'gate'; }
   var stakeTiles = {}; V.props.forEach(function (p) { if (p.name === 'stake' && !p.cut) stakeTiles[key(Math.floor(p.x / T), Math.floor(p.y / T))] = 1; });
-  function routes(from, targets, each) {              // a breadth-first search from one tile to many on the tile grid, walls and stakes in the way; each(path) for every target reached
-    var start = key(from[0], from[1]), prev = {}, q = [from], qi = 0, left = targets.length, k2; prev[start] = null;
-    var want = {}; targets.forEach(function (t) { want[key(t[0], t[1])] = (want[key(t[0], t[1])] || 0) + 1; });
-    while (qi < q.length && left > 0 && qi < 20000) {
-      var c = q[qi++], ck = key(c[0], c[1]); if (want[ck]) { left -= want[ck]; var path = [], at = ck; while (at) { var pq = at.split(','); path.push([+pq[0], +pq[1]]); at = prev[at]; } each(path, want[ck]); want[ck] = 0; }
-      for (k2 = 0; k2 < 4; k2++) { var nx = c[0] + [1, -1, 0, 0][k2], ny = c[1] + [0, 0, 1, -1][k2], nk = key(nx, ny); if (prev[nk] !== undefined || !passable(nx, ny) || stakeTiles[nk] || wallBetween(c[0], c[1], nx, ny)) continue; prev[nk] = ck; q.push([nx, ny]); }
-    }
-  }
   if (G.wear && !V.ruin) {
     // (2026-11-10, Colin, AD; Robin via Clive, GD: "the village paths are blocky", a grid of right-angled lanes.) Each household's ways
     // are found on the tile grid with eight neighbours (a diagonal step only where both sides are open and no wall stands between) and
@@ -12064,26 +12060,33 @@ function make(seed, site, opts) {
     // that wander a little, wider where more feet go. Where many ways end (the well, the fire, a busy door) the ground is a worn apron.
     var traffic = {}, ends = {}, ways = [], gateT = gateX != null ? [gateX, ey1] : (shore === 's' ? [Math.floor(focus[0] / T), ty + h - 1] : null);
     var painted = {}, pi5; for (pi5 = 0; pi5 < V.paints.length; pi5++) { var pa5 = V.paints[pi5]; if (pa5.kind !== 1 && pa5.kind !== 2) continue; var rk5 = key(Math.floor(pa5.x / T), Math.floor(pa5.y / T)); if (!V.floors[rk5]) { traffic[rk5] = 3; painted[rk5] = 1; } }   // the streets, lanes and yards already laid count as trodden ground: the ways join them and leave them, never run beside them
-    var open2 = function (x2, y2) { return passable(x2, y2) && !stakeTiles[key(x2, y2)]; };
+    // the ground as flat arrays over the site and a tile round it (the search runs for every household: string keys were too slow)
+    var GX0 = tx - 1, GY0 = ty - 1, GW = w + 2, GH = h + 2, GN = GW * GH, openA = new Uint8Array(GN), wallE = new Uint8Array(GN), wallS = new Uint8Array(GN), trA = new Float32Array(GN), gi, gx4, gy4;
+    for (gy4 = 0; gy4 < GH; gy4++) for (gx4 = 0; gx4 < GW; gx4++) { gi = gy4 * GW + gx4; var wx4 = GX0 + gx4, wy4 = GY0 + gy4; openA[gi] = passable(wx4, wy4) && !stakeTiles[key(wx4, wy4)] ? 1 : 0; if (gx4 < GW - 1) wallE[gi] = wallBetween(wx4, wy4, wx4 + 1, wy4) ? 1 : 0; if (gy4 < GH - 1) wallS[gi] = wallBetween(wx4, wy4, wx4, wy4 + 1) ? 1 : 0; trA[gi] = traffic[key(wx4, wy4)] || 0; }
+    function gIdx(x2, y2) { var gx5 = x2 - GX0, gy5 = y2 - GY0; return gx5 < 0 || gy5 < 0 || gx5 >= GW || gy5 >= GH ? -1 : gy5 * GW + gx5; }
+    function wallG(i1, i2) { var d = i2 - i1; return d === 1 ? wallE[i1] : d === -1 ? wallE[i2] : d === GW ? wallS[i1] : wallS[i2]; }   // between two neighbouring tiles
     var step2 = function (ax, ay, bx2, by2) {             // may one step go from tile a to the neighbouring tile b?
-      if (!open2(bx2, by2)) return false;
-      if (ax === bx2 || ay === by2) return !wallBetween(ax, ay, bx2, by2);
-      return open2(bx2, ay) && open2(ax, by2) && !wallBetween(ax, ay, bx2, ay) && !wallBetween(bx2, ay, bx2, by2) && !wallBetween(ax, ay, ax, by2) && !wallBetween(ax, by2, bx2, by2);
+      var ia = gIdx(ax, ay), ib = gIdx(bx2, by2); if (ia < 0 || ib < 0 || !openA[ib]) return false;
+      if (ax === bx2 || ay === by2) return !wallG(ia, ib);
+      var ic = gIdx(bx2, ay), id = gIdx(ax, by2); return openA[ic] && openA[id] && !wallG(ia, ic) && !wallG(ic, ib) && !wallG(ia, id) && !wallG(id, ib);
     };
+    var bestA = new Float64Array(GN), prevA = new Int32Array(GN), stampA = new Int32Array(GN), callN = 0, hc = [], hi = [];
+    var DX8 = [1, -1, 0, 0, 1, 1, -1, -1], DY8 = [0, 0, 1, -1, 1, -1, 1, -1];
     function ways8(from, targets, each) {                 // a cheapest-way search from one tile to many (a binary heap): a step costs its length, less on trodden ground
-      var start = key(from[0], from[1]), best = {}, prev = {}, heap = [[0, from[0], from[1]]], left = 0, want = {}, pops = 0, k2;
-      targets.forEach(function (t) { var tk = key(t[0], t[1]); if (!want[tk]) left++; want[tk] = (want[tk] || 0) + 1; });
-      best[start] = 0; prev[start] = null;
-      function push(e) { heap.push(e); var i = heap.length - 1; while (i > 0) { var pi = (i - 1) >> 1; if (heap[pi][0] <= heap[i][0]) break; var t0 = heap[pi]; heap[pi] = heap[i]; heap[i] = t0; i = pi; } }
-      function pop() { var top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; var i = 0; for (;;) { var l = i * 2 + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; var t1 = heap[m]; heap[m] = heap[i]; heap[i] = t1; i = m; } } return top; }
-      while (heap.length && left > 0 && pops < 40000) {
-        var c = pop(), ck = key(c[1], c[2]); pops++; if (c[0] > best[ck]) continue;
-        if (want[ck]) { left--; var path = [], at = ck; while (at) { var pq = at.split(','); path.push([+pq[0], +pq[1]]); at = prev[at]; } each(path.reverse(), want[ck]); want[ck] = 0; }
+      var start = gIdx(from[0], from[1]); if (start < 0) return; callN++;
+      var want = {}, left = 0, pops = 0, k2; targets.forEach(function (t) { var ti = gIdx(t[0], t[1]); if (ti < 0) return; if (!want[ti]) left++; want[ti] = (want[ti] || 0) + 1; });
+      hc.length = 0; hi.length = 0; stampA[start] = callN; bestA[start] = 0; prevA[start] = -1;
+      function push(cst, ix) { hc.push(cst); hi.push(ix); var i = hc.length - 1; while (i > 0) { var pi = (i - 1) >> 1; if (hc[pi] <= hc[i]) break; var t0 = hc[pi]; hc[pi] = hc[i]; hc[i] = t0; t0 = hi[pi]; hi[pi] = hi[i]; hi[i] = t0; i = pi; } }
+      function pop() { var lc = hc.pop(), li = hi.pop(); if (hc.length) { hc[0] = lc; hi[0] = li; var i = 0, n9 = hc.length; for (;;) { var l = i * 2 + 1, r = l + 1, m = i; if (l < n9 && hc[l] < hc[m]) m = l; if (r < n9 && hc[r] < hc[m]) m = r; if (m === i) break; var t1 = hc[m]; hc[m] = hc[i]; hc[i] = t1; t1 = hi[m]; hi[m] = hi[i]; hi[i] = t1; i = m; } } }
+      push(0, start);
+      while (hc.length && left > 0 && pops < 40000) {
+        var cc = hc[0], ci = hi[0]; pop(); pops++; if (cc > bestA[ci]) continue;
+        if (want[ci]) { left--; var path = [], at = ci; while (at >= 0) { path.push([GX0 + at % GW, GY0 + Math.floor(at / GW)]); at = prevA[at]; } each(path.reverse(), want[ci]); want[ci] = 0; }
+        var cx9 = GX0 + ci % GW, cy9 = GY0 + Math.floor(ci / GW);
         for (k2 = 0; k2 < 8; k2++) {
-          var dx2 = [1, -1, 0, 0, 1, 1, -1, -1][k2], dy2 = [0, 0, 1, -1, 1, -1, 1, -1][k2], nx = c[1] + dx2, ny = c[2] + dy2, nk = key(nx, ny);
-          if (!step2(c[1], c[2], nx, ny)) continue;
-          var tc = traffic[nk] || 0, cst = c[0] + (dx2 && dy2 ? 1.414 : 1) * (tc >= 3 ? 0.35 : tc >= 1 ? 0.55 : 1);
-          if (best[nk] === undefined || cst < best[nk] - 1e-9) { best[nk] = cst; prev[nk] = ck; push([cst, nx, ny]); }
+          var dx2 = DX8[k2], dy2 = DY8[k2], nx = cx9 + dx2, ny = cy9 + dy2; if (!step2(cx9, cy9, nx, ny)) continue;
+          var ni = gIdx(nx, ny), tc = trA[ni], cst = cc + (dx2 && dy2 ? 1.414 : 1) * (tc >= 3 ? 0.35 : tc >= 1 ? 0.55 : 1);
+          if (stampA[ni] !== callN || cst < bestA[ni] - 1e-9) { stampA[ni] = callN; bestA[ni] = cst; prevA[ni] = ci; push(cst, ni); }
         }
       }
     }
@@ -12092,7 +12095,7 @@ function make(seed, site, opts) {
       var Y = V.yard, ft = [Math.floor(focus[0] / T), Math.floor(focus[1] / T)];
       f.spots.forEach(function (s) { if (s[2] === 'door') return; var sx6 = Math.floor(s[0] / T), sy6 = Math.floor(s[1] / T); if (Y && sx6 >= Y.x - 1 && sx6 <= Y.x + Y.w && sy6 >= Y.y - 1 && sy6 <= Y.y + Y.h) { sx6 = ft[0]; sy6 = ft[1]; } tg.push([sx6, sy6]); });   // (a spot on the common is walked to from its middle: the ways meet there as spokes, not a fan of ends)
       if (gateT && fi % 3 === 0) tg.push(gateT);
-      ways8(from, tg, function (path, wgt) { path.forEach(function (p) { var pk = key(p[0], p[1]); traffic[pk] = (traffic[pk] || 0) + wgt; }); ways.push(path); var ek = key(path[path.length - 1][0], path[path.length - 1][1]); ends[ek] = (ends[ek] || 0) + wgt; });
+      ways8(from, tg, function (path, wgt) { path.forEach(function (p) { var pk = key(p[0], p[1]); traffic[pk] = (traffic[pk] || 0) + wgt; var pgi = gIdx(p[0], p[1]); if (pgi >= 0) trA[pgi] += wgt; }); ways.push(path); var ek = key(path[path.length - 1][0], path[path.length - 1][1]); ends[ek] = (ends[ek] || 0) + wgt; });
     });
     function clearLine(a2, b2) {                          // does the straight line between two tile centres keep to open ground, crossing no wall?
       var n2 = Math.max(1, Math.ceil(Math.hypot(b2[0] - a2[0], b2[1] - a2[1]) * 5)), px2 = a2[0], py2 = a2[1], i2;
@@ -12133,7 +12136,7 @@ function make(seed, site, opts) {
   if (V.fence && !V.fence.round) { var Fk = V.fence, gk; if (Fk.gate != null) for (gk = 0; gk < (Fk.gateW || 1); gk++) keep.push([Fk.gate + gk, Fk.y1 - 1], [Fk.gate + gk, Fk.y1]); for (gk = Fk.x0; gk < Fk.x1; gk++) if (V.H[key(gk, Fk.y0)] && V.H[key(gk, Fk.y0)].t === 'gate') keep.push([gk, Fk.y0 - 1], [gk, Fk.y0]); }
   V.units.forEach(function (u) { if (u.plot) return; var gx2 = Math.floor(u.gapC[0] / T), gy2 = Math.floor(u.gapC[1] / T); keep.push([gx2, gy2], [gx2, gy2 + (u.front === 's' ? 1 : u.front === 'n' ? -1 : 0)], [gx2 + (u.front === 'e' ? 1 : u.front === 'w' ? -1 : 0), gy2]); });
   function inWay(o, r, upto, reach) { if (!(r > 0)) return false; for (var i = 0; i < (upto == null ? keep.length : upto); i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * (reach || 1.5)) return true; return false; }
-  V.props = V.props.filter(function (o) { return o.gatePost ? !inWay(o, 3, nDoor, 0.9) : !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });   // (a gate's own posts stay, unless before a door: out/gate, 2026-10-28)
+  V.props = V.props.filter(function (o) { return o.gatePost ? !inWay(o, 3, nDoor, 1.0) : !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });   // (a gate's own posts stay, unless before a door: out/gate, 2026-10-28; within a tile of it, as the audit counts, 2026-11-10)
   V.fences.forEach(function (F) { if (F.gates) F.gates = F.gates.filter(function (g) { return [g.a, g.b].every(function (q) { return V.props.some(function (o) { return o.gatePost && o.x === q[0] && o.y === q[1]; }); }); }); });   // a gate that lost a post to a door goes
   V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
   if (V.fence && V.fence.poly) V.props = V.props.filter(function (pr) { if (pr.name !== 'stake') return true; for (var ni = 0; ni < V.nature.length; ni++) { var nq = V.nature[ni]; if (nq.r >= 6 && Math.hypot(nq.x - pr.x, nq.y - pr.y) < nq.r + 9) return false; } return true; });   // the ring stops a stake short of a kept rock or tree (the polygon rings, 2026-10-21)
