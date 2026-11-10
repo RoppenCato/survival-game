@@ -6,16 +6,13 @@ The detail lives in the chapter checklists (`docs/chapter-0-checklist.md`, `docs
 
 Last updated: 2026-11-10.
 
-## Now (Clive, GD), in order (Robin asked for the list, 2026-11-10)
+## Now (Clive, GD), in order
 
-1. **See today's work in the game.** Needs the browser pane showing, or Robin's play: the claim stone's three acts at a real stone, a clue's `?` on the map, the Old Man's new look, the bear rug, the log towed on the water, the rune screens with upgrading off, Eadric and the ruin's lines. Fix what is off. Until the pane shows, go on with 2.
-2. **Finish step 8:** Old Aslak's two clues (old pines, sailcloth), Arnor's line about the loom, the three whispered rumours of chapter 2, and the steading's houses mended when you come back from another island (read how the steading's houses are stored first; it is chapter 0's ground).
-3. **Small leftovers of steps 1 and 3:** the spring, the bay and the hill as things you see on the home islands; more deer, fish or birds where an island has more; the walls' corner ends and posts; the elm door; the log drawn behind him when he faces west to north; the picked states of herbs, flax and roseroot; Eadric's own look and Jorunn always a woman.
-4. **Step 9, the scripted run:** extend `tools/visual/play0.js` from the blót to the sail out (home, Arnor, flint, the old pine and its log, Saltvik, the loom, the claim stone, the ship, the swell), a step a call.
-5. **Step 9, the balance:** from that run, count what each thing costs and where it comes from, and set the numbers so the ship comes last and no island is skipped for nothing (flint, flax, timber, pelts, salt).
-6. **The foundations for chapter 1:** save and load at every step, the error log after a full run, the frame rate in a village and at sea, no leaks of chapter 2.
-7. **Chapter 0's loose ends:** fix whatever Robin's next run finds; the frame log from his work computer; sort the `LORE?` marks left in the code against the lore.
-8. **Write up chapter 1 for Robin's play:** the checklist's states made exact, and a short list of what to try, as for chapter 0.
+1. **The villages' and places' look**, with Colin, AD (Robin, 2026-11-10): the big island's village and the places on the islands round; what art needs improving; then do it.
+2. **Inland water**: can there be waterfalls, rivers and lakes on the land; mockups for Robin.
+3. **What is left of chapter 1:** Old Aslak's two clues, Arnor's loom line, the whispered rumours of chapter 2, the steading's houses mended on your return, a spring (with inland water), Eadric's own look.
+4. **Seen in the game:** the claim stone's acts at a real stone, a clue's `?`, the towed log on the water, the rune screens with upgrading off (Robin's play, or the pane).
+5. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 
 ## Waiting on Robin
 

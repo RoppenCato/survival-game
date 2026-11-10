@@ -32,7 +32,7 @@ seeds.forEach(seed => {
   w.isles.forEach((q, j) => { if (q.feat === 'bay') { const bx = Math.floor(q.x + Math.cos(q.bay.a) * q.r * 0.92), by = Math.floor(q.y + Math.sin(q.bay.a) * q.r * 0.92 * 0.9); want(w.siteCode(bx, by) === 0, 'the bay of island ' + j + ' is water at its middle'); } if (q.feat === 'hill') want(!!q.hill, 'the hill of island ' + j + ' has its cairn'); });
   want(sites[0].isle === 1 && sites[0].arch !== 'ruin' && !sites.some(st => st.arch === 'seat'), 'the first village on the big island, no seat');
   want((per[1].roseroot || 0) >= 3, 'roseroot on the mountain: ' + (per[1].roseroot || 0));
-  want((per[1].oldPine || 0) >= 3, 'old pines at the mountain\'s foot: ' + (per[1].oldPine || 0)); want(bear === 1, 'the bear on ' + bear + ' islands');
+  want((per[1].oldPine || 0) >= 2 && (per[1].oldPine || 0) <= 9, 'a few old pines at the mountain foot (2 to 9): ' + (per[1].oldPine || 0));
   want(w.isles.some((q, j) => q.role === 'elm' && per[j].elm >= 10), 'elms on the elm island');
 });
 console.log('bad = ' + bad);

@@ -23,7 +23,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.10 | **A home of your own** on an island you choose: a roofed sleeping place off the starter island. | Built |
 | 1.11 | **Arnor comes over** the morning after the blót and works about your home as its smith. | Built |
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
-| 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **Its price** (Robin, 2026-11-10): 20 wood, 6 timber (a big log for the mast), 3 sailcloth from your loom, 4 leather, so it comes when most of the big island and the islands near it are done. | Built (the price by the ship test; not built at a yard in the pane) |
+| 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **Its price** (Robin, 2026-11-10; the numbers mine): 20 wood, 12 timber (two big logs), 4 sailcloth from your loom, 4 leather, so it comes when most of the big island and the islands near it are done (`docs/chapter-1-balance.md`). | Built (built at a pier's yard and sailed past the swell in the scripted run) |
 | 1.14 | **The chapter ends when you have built the new boat and sailed out into the deeper waters** (Robin, 2026-11-10). **Its last quest, A boat for deep water** (Alistair, LD's, handoff 28): in the book once Old Aslak's craft is open, naming a mast of old pine and a sail of flax and no numbers; closed when your sail ship rides the swell past home water's edge; no farewell. | Built (the quest by its rules only: **not played**) |
 | 1.15 | **The first claim stone** at your home (Robin, 2026-11-10): 6 stone on the Building board, shown once a wolf's blood was held; laid flat; E held about 4 s carves it; E pours the wolf's blood; E held 2 s raises it; the place is named after you (`Ketilstad`: your name + stad) in the map's lettering; Arnor, if he is by, has a line for each act. | Built (the three acts run through by stepping the game; the lettering and the standing stone seen; **the hero's three animations not watched**, the pane was hidden) |
 | 1.16 | **The steading's other houses mended by Arnor** once you have landed on another island: come back and they stand whole (Robin, 2026-11-10: "Arnor fixed them"). | Not built |
@@ -84,14 +84,15 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 | # | What to try | State |
 | --- | --- | --- |
-| 5.1 | **Save and load at every step** of part 1. | Not tried |
-| 5.2 | **No errors** after a full play. | Not tried |
-| 5.3 | **The frame rate** in a village and at sea. | Not measured since 2026-10-23 |
+| 5.1 | **Save and load** across what chapter 1 adds. | Built (a save after the stone, the loom, the swaps and the flint arrows, loaded again: all as saved; `tools/visual/play1.js` `saveLoad`, `afterLoad`). Not at every step |
+| 5.2 | **No errors** after a full play. | Built for the second half (the scripted run of 2026-11-10: an empty error log) |
+| 5.3 | **The frame rate** in a village and at sea. | Not measured (the pane ran in the background); the game's own work was 10 ms a frame aboard the karve; 337 MB of decoded sheets |
 | 5.4 | **No leaks of chapter 2**: no trolls, copper, raids, soldiers, hird or silver in home water; **no jarl** (Robin, 2026-11-10: the seat is out of home water); a claim stone shows no Muster while there is no hird. | Built (the rest not gone through) |
-| 5.5 | **A scripted playthrough of the whole chapter** (`tools/visual/play0.js` ends at the blót). | Partly: to the blót; the home, Arnor, the ships and the way out Not scripted |
+| 5.5 | **A scripted playthrough of the whole chapter**: `tools/visual/play0.js` to the blót, `tools/visual/play1.js` from flint to the sail out (seventeen steps; what each step is given, not earned, it says). | Built (both halves; the second run clean on 2026-11-10). Old Aslak's quest, the wolf and the home in between are play0's and the earlier rounds' |
 
 ## What changed (newest first)
 
+- 2026-11-10: the scripted run of the second half (`play1.js`), the balance (`docs/chapter-1-balance.md`: the ship 12 timber and 4 bolts, the loom's parts 8 flint and 3 pelts, a few old pines at the mountain's foot), the foundations; found by the run and fixed: village furniture taken for logs (the flag `big`), four bears on the mountain.
 - 2026-11-10: lore handoff 28: the quest A boat for deep water wired; the rune's card is the lore's.
 - 2026-11-10: Robin: the chapter ends with the new boat sailed out to deeper water; Bear strength; no jarl. Built: the rune, Eadric, the ruin's lines, Jorunn's other lines, what folk say after the Old Man.
 - 2026-11-10: step 6 built but for the rune: the Old Man's own look, his pelt, the Bear Cape and the Bear rug.
