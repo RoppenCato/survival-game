@@ -9,16 +9,13 @@ Set up 2026-11-10. What I am doing now, and what waits on a studio, is in `docs/
 
 ## Chapter 0 (these hold up the alpha)
 
+D2, D3, D4, D6 and D7 were answered by Robin on 2026-11-10 (`docs/chapter-0-checklist.md`, 4.1 to 4.3, and `CLAUDE.md`).
+
 | # | The choice | Mine | Where it is written up |
 | --- | --- | --- | --- |
-| D1 | **The "Building" board** still announces building; the rule says no announcing boards. What replaces it? | Wait for Colin, AD's look at other games; until then drop the board and let the workbench's own prompt and the new marks on the Building board do it. | checklist 2d.6 |
-| D2 | **The glimpses of chapter 0**: eight options. | The four starred: smoke over the sea at dusk, a sail passing far out, wolves howling across the water at night, Ormr's mark in the ashes. | `docs/glimpses-chapter0.md` |
-| D3 | **The basic outfit's undyed shirt**: in or not. | In, if Colin, AD has it without new work; otherwise leave it. | checklist 4.2 |
-| D4 | **The steading's other houses**: do they stay as ruin? | Yes, they stay: the ruin is the story, and Arnor moves away from it in chapter 1. | checklist 4.3 |
+| D1 | **The "Building" board** still announces building. **Robin, 2026-11-10: keep the board for now.** What replaces it waits on Colin, AD's look at other games. | Then choose from what he finds. | checklist 2d.6 |
 | D5 | **The frame rate on a weaker computer** (your work computer, 2026-10-29). Accept it for the alpha, or fix first? | Play ten minutes there with `npm start` and send me `framelog.txt`; then I know whether it is a day's work or a week's. | checklist 3.4 |
-| D6 | **Old drawings still near the start**: wild herbs (148), fallen trees (3), bird nests (3). Ask Colin, AD for pictures, or take them out? | Pictures for herbs and fallen trees; nests out (they give nothing since 2026-10-31). | `docs/state/world.md` |
-| D7 | **Arnor's workbench with no roof** shows greyed-out recipes and says nothing. A word from Arnor, or leave it found? | A single line from Arnor when you first try it ("Not in the rain. Get a roof on."), from Alistair, LD. | `docs/state/game.md` |
-| D8 | **A hall is 14 tiles of floor or more** for the house hearth's size and pot. | Keep 14. | `docs/state/game.md` |
+| D8 | **How big a room must be to count as a hall.** A house hearth is small in a small room and becomes the big hearth with the hanging pot in a big one; today the line is 14 floor tiles, about a room of 3 by 5 (Robin, 2026-11-10: the question was unclear). | Keep 14 until you have built one and feel it. | `docs/state/game.md` |
 
 ## Chapter 1
 

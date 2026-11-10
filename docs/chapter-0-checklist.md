@@ -65,7 +65,7 @@ wrong with the rest.
 | 2d.3 | The map (M): what has been seen, the lettering's big turns. | Built (changed 2026-10-31: the map arrow follows the boat, ! and ? marks in place of the red cross) |
 | 2d.4 | Health, stamina, the food buffs, the comfort buff by the fire. | Checked (Robin, 2026-10-31) |
 | 2d.5 | Esc: the menu, the music and world-sound bars, Save to a file, Load from a file. | Checked (Robin, 2026-10-31) |
-| 2d.6 | **The "Building" board** still announces building. By the rule there should be no announcing boards. | Open (Colin, AD is looking at how other games do it) |
+| 2d.6 | **The "Building" board** still announces building. Robin, 2026-11-10: keep the board for now. | Built (what replaces it waits on Colin, AD's look at other games) |
 | **2e** | **Music, sound and effects** | |
 | 2e.1 | The day's music and the night's; music in danger. | Checked (Robin, 2026-10-31) |
 | 2e.2 | The world's sounds: the sea, wind, birds, the fire. | Checked (Robin, 2026-10-31) |
@@ -93,9 +93,9 @@ wrong with the rest.
 
 | # | Item | State |
 | --- | --- | --- |
-| 4.1 | **The glimpses** of chapter 0: eight options, four recommended (`docs/glimpses-chapter0.md`). | Open |
-| 4.2 | **The basic outfit's undyed shirt**: in or not. | Open |
-| 4.3 | **The steading's other houses**: do they stay as ruin? | Open |
+| 4.1 | **The glimpses** of chapter 0: none (Robin, 2026-11-10: "Dont think we need any"; a far smoke or sail cannot be shown from above). | Checked (nothing to build) |
+| 4.2 | **The basic outfit's undyed shirt**: in, and made (Robin, 2026-11-10). | To fix (asked of Colin, AD, 2026-11-10) |
+| 4.3 | **The steading's other houses** stay ruin through chapter 0; **Arnor has mended them once you have landed on another island** (Robin, 2026-11-10: "Arnor fixed them"). That is chapter 1's (its checklist, 1.16). | Checked for chapter 0 (they are ruin) |
 
 ## What changed (newest first)
 

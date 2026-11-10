@@ -26,6 +26,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **It needs sailcloth from your loom, a big log for the mast and flint tools** (Robin, 2026-11-10), so it comes when most of the big island and the islands near it are done. | The ship Built; its new cost Not built |
 | 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
 | 1.15 | **The first claim stone** at your home, of stone and a wolf's blood, no blót: laid flat, carved with E, filled with blood with E, raised with E; the place named; Arnor its only villager (Robin, 2026-11-10: carve held, fill one press, raise held). | The stone Built as a recipe (snake blood today); the three steps and the wolf's blood Not built |
+| 1.16 | **The steading's other houses mended by Arnor** once you have landed on another island: come back and they stand whole (Robin, 2026-11-10: "Arnor fixed them"). | Not built |
 
 ## 2. What chapter 1 adds
 

@@ -9,7 +9,7 @@ Last updated: 2026-11-10.
 ## Now (Clive, GD)
 
 1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`, step 1 first (the islands round and what lies on them), on main only.
-2. Fix whatever Robin's next chapter 0 run finds.
+2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin
 
@@ -27,7 +27,7 @@ Last updated: 2026-11-10.
 10. The error log empty after the run: Escape, Admin, download `errorlog.txt` (needs `npm start`) (3.2).
 11. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22 and D46 (the bear's rune) for chapter 1.
+**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 and D46 (the bear's rune) for chapter 1.
 
 ## Waiting on a studio
 
@@ -39,6 +39,7 @@ Last updated: 2026-11-10.
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
 | Colin, AD | Chapter 1's new things (asked 2026-11-10): flint gear, the old pine and its log, log walls and floors, the loom, wild flax, the wolf-skin cloak, hood and tunic, the bear rug and cloak, the yew and the yew bow, roseroot, the claim stone lying, carved, reddened and standing, salt | 2026-11-10 |
 | Alistair, LD | Nothing: handoffs 24 and 25 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
+| Colin, AD | Chapter 0 (Robin, 2026-11-10): the basic outfit's undyed shirt; pictures for wild herbs and fallen trees | 2026-11-10 |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 
 ## After that
