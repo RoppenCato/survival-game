@@ -41,7 +41,7 @@ var WorldMap = (function () {
     return md > tol ? simplify(pts.slice(0, mi + 1), tol).slice(0, -1).concat(simplify(pts.slice(mi), tol)) : [a, b]; }
 
   function create(env) {
-    var S = Object.assign({}, SETTINGS, env.settings || {}), TW = env.TW, TH = env.TH, ISLES = env.isles.map(function (q, i) { return { i: i, x: q.x, y: q.y, r: q.r, water: q.water, name: null }; });
+    var S = Object.assign({}, SETTINGS, env.settings || {}), TW = env.TW, TH = env.TH, ISLES = env.isles.map(function (q, i) { return { i: i, x: q.x, y: q.y, r: q.r, water: q.water, role: q.role || null, name: null }; });
     var VP = { x: 58, y: 37, w: 1084, h: 676 }, LEVELS = [0.25, 0.5, 1, 2, 4], TILE = 256, ZMAX = 3;
     var SY0 = -200, SY1 = TH + 284, SW = (SY1 - SY0) * VP.w / VP.h, SX0 = TW / 2 - SW / 2, SX1 = TW / 2 + SW / 2;
     var KNOW = new Int8Array(ISLES.length), HERE = -1, hero = { x: env.home.x, y: env.home.y, face: -Math.PI / 2 }, ship = null, OWN = [], GOAL = null;
@@ -115,6 +115,7 @@ var WorldMap = (function () {
       F.forEach(function (f) { if ((f.kind === 'island' || f.kind === 'skerry') && f.isleId != null && ISLES[f.isleId] && f.name) { ISLES[f.isleId].name = f.name; ISLES[f.isleId].gloss = f.gloss; } });   /* the islands take the world's names, the starter island and the big island too (Robin, 2026-10-25, through Alistair, LD) */
       var FX = (env.fixed || {}), wi = (env.waters || []).findIndex(function (wt) { return wt.dir === 'west'; }), west = ISLES.filter(function (q) { return q.water === wi; }).sort(function (a, b) { return b.r - a.r; })[0];
       if (west && FX['place.kvennaey']) { ISLES[west.i].name = FX['place.kvennaey']; ISLES[west.i].gloss = "the women's isle"; F.forEach(function (f) { if (f.kind === 'island' && f.isleId === west.i) { f.name = FX['place.kvennaey']; f.gloss = "the women's isle"; } }); }
+      [['fisher', 'place.tangholm', 'the kelp islet'], ['elm', 'place.almey', 'the elm isle']].forEach(function (rn) { var q = ISLES.filter(function (z) { return z.role === rn[0]; })[0]; if (!q || !FX[rn[1]]) return; q.name = FX[rn[1]]; q.gloss = rn[2]; F.forEach(function (f) { if ((f.kind === 'island' || f.kind === 'skerry') && f.isleId === q.i) { f.name = q.name; f.gloss = q.gloss; } }); });   /* chapter 1's islands with a fixed name (the lore's Tangholm and Almey) */
       FEATS = F;
     }
     function nameOf(id, dflt) { return RENAMED[id] || dflt; }

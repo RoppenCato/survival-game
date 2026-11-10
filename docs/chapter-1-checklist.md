@@ -35,7 +35,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.1 | **The spear** of wood and stone: its reach and thrust, good against wolves. | Built |
 | 2.2 | **The torch in the shield's hand**; the bash with it sets fire and frightens a beast. | Built |
 | 2.3 | **A meat for each beast**; dishes learnt by E at a village's pot; mushrooms and angelica. | Built (pictures stand in) |
-| 2.4 | **Fishing**, taught by Gamli the fisherman: the rod, the cast, the bite, the fish dishes. | Built (he is on the big island; an island of his own: Not built) |
+| 2.4 | **Fishing**, taught by Gamli the fisherman on his own island, Tangholm: the rod, the cast, the bite, the fish dishes. | Built (his island by script; the lesson not played there) |
 | 2.5 | **The runes**: the first one from the blót, the rune screen (O), binding at an altar. | Built |
 | 2.6 | **Your own altar and blót**: taught after the village's; seasons are independent of the chapter (Robin, 2026-11-10). | Built as a system; not played in the chapter |
 | 2.7 | **The year**: the first summer four days, autumn's look, what a season gives. | Built |
@@ -59,9 +59,9 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | # | What to try | State |
 | --- | --- | --- |
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
-| 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island, a trading hamlet, an elm island. | Not built (Gamli is on the big island today) |
+| 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island (Tangholm, Gamli's hut), the trading hamlet (Saltvik, Jorunn), the elm island (Almey). | Built: the islands, their names on the map, the places and the two people (`tests/isles.js`; seen in the pane: Ulfarstad). Jorunn's barter is 2.16 |
 | 3.6 | **Flint on the beaches of every island round**, never on the big island or the starter island. | Built in the world (`tests/isles.js`); it is a small rock that gives stone until step 2 makes flint a thing of its own |
-| 3.7 | **The elm island** (Robin, 2026-11-10: no yew anywhere in the game; the name is Alistair, LD's, Barlindey goes): **elm for a better bow, and new building options from it, a floor, walls and more**. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | Not built (the bear's model and fight exist; the elm bow, the elm pieces, the cape, the rug and the rune do not) |
+| 3.7 | **The elm island** (Robin, 2026-11-10: no yew anywhere in the game; the name is Alistair, LD's, Barlindey goes): **elm for a better bow, and new building options from it, a floor, walls and more**. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | The Old Man Built (on the ruin's island, 132 health, 55 a blow, slower; once dead he stays dead; seen in the pane); the elm bow, the elm pieces, the cape, the rug and the rune Not built |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
 | 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **a healing herb** gathered only up there (2.20). | The cave Built; the lookout opening the map and the herb Not built |
 | 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): a southern trader with copper goods, a raided ruin, troll traces, rumours from villagers. | Troll traces Built; the trader, the ruin and the lore's rumours Not built |
@@ -76,6 +76,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 4.4 | **The interface**: the quests in the book, the season dial, the map of several islands. | Built |
 | 4.5 | **Music, sound and effects**: night and danger music on the big island, the cave, the blót, fishing, the boat under sail. | Built (the blót's sounds and the fishing picks not yet judged by ear) |
 | 4.6 | **The day and night**: night with wolves, the torch's light, dusk at the blót. | Built |
+| 4.7 | **Villagers with things to do** (Robin, 2026-11-10: "some hang around in communion areas, some do some work and so on. So that it feels more alive"): patterns of behaviour round a village. | Not built (folk have spots, jobs and idles today; what is missing is to be looked at) |
 
 ## 5. The foundations
 
@@ -89,6 +90,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: step 1's second half built: Saltvik with Jorunn, Tangholm with Gamli, the ruin Ulfarstad, the names on the map, the Old Man; no jarl's seat in home water (D47). Robin: villagers with things to do (4.7).
 - 2026-11-10: step 1's first half built: every island round has its role, flint on its beaches, flax on three or more, old pines on two and at the mountain's foot, elms on the elm island (`tests/isles.js`, ten seeds). Robin: clues that leave a question mark on the map (2.21).
 - 2026-11-10: Robin on the bear: no island of its own, a named old bear as a miniboss, the best cape of the chapter and a rune (D46).
 - 2026-11-10: Robin's second round: the healing herb, three wolf-skin pieces, the hamlet's swaps and the loom, wild flax, the big-log tree, the very hard bear, home sites that differ, flint arrows' numbers, the claim stone of stone and a wolf's blood in three steps.

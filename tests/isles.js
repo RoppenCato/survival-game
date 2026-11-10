@@ -2,7 +2,7 @@
 // Prints values; a line marked !! is a fault. Run from the project root: node tests/isles.js [seed ...]
 const { createCanvas } = require('@napi-rs/canvas');
 global.__mk = (w, h) => createCanvas(w, h);
-const S = require('../src/stylelab.js'), World = require('../src/world.js');
+const S = require('../src/stylelab.js'), World = require('../src/world.js'), Village = require('../src/village.js');
 const kit = S.kit; kit.setup(kit.STYLE);
 const seeds = process.argv.length > 2 ? process.argv.slice(2).map(Number) : [11, 23, 28, 101, 138, 471, 7, 55, 902, 3141];
 let bad = 0; const T = 32;
@@ -22,6 +22,14 @@ seeds.forEach(seed => {
   const want = (ok, what) => { if (!ok) { bad++; console.log('!! seed ' + seed + ': ' + what); } };
   want(roles.hamlet === 1 && roles.elm === 1 && roles.fisher === 1, 'the three islands with a reason: ' + JSON.stringify(roles));
   want(flintless === 0, flintless + ' islands round without flint'); want(flax >= 2, 'flax on ' + flax + ' islands'); want(pines >= 2, 'old pines on ' + pines + ' islands round');
+  const sites = Village.plan({ isles: w.isles, code: w.siteCode, shallow: (tx, ty) => w.siteCode(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7, R: kit.rng(seed * 23 + 11), home: [w.home.x / T, w.home.y / T], avoid: [] }, {});
+  console.log('   places: ' + sites.map(st => st.isle + ':' + st.arch + ' ' + st.name).join(', '));
+  const at = (role) => sites.filter(st => role === 'hamlet' ? st.name === 'Saltvik' : role === 'ruin' ? st.name === 'Ulfarstad' : role === 'fisher' ? st.role === 'fisher' : w.isles[st.isle].role === role && st.name !== 'Saltvik' && st.name !== 'Ulfarstad' && st.role !== 'fisher');
+  want(at('fisher').length === 1 && at('fisher')[0].arch === 'fisher', 'the fisherman on his island: ' + at('fisher').map(st => st.arch));
+  want(at('hamlet').length === 1 && at('hamlet')[0].name === 'Saltvik' && at('hamlet')[0].arch !== 'ruin', 'Saltvik: ' + at('hamlet').map(st => st.arch + ' ' + st.name));
+  want(at('ruin').length === 1 && at('ruin')[0].arch === 'ruin' && at('ruin')[0].name === 'Ulfarstad', 'Ulfarstad: ' + at('ruin').map(st => st.arch + ' ' + st.name));
+  want(at('home').length === 0 && at('elm').length === 0, 'nobody on the homes or the elm island: ' + (at('home').length + at('elm').length));
+  want(sites[0].isle === 1 && sites[0].arch !== 'ruin' && !sites.some(st => st.arch === 'seat'), 'the first village on the big island, no seat');
   want((per[1].oldPine || 0) >= 3, 'old pines at the mountain\'s foot: ' + (per[1].oldPine || 0)); want(bear === 1, 'the bear on ' + bear + ' islands');
   want(w.isles.some((q, j) => q.role === 'elm' && per[j].elm >= 10), 'elms on the elm island');
 });

@@ -4417,15 +4417,16 @@ var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
-/* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the bear's; the small ones the fisherman's, the ruin's and homes. */
+/* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the ruin's, where the bear also walks; the biggest small one is the fisherman's and the rest are homes. */
 var HOME_FEATS = ['spring', 'bay', 'meadow', 'hill'], HOME_RES = ['fish', 'deer', 'berries', 'stone', 'birds'];
 function homeRoles(isles, home, R) {
   var rest = home.isles.slice(2).map(function (k) { return isles[k]; }).filter(function (q) { return q && !q.role; }), sh = function (l) { for (var k = l.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = l[k]; l[k] = l[j]; l[j] = t; } return l; };
   rest.sort(function (p, q) { return q.r - p.r; });
   var mids = sh(rest.filter(function (q) { return q.r >= 60; })), smalls = sh(rest.filter(function (q) { return q.r < 60; })), take = function (l, alt) { return l.length ? l.shift() : alt.length ? alt.shift() : null; };
-  var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), ruin = take(smalls, mids), homes = smalls.concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
-  if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher'; if (ruin) { ruin.role = 'ruin'; ruin.flax = true; }   /* (flax gone wild in the ruin's old fields) */
-  if (wild) { wild.role = 'home'; wild.feat = 'pines'; wild.pines = true; }
+  smalls.sort(function (p, q) { return q.r - p.r; });   /* (the fisherman's hut wants room: the biggest of the small islands is his) */
+  var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), homes = sh(smalls).concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
+  if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher';
+  if (wild) { wild.role = 'ruin'; wild.pines = true; wild.flax = true; }   /* the third middle-sized island: the raided steading (a place of its size needs the room), flax gone wild in its old fields, old pines, and the Old Man */
   homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
   var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
   rest.forEach(function (q) { q.flint = q !== hamlet; });   /* (Saltvik's own beach was picked clean long ago, Alistair, LD's line: so its trader wants flint) */
@@ -6003,7 +6004,7 @@ function make(kit, opts) {
         if (Math.hypot(wx - w.home.x, wy - w.home.y) < 130) continue;
         if (q.flint && t3 === 1 && h1 < 0.022 && own(wx / T, wy / T, q) && free(wx, wy, 18)) { if (IMAGES.flint_1) put('flint', 'flint', wx, wy, 1, 4, h2, 2); else put('flint', 'rock', wx, wy, 0.36 + h2 * 0.1, 5, h2, 2); }   /* (Colin, AD's flint_1..3 where the pictures are loaded; a small rock in a headless test) */
         else if (q.flax && grass && h1 < 0.16 && vnoise(x / 5, y / 5, s + 31 + qi) > 0.7 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('flax', IMAGES.wildFlax_1 ? 'wildFlax' : 'tallGrass', wx, wy, IMAGES.wildFlax_1 ? 1 : 0.9, 0, h2, HP.tallGrass);
-        else if (q.pines && grass && h1 < 0.022 && vnoise(x / 9, y / 9, s + 41 + qi) > 0.6 && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
+        else if (q.pines && grass && h1 < (q.r < 60 ? 0.05 : 0.022) && vnoise(x / 9, y / 9, s + 41 + qi) > (q.r < 60 ? 0.42 : 0.6) && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
         else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.oak);
         else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
         else if (q.res === 'stone' && grass && h1 < 0.008 && own(wx / T, wy / T, q) && free(wx, wy, 22)) put('stone', 'boulder', wx, wy, 0.9 + h2 * 0.3, 11, h2, HP.boulder);
@@ -6169,7 +6170,7 @@ if (typeof module !== 'undefined') module.exports = World;
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 2;                                       // the generator's version (2: the grammar of 2026-10-22); a save made under another should not keep its villages' walls
+var VERSION = 3;                                       // the generator's version (2: the grammar of 2026-10-22); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -7289,25 +7290,34 @@ function plan(env, opts) {
   function siteOk(cx, cy, sw, sh) { var hw = Math.ceil(sw / 2), hh = Math.ceil(sh / 2), x, y; for (y = cy - hh - 1; y <= cy + hh + 1; y++) for (x = cx - hw - 1; x <= cx + hw + 1; x++) if (!grassAt(x, y)) return false; return true; }
   function shoreOf(cx, cy, sh) { var x, sy, n; for (sy = cy + Math.ceil(sh / 2) + 2; sy <= cy + Math.ceil(sh / 2) + 10; sy++) { n = 0; for (x = cx - 4; x <= cx + 4; x++) if (env.code(x, sy) === 0) n++; if (n >= 5) return 's'; } return null; }   // the sea within a few tiles past the beach below the site
   function farEnough(cx, cy) { var k; for (k = 0; k < sites.length; k++) if (Math.hypot(sites[k].cx - cx, sites[k].cy - cy) < 38) return false; for (k = 0; k < (env.avoid || []).length; k++) if (Math.hypot(env.avoid[k].x - cx, env.avoid[k].y - cy) < env.avoid[k].r + 18) return false; return true; }
-  function find(q, arch, wantShore) {                         // a site of the archetype's size on island q, on a shore or not, or null
+  function find(q, arch, wantShore, any, R2) { var R = R2 || env.R;                         // a site of the archetype's size on island q, on a shore or not, or null
     var sz = siteFor(arch, opts.G), tries;
     for (tries = 0; tries < 900; tries++) {
-      var a = R() * 6.283, d = (wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
+      var a = R() * 6.283, d = (any ? R() * 0.55 * Math.min(1, tries / 300 + 0.15) : wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
       if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue;
-      var sh = shoreOf(cx, cy, sz.h); if (wantShore && !sh) continue; if (!wantShore && sh) continue;
+      var sh = shoreOf(cx, cy, sz.h); if (!any) { if (wantShore && !sh) continue; if (!wantShore && sh) continue; }
       return { cx: cx, cy: cy, tx: cx - Math.ceil(sz.w / 2), ty: cy - Math.ceil(sz.h / 2), w: sz.w, h: sz.h, shore: sh };
     }
     return null;
   }
   var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
-  var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; fisherIsle = best; })();   // the fisherman lives alone on the smallest island
+  var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; for (fi = 1; fi < isles.length; fi++) if (isles[fi].role === 'fisher') best = fi; fisherIsle = best; })();   /* (chapter 1: the island the world gave him, role fisher) */   // the fisherman lives alone on the smallest island
   /* The sea as waters (2026-10-20, docs/build-plan-waters.md step 3): home water (ring 0) gets only peaceful places and exactly one
      seat, the jarl's, on a medium island (never the big island, whose first village is Old Aslak's); a ring-1 water gets its own
      mix (the south the town and church, by its biome). Without waters nothing changes. */
-  var seatIsle = -1; if (isles.some(function (q) { return q.ring != null; })) { var meds = []; for (var mi = 2; mi < isles.length; mi++) if (isles[mi].ring === 0 && mi !== fisherIsle && isles[mi].r >= 60 && isles[mi].r <= 140) meds.push(mi); meds.sort(function (p, q) { return isles[q].r - isles[p].r; }); if (meds.length) seatIsle = meds[Math.floor(R() * Math.min(2, meds.length))];   /* (the seat wants room: one of the two biggest medium islands, 2026-10-22) */ }
+  var roled = isles.some(function (q) { return q.role === 'hamlet'; });   /* chapter 1's roles (World's homeRoles, Robin 2026-11-10): the islands round hold the fisherman, the trading hamlet and the raided ruin and nobody else; no jarl's seat in home water while they do (mine: small unguarded places) */
+  var fisherSite = null, fisherAt = -1; if (roled && fisherIsle > 1) (function () {   /* the fisherman's island must have room for his hut: where the world's pick has none, the biggest home island that has takes the role (its own draws, so no other place moves) */
+    var sd = (isles[fisherIsle].seed || 7) % 100000, R2 = function () { sd = (sd * 16807 + 11) % 2147483647; return sd / 2147483647; }, cands = [fisherIsle], k;
+    for (k = 2; k < isles.length; k++) if (isles[k].ring === 0 && isles[k].role === 'home' && !isles[k].bear) cands.push(k);
+    cands = [cands[0]].concat(cands.slice(1).sort(function (a, b) { return isles[b].r - isles[a].r; }));
+    for (k = 0; k < cands.length && !fisherSite; k++) { var qf = isles[cands[k]], stf = find(qf, 'fisher', true, false, R2) || find(qf, 'fisher', true, true, R2); if (stf) { fisherSite = stf; fisherAt = cands[k]; if (cands[k] !== fisherIsle) { isles[fisherIsle].role = 'home'; qf.role = 'fisher'; fisherIsle = cands[k]; } } }
+    if (!fisherSite) { var mids2 = []; for (k = 2; k < isles.length; k++) if (isles[k].ring === 0 && isles[k].r >= 60) mids2.push(k); mids2.sort(function (a, b) { return isles[a].r - isles[b].r; }); for (k = 0; k < mids2.length && !fisherSite; k++) { var stm = find(isles[mids2[k]], 'fisher', true, false, R2) || find(isles[mids2[k]], 'fisher', true, true, R2); if (stm) { fisherSite = stm; fisherAt = mids2[k]; } } }   /* (no small island with room: his hut on a shore of a middle-sized one, which keeps its own role and name) */
+  })();
+  var seatIsle = -1; if (!roled && isles.some(function (q) { return q.ring != null; })) { var meds = []; for (var mi = 2; mi < isles.length; mi++) if (isles[mi].ring === 0 && mi !== fisherIsle && isles[mi].r >= 60 && isles[mi].r <= 140) meds.push(mi); meds.sort(function (p, q) { return isles[q].r - isles[p].r; }); if (meds.length) seatIsle = meds[Math.floor(R() * Math.min(2, meds.length))];   /* (the seat wants room: one of the two biggest medium islands, 2026-10-22) */ }
   for (i = 1; i < isles.length; i++) {
     var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
     if (i === fisherIsle) wants = [['fisher', true]];
+    else if (roled && q.ring === 0 && i > 1) wants = q.role === 'hamlet' ? [['fishing', true]] : q.role === 'ruin' ? [['small', false]] : [];   /* Saltvik is a few houses by the shore, Ulfarstad a burnt steading; the elm island and the homes are empty of people */
     else if (q.ring === 0 && i === seatIsle) wants = [['seat', false], [R() < 0.5 ? 'trading' : 'fishing', true], ['small', false]];   // the jarl's seat (its name and his are the Lore Director's: LORE? proposed Tingvoll, Jarl Fridmund)
     else if (q.ring === 0 && big) wants = [['village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];   // home's other big islands: a village, never a seat
     else if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
@@ -7316,13 +7326,17 @@ function plan(env, opts) {
     else if (q.r >= 65) wants = [[R() < 0.6 ? 'fishing' : 'trading', true], [R() < 0.5 ? 'small' : (R() < 0.5 ? 'village' : 'farmstead'), false]];
     else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
     else if (R() < 0.5) wants = [['farmstead', false]];
+    if (roled && i === fisherIsle && fisherAt !== i) wants = [];
+    if (roled && i === fisherAt && i !== fisherIsle) wants.push(['fisher', true]);
     wants.forEach(function (wq) {
-      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = (wq[0] === 'fisher' && i === fisherAt && fisherSite) || find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+      if (!st && roled && q.ring === 0 && i > 1) st = find(q, arch, wq[1], true);   /* (a place the chapter needs: by the shore or not, wherever the island has room) */
+      var isleAt = i; if (!st && roled && q.ring === 0 && i > 1 && (q.role === 'hamlet' || q.role === 'ruin')) for (var oi = 2; oi < isles.length && !st; oi++) if (oi !== i && isles[oi].ring === 0 && isles[oi].r >= 60) { st = find(isles[oi], arch, false, true); if (st) isleAt = oi; }   /* (and if its own island has none, another middle-sized island round) */
       if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
       var ruinRoll = R() < 0.14;   /* (rolled whether or not it can apply, so a seed's layout does not move) */
-      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && sites.length > 0 && ruinRoll) arch = 'ruin';   /* (never the first place, the big island's village: Old Aslak lives there, and a fresh start of 2026-10-23 had it a ruin with nobody in it) */
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && sites.length > 0 && ruinRoll) arch = 'ruin'; if (roled && q.role === 'ruin') arch = 'ruin'; else if (roled && q.role === 'hamlet' && arch === 'ruin') arch = 'fishing';   /* (never the first place, the big island's village: Old Aslak lives there, and a fresh start of 2026-10-23 had it a ruin with nobody in it) */
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
-      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.arch = arch; st.wealth = wealth; st.isle = isleAt; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used); st.role = arch === 'fisher' ? 'fisher' : (q.role || null); if (roled && q.role === 'hamlet' && arch !== 'fisher') st.name = 'Saltvik'; if (roled && q.role === 'ruin' && arch === 'ruin') st.name = 'Ulfarstad';   /* (the lore's fixed names, place.saltvik and place.ulfarstad) */
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
     });

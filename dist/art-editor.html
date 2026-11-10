@@ -4404,15 +4404,16 @@ var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
-/* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the bear's; the small ones the fisherman's, the ruin's and homes. */
+/* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the ruin's, where the bear also walks; the biggest small one is the fisherman's and the rest are homes. */
 var HOME_FEATS = ['spring', 'bay', 'meadow', 'hill'], HOME_RES = ['fish', 'deer', 'berries', 'stone', 'birds'];
 function homeRoles(isles, home, R) {
   var rest = home.isles.slice(2).map(function (k) { return isles[k]; }).filter(function (q) { return q && !q.role; }), sh = function (l) { for (var k = l.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = l[k]; l[k] = l[j]; l[j] = t; } return l; };
   rest.sort(function (p, q) { return q.r - p.r; });
   var mids = sh(rest.filter(function (q) { return q.r >= 60; })), smalls = sh(rest.filter(function (q) { return q.r < 60; })), take = function (l, alt) { return l.length ? l.shift() : alt.length ? alt.shift() : null; };
-  var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), ruin = take(smalls, mids), homes = smalls.concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
-  if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher'; if (ruin) { ruin.role = 'ruin'; ruin.flax = true; }   /* (flax gone wild in the ruin's old fields) */
-  if (wild) { wild.role = 'home'; wild.feat = 'pines'; wild.pines = true; }
+  smalls.sort(function (p, q) { return q.r - p.r; });   /* (the fisherman's hut wants room: the biggest of the small islands is his) */
+  var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), homes = sh(smalls).concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
+  if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher';
+  if (wild) { wild.role = 'ruin'; wild.pines = true; wild.flax = true; }   /* the third middle-sized island: the raided steading (a place of its size needs the room), flax gone wild in its old fields, old pines, and the Old Man */
   homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
   var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
   rest.forEach(function (q) { q.flint = q !== hamlet; });   /* (Saltvik's own beach was picked clean long ago, Alistair, LD's line: so its trader wants flint) */
@@ -5990,7 +5991,7 @@ function make(kit, opts) {
         if (Math.hypot(wx - w.home.x, wy - w.home.y) < 130) continue;
         if (q.flint && t3 === 1 && h1 < 0.022 && own(wx / T, wy / T, q) && free(wx, wy, 18)) { if (IMAGES.flint_1) put('flint', 'flint', wx, wy, 1, 4, h2, 2); else put('flint', 'rock', wx, wy, 0.36 + h2 * 0.1, 5, h2, 2); }   /* (Colin, AD's flint_1..3 where the pictures are loaded; a small rock in a headless test) */
         else if (q.flax && grass && h1 < 0.16 && vnoise(x / 5, y / 5, s + 31 + qi) > 0.7 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('flax', IMAGES.wildFlax_1 ? 'wildFlax' : 'tallGrass', wx, wy, IMAGES.wildFlax_1 ? 1 : 0.9, 0, h2, HP.tallGrass);
-        else if (q.pines && grass && h1 < 0.022 && vnoise(x / 9, y / 9, s + 41 + qi) > 0.6 && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
+        else if (q.pines && grass && h1 < (q.r < 60 ? 0.05 : 0.022) && vnoise(x / 9, y / 9, s + 41 + qi) > (q.r < 60 ? 0.42 : 0.6) && own(wx / T, wy / T, q) && free(wx, wy, 26)) put('oldPine', 'pine', wx, wy, 0.8 + h2 * 0.08, 13, h2, HP.pine * 3);
         else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.oak);
         else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
         else if (q.res === 'stone' && grass && h1 < 0.008 && own(wx / T, wy / T, q) && free(wx, wy, 22)) put('stone', 'boulder', wx, wy, 0.9 + h2 * 0.3, 11, h2, HP.boulder);

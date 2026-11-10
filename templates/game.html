@@ -921,7 +921,8 @@ __COMBAT__
   var VBLOT = { first: 'stoneBiter' };   /* ár, plenty: the gods answer the blót's 'til árs ok friðar' in their own word (Alistair, LD's proposal) */   /* the first rune, scripted (Robin, 2026-10-26: "the scripted first pick"); the Charge for now, mine, which one is asked of Alistair, LD */
   function godiMake() {                    /* whoever leads the village's blót: a woman of the first village, not Old Aslak (a gydja; mine, who she is the lore's) */
     if (SCENE) return; var f = folk.filter(function (q) { return q.vi === 0 && !q.aslak && !q.child && WOMEN.indexOf(q.name) >= 0 && !q.dead; })[0] || folk.filter(function (q) { return q.vi === 0 && !q.aslak && !q.child && !q.dead; })[0]; if (f) { f.godi = true; f.name = 'Hallveig'; }   /* Hallveig, the village's gyðja, who keeps the stones (Alistair, LD's proposal, person.hallveig, LORE?) */
-    var fv = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.arch === 'fishing' && (q.v.ring || 0) === 0; }), fv1 = fv.filter(function (q) { return q.v.isle !== villages[0].isle; })[0] || fv[0], fm = fv1 ? folk.filter(function (q) { return q.vi === fv1.i && q.role === 'fisher' && !q.dead && !q.child; })[0] : null; if (fm) { fm.name = 'Gamli'; fm.fishTeacher = true; }   /* the fisherman who teaches fishing, in a fishing hamlet of home water, off the big island where there is one (Robin, 2026-10-26; Gamli, Alistair, LD's, LORE?) */
+    var fv = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.arch === 'fishing' && (q.v.ring || 0) === 0; }), fvT = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.role === 'fisher'; })[0], fv1 = fvT || fv.filter(function (q) { return q.v.isle !== villages[0].isle; })[0] || fv[0], fm = fv1 ? folk.filter(function (q) { return q.vi === fv1.i && q.role === 'fisher' && !q.dead && !q.child; })[0] || (fvT ? folk.filter(function (q) { return q.vi === fv1.i && !q.dead && !q.child; })[0] : null) : null; if (fm) { fm.name = 'Gamli'; fm.fishTeacher = true; }   /* (chapter 1: on his own island, Tangholm, where the world has one: Robin, 2026-11-10) */
+    var sv1 = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.role === 'hamlet'; })[0], jr = sv1 ? folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead && WOMEN.indexOf(q.name) >= 0; })[0] || folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead; })[0] : null; if (jr) { jr.name = 'Jorunn'; jr.trader = true; }   /* Jorunn the salt-wife, Saltvik's trader (Alistair, LD's person.jorunn; her barter is step 4) */   /* the fisherman who teaches fishing, in a fishing hamlet of home water, off the big island where there is one (Robin, 2026-10-26; Gamli, Alistair, LD's, LORE?) */
   }
   function godiTalk(f) {
     var L, k;
@@ -4256,12 +4257,12 @@ __COMBAT__
   function wmap() {
     if (WMAP || typeof WorldMap === 'undefined' || !w || !w.isles || BT.on) return WMAP;
     WMAP = WorldMap.create({ chart: function () { return w.chart(GW); }, TW: GW, TH: GH,
-      isles: w.isles.map(function (q) { return { x: q.x, y: q.y, r: q.r, water: q.water }; }), waters: w.waters || [],
+      isles: w.isles.map(function (q) { return { x: q.x, y: q.y, r: q.r, water: q.water, role: q.role }; }), waters: w.waters || [],
       villages: villages.map(function (v) { var e = v.roadEnds || {}; return { tx: v.tx, ty: v.ty, w: v.w, h: v.h, arch: v.arch, name: v.name, ends: [e.front, e.back].filter(Boolean).map(function (p) { return [p[0] / T, p[1] / T]; }), jetty: v.jetty, trail: v.trail ? [v.trail[0] / T, v.trail[1] / T] : null }; }),
       caves: caves.filter(function (cv) { return cv.kind === 'troll' || cv.kind === 'crypt'; }).map(function (cv) { return { kind: cv.kind, x: cv.mouth.x / T, y: cv.mouth.y / T }; }),
       home: { x: home.x / T, y: home.y / T }, steading: village ? { x: village.tx + village.w / 2, y: village.ty + village.h / 2 } : null,
       shelters: w.mt ? w.mt.shelters.map(function (sh) { return [sh.x / T, sh.y / T]; }) : [],
-      words: PLACENAMES, waterNames: PLACENAMES.waters, fixed: PLACENAMES.fixed,
+      words: PLACENAMES, waterNames: PLACENAMES.waters, fixed: Object.assign({ 'place.tangholm': 'Tangholm', 'place.almey': 'Almey' }, PLACENAMES.fixed),
       seasonText: function () { return YEAR.names[year.season] + '  \u00b7  ' + yearMonth() + (year.winters ? '  \u00b7  ' + (year.winters === 1 ? 'one winter' : year.winters + ' winters') : '') + (yearDue() ? '  \u00b7  ' + YEAR.blot[yearNext(year.season)] + ' can be held at your fire' : ''); } });
     var sv0 = wmSaved || {}, st0 = w.isles.findIndex(function (q) { return q.role === 'starter'; });
     WMAP.loadKnow(sv0.k || []); if (st0 >= 0 && !WMAP.know(st0)) WMAP.setKnow(st0, 2);
@@ -7525,7 +7526,12 @@ __COMBAT__
      of 80 tiles' radius or more outside home water (distance from home sets how hard: Robin). */
   var BEAST_NEAR = 1100, BEAST_FAR = 2600, BEAST_HOLD = 40, isleLive = {}, isleTickT = 0;
   function isleBeastKinds(q) { var ks = ['boar', 'deer', 'snake']; return ks; }   /* the moose and the bear saved for later (Robin, 2026-10-26) */
-  function islePopulate(i) { var q = w.isles[i]; isleBeastKinds(q).forEach(function (k) { placeIsle = i; for (var j = 0, n1 = animalN(k, i); j < n1; j++) { var e = placeAnimal(k, 260, null, false); if (!e) break; e.isle = i; j += herdOf(e, k, n1 - j - 1); } placeIsle = null; }); }
+  function oldManPlace(i) {   /* the Old Man (Robin, 2026-11-10): a named old bear on one island round, old and weakened and still a miniboss: six times a wolf's health, two blows fell an unarmoured man, slower than a bear in his prime; once dead he does not come back */
+    if (seen.oldManDead) return; placeIsle = i; var e = placeAnimal('bear', 300, null, false); placeIsle = null; if (!e) return;
+    e.isle = i; e.oldMan = true; e.name = 'THE OLD MAN'; e.hp = e.maxHp = Math.round(lib.animalSpec('wolf').hp * OLD_MAN.hpWolves); e.cfg.dmg = OLD_MAN.dmg; e.cfg.speed *= OLD_MAN.speedK; e.wander.r = OLD_MAN.range;
+  }
+  var OLD_MAN = { hpWolves: 6, dmg: 55, speedK: 0.85, range: 140 };   /* (mine, first settings) */
+  function islePopulate(i) { var q = w.isles[i]; if (q.bear) oldManPlace(i); isleBeastKinds(q).forEach(function (k) { placeIsle = i; for (var j = 0, n1 = animalN(k, i); j < n1; j++) { var e = placeAnimal(k, 260, null, false); if (!e) break; e.isle = i; j += herdOf(e, k, n1 - j - 1); } placeIsle = null; }); }
   function isleClear(i) { Combat.dbg().W.enemies.forEach(function (e) { if (e.isle === i && !e.human && !e.night && !e.unge && e.kind !== 'troll' && !e.dead) e.away = true; }); }
   /* The villages' animals (the Art Director's step 5A, 2026-10-20; wired 2026-10-21, mine): hens, goats, sheep and cows on the
      beasts' sheets. A place gets its stock by its kind (LIVESTOCK) when the hero comes within STOCK_NEAR of it and loses them
@@ -7574,6 +7580,7 @@ __COMBAT__
   }
   function isleBeastTick(dt) {
     isleTickT += dt; if (isleTickT < 2) return; isleTickT = 0; var P = hero(), i;
+    if (!seen.oldManDead) { var GE = (Combat.dbg().W || {}).enemies || []; for (i = 0; i < GE.length; i++) if (GE[i].oldMan && GE[i].dead) { seen.oldManDead = true; save(); break; } }
     for (i = 2; i < w.isles.length; i++) { var q = w.isles[i], d = Math.hypot(P.x - q.x * T, P.y - q.y * T) - q.r * T;
       if (d < BEAST_NEAR) { if (!isleLive[i]) { isleLive[i] = { since: clock }; islePopulate(i); } isleLive[i].seen = clock; }
       else if (isleLive[i] && d > BEAST_FAR && clock - isleLive[i].seen > BEAST_HOLD) { isleClear(i); delete isleLive[i]; } }

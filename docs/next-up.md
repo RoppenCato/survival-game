@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`, step 1 first (the islands round and what lies on them), on main only.
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: step 1 is built but for the spring, bay and hill; **step 2 (flint gear) is next**, then villagers with things to do (Robin, 2026-11-10), then step 3.
 2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
 
 ## Waiting on Robin
@@ -28,7 +28,7 @@ Last updated: 2026-11-10.
 11. The hero in the undyed shirt from the wreck on, and wild herbs and fallen trees as pictures (4.2, 4.4).
 12. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 and D46 (the bear's rune) for chapter 1.
+**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22, D46 (the bear's rune) and D47 (the jarl's seat in home water) for chapter 1.
 
 ## Waiting on a studio
 
