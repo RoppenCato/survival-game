@@ -1143,7 +1143,7 @@ function make(seed, site, opts) {
      grim: the green has come back. Its own random stream: the walls do not move. */
   if (V.ruin) (function ruinDress() {
     var RR = rngOf(seed * 23 + 9), pick = function (a) { return a[Math.floor(RR() * a.length)]; };
-    var GONE = { bed: 0.75, table: 0.6, chair: 0.7, bench: 0.55, loom: 0.85, stool: 0.6, shelf: 0.75, cupboard: 0.85, cradle: 1, rug: 1, foodTable: 1, logSeat: 0.5, haystack: 1 };
+    var GONE = { bed: 1, strawBed: 1, table: 0.6, chair: 0.7, bench: 0.55, loom: 0.85, stool: 0.6, shelf: 0.75, cupboard: 0.85, cradle: 1, rug: 1, foodTable: 1, logSeat: 0.5, haystack: 1 };
     V.items = V.items.filter(function (it) { return !(GONE[it.name] && RR() < GONE[it.name]) && !/^wallHanging/.test(it.name); });
     V.props.forEach(function (o) { if (o.name === 'woodshed') { o.name = pick(['burntHeap_1', 'burntHeap_2']); o.solid = 8; } });
     var BEAMS = ['charBeamA', 'charBeamB', 'charBeamC', 'charredBeam_1', 'charredBeam_2', 'charredBeam_3'], HEAPS = ['burntHeap_1', 'burntHeap_2', 'charPile', 'ashHeap'];
