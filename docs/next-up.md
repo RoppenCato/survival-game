@@ -29,7 +29,7 @@ Last updated: 2026-11-10.
 12. The first tools are called Stone Axe, Stone Pickaxe and Stone Knife (4.5).
 13. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22, D46 (the bear's rune) and D47 (the jarl's seat in home water) for chapter 1.
+**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 for chapter 1.
 
 ## Waiting on a studio
 

@@ -24,7 +24,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.11 | **Arnor comes over** the morning after the blót and works about your home as its smith. | Built |
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
 | 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **Its price** (Robin, 2026-11-10): 20 wood, 6 timber (a big log for the mast), 3 sailcloth from your loom, 4 leather, so it comes when most of the big island and the islands near it are done. | Built (the price by the ship test; not built at a yard in the pane) |
-| 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
+| 1.14 | **The chapter ends when you have built the new boat and sailed out into the deeper waters** (Robin, 2026-11-10): with the sail ship the swell at home water's edge no longer turns you back; no farewell moment. | Built |
 | 1.15 | **The first claim stone** at your home (Robin, 2026-11-10): 6 stone on the Building board, shown once a wolf's blood was held; laid flat; E held about 4 s carves it; E pours the wolf's blood; E held 2 s raises it; the place is named after you (`Ketilstad`: your name + stad) in the map's lettering; Arnor, if he is by, has a line for each act. | Built (the three acts run through by stepping the game; the lettering and the standing stone seen; **the hero's three animations not watched**, the pane was hidden) |
 | 1.16 | **The steading's other houses mended by Arnor** once you have landed on another island: come back and they stand whole (Robin, 2026-11-10: "Arnor fixed them"). | Not built |
 
@@ -63,10 +63,10 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
 | 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island (Tangholm, Gamli's hut), the trading hamlet (Saltvik, Jorunn), the elm island (Almey). | Built: the islands, their names on the map, the places and the two people (`tests/isles.js`; seen in the pane: Ulfarstad). Jorunn's barter is 2.16 |
 | 3.6 | **Flint on the beaches of the islands round**, never on the big island, the starter island or Saltvik's own beach: a nodule gives one flint. | Built (`tests/isles.js`; picked up in the pane) |
-| 3.7 | **The elm island** (Almey): elm for the better bow and elm pieces (2.22, 2.23). **The Old Man** (Robin, 2026-11-10): a named old bear on one island round (the ruin's), weakened by age and still a miniboss (132 health, 55 a blow, slower), optional, dead for good once killed; in Colin, AD's own old look (grey muzzle, scars, a torn ear). Butchered, he gives 6 meat, 4 leather and **two halves of his pelt**: one makes **the Bear Cape, the best of chapter 1** (armor 1.8 against wolf skin's 1.4; a pelt, 2 leather and a sinew at a bench), the other **the Bear rug** (it counts twice for comfort). **A rune** from him waits on Robin (D46). | Built (the bear seen earlier in his old stand-in look; **his new look, the cape and the rug not seen**: the pane was hidden); the rune Not built |
+| 3.7 | **The elm island** (Almey): elm for the better bow and elm pieces (2.22, 2.23). **The Old Man** (Robin, 2026-11-10): a named old bear on one island round (the ruin's), weakened by age and still a miniboss (132 health, 55 a blow, slower), optional, dead for good once killed; in Colin, AD's own old look (grey muzzle, scars, a torn ear). Butchered, he gives 6 meat, 4 leather and **two halves of his pelt**: one makes **the Bear Cape, the best of chapter 1** (armor 1.8 against wolf skin's 1.4; a pelt, 2 leather and a sinew at a bench), the other **the Bear rug** (it counts twice for comfort). **His rune, Bear strength** (Robin, 2026-11-10): into your library when he dies; bound at an altar, what you carry on your shoulders does not slow you (two beasts at once is its third tier, not built). | Built (the bear seen earlier in his old stand-in look; **his new look, the cape and the rug not seen**: the pane was hidden; the rune by the rune test only) |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
 | 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **the lookout cairn shows the islands round on the map** (they fade in the next time it opens); **roseroot** only up there (2.20). | Built (the lookout by stepping the game) |
-| 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): a southern trader with copper goods, a raided ruin, troll traces, rumours from villagers. | Troll traces Built; the trader, the ruin and the lore's rumours Not built |
+| 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): **Eadric the copper-man** at Saltvik one day in three, with words of the south and nothing to swap; **the raided ruin** Ulfarstad with two things seen in it and what villagers say of it afterwards; the troll traces; rumours from villagers (2.21). | Built (Eadric and the ruin's lines **not seen**: the pane was hidden; Eadric is a Saltvik villager in look) |
 
 ## 4. The six areas, for what chapter 1 shows
 
@@ -87,11 +87,12 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 5.1 | **Save and load at every step** of part 1. | Not tried |
 | 5.2 | **No errors** after a full play. | Not tried |
 | 5.3 | **The frame rate** in a village and at sea. | Not measured since 2026-10-23 |
-| 5.4 | **No leaks of chapter 2**: no trolls, copper, raids, soldiers, hird or silver in home water. | Built (copper and the troll are out; the rest not gone through) |
+| 5.4 | **No leaks of chapter 2**: no trolls, copper, raids, soldiers, hird or silver in home water; **no jarl** (Robin, 2026-11-10: the seat is out of home water); a claim stone shows no Muster while there is no hird. | Built (the rest not gone through) |
 | 5.5 | **A scripted playthrough of the whole chapter** (`tools/visual/play0.js` ends at the blót). | Partly: to the blót; the home, Arnor, the ships and the way out Not scripted |
 
 ## What changed (newest first)
 
+- 2026-11-10: Robin: the chapter ends with the new boat sailed out to deeper water; Bear strength; no jarl. Built: the rune, Eadric, the ruin's lines, Jorunn's other lines, what folk say after the Old Man.
 - 2026-11-10: step 6 built but for the rune: the Old Man's own look, his pelt, the Bear Cape and the Bear rug.
 - 2026-11-10: step 7 built (roseroot, the drink, the lookout) and step 8's core (clues that mark the map, quest marks over the other quest-givers).
 - 2026-11-10: step 5 built: wolf's blood, the claim stone's three acts and its name, wolf-skin gear.

@@ -19,13 +19,11 @@ D2, D3, D4, D6 and D7 were answered by Robin on 2026-11-10 (`docs/chapter-0-chec
 
 ## Chapter 1
 
-D10 to D29 and D45 were answered by Robin on 2026-11-10 (`docs/chapters.md`, chapter 1's table). What is left:
+D10 to D29 and D45 to D47 were answered by Robin on 2026-11-10 (`docs/chapters.md`, chapter 1's table). What is left:
 
 | # | The choice | Mine |
 | --- | --- | --- |
 | D22 | **`leysingi`** for a freed thrall, and the three variants of each raid line (Alistair, LD's). | Take them as `in-game` under your rule of 2026-10-31; nothing to decide unless you dislike one. |
-| D46 | **The old bear's rune** (yours, 2026-11-10: "make a note of that and we come back to it"): which rune, and how it is given. | A world rune, one of the kind not found at any blót: given where he falls, by laying him on an altar as any beast, or carved from his claw. It fits the rework's "two kinds of rune, the sacrifice pools' and the world's". |
-| D47 | **The jarl's seat in home water**: the generator put a chieftain's seat with guards on a middle-sized island of home water (your "simpler jarl" of 2026-10-19). With chapter 1's islands given their roles I took it out, so home water has only the big island's places, Saltvik, Gamli and the ruin. Should he come back, and where? | Leave him out of chapter 1 ("small unguarded villages"); bring him back with chapter 2, when raiding opens, on the big island or as a newcomer after a winter. |
 
 ## Later chapters (nothing waits on these today)
 
