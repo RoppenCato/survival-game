@@ -7,7 +7,7 @@ const kit = S.kit; kit.setup(kit.STYLE);
 const seeds = process.argv.length > 2 ? process.argv.slice(2).map(Number) : [11, 23, 28, 101, 138, 471, 7, 55, 902, 3141];
 let bad = 0; const T = 32;
 seeds.forEach(seed => {
-  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: { rings: 0 } };
+  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: { rings: 0 }, inland: { auto: 1 } };
   const w = World.make(kit, spec); w.plant();
   const per = w.isles.map(() => ({})); let props = 0;
   w.eachProp(p => { props++; if (!p.is) return; let b = -1, bd = 1e9; w.isles.forEach((q, j) => { const d = Math.hypot(p.x / T - q.x, p.y / T - q.y) / q.r; if (d < bd) { bd = d; b = j; } }); per[b][p.is] = (per[b][p.is] || 0) + 1; });
@@ -34,5 +34,11 @@ seeds.forEach(seed => {
   want((per[1].roseroot || 0) >= 3, 'roseroot on the mountain: ' + (per[1].roseroot || 0));
   want((per[1].oldPine || 0) >= 2 && (per[1].oldPine || 0) <= 9, 'a few old pines at the mountain foot (2 to 9): ' + (per[1].oldPine || 0));
   want(w.isles.some((q, j) => q.role === 'elm' && per[j].elm >= 10), 'elms on the elm island');
+  /* inland water (Robin, 2026-11-10): lakes and a river on the big island, a lake on some of the islands round, none on the starter island, every lake's middle water, nothing in a lake */
+  const lk = w.inland.filter(q => q.kind === 'lake'), rv = w.inland.filter(q => q.kind === 'river'), isl = {}; lk.forEach(q => { isl[q.isle] = (isl[q.isle] || 0) + 1; });
+  console.log('   inland: lakes ' + lk.map(q => q.isle + ':r' + Math.round(q.r / T)).join(' ') + '; rivers ' + rv.map(q => q.isle + (q.between ? ':between' : ':sea') + ':' + q.pts.length).join(' '));
+  want((isl[1] || 0) >= 2, 'two lakes or more on the big island: ' + (isl[1] || 0)); want(!isl[0], 'no lake on the starter island'); want(rv.some(q => q.isle === 1), 'a river on the big island');
+  want(lk.every(q => w.isWater(q.x, q.y) && !w.isLand(q.x, q.y)), 'every lake is water at its middle');
+  let wet = 0; w.eachProp(p => { if (!w.isLand(p.x, p.y) && lk.some(q => Math.hypot(p.x - q.x, p.y - q.y) < q.r * 0.8)) wet++; }); want(wet === 0, 'nothing stands in a lake: ' + wet);
 });
 console.log('bad = ' + bad);

@@ -31,7 +31,7 @@ Last updated: 2026-11-10.
 12. The first tools are called Stone Axe, Stone Pickaxe and Stone Knife (4.5).
 13. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 for chapter 1. **Inland water** (`docs/inland-water.md`, with mockups in `docs/pictures/inland-water/`): lakes only or rivers too, on which islands, a river from the mountain's waterfall, boats up a river. **Turf on byres and boathouses** (Colin, AD asks; your ruling of 2026-10-14 was thatch, turf only for the poorest).
+**To decide:** `docs/decisions.md`: D5 (the frame log from your work computer) and D8 (the hall's size, once you have built one) for chapter 0; D22 for chapter 1. **Inland water is decided** (Robin, 2026-11-10: lakes and rivers both, on the big island and some islands round, varying sizes, a river also from lake to lake; a first version is in the game, the fresh-water look and the rest in `docs/inland-water.md`; a boat up a river is a maybe). **Turf roofs on byres and boathouses: yes** (Robin, the same day; Colin, AD's to lay in the generator).
 
 ## Waiting on a studio
 

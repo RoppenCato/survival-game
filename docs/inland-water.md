@@ -1,4 +1,4 @@
-# Inland water: lakes, rivers, waterfalls (a proposal waiting for Robin)
+# Inland water: lakes, rivers, waterfalls (Robin's yes of 2026-11-10; the first version is in the game)
 
 Robin, 2026-11-10: "consider if we can have waterfalls/rivers/lakes in land. Create some mockups and show me what it would
 look like." **The short answer: yes.** The pictures in `docs/pictures/inland-water/` are not paintings: they are the game's own
@@ -57,9 +57,19 @@ The trial is forty lines. Making it part of the game: where they lie on each isl
 the villages and roads taught to bridge or avoid it, and the tests run again on ten seeds. A week's work for a first good
 version, most of it look and crossings. A new world layout drops older saves once.
 
-## Questions for Robin
+## Robin's answers (2026-11-10) and what is built
 
-- Lakes only, or rivers too? (A lake costs nothing in crossing; a river changes how an island is walked.)
-- On which islands: the big island only, or the middle-sized ones round it too?
-- Should a river begin at the mountain's waterfall?
-- May a boat go up a river?
+- **Lakes and rivers both.**
+- **On the big island and the islands round, "but not all the islands, they can be varying sizes too".**
+- **A river may also run "from one lake to another".**
+- **A boat up a river: "maybe"** ("Then you have to spawn the boat somehow tho"). Not built; undecided.
+
+**Built the same day (mine, first settings):** the game's world sets `inland: { auto: 1 }`. The big island gets up to three lakes
+of 3 to 10 tiles' radius, a river from the first lake to the sea and one between the other two; an island round of radius 55 or
+more gets one lake a little over half the time (not the fisher's, nor one with a bay, a hill or a mound), and under half of those
+a river. None on the starter island and nothing on the mountain. A river is shallow all the way, waded anywhere; a lake is deep
+in its middle. `tests/isles.js` checks ten seeds. The save's layout key moved (`h3`), so an older save is dropped once.
+
+**Still to do:** the fresh-water look (it is the sea's water, with a sand rim and gulls), banks and reeds, a river from the
+mountain's waterfall, a plank bridge, the spring on a home island, lake ice in winter, boats.
+
