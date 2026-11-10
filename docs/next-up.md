@@ -27,7 +27,7 @@ Last updated: 2026-11-10.
 10. The error log empty after the run: Escape, Admin, download `errorlog.txt` (needs `npm start`) (3.2).
 11. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22 for chapter 1.
+**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22 and D46 (the bear's rune) for chapter 1.
 
 ## Waiting on a studio
 

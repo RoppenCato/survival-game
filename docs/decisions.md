@@ -27,6 +27,7 @@ D10 to D29 and D45 were answered by Robin on 2026-11-10 (`docs/chapters.md`, cha
 | # | The choice | Mine |
 | --- | --- | --- |
 | D22 | **`leysingi`** for a freed thrall, and the three variants of each raid line (Alistair, LD's). | Take them as `in-game` under your rule of 2026-10-31; nothing to decide unless you dislike one. |
+| D46 | **The old bear's rune** (yours, 2026-11-10: "make a note of that and we come back to it"): which rune, and how it is given. | A world rune, one of the kind not found at any blót: given where he falls, by laying him on an altar as any beast, or carved from his claw. It fits the rework's "two kinds of rune, the sacrifice pools' and the world's". |
 
 ## Later chapters (nothing waits on these today)
 

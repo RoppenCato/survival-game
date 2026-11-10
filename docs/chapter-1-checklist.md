@@ -59,7 +59,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
 | 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island, a trading hamlet, a yew island. | Not built (Gamli is on the big island today) |
 | 3.6 | **Flint on the beaches of every island round**, never on the big island. | Not built |
-| 3.7 | **The yew island**: yew for a better bow, and **the lone bear**: avoided at first, then a very hard, optional hunt (six times a wolf's health, two blows fell you unarmoured); its pelt makes both a rug and a cloak. | Not built (the bear's model and fight exist; the yew bow, the rug and the cloak do not) |
+| 3.7 | **The yew island** (the lore's Barlindey): yew for a better bow. **The old bear** (Robin, 2026-11-10): on one of the islands round, not tied to this one; named, an old and weakened one of his kind, a miniboss the locals speak of ("the Old Man"); very hard (six times a wolf's health, two blows fell you unarmoured), optional; he gives **the bear cape, the best of chapter 1**, a rug, and **a rune** (D46). | Not built (the bear's model and fight exist; the yew bow, the cape, the rug and the rune do not) |
 | 3.3 | **Places to want to build a home on**, each a little different so some are interesting to build at: a land feature (a spring, a sheltered bay, a wide meadow, a hill with a view), more of one resource, or an old ruin, mixed by the generator; wild flax and the old pines among them. | Not built |
 | 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **a healing herb** gathered only up there (2.20). | The cave Built; the lookout opening the map and the herb Not built |
 | 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): a southern trader with copper goods, a raided ruin, troll traces, rumours from villagers. | Troll traces Built; the trader, the ruin and the lore's rumours Not built |
@@ -87,6 +87,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: Robin on the bear: no island of its own, a named old bear as a miniboss, the best cape of the chapter and a rune (D46).
 - 2026-11-10: Robin's second round: the healing herb, three wolf-skin pieces, the hamlet's swaps and the loom, wild flax, the big-log tree, the very hard bear, home sites that differ, flint arrows' numbers, the claim stone of stone and a wolf's blood in three steps.
 - 2026-11-10: Robin's questionnaire: three islands with a reason, the bear, flint gear and wolf-skin gear, flint on the outer beaches, barter, the lookout and a rare thing on the mountain, the claim stone, four glimpses; the end is being able to leave; no practice ground, no hirdman; seasons independent.
 - 2026-11-10: the list drafted from what is built and from `docs/chapters.md`.
