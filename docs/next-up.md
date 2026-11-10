@@ -38,7 +38,7 @@ Last updated: 2026-11-10.
 | Colin, AD | The blót's ritual clips and props (the cut-scene uses stand-ins) | 2026-10-29 |
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
-| Colin, AD | Chapter 1's art still to come: wolf-skin cloak, hood and tunic, the claim stone's states and acts, the elm, its bow and pieces, the old bear's look, his cape and rug, roseroot. Delivered 2026-11-10 and copied in: the shirt, herbs, fallen trees, flint gear and arrows, the old pine with its log, the log wall and floor, the loom and wild flax | 2026-11-10 |
+| Colin, AD | Chapter 1's art still to come: the elm, its bow and pieces, the old bear's look, his cape and rug. Also delivered and copied in: the wolf-skin tunic, hood and cloak, the claim stone's pictures and three clips, roseroot. Delivered 2026-11-10 and copied in: the shirt, herbs, fallen trees, flint gear and arrows, the old pine with its log, the log wall and floor, the loom and wild flax | 2026-11-10 |
 | Alistair, LD | Nothing: handoffs 24 to 27 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 
