@@ -40,7 +40,7 @@ Last updated: 2026-11-10.
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
 | Colin, AD | Nothing waits: every chapter 1 item asked on 2026-11-10 is delivered and copied in. Still open from before: the blót's ritual clips and props, pictures for the cave mushrooms and angelica, the study for the Building board | |
-| Alistair, LD | Nothing: handoffs 24 to 27 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
+| Alistair, LD | Nothing: handoffs 24 to 28 (2026-11-10) have chapter 1's people, places and lines, copied into `assets/lore/` | |
 | Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 
 ## After that
