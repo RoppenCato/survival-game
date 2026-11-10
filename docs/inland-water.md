@@ -83,4 +83,6 @@ mountain's waterfall, a plank bridge, the spring on a home island, lake ice in w
 - **A drake and a hen** on a river's lower reach. **Fish:** a river is the salmon's water, a lake has perch and pike.
 - **No lake on the hamlet's or the ruin's island** (a lake had pushed Saltvik off its island).
 
-**Still not built:** a river from the mountain's waterfall (the big island's mountain has no waterfall on any seed tried, so there is nothing for it to come from), a plank bridge (asked of Colin, AD), streaks faster where a river narrows, gulls kept off the swans' shore, lake ice in winter, boats up a river (Robin: maybe).
+**Still not built:** a river from the mountain's waterfall (the big island's mountain has no waterfall on any seed tried, so there is nothing for it to come from), streaks faster where a river narrows, gulls kept off the swans' shore, lake ice in winter, boats up a river (Robin: maybe).
+
+**The crossings, 2026-11-10** (Colin, AD's `out/crossings`, in `assets/props/crossings`): a plank bridge on every river, laid by the world on its straightest reach clear of the ford (`w.crossings`, `w.bridges`, `w.bridgeAt`; east to west or north to south, 4, 5 or 6 tiles by the river's width), drawn with the ground, and nobody wades on its deck. It is not a Building board piece (his reasons: nobody needs one, it must fit its river, it belongs to the path). The ford's stones are his pictures. Seen in the pane: the hero on a bridge, the stones. Not done: a village path led to a bridge; beasts and villagers still show as wading on a deck.

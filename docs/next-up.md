@@ -9,7 +9,7 @@ Last updated: 2026-11-10.
 ## Now (Clive, GD), in order
 
 1. **The villages' look, with Colin, AD** (Robin, 2026-11-10): his list is closed and in the game (paths, roof ages, the green, Saltvik's salt works, Gamli's hut, the ruin, the mound and the hill). Mine still: grass tufts over the path edges, damp earth by the well.
-2. **What is left of chapter 1** (Robin, 2026-11-10: "Do all of them"; built the same day: Old Aslak's two clues, Arnor's loom line, the whispers of chapter 2, the steading mended on your return, the ford, the spring, river fish, ducks on rivers): Eadric's own look and a plank bridge (asked of Colin, AD); the sounds below; the crafting board's names cut short by the `new` mark (a look for Robin: it touches chapter 0's board).
+2. **What is left of chapter 1** (Robin, 2026-11-10: "Do all of them"; built the same day: Old Aslak's two clues, Arnor's loom line, the whispers of chapter 2, the steading mended on your return, the ford, the spring, river fish, ducks on rivers): Eadric's own look, a plank bridge on every river and the ford's stones as pictures (Colin, AD's `out/eadric` and `out/crossings`, in the game the same day); the sounds below; the crafting board's names cut short by the `new` mark (a look for Robin: it touches chapter 0's board).
 3. **Seen in the game, 2026-11-10, in the small pane:** a clue's `?` on the map, the turf roofs, the foothills, the rune screens with no tiers, the mended hall, the ford. By script only: the claim stone's acts, the log shouldered and split. Not seen: the towed log on the water, night on fresh water, a spring, a whisper said aloud.
 4. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 

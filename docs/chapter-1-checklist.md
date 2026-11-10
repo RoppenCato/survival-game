@@ -92,6 +92,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: Colin, AD's Eadric (his own look at Saltvik), a plank bridge on every river and the ford's stones as pictures: in the game, seen in the pane.
 - 2026-11-10, Robin: "Do all of them". Built: Old Aslak's two clues (the old pines' island gets its `?`), Arnor's loom line, a whisper of chapter 2 among every grown villager's lines in home water, the steading mended (1.16); on the water a ford of stepping stones on every river, a spring on a home island, tall grass at the lakes' edges, the marks at half by night, a pair of ducks on a river, salmon in rivers; no lake on the hamlet's or the ruin's island (a lake had pushed Saltvik onto the elm island: found by the scripted run, now checked by `tests/isles.js`). The scripted run again: clean to the sail out, the ship's price unchanged.
 - 2026-11-10: the scripted run of the second half (`play1.js`), the balance (`docs/chapter-1-balance.md`: the ship 12 timber and 4 bolts, the loom's parts 8 flint and 3 pelts, a few old pines at the mountain's foot), the foundations; found by the run and fixed: village furniture taken for logs (the flag `big`), four bears on the mountain.
 - 2026-11-10: lore handoff 28: the quest A boat for deep water wired; the rune's card is the lore's.

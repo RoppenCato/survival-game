@@ -1552,6 +1552,25 @@ function make(kit, opts) {
   };
   // wave glints drifting across open water, and small waves rolling in against the shore: lines of equal depth
   // traced along the height field, so they follow the curve of the coast
+  /* The rivers' crossings, made once when first asked for: the ford's stones (q.stones, q.fordA) and one bridge a river on its straightest reach clear of the ford (w.bridges: the picture's name, the deck's middle and its half sizes in world units). A bridge is not built by the player: a river is waded anywhere, it must fit its river and lie across the flow (Colin, AD, 2026-11-10). w.bridgeAt says whether a point is on a deck, so nobody wades there. */
+  w.bridges = []; var crossDone = false;
+  w.crossings = function () {
+    if (crossDone || !FR) return; crossDone = true;
+    (w.inland || []).forEach(function (q, qi) {
+      if (q.kind !== 'river' || q.brook || !q.pts || q.pts.length < 4) return;
+      q.stones = []; var mi = Math.floor(q.pts.length * 0.45), pa = q.pts[mi], pb = q.pts[mi + 1] || q.pts[mi - 1], fa0 = Math.atan2(pb[1] - pa[1], pb[0] - pa[0]), nx0 = -Math.sin(fa0), ny0 = Math.cos(fa0), dq; q.fordA = fa0;
+      for (dq = -110; dq <= 110; dq += 17) { var jx = pa[0] + nx0 * dq + Math.cos(fa0) * (hash(qi, dq + 200, 51) - 0.5) * 9, jy = pa[1] + ny0 * dq + Math.sin(fa0) * (hash(qi, dq + 200, 51) - 0.5) * 9; if (w.isWater(jx, jy) && !w.isLand(jx, jy) && FR[Math.floor(jy / T) * GW + Math.floor(jx / T)]) q.stones.push({ x: jx, y: jy, r: 5 + hash(qi, dq + 200, 52) * 2.6, h: hash(qi, dq + 200, 53) }); }
+      if (!IMAGES.bridgeEW_4) return; var best = null, bi;
+      for (bi = 2; bi < q.pts.length - 2; bi++) { if (Math.abs(bi - mi) < 3) continue; var p0 = q.pts[bi - 1], p1 = q.pts[bi + 1], fb = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), ew = Math.abs(Math.sin(fb)) > Math.abs(Math.cos(fb)), al = Math.max(Math.abs(Math.sin(fb)), Math.abs(Math.cos(fb))); if (al < 0.93) continue;
+        var px = q.pts[bi][0], py = q.pts[bi][1], ux = ew ? 1 : 0, uy = ew ? 0 : 1, a0 = 0, a1 = 0, st2, wet = function (d) { var x = px + ux * d, y = py + uy * d; return w.isWater(x, y) && !w.isLand(x, y); };
+        if (!wet(0)) continue; for (st2 = 4; st2 < 120 && wet(-st2); st2 += 4) a0 = st2; for (st2 = 4; st2 < 120 && wet(st2); st2 += 4) a1 = st2; if (a0 >= 116 || a1 >= 116) continue;
+        var wid = (a0 + a1 + 8) / T, len = wid + 1.2 <= 4 ? 4 : wid + 1.2 <= 5 ? 5 : wid + 1.2 <= 6 ? 6 : 0; if (!len) continue; var mx = px + ux * (a1 - a0) / 2, my = py + uy * (a1 - a0) / 2;
+        if (!w.isLand(mx - ux * (len * T / 2 - 6), my - uy * (len * T / 2 - 6)) || !w.isLand(mx + ux * (len * T / 2 - 6), my + uy * (len * T / 2 - 6))) continue;
+        var sc = al - Math.abs(bi / q.pts.length - 0.25) * 0.1; if (!best || sc > best.sc) best = { sc: sc, name: (ew ? 'bridgeEW_' : 'bridgeNS_') + len, x: mx, y: my, hw: ew ? len * T / 2 : 15, hh: ew ? 15 : len * T / 2, river: qi }; }
+      if (best) w.bridges.push(best);
+    });
+  };
+  w.bridgeAt = function (x, y) { if (!crossDone) w.crossings(); for (var i = 0; i < w.bridges.length; i++) { var b = w.bridges[i]; if (Math.abs(x - b.x) < b.hw && Math.abs(y - b.y) < b.hh) return b; } return null; };
   w.drawWaves = function (c, cam, hw, hh, clock, waves, foam) {
     if (waves > 0) {
       c.lineCap = 'round'; c.lineWidth = 1.1;
@@ -1563,17 +1582,22 @@ function make(kit, opts) {
         c.strokeStyle = 'rgba(220,250,255,' + al.toFixed(3) + ')'; c.beginPath(); c.moveTo(wx - 5, wy); c.quadraticCurveTo(wx - 2.5, wy - 2.2, wx, wy); c.quadraticCurveTo(wx + 2.5, wy + 2.2, wx + 5, wy); c.stroke();
       }
     }
-    if (FR) (w.inland || []).forEach(function (q, qi) {   /* a ford (Colin, AD's list, 2026-11-10; the look mine): a row of flat stepping stones across every river about halfway down, the water breaking pale below each. A river is waded anywhere, so the stones are where it looks right to cross, not a gate */
-      if (q.kind !== 'river' || q.brook || !q.pts || q.pts.length < 4) return;
-      if (!q.stones) { q.stones = []; var mi = Math.floor(q.pts.length * 0.45), pa = q.pts[mi], pb = q.pts[mi + 1] || q.pts[mi - 1], fa0 = Math.atan2(pb[1] - pa[1], pb[0] - pa[0]), nx0 = -Math.sin(fa0), ny0 = Math.cos(fa0), dq; q.fordA = fa0; for (dq = -110; dq <= 110; dq += 17) { var jx = pa[0] + nx0 * dq + Math.cos(fa0) * (hash(qi, dq + 200, 51) - 0.5) * 9, jy = pa[1] + ny0 * dq + Math.sin(fa0) * (hash(qi, dq + 200, 51) - 0.5) * 9; if (w.isWater(jx, jy) && !w.isLand(jx, jy) && FR[Math.floor(jy / T) * GW + Math.floor(jx / T)]) q.stones.push({ x: jx, y: jy, r: 5 + hash(qi, dq + 200, 52) * 2.6, h: hash(qi, dq + 200, 53) }); } }
-      if (!q.stones.length || Math.abs(q.stones[0].x - cam.x) > hw + 160 || Math.abs(q.stones[0].y * K - cam.y) > hh + 160) return;
-      var nk0 = 1 - 0.5 * Math.max(0, Math.min(1, ((w.nightK || 0) - 0.3) / 0.5)), ca0 = Math.cos(q.fordA), sa0 = Math.sin(q.fordA) * K;
-      q.stones.forEach(function (st, si) { var sx0 = st.x, sy0 = st.y * K, ph0 = (clock * 1.6 + st.h * 5) % 1;
-        c.lineCap = 'round'; c.lineWidth = 0.6; c.strokeStyle = 'rgba(232,240,236,' + (Math.sin(ph0 * Math.PI) * 0.5 * nk0).toFixed(3) + ')'; c.beginPath(); c.moveTo(sx0 + ca0 * (st.r + 1 + ph0 * 5) - sa0 * 2, sy0 + sa0 * (st.r + 1 + ph0 * 5) + ca0 * 2 * K); c.lineTo(sx0 + ca0 * (st.r + 4 + ph0 * 7), sy0 + sa0 * (st.r + 4 + ph0 * 7)); c.moveTo(sx0 + ca0 * (st.r + 1 + ph0 * 5) + sa0 * 2, sy0 + sa0 * (st.r + 1 + ph0 * 5) - ca0 * 2 * K); c.lineTo(sx0 + ca0 * (st.r + 3 + ph0 * 6) + sa0 * 1.5, sy0 + sa0 * (st.r + 3 + ph0 * 6) - ca0 * 1.5 * K); c.stroke();
-        c.fillStyle = 'rgba(34,44,44,0.35)'; c.beginPath(); c.ellipse(sx0 + 0.8, sy0 + 1.2, st.r + 0.6, (st.r + 0.6) * 0.62, st.h * 3, 0, 7); c.fill();
-        c.fillStyle = st.h < 0.5 ? '#8f8c80' : '#9a968a'; c.strokeStyle = 'rgba(58,48,40,0.8)'; c.lineWidth = 0.55; c.beginPath(); c.ellipse(sx0, sy0, st.r, st.r * 0.62, st.h * 3, 0, 7); c.fill(); c.stroke();
-        c.fillStyle = 'rgba(214,210,196,0.5)'; c.beginPath(); c.ellipse(sx0 - st.r * 0.25, sy0 - st.r * 0.18, st.r * 0.5, st.r * 0.26, st.h * 3, 0, 7); c.fill(); });
-    });
+    if (FR) { w.crossings(); var nk0 = 1 - 0.5 * Math.max(0, Math.min(1, ((w.nightK || 0) - 0.3) / 0.5));
+      (w.inland || []).forEach(function (q, qi) {   /* a ford (Colin, AD's stones, out/crossings, 2026-11-10): a row of flat stepping stones across every river about halfway down, the water breaking pale below each. A river is waded anywhere, so the stones are where it looks right to cross, not a gate */
+        if (!q.stones || !q.stones.length || Math.abs(q.stones[0].x - cam.x) > hw + 160 || Math.abs(q.stones[0].y * K - cam.y) > hh + 160) return;
+        var ca0 = Math.cos(q.fordA), sa0 = Math.sin(q.fordA) * K;
+        q.stones.forEach(function (st, si) { var sx0 = st.x, sy0 = st.y * K, ph0 = (clock * 1.6 + st.h * 5) % 1, im0 = IMAGES['steppingStone_' + (1 + Math.floor(st.h * 3.99))];
+          c.lineCap = 'round'; c.lineWidth = 0.6; c.strokeStyle = 'rgba(232,240,236,' + (Math.sin(ph0 * Math.PI) * 0.5 * nk0).toFixed(3) + ')'; c.beginPath(); c.moveTo(sx0 + ca0 * (st.r + 1 + ph0 * 5) - sa0 * 2, sy0 + sa0 * (st.r + 1 + ph0 * 5) + ca0 * 2 * K); c.lineTo(sx0 + ca0 * (st.r + 4 + ph0 * 7), sy0 + sa0 * (st.r + 4 + ph0 * 7)); c.moveTo(sx0 + ca0 * (st.r + 1 + ph0 * 5) + sa0 * 2, sy0 + sa0 * (st.r + 1 + ph0 * 5) - ca0 * 2 * K); c.lineTo(sx0 + ca0 * (st.r + 3 + ph0 * 6) + sa0 * 1.5, sy0 + sa0 * (st.r + 3 + ph0 * 6) - ca0 * 1.5 * K); c.stroke();
+          if (im0 && imgReady(im0.img)) { c.drawImage(im0.img, sx0 - im0.ax * im0.upp, sy0 - im0.ay * im0.upp, im0.w * im0.upp, im0.h * im0.upp); return; }
+          c.fillStyle = 'rgba(34,44,44,0.35)'; c.beginPath(); c.ellipse(sx0 + 0.8, sy0 + 1.2, st.r + 0.6, (st.r + 0.6) * 0.62, st.h * 3, 0, 7); c.fill();
+          c.fillStyle = st.h < 0.5 ? '#8f8c80' : '#9a968a'; c.strokeStyle = 'rgba(58,48,40,0.8)'; c.lineWidth = 0.55; c.beginPath(); c.ellipse(sx0, sy0, st.r, st.r * 0.62, st.h * 3, 0, 7); c.fill(); c.stroke();
+          c.fillStyle = 'rgba(214,210,196,0.5)'; c.beginPath(); c.ellipse(sx0 - st.r * 0.25, sy0 - st.r * 0.18, st.r * 0.5, st.r * 0.26, st.h * 3, 0, 7); c.fill(); });
+      });
+      w.bridges.forEach(function (b) {   /* a plank bridge (Colin, AD's set piece: laid by the world, drawn with the ground under whoever walks over it) */
+        if (Math.abs(b.x - cam.x) > hw + 140 || Math.abs(b.y * K - cam.y) > hh + 140) return; var imb = IMAGES[b.name]; if (!imb || !imgReady(imb.img)) return;
+        c.fillStyle = 'rgba(26,34,62,' + (0.22 * nk0).toFixed(3) + ')'; c.fillRect(b.x - b.hw + 8, b.y * K + b.hh * K, b.hw * 2 - 12, 5);
+        c.drawImage(imb.img, b.x - imb.ax * imb.upp, b.y * K - imb.ay * imb.upp, imb.w * imb.upp, imb.h * imb.upp); });
+    }
     if (FR && waves > 0) {   /* fresh water's own marks (Colin, AD's look, 2026-11-10): on a river short pale streaks drifting with the current, what makes it read as a river and not a long lake; on a lake level streaks of sky drifting slowly east, a sparse glint, a fish rising now and then */
       var anyFr = false, ftx, fty, fx0 = Math.max(0, Math.floor((cam.x - hw) / T)), fx1 = Math.min(GW - 1, Math.ceil((cam.x + hw) / T)), fy0 = Math.max(0, Math.floor((cam.y - hh) / TS)), fy1 = Math.min(GH - 1, Math.ceil((cam.y + hh) / TS));
       for (fty = fy0; fty <= fy1 && !anyFr; fty += 2) for (ftx = fx0; ftx <= fx1; ftx += 2) if (FR[fty * GW + ftx]) { anyFr = true; break; }
