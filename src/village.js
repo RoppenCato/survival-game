@@ -684,7 +684,21 @@ function make(seed, site, opts) {
     if (shore === 's' && !V.ruin) {                    // the shore strip below the street: racks, a boathouse, a boat drawn up
       var ry = ty + h - 3.5, k3; for (k3 = 0; k3 < (A.racks || 1); k3++) prop({ name: 'dryingRack', x: (focus[0] / T + (k3 - 0.5) * 4 + (R() - 0.5) * 2) * T, y: ry * T, solid: 6 });
       tryLot({ id: 'boathouse', x: Math.round(focus[0] / T) + 5, y: ty + h - 6, w: 7, h: 5, door: 's', slot: 'shore' });
+      if (opts.salt || /^saltvik$/i.test(opts.name || '')) saltWorks(ry);
     }
+  }
+  /* Saltvik's salt works (2026-11-10, Colin, AD; Robin via Clive, GD: "Saltvik has nothing of salt"; the lore: salt boiled from the sea).
+     On the shore strip west of the racks: a stone-lined pool at the water's edge where the sea is let in to settle, two pans on their
+     hearths (one boiling, its fire lit: the game adds the steam; one boiled down to its crust), the brine tub between, the salt in its
+     baskets, the driftwood for the fires. Their own random stream: nothing else moves. For a place named Saltvik, or opts.salt. */
+  function saltWorks(ry) {
+    V.saltWorks = true; var RS = rngOf(seed * 17 + 3), fx = focus[0] / T, j = function () { return (RS() - 0.5) * 0.8; }, wx = function (dx) { return (fx - dx + j()) * T; };
+    prop({ name: 'seaPool', x: wx(9.5), y: (ty + h - 1.4) * T, solid: 26, under: true });   // (solid: its stones and water stop the feet, and nothing grows in it)
+    prop({ name: 'saltPan_boil', x: wx(7), y: (ry + j() * 0.5) * T, solid: 14, light: 1, steam: true });
+    prop({ name: 'saltPan_crust', x: wx(11.5), y: (ry + j() * 0.5) * T, solid: 14 });
+    prop({ name: 'brineTub', x: wx(9.4), y: (ry + 1.1) * T, solid: 6 });
+    prop({ name: 'saltBaskets', x: wx(13.6), y: (ry - 1.2) * T, solid: 8, loot: { salt: 3 } });
+    prop({ name: 'driftwood', x: wx(4.6), y: (ry - 1.3) * T, solid: 9 });
   }
   function growRow() {                                // the shore row (Ribe, Birka): plots with their short side to a street a few tiles up from the water, the market strip between
     var sy = ty + h - 7.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
@@ -766,7 +780,7 @@ function make(seed, site, opts) {
   resample();
   var fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
   if (A.chapel && gateX != null) prop({ name: 'lychGate', x: (gateX + 0.5) * T, y: (ey1 + 0.02) * T });   // the churchyard's roofed gate
-  if (shore && !V.ruin && R() < 0.7) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : focus[0] / T - 9 + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : focus[1] / T; prop({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
+  if (shore && !V.ruin && R() < 0.7) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : focus[0] / T - (V.saltWorks ? 17 : 9) + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : focus[1] / T; prop({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
   if (fk === 'palisade' && !A.townwall) {              // a ring of sharpened stakes round the whole place. Since 2026-10-21 (the Art Director's step 2 notes, mine to build): a POLYGON of eight to twelve straight runs hugging the buildings (V.fence.poly), each corner a little off its even angle and a little outside the hugging ellipse (every unit's corner inside), the gate two tiles wide at the start of the run on the road, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (stake.mended: stake_new; the raid's weak run), banners either side of the gate; the stakes a tile apart (G.stakeStep)
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     hugRects.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it

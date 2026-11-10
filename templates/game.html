@@ -7780,9 +7780,11 @@ __COMBAT__
       sceneItems.push({ y: sy, f: function () { Build.drawChimney(ctx, it.x, it.y * K - 24 + dy, h, a, clock); } });
     });
     var hole = false; B.items.forEach(function (it) {   // a room with a hearth or a fire pit indoors has a smoke hole in its ridge instead (the Art Director's, 2026-10-20); the fireplace keeps its chimney
-      if (hole || !(isHearth(it) || it.name === 'firePit') || (it.lvl || 0) !== L) return; var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), R = RI(L);
+      var livedIn = !!it.bed && !it.cold && (function () { var vv = villageAt(it.x, it.y); return vv >= 0 && villages[vv] && villages[vv].V && !villages[vv].V.ruin; })();   /* (a village's house with a bed is lived in, hearth item or not: smoke on every lived-in house, Colin, AD 2026-11-10) */
+      if (hole || !(isHearth(it) || it.name === 'firePit' || livedIn) || (it.lvl || 0) !== L) return; var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), R = RI(L);
       if (!R || R.rooms[R.at(tx, ty)] !== room) return; var m = Build.ridgeMid(room, roofCfg(room, L)); if (!m) return; hole = true;
-      sceneItems.push({ y: sy, f: function () { Build.drawSmokeHole(ctx, m.x, m.y + dy, a, clock); } });
+      var smithy = B.items.some(function (q) { return /^(forge|anvil|smithy)/.test(q.name || '') && (q.lvl || 0) === L && R.rooms[R.at(Math.floor(q.x / T), Math.floor(q.y / T))] === room; });
+      sceneItems.push({ y: sy, f: function () { Build.drawSmokeHole(ctx, m.x, m.y + dy, a, clock, { smithy: smithy, night: Math.max(0, Math.min(1, (light() - 0.3) / 0.5)), drift: (typeof wind !== 'undefined' && wind ? Math.cos(wind.a || 0) : 1) * 14 }); } });
     });
   }
   var sceneItems = null;

@@ -949,12 +949,19 @@ function ridgeMid(room, C) {                     // where a room's ridge is at i
   var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT), rh = ns ? Math.min(34, Wd * 0.46) : Math.min(26, D * 0.42);
   return { x: (left + right) / 2, y: (top + bot) / 2 - rh };
 }
-function drawSmokeHole(c, x, yBase, a, t) {
-  var w = 10, h = 4, i, seed = Math.round(x); c.save(); c.globalAlpha = a; c.translate(x, yBase); c.scale(1.8, 1.8); c.translate(-x, -yBase);   /* (bigger: Robin, 2026-10-31) */
+function drawSmokeHole(c, x, yBase, a, t, o) {   /* o: { smithy, night 0..1, drift: units the smoke leans over its rise (the wind's side) } */
+  o = o || {}; var w = 10, h = 4, i, seed = Math.round(x), SC = 2.2; c.save(); c.globalAlpha = a; c.save(); c.translate(x, yBase); c.scale(SC, SC); c.translate(-x, -yBase);   /* (2.2 times: Colin, AD, 2026-11-10, so it reads on the bigger roofs; 1.8 since Robin, 2026-10-31) */
   c.fillStyle = '#1e1714'; c.beginPath(); c.ellipse(x, yBase, w * 0.5, 1.6, 0, 0, 7); c.fill();                                   // the dark hole in the ridge
   for (i = 0; i < 2; i++) ink(c, rect(x - w / 2 + 1 + i * (w - 3.4), yBase - h - 3, 1.4, h + 3), '#4a3626', { wob: 0.3, seed: seed + i, lw: 0.5, heavy: 0.9 });   // the posts
   ink(c, [[x - w / 2 - 1.5, yBase - h - 2], [x + w / 2 + 1.5, yBase - h - 2.4], [x + w / 2 + 0.5, yBase - h - 4.4], [x - w / 2 - 0.5, yBase - h - 4]], '#5a4030', { wob: 0.5, seed: seed + 3, lw: 0.7, heavy: 1.3 });   // the plank hood
-  for (i = 0; i < 5; i++) { var u = ((t * 0.25 + i * 0.2) % 1), px = x + Math.sin(t * 0.8 + i * 1.7) * 2.5 + u * 7, py = yBase - h - 6 - u * 22, r = 1.8 + u * 4; c.fillStyle = 'rgba(226,222,214,' + ((1 - u) * 0.32).toFixed(3) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill(); }
+  c.restore();
+  /* the smoke (Colin, AD's numbers, 2026-11-10: smoke from above is what says people live here): seven puffs on a five-second round, rising 42 units and leaning with the wind, each a pale body over a cooler under-puff so it has a form lit from the upper left; a smithy's thicker and darker; by night half as strong, the lowest puff warm from the fire under it */
+  var n = o.smithy ? 9 : 7, y0 = yBase - (h + 5) * SC, dr = o.drift != null ? o.drift : 14, nt = o.night || 0, ak = 1 - 0.5 * nt, body = o.smithy ? [150, 146, 140, 0.55] : [234, 230, 222, 0.46], under = o.smithy ? [90, 94, 104, 0.3] : [150, 158, 176, 0.22];
+  if (nt > 0) body = [body[0] - 60 * nt, body[1] - 50 * nt, body[2] - 30 * nt, body[3]];
+  for (i = 0; i < n; i++) { var u = ((t * 0.2 + i / n) % 1), px = x + Math.sin(t * 0.8 + i * 1.7) * 2.5 + u * dr, py = y0 - u * 42, r = (o.smithy ? 3 : 2.5) + u * (o.smithy ? 10 : 8);
+    c.fillStyle = 'rgba(' + under[0] + ',' + under[1] + ',' + under[2] + ',' + ((1 - u) * under[3] * ak).toFixed(3) + ')'; c.beginPath(); c.arc(px + 1.2, py + 1.2, r, 0, 7); c.fill();
+    c.fillStyle = 'rgba(' + Math.round(body[0]) + ',' + Math.round(body[1]) + ',' + Math.round(body[2]) + ',' + ((1 - u) * body[3] * ak).toFixed(3) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
+    if (nt > 0.3 && u < 0.16) { c.fillStyle = 'rgba(255,170,90,' + ((0.16 - u) * 2.2 * nt).toFixed(3) + ')'; c.beginPath(); c.arc(px, py + r * 0.4, r * 0.8, 0, 7); c.fill(); } }
   c.restore();
 }
 function drawChimney(c, x, yBase, h, a, t) {
