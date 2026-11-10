@@ -22,17 +22,13 @@ Set up 2026-11-10. What I am doing now, and what waits on a studio, is in `docs/
 
 ## Chapter 1
 
-D10 to D21 were answered by Robin on 2026-11-10 (`docs/chapters.md`, chapter 1's table). What his answers opened:
+D10 to D28 were answered by Robin on 2026-11-10 in two rounds (`docs/chapters.md`, chapter 1's table). What is left:
 
 | # | The choice | Mine |
 | --- | --- | --- |
 | D22 | **`leysingi`** for a freed thrall, and the three variants of each raid line (Alistair, LD's). | Take them as `in-game` under your rule of 2026-10-31; nothing to decide unless you dislike one. |
-| D23 | **The rare thing on the mountain**: what is it? | Cloudberries on the high bog: a dish that gives the chapter's best stamina buff, and a dye for the sail. |
-| D24 | **The wolf-skin gear**: which pieces, and what do they give? | A wolf-skin cloak, hood and a lined tunic: 1 to 2 armor points over leather each, and wolves notice you from less far. Made at a bench from leather and wolf pelts. |
-| D25 | **The trading hamlet**: what does it swap? | It wants pelts, flint and dried fish; it gives salt (for the better dishes), linen (the sail) and seeds or a hen for your home. |
-| D26 | **The other islands' one good thing each.** | A spring, a sheltered bay for a pier, a wide meadow, a wood of tall pines, a hill with a view: one each, by the generator. |
-| D27 | **The bear**: how strong, and what does its pelt make? | About four times a wolf's health, a blow that takes half yours; the pelt makes a bear rug (the best comfort) or a cloak. |
-| D28 | **Flint arrows**: the cost and the gain. | 5 for a flint, a wood and a fibre; a quarter more damage than wooden ones. |
+| D29 | **The claim stone's three steps** (yours: laid flat, E to carve, E to fill with blood, E to raise): is it monotonous? | Keep your three steps, but make each a different act, done once and over in twenty seconds: **carve** is E held about four seconds with the chisel's ring and chips flying; **fill** is one press, the wolf's blood poured and the runes running red along the carving; **raise** is E held as he heaves it upright, then the place's name in the map's lettering. Arnor watches if he lives there. |
+| D45 | **The big-log tree**: which tree, and where does it grow? | Old pines, tall and thick: a stand on two of the islands round and a few at the mountain's foot, so the first log can be had on the big island and the mast's on a sail away. A log is a heavy thing: carried, and towed behind the boat. |
 
 ## Later chapters (nothing waits on these today)
 

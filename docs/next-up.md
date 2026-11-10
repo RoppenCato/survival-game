@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Chapter 1's list is drafted with Robin's answers of 2026-11-10 (`docs/chapter-1-checklist.md`): sixteen items Not built. Next: Robin's answers to D23 to D28, then a build order for them.
+1. Chapter 1's list is drafted with Robin's answers of 2026-11-10 (`docs/chapter-1-checklist.md`): about twenty items Not built. Next: Robin's word on D29 and D45, a build order, and the asks to Colin, AD and Alistair, LD.
 2. Fix whatever Robin's next chapter 0 run finds.
 
 ## Waiting on Robin
@@ -27,7 +27,7 @@ Last updated: 2026-11-10.
 10. The error log empty after the run: Escape, Admin, download `errorlog.txt` (needs `npm start`) (3.2).
 11. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22 to D28 for chapter 1.
+**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22, D29 and D45 for chapter 1.
 
 ## Waiting on a studio
 
