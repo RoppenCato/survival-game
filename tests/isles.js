@@ -29,6 +29,7 @@ seeds.forEach(seed => {
   want(at('hamlet').length === 1 && at('hamlet')[0].name === 'Saltvik' && at('hamlet')[0].arch !== 'ruin', 'Saltvik: ' + at('hamlet').map(st => st.arch + ' ' + st.name));
   want(at('ruin').length === 1 && at('ruin')[0].arch === 'ruin' && at('ruin')[0].name === 'Ulfarstad', 'Ulfarstad: ' + at('ruin').map(st => st.arch + ' ' + st.name));
   want(at('home').length === 0 && at('elm').length === 0, 'nobody on the homes or the elm island: ' + (at('home').length + at('elm').length));
+  w.isles.forEach((q, j) => { if (q.feat === 'bay') { const bx = Math.floor(q.x + Math.cos(q.bay.a) * q.r * 0.92), by = Math.floor(q.y + Math.sin(q.bay.a) * q.r * 0.92 * 0.9); want(w.siteCode(bx, by) === 0, 'the bay of island ' + j + ' is water at its middle'); } if (q.feat === 'hill') want(!!q.hill, 'the hill of island ' + j + ' has its cairn'); });
   want(sites[0].isle === 1 && sites[0].arch !== 'ruin' && !sites.some(st => st.arch === 'seat'), 'the first village on the big island, no seat');
   want((per[1].roseroot || 0) >= 3, 'roseroot on the mountain: ' + (per[1].roseroot || 0));
   want((per[1].oldPine || 0) >= 3, 'old pines at the mountain\'s foot: ' + (per[1].oldPine || 0)); want(bear === 1, 'the bear on ' + bear + ' islands');

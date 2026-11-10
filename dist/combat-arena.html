@@ -5925,6 +5925,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
   function rankOf(q, d) {
     var r = RANK[q.l];
+    if (q.l === 'carryLog') return d >= 2 && d <= 4 ? -1 : 11;   /* the log on his right shoulder: behind him when he faces west, north-west or north (Colin, AD, 2026-11-10) */
     if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 3.5; }      // the bow is in the left hand; the far side under the armour and the cloak, over the tunic and the dress (2026-10-20)
     if (r == null) return 11;
     if (r >= 9) return d <= 3 ? r : 3.6 + (r - 9);

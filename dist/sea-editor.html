@@ -4418,7 +4418,7 @@ var HP = { elm: 22, oldPine: 54, dwarfBirch: 8, juniper: 4, heather: 3, boulder:
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
 /* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the ruin's, where the bear also walks; the biggest small one is the fisherman's and the rest are homes. */
-var HOME_FEATS = ['spring', 'bay', 'meadow', 'hill'], HOME_RES = ['fish', 'deer', 'berries', 'stone', 'birds'];
+var HOME_FEATS = ['bay', 'meadow', 'hill', 'mound'],   /* (a spring waits for inland water: the game has none yet) */ HOME_RES = ['fish', 'deer', 'berries', 'stone', 'herbs'];   /* (herbs where birds stood: nothing in the game is a seabird yet) */
 function homeRoles(isles, home, R) {
   var rest = home.isles.slice(2).map(function (k) { return isles[k]; }).filter(function (q) { return q && !q.role; }), sh = function (l) { for (var k = l.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = l[k]; l[k] = l[j]; l[j] = t; } return l; };
   rest.sort(function (p, q) { return q.r - p.r; });
@@ -4427,7 +4427,7 @@ function homeRoles(isles, home, R) {
   var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), homes = sh(smalls).concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
   if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher';
   if (wild) { wild.role = 'ruin'; wild.pines = true; wild.flax = true; }   /* the third middle-sized island: the raided steading (a place of its size needs the room), flax gone wild in its old fields, old pines, and the Old Man */
-  homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
+  var fI = 0, rI = 0; homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[rI++ % res.length]; else q.feat = feats[fI++ % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
   var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
   rest.forEach(function (q) { q.flint = q !== hamlet; });   /* (Saltvik's own beach was picked clean long ago, Alistair, LD's line: so its trader wants flint) */
 }
@@ -4549,6 +4549,12 @@ function make(kit, opts) {
     blob(q.x, q.y, q.r, q.seed != null ? q.seed : s + idx * 17, o.rough);
     var ns = Math.round(o.skerries * (2 + q.r * 0.07));
     for (var j = 0; j < ns; j++) { var sa = R() * 6.283, sdist = q.r * rnd(1.1, 1.42) + rnd(3, 12); blob(q.x + Math.cos(sa) * sdist, q.y + Math.sin(sa) * sdist * 0.9, rnd(1.8, 5.5), s + idx * 31 + j, 0.8); skerries++; }
+  });
+  /* a home island with a bay (chapter 1, Robin 2026-11-10: islands that differ, a sheltered bay for a pier): a round bite out of its coast, on the side its seed gives, after the skerries so none lies in it; no draw is taken */
+  isles.forEach(function (q) {
+    if (q.feat !== 'bay') return; var a = hash(q.seed || 3, 7, 91) * 6.283, br = Math.max(7, q.r * 0.42), bx = q.x + Math.cos(a) * q.r * 0.92, by = q.y + Math.sin(a) * q.r * 0.92 * 0.9, e = Math.ceil(br + 2), xx, yy;
+    q.bay = { x: q.x + Math.cos(a) * q.r * 0.5, y: q.y + Math.sin(a) * q.r * 0.5 * 0.9, a: a };
+    for (yy = Math.max(2, Math.floor(by - e)); yy <= Math.min(GH - 3, Math.ceil(by + e)); yy++) for (xx = Math.max(2, Math.floor(bx - e)); xx <= Math.min(GW - 3, Math.ceil(bx + e)); xx++) { var d = Math.hypot(xx + 0.5 - bx, yy + 0.5 - by), pp = yy * GW + xx, cap = Math.round((d - br) * 100); if (cap < E[pp]) E[pp] = Math.max(-1000, cap); }
   });
   w.E = E;
   /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
@@ -5996,7 +6002,7 @@ function make(kit, opts) {
     var own = function (x, y, q) { var d = Math.hypot(x - q.x, y - q.y) / q.r, j; for (j = 0; j < isles.length; j++) if (isles[j] !== q && Math.hypot(x - isles[j].x, y - isles[j].y) / isles[j].r < d) return false; return true; };   /* (the tile is this island's and no neighbour's) */
     var put = function (is, name, wx, wy, sc, r, hv, hp) { if (!kit.PROPS[name] && !IMAGES[name + '_1']) return; var p = { name: name, is: is, x: wx, y: wy, s: sc, r: r, v: Math.floor(hv * 3) % 3, kind: KIND[name] || null }; p.max = p.hp = hp; p.leanDir = hv < 0.5 ? -1 : 1; w.addProp(p); n[is === 'flint' || is === 'flax' || is === 'oldPine' || is === 'elm' || is === 'roseroot' ? is : 'more']++; };
     isles.forEach(function (q, qi) {
-      var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || big)) return;
+      var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || q.feat === 'hill' || q.feat === 'mound' || big)) return;
       var e = Math.ceil(q.r * 1.45), xa = Math.max(3, Math.floor(q.x - e)), xb = Math.min(GW - 4, Math.ceil(q.x + e)), ya = Math.max(3, Math.floor(q.y - e)), yb = Math.min(GH - 4, Math.ceil(q.y + e)), x, y;
       for (y = ya; y <= yb; y++) for (x = xa; x <= xb; x++) {
         var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
@@ -6009,6 +6015,19 @@ function make(kit, opts) {
         else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', IMAGES.elm_1 ? 'elm' : 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.elm);
         else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
         else if (q.res === 'stone' && grass && h1 < 0.008 && own(wx / T, wy / T, q) && free(wx, wy, 22)) put('stone', 'boulder', wx, wy, 0.9 + h2 * 0.3, 11, h2, HP.boulder);
+        else if (q.res === 'herbs' && grass && h1 < 0.014 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('herbs', h2 < 0.5 && kit.PROPS.mushrooms ? 'mushrooms' : 'wildHerbs', wx, wy, 1, 0, h2, 1);
+      }
+      if (q.feat === 'hill' && kit.PROPS.varde) {   /* a hill with a view: a beacon cairn on the island's highest ground, boulders about it; standing by it shows the islands round on the map, as the mountain's does */
+        var hb = -1e9, hx = q.x, hy = q.y, ex, ey, rr0 = Math.max(3, Math.floor(q.r * 0.5)); for (ey = Math.floor(q.y - rr0); ey <= q.y + rr0; ey++) for (ex = Math.floor(q.x - rr0); ex <= q.x + rr0; ex++) { if (ex < 3 || ey < 3 || ex >= GW - 3 || ey >= GH - 3) continue; var ev = E[ey * GW + ex]; if (ev > hb && grid[ey * GW + ex] >= 2) { hb = ev; hx = ex; hy = ey; } }
+        var cxh = (hx + 0.5) * T, cyh = (hy + 0.5) * T, goneH = []; w.around(cxh, cyh, function (p) { if (Math.hypot(p.x - cxh, p.y - cyh) < 70 && p.kind === 'tree') goneH.push(p); }); goneH.forEach(w.removeProp);
+        w.addProp({ name: 'varde', x: cxh, y: cyh, s: 1, r: 13, v: 0, lookout: true }); q.hill = { x: cxh, y: cyh };
+        [[-44, 10], [38, 22], [16, -34]].forEach(function (o2, k) { if (kit.PROPS.boulder) { var pb = { name: 'boulder', x: cxh + o2[0], y: cyh + o2[1], s: 0.8 + hash(hx, hy, 60 + k) * 0.3, r: 10, v: k % 3, kind: 'stone' }; pb.max = pb.hp = HP.boulder; pb.leanDir = 1; w.addProp(pb); } });
+      }
+      if (q.feat === 'mound') {   /* a trace of those before you (Robin, 2026-11-10: an old ruin among what makes a home island differ): a burial mound in a clearing, old boundary stones about it */
+        var mx = (q.x + 0.5) * T + (hash(q.seed || 1, 3, 71) - 0.5) * q.r * T * 0.5, my = (q.y + 0.5) * T + (hash(q.seed || 1, 5, 72) - 0.5) * q.r * T * 0.4, goneM = []; if (grid[Math.floor(my / T) * GW + Math.floor(mx / T)] < 2) { mx = (q.x + 0.5) * T; my = (q.y + 0.5) * T; }
+        w.around(mx, my, function (p) { if (Math.hypot(p.x - mx, p.y - my) < 80) goneM.push(p); }); goneM.forEach(w.removeProp);
+        var mName = IMAGES.burialMound ? 'burialMound' : IMAGES.graveMound_1 ? 'graveMound' : kit.PROPS.cairn ? 'cairn' : null; if (mName) { w.addProp({ name: mName, x: mx, y: my, s: 1, r: 16, v: 0 }); q.mound = { x: mx, y: my }; }
+        [[-58, 24], [52, 30], [10, -46]].forEach(function (o3, k) { var bn = IMAGES.boundaryStone_1 ? 'boundaryStone' : kit.PROPS.cairn ? 'cairn' : null; if (bn) w.addProp({ name: bn, x: mx + o3[0], y: my + o3[1], s: 1, r: 6, v: k % 3 }); });
       }
       if (q.feat === 'meadow') { var cx = (q.x + 0.5) * T, cy = (q.y + 0.5) * T, rr = q.r * T * 0.42, gone = []; w.eachProp(function (p) { if (p.kind === 'tree' && Math.hypot(p.x - cx, p.y - cy) < rr) gone.push(p); }); gone.forEach(w.removeProp); n.cleared = gone.length; }   /* a wide meadow: the middle of the island open */
     });
@@ -11557,6 +11576,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
   function rankOf(q, d) {
     var r = RANK[q.l];
+    if (q.l === 'carryLog') return d >= 2 && d <= 4 ? -1 : 11;   /* the log on his right shoulder: behind him when he faces west, north-west or north (Colin, AD, 2026-11-10) */
     if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 3.5; }      // the bow is in the left hand; the far side under the armour and the cloak, over the tunic and the dress (2026-10-20)
     if (r == null) return 11;
     if (r >= 9) return d <= 3 ? r : 3.6 + (r - 9);

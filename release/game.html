@@ -5724,7 +5724,7 @@ var HP = { elm: 22, oldPine: 54, dwarfBirch: 8, juniper: 4, heather: 3, boulder:
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
 /* Chapter 1's islands round (Robin, 2026-11-10): three with a reason, the fisherman's, the trading hamlet and the elm island; the rest are places to build a home, each a little different (a land feature, more of one thing, or an old ruin); flint on the beaches of all of them and never on the big island; wild flax on some; old pines on two; the old bear on one. Which island gets what is mine, by size: the three middle-sized ones are the hamlet's, the elm's and the ruin's, where the bear also walks; the biggest small one is the fisherman's and the rest are homes. */
-var HOME_FEATS = ['spring', 'bay', 'meadow', 'hill'], HOME_RES = ['fish', 'deer', 'berries', 'stone', 'birds'];
+var HOME_FEATS = ['bay', 'meadow', 'hill', 'mound'],   /* (a spring waits for inland water: the game has none yet) */ HOME_RES = ['fish', 'deer', 'berries', 'stone', 'herbs'];   /* (herbs where birds stood: nothing in the game is a seabird yet) */
 function homeRoles(isles, home, R) {
   var rest = home.isles.slice(2).map(function (k) { return isles[k]; }).filter(function (q) { return q && !q.role; }), sh = function (l) { for (var k = l.length - 1; k > 0; k--) { var j = Math.floor(R() * (k + 1)), t = l[k]; l[k] = l[j]; l[j] = t; } return l; };
   rest.sort(function (p, q) { return q.r - p.r; });
@@ -5733,7 +5733,7 @@ function homeRoles(isles, home, R) {
   var hamlet = take(mids, smalls), elm = take(mids, smalls), wild = take(mids, smalls), fisher = take(smalls, mids), homes = sh(smalls).concat(mids), feats = sh(HOME_FEATS.slice()), res = sh(HOME_RES.slice());
   if (hamlet) hamlet.role = 'hamlet'; if (elm) elm.role = 'elm'; if (fisher) fisher.role = 'fisher';
   if (wild) { wild.role = 'ruin'; wild.pines = true; wild.flax = true; }   /* the third middle-sized island: the raided steading (a place of its size needs the room), flax gone wild in its old fields, old pines, and the Old Man */
-  homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
+  var fI = 0, rI = 0; homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[rI++ % res.length]; else q.feat = feats[fI++ % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
   var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
   rest.forEach(function (q) { q.flint = q !== hamlet; });   /* (Saltvik's own beach was picked clean long ago, Alistair, LD's line: so its trader wants flint) */
 }
@@ -5855,6 +5855,12 @@ function make(kit, opts) {
     blob(q.x, q.y, q.r, q.seed != null ? q.seed : s + idx * 17, o.rough);
     var ns = Math.round(o.skerries * (2 + q.r * 0.07));
     for (var j = 0; j < ns; j++) { var sa = R() * 6.283, sdist = q.r * rnd(1.1, 1.42) + rnd(3, 12); blob(q.x + Math.cos(sa) * sdist, q.y + Math.sin(sa) * sdist * 0.9, rnd(1.8, 5.5), s + idx * 31 + j, 0.8); skerries++; }
+  });
+  /* a home island with a bay (chapter 1, Robin 2026-11-10: islands that differ, a sheltered bay for a pier): a round bite out of its coast, on the side its seed gives, after the skerries so none lies in it; no draw is taken */
+  isles.forEach(function (q) {
+    if (q.feat !== 'bay') return; var a = hash(q.seed || 3, 7, 91) * 6.283, br = Math.max(7, q.r * 0.42), bx = q.x + Math.cos(a) * q.r * 0.92, by = q.y + Math.sin(a) * q.r * 0.92 * 0.9, e = Math.ceil(br + 2), xx, yy;
+    q.bay = { x: q.x + Math.cos(a) * q.r * 0.5, y: q.y + Math.sin(a) * q.r * 0.5 * 0.9, a: a };
+    for (yy = Math.max(2, Math.floor(by - e)); yy <= Math.min(GH - 3, Math.ceil(by + e)); yy++) for (xx = Math.max(2, Math.floor(bx - e)); xx <= Math.min(GW - 3, Math.ceil(bx + e)); xx++) { var d = Math.hypot(xx + 0.5 - bx, yy + 0.5 - by), pp = yy * GW + xx, cap = Math.round((d - br) * 100); if (cap < E[pp]) E[pp] = Math.max(-1000, cap); }
   });
   w.E = E;
   /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
@@ -7302,7 +7308,7 @@ function make(kit, opts) {
     var own = function (x, y, q) { var d = Math.hypot(x - q.x, y - q.y) / q.r, j; for (j = 0; j < isles.length; j++) if (isles[j] !== q && Math.hypot(x - isles[j].x, y - isles[j].y) / isles[j].r < d) return false; return true; };   /* (the tile is this island's and no neighbour's) */
     var put = function (is, name, wx, wy, sc, r, hv, hp) { if (!kit.PROPS[name] && !IMAGES[name + '_1']) return; var p = { name: name, is: is, x: wx, y: wy, s: sc, r: r, v: Math.floor(hv * 3) % 3, kind: KIND[name] || null }; p.max = p.hp = hp; p.leanDir = hv < 0.5 ? -1 : 1; w.addProp(p); n[is === 'flint' || is === 'flax' || is === 'oldPine' || is === 'elm' || is === 'roseroot' ? is : 'more']++; };
     isles.forEach(function (q, qi) {
-      var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || big)) return;
+      var big = q.role === 'big' && mtn; if (!(q.flint || q.flax || q.pines || q.role === 'elm' || q.res || q.feat === 'meadow' || q.feat === 'hill' || q.feat === 'mound' || big)) return;
       var e = Math.ceil(q.r * 1.45), xa = Math.max(3, Math.floor(q.x - e)), xb = Math.min(GW - 4, Math.ceil(q.x + e)), ya = Math.max(3, Math.floor(q.y - e)), yb = Math.min(GH - 4, Math.ceil(q.y + e)), x, y;
       for (y = ya; y <= yb; y++) for (x = xa; x <= xb; x++) {
         var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
@@ -7315,6 +7321,19 @@ function make(kit, opts) {
         else if (q.role === 'elm' && grass && h1 < 0.03 && vnoise(x / 8, y / 8, s + 51) > 0.58 && own(wx / T, wy / T, q) && free(wx, wy, 24)) put('elm', IMAGES.elm_1 ? 'elm' : 'oak', wx, wy, 0.54 + h2 * 0.08, 12, h2, HP.elm);
         else if (q.res === 'berries' && grass && h1 < 0.012 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('berries', 'berryBush', wx, wy, 0.9, 0, h2, HP.berryBush);
         else if (q.res === 'stone' && grass && h1 < 0.008 && own(wx / T, wy / T, q) && free(wx, wy, 22)) put('stone', 'boulder', wx, wy, 0.9 + h2 * 0.3, 11, h2, HP.boulder);
+        else if (q.res === 'herbs' && grass && h1 < 0.014 && own(wx / T, wy / T, q) && free(wx, wy, 14)) put('herbs', h2 < 0.5 && kit.PROPS.mushrooms ? 'mushrooms' : 'wildHerbs', wx, wy, 1, 0, h2, 1);
+      }
+      if (q.feat === 'hill' && kit.PROPS.varde) {   /* a hill with a view: a beacon cairn on the island's highest ground, boulders about it; standing by it shows the islands round on the map, as the mountain's does */
+        var hb = -1e9, hx = q.x, hy = q.y, ex, ey, rr0 = Math.max(3, Math.floor(q.r * 0.5)); for (ey = Math.floor(q.y - rr0); ey <= q.y + rr0; ey++) for (ex = Math.floor(q.x - rr0); ex <= q.x + rr0; ex++) { if (ex < 3 || ey < 3 || ex >= GW - 3 || ey >= GH - 3) continue; var ev = E[ey * GW + ex]; if (ev > hb && grid[ey * GW + ex] >= 2) { hb = ev; hx = ex; hy = ey; } }
+        var cxh = (hx + 0.5) * T, cyh = (hy + 0.5) * T, goneH = []; w.around(cxh, cyh, function (p) { if (Math.hypot(p.x - cxh, p.y - cyh) < 70 && p.kind === 'tree') goneH.push(p); }); goneH.forEach(w.removeProp);
+        w.addProp({ name: 'varde', x: cxh, y: cyh, s: 1, r: 13, v: 0, lookout: true }); q.hill = { x: cxh, y: cyh };
+        [[-44, 10], [38, 22], [16, -34]].forEach(function (o2, k) { if (kit.PROPS.boulder) { var pb = { name: 'boulder', x: cxh + o2[0], y: cyh + o2[1], s: 0.8 + hash(hx, hy, 60 + k) * 0.3, r: 10, v: k % 3, kind: 'stone' }; pb.max = pb.hp = HP.boulder; pb.leanDir = 1; w.addProp(pb); } });
+      }
+      if (q.feat === 'mound') {   /* a trace of those before you (Robin, 2026-11-10: an old ruin among what makes a home island differ): a burial mound in a clearing, old boundary stones about it */
+        var mx = (q.x + 0.5) * T + (hash(q.seed || 1, 3, 71) - 0.5) * q.r * T * 0.5, my = (q.y + 0.5) * T + (hash(q.seed || 1, 5, 72) - 0.5) * q.r * T * 0.4, goneM = []; if (grid[Math.floor(my / T) * GW + Math.floor(mx / T)] < 2) { mx = (q.x + 0.5) * T; my = (q.y + 0.5) * T; }
+        w.around(mx, my, function (p) { if (Math.hypot(p.x - mx, p.y - my) < 80) goneM.push(p); }); goneM.forEach(w.removeProp);
+        var mName = IMAGES.burialMound ? 'burialMound' : IMAGES.graveMound_1 ? 'graveMound' : kit.PROPS.cairn ? 'cairn' : null; if (mName) { w.addProp({ name: mName, x: mx, y: my, s: 1, r: 16, v: 0 }); q.mound = { x: mx, y: my }; }
+        [[-58, 24], [52, 30], [10, -46]].forEach(function (o3, k) { var bn = IMAGES.boundaryStone_1 ? 'boundaryStone' : kit.PROPS.cairn ? 'cairn' : null; if (bn) w.addProp({ name: bn, x: mx + o3[0], y: my + o3[1], s: 1, r: 6, v: k % 3 }); });
       }
       if (q.feat === 'meadow') { var cx = (q.x + 0.5) * T, cy = (q.y + 0.5) * T, rr = q.r * T * 0.42, gone = []; w.eachProp(function (p) { if (p.kind === 'tree' && Math.hypot(p.x - cx, p.y - cy) < rr) gone.push(p); }); gone.forEach(w.removeProp); n.cleared = gone.length; }   /* a wide meadow: the middle of the island open */
     });
@@ -9401,7 +9420,7 @@ function drawH(c, x, y, e, low, open, C, fx) {   // fx: the room's south face th
   if (e.t === 'door' && !low) {
     ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.3 });
     ink(c, rect(x0 - 0.5, yb - h - cp, T + 1, cp + 4), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });   // the lintel
-    if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
+    if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else if (m.tex === 'elmBoards') BuildElm.door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
     if (e.st && !open) { c.save(); c.translate(x0 + 4, yb - h + 4); scars(c, { tex: 'planks' }, T - 8, h - 4, seed + 3, e.st); c.restore(); }   // a locked door under the axe
     return;
   }
@@ -9461,6 +9480,8 @@ function drawPost(c, x, y, p, C) {
     stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - hb + 5]], 'rgba(150,140,128,0.35)', 0.6); stroke(c, [[px + 1.4, py - hb * 0.3], [px + 1.6, py - hb * 0.62], [px + 0.9, py - hb * 0.7]], 'rgba(0,0,0,0.5)', 0.6);
     return;
   }
+  if (m.tex === 'bigLogs') { BuildLogs.ends(c, m, px, py, h, seed); return; }   /* a big-log wall's corner: the cut ends of its logs (Colin, AD's) */
+  if (m.tex === 'elmBoards') { BuildElm.post(c, m, px, py, h, seed); return; }   /* an elm wall's: a squared post, the sill and the plate pegged into it */
   var pd = stoneWall(m) ? 0 : DEPTH.post.proud;   /* (standing proud of the wall's foot, 2026-10-22: the depth board) */
   ink(c, [[px - w / 2, py + pd], [px - w / 2 + 0.3, py - h], [px + w / 2 - 0.3, py - h], [px + w / 2, py + pd]], m.dark, { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
   if (pd) { c.fillStyle = 'rgba(255,240,200,0.28)'; c.fillRect(px - w / 2 + 0.6, py - h + 1, w * DEPTH.post.lit, h + pd - 2); }   // its lit west face
@@ -14541,6 +14562,7 @@ if (typeof module !== 'undefined') module.exports = Pier;
   // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
   function rankOf(q, d) {
     var r = RANK[q.l];
+    if (q.l === 'carryLog') return d >= 2 && d <= 4 ? -1 : 11;   /* the log on his right shoulder: behind him when he faces west, north-west or north (Colin, AD, 2026-11-10) */
     if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 3.5; }      // the bow is in the left hand; the far side under the armour and the cloak, over the tunic and the dress (2026-10-20)
     if (r == null) return 11;
     if (r >= 9) return d <= 3 ? r : 3.6 + (r - 9);
@@ -18813,7 +18835,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function godiMake() {                    /* whoever leads the village's blót: a woman of the first village, not Old Aslak (a gydja; mine, who she is the lore's) */
     if (SCENE) return; var f = folk.filter(function (q) { return q.vi === 0 && !q.aslak && !q.child && WOMEN.indexOf(q.name) >= 0 && !q.dead; })[0] || folk.filter(function (q) { return q.vi === 0 && !q.aslak && !q.child && !q.dead; })[0]; if (f) { f.godi = true; f.name = 'Hallveig'; }   /* Hallveig, the village's gyðja, who keeps the stones (Alistair, LD's proposal, person.hallveig, LORE?) */
     var fv = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.arch === 'fishing' && (q.v.ring || 0) === 0; }), fvT = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.role === 'fisher'; })[0], fv1 = fvT || fv.filter(function (q) { return q.v.isle !== villages[0].isle; })[0] || fv[0], fm = fv1 ? folk.filter(function (q) { return q.vi === fv1.i && q.role === 'fisher' && !q.dead && !q.child; })[0] || (fvT ? folk.filter(function (q) { return q.vi === fv1.i && !q.dead && !q.child; })[0] : null) : null; if (fm) { fm.name = 'Gamli'; fm.fishTeacher = true; }   /* (chapter 1: on his own island, Tangholm, where the world has one: Robin, 2026-11-10) */
-    var sv1 = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.role === 'hamlet'; })[0], jr = sv1 ? folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead && WOMEN.indexOf(q.name) >= 0; })[0] || folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead; })[0] : null; if (jr) { jr.name = 'Jorunn'; jr.trader = true; }   /* Jorunn the salt-wife, Saltvik's trader (Alistair, LD's person.jorunn; her barter is step 4) */   /* the fisherman who teaches fishing, in a fishing hamlet of home water, off the big island where there is one (Robin, 2026-10-26; Gamli, Alistair, LD's, LORE?) */
+    var sv1 = villages.map(function (v, i) { return { v: v, i: i }; }).filter(function (q) { return q.v.role === 'hamlet'; })[0], jr = sv1 ? folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead && WOMEN.indexOf(q.name) >= 0; })[0] || folk.filter(function (q) { return q.vi === sv1.i && !q.child && !q.dead; })[0] : null; if (jr) { jr.name = 'Jorunn'; jr.trader = true; if (WOMEN.indexOf(jr.name0 || '') < 0 && !jr.womanFig) { var jsp = lib.folkSpec('villager', kit.rng(771)); jsp.clothes = 3; jsp.beard = 0; jr.fig = lib.makeFigure(jsp); jr.womanFig = 1; } }   /* (the salt-wife is a woman in look whoever the hamlet's pick was) */   /* Jorunn the salt-wife, Saltvik's trader (Alistair, LD's person.jorunn; her barter is step 4) */   /* the fisherman who teaches fishing, in a fishing hamlet of home water, off the big island where there is one (Robin, 2026-10-26; Gamli, Alistair, LD's, LORE?) */
   }
   function godiTalk(f) {
     var L, k;
@@ -21717,7 +21739,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function pullGrass(o) {                 /* the tuft comes up and is gone (Robin, 2026-10-16); it grows back where it stood after GT.regrowDays (mine) */
     if (o.is === 'flax') yieldDrop('flax', o.x, o.y + 10, 2); else if (o.is === 'roseroot') yieldDrop('roseroot', o.x, o.y + 10, 1); else yieldDrop('fiber', o.x, o.y + 10, BUSH_FIBER); chip(o.x, o.y, 6, '#8a9a4a', 7, 60); sfx('pick');
-    removeProp(o); decals.push({ k: 'grass', x: o.x, y: o.y, name: o.name, s: o.s, v: o.v, day: day.n });
+    removeProp(o); decals.push({ k: 'grass', x: o.x, y: o.y, name: o.name, s: o.s, v: o.v, day: day.n, is: o.is || undefined });
   }
   function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360 * (runeHas('greenThumb') ? runeN('greenThumb', 'regrowK') || 1 : 1); if (runeHas('greenThumb')) { sugarT = runeN('greenThumb', 'last') || 120; note('Sugar rush'); } sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
@@ -24101,7 +24123,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function beesTick(dt) { var P = hero(); for (var i = bees.length - 1; i >= 0; i--) { var be = bees[i]; be.t += dt; be.life -= dt; var tx = P.x - be.x, ty = P.y - be.y, dl = Math.hypot(tx, ty) || 1; be.x += (tx / dl * 70 + Math.cos(be.t * 7 + be.a) * 40) * dt; be.y += (ty / dl * 50 + Math.sin(be.t * 6 + be.a) * 30) * dt; be.cd = (be.cd || 0) - dt; if (dl < 12 && be.cd <= 0) { if (!ADMIN.immortal) P.hp = Math.max(1, P.hp - 1); P.flash = 0.5; be.cd = 2; } if (be.life <= 0 || fireNear(be.x, be.y, 60)) bees.splice(i, 1); } }
   function regrowTick() {                   // each new day the stumps old enough become saplings that grow up
     decals = decals.filter(function (d) { return !(d.k === 'rubble' && day.n - (d.day || 0) >= 3); });   /* (a broken rock's rubble is gone after three days) */
-    Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; if (st.k === 'grass') { var gp = { name: st.name, x: st.x, y: st.y, s: st.s || 1, r: 0, v: st.v || 0, kind: World.KIND[st.name] || 'bush', leanDir: 1 }; gp.max = gp.hp = (World.HP[st.name] || 1) * (0.7 + 0.6 * gp.s); w.addProp(gp); delete gone[propKey(gp)]; return gp; } var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
+    Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !(kit.PROPS[st.name] || World.IMAGES[st.name + '_1'])) return null; if (st.k === 'grass') { var gp = { name: st.name, x: st.x, y: st.y, s: st.s || 1, r: 0, v: st.v || 0, kind: World.KIND[st.name] || 'bush', leanDir: 1 }; if (st.is) gp.is = st.is;   /* (flax and roseroot grow back as flax and roseroot) */ gp.max = gp.hp = (World.HP[st.name] || 1) * (0.7 + 0.6 * gp.s); w.addProp(gp); delete gone[propKey(gp)]; return gp; } var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
   }
   /* Blood on the ground (2026-10-14): a wounded deer leaves a trail of drops and a pool where it stands (the engine's api.onBlood);
      they are decals among the stumps, aged by bloodTick, gone after BLOOD_T seconds, never saved, at most BLOOD_MAX of them. */
@@ -25555,7 +25577,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      seconds, so the engine carries only the islands round him. Boar, deer and adder everywhere; moose and bear only on islands
      of 80 tiles' radius or more outside home water (distance from home sets how hard: Robin). */
   var BEAST_NEAR = 1100, BEAST_FAR = 2600, BEAST_HOLD = 40, isleLive = {}, isleTickT = 0;
-  function isleBeastKinds(q) { var ks = ['boar', 'deer', 'snake']; return ks; }   /* the moose and the bear saved for later (Robin, 2026-10-26) */
+  function isleBeastKinds(q) { var ks = ['boar', 'deer', 'snake']; if (q && q.res === 'deer') ks.push('deer', 'deer'); return ks; }   /* (an island with more deer: three herds' worth, chapter 1) */   /* the moose and the bear saved for later (Robin, 2026-10-26) */
   function oldManPlace(i) {   /* the Old Man (Robin, 2026-11-10): a named old bear on one island round, old and weakened and still a miniboss: six times a wolf's health, two blows fell an unarmoured man, slower than a bear in his prime; once dead he does not come back */
     if (seen.oldManDead) return; placeIsle = i; var e = placeAnimal('bear', 300, null, false); placeIsle = null; if (!e) return;
     e.isle = i; e.oldMan = true; e.name = 'THE OLD MAN'; e.hp = e.maxHp = Math.round(lib.animalSpec('wolf').hp * OLD_MAN.hpWolves); e.cfg.dmg = OLD_MAN.dmg; e.cfg.speed *= OLD_MAN.speedK; e.wander.r = OLD_MAN.range;
@@ -25752,7 +25774,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
       if (B.ruin) drawDebrisAll(c, hw, hh);     // what a fallen or a burnt roof left on the floor
       // stumps where trees stood
-      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue; if (dc.k === 'blood') { drawBlood(c, dc); continue; } if (dc.k === 'grass') continue; if (dc.k === 'rubble') { Gather.drawRubble(c, dc); continue; } if (dc.k === 'litter') { var ls = sprite(dc.name, dc.v); c.drawImage(ls.cv, dc.x + ls.l, dc.y * K + ls.t, ls.w, ls.h); continue; }
+      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue; if (dc.k === 'blood') { drawBlood(c, dc); continue; } if (dc.k === 'grass') { if (World.IMAGES[dc.name + '_picked_1']) { var pks = sprite(dc.name + '_picked', dc.v); if (pks && pks.cv) c.drawImage(pks.cv, dc.x + pks.l, dc.y * K + pks.t, pks.w, pks.h); } continue; }   /* (a pulled plant's stub where Colin, AD made one: flax, roseroot) */ if (dc.k === 'rubble') { Gather.drawRubble(c, dc); continue; } if (dc.k === 'litter') { var ls = sprite(dc.name, dc.v); c.drawImage(ls.cv, dc.x + ls.l, dc.y * K + ls.t, ls.w, ls.h); continue; }
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
         c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
