@@ -47,7 +47,7 @@ function spotHit(G, o, t, hero) {              // does a blow from where the her
 function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.round(o.x) + 1, Math.round(o.y), 4) * 6.283; }
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
-var TREE_WOOD = { oak: 14, elm: 14, oldPine: 16, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
+var TREE_WOOD = { oak: 14, elm: 12, oldPine: 16, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
 function treeLen(s, o) { return s.h * (s.fixed ? 1 : (o.s || 1)) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {

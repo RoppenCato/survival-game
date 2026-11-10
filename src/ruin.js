@@ -28,7 +28,7 @@
    MENDING (DEF.mend) costs a share of the piece's own price; the game allows it only in a place you hold. */
 var Ruin = (function () {
 'use strict';
-var TEX = ['logs', 'planks', 'wattle', 'blocks', 'turf', 'frame', 'ashlar'];          // Build.WALLS, in its order
+var TEX = ['logs', 'planks', 'wattle', 'blocks', 'turf', 'frame', 'ashlar', 'logs', 'planks'];   /* (7 big logs break as logs, 8 elm boards as planks) */          // Build.WALLS, in its order
 var ROOFN = ['turf', 'thatch', 'shingles', 'tiles', 'slate', 'none'];                 // Build.ROOFS, in its order
 var YARDS = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 };
 var DEF = {

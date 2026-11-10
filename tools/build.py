@@ -122,7 +122,7 @@ def item_icons():
     d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}
     if not os.path.isdir(d): return 'null'
     for fn in sorted(os.listdir(d)):
-        m = re.match(r'^(\w+?)_(wood|metal|flint)\.png$', fn)
+        m = re.match(r'^(\w+?)_(wood|metal|flint|elm)\.png$', fn)
         if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn + '?v=' + sheet_tag(os.path.join(d, fn))
     return json.dumps(out)
 SRC['__ICONS__'] = item_icons()

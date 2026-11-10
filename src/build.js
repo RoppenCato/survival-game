@@ -10,6 +10,211 @@
 var Build = (function () {
 'use strict';
 var T = 32, TS = 24, K = 0.75, LINE = '#231a16';
+/* build_logs.js: the old pine's thick logs as building pieces (Colin, AD, 2026-11-10; Robin, chapter 1: log walls and floors "thicker and
+   more loggy", from the old pine's big logs). Drawn in code like every wall and floor (one small file, global BuildLogs, also
+   module.exports), in Build's own units (a tile 32 across, 24 deep; a wall 40 high). No pictures, no memory.
+   - A wall: a new WALLS entry { name: 'Big logs', face: '#7a6250', top: '#94785e', dark: '#4a382c', tex: 'bigLogs' }. In Build's face(), for
+     m.tex === 'bigLogs', call BuildLogs.face(c, m, x, y, w, h, seed, vertical) inside the face's clip (as BuildDetail is called). Round
+     logs about 0.45 m thick (9 units: four and a half to a storey, against today's 'Logs' at 5.4), each lit on its upper curve and dark
+     under it, moss pressed into the joints, the bark in long checks, now and then a knot. Its pattern follows the world's x, so a long wall
+     runs on across its tiles without a seam.
+     The cap: for 'bigLogs' Build's cap() can draw as for 'logs' (the line along it).
+   - Where a wall ends or turns, the log ends stand out: BuildLogs.ends(c, m, x, yb, h, seed) draws a column of cut ends, pale with
+     their rings, centred on x, from the wall's foot (yb) up its height h. Call it after the wall at a room's corners, as the
+     corner posts are drawn.
+   - A floor: a new FLOORS entry { name: 'Split logs', tile: 'logs' }. For tile 'logs' call BuildLogs.floor(c, x, y, w, h, seed) for
+     the tile's rectangle in place of the plain fill: split logs laid flat side up along the x, three to a tile, their split faces pale
+     with the adze's marks, rounded dark where the log curves away, a dark gap between.
+   Composite only (fills and strokes); nothing reads a pixel. */
+var BuildLogs = (function () {
+  'use strict';
+  var INK = '#231a16';
+  function hs(a, b) { var x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); }
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), r = ((pa >> 16) & 255) + ((((pb >> 16) & 255) - ((pa >> 16) & 255)) * t),
+      g = ((pa >> 8) & 255) + ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t), bl = (pa & 255) + (((pb & 255) - (pa & 255)) * t);
+    return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(bl) + ')';
+  }
+  var LH = 9;                                            // a log's height on the face, in Build's units
+  function wob(x, row) { return Math.sin(x * 0.11 + row * 1.7) * 0.5 + Math.sin(x * 0.037 + row * 4.1) * 0.6; }   // follows the world's x: no seam between tiles
+  function face(c, m, x, y, w, h, seed, vertical) {
+    var n = Math.ceil(h / LH) + 1, i, k, base = m.face || '#7a6250';
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = '#4f5a34'; c.fillRect(x, y, w, h);                               // the moss in the joints shows where the logs part
+    for (i = 0; i < n; i++) {
+      var yb = y + h - i * LH, tone = (hs(i * 3.1 + 0.7, 2.2) - 0.5) * 0.16, col = mix(base, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+      var x0 = x - 1, x1 = x + w + 1, st = 3, top = [], bot = [];
+      for (k = 0; k <= Math.ceil((x1 - x0) / st); k++) { var px = Math.min(x1, x0 + k * st); top.push([px, yb - LH + 0.9 + wob(px, i) * 0.45]); bot.push([px, yb - 0.5 + wob(px, i + 9) * 0.35]); }
+      var poly = top.concat(bot.slice().reverse());
+      c.beginPath(); poly.forEach(function (p, j) { j ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); c.closePath(); c.fillStyle = col; c.fill();
+      // the round: a lit band along the upper curve, a dark one under it
+      c.save(); c.clip();
+      var gr = c.createLinearGradient(0, yb - LH, 0, yb); gr.addColorStop(0, 'rgba(255,240,215,0.0)'); gr.addColorStop(0.1, 'rgba(255,240,215,0.32)'); gr.addColorStop(0.3, 'rgba(255,240,215,0.1)');
+      gr.addColorStop(0.55, 'rgba(0,0,0,0)'); gr.addColorStop(0.85, 'rgba(30,18,10,0.3)'); gr.addColorStop(1, 'rgba(30,18,10,0.45)'); c.fillStyle = gr; c.fillRect(x - 1, yb - LH - 1, w + 2, LH + 2);
+      // the bark: long checks along the log, darker; a short pale scar now and then
+      c.lineCap = 'round';
+      for (k = 0; k < 4; k++) {
+        var cx = x + ((hs(i + 11, k) * 3 + Math.floor(x / 23)) % 1) * w, len = 6 + hs(i, k + 5) * 9, cy = yb - LH * (0.3 + 0.45 * hs(i + 2, k + 1));
+        c.strokeStyle = 'rgba(40,26,18,0.55)'; c.lineWidth = 0.55; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + len, cy + (hs(k, i) - 0.5) * 0.6); c.stroke();
+      }
+      if (hs(i * 7 + Math.floor(x / T_), 3) < 0.28) {                               // a knot
+        var kx = x + 4 + hs(i, 9 + Math.floor(x / T_)) * (w - 8), ky = yb - LH * 0.5;
+        c.fillStyle = mix(base, '#000000', 0.38); c.beginPath(); c.ellipse(kx, ky, 1.6, 1.1, 0, 0, 7); c.fill();
+        c.strokeStyle = 'rgba(40,26,18,0.5)'; c.lineWidth = 0.45; c.beginPath(); c.ellipse(kx, ky, 3, 1.9, 0, 0.3, 2.9); c.stroke();
+      }
+      if (hs(i * 5 + Math.floor(x / T_), 13) < 0.2) {                               // a pale patch where the bark came away
+        var sx = x + 3 + hs(i, 19 + Math.floor(x / T_)) * (w - 10); c.fillStyle = 'rgba(214,190,150,0.55)'; c.beginPath(); c.ellipse(sx, yb - LH * 0.62, 3.2, 1.0, 0, 0, 7); c.fill();
+      }
+      c.restore();
+      c.strokeStyle = INK; c.globalAlpha = 0.55; c.lineWidth = 0.6; c.beginPath(); bot.forEach(function (p, j) { j ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); c.stroke(); c.globalAlpha = 1;   // the joint's line under each log
+    }
+    c.restore();
+  }
+  var T_ = 32;
+  function ends(c, m, x, yb, h, seed) {                  // a corner's column of cut ends
+    var n = Math.ceil(h / LH), i, wood = '#c9a878', ring = '#a8844e';
+    for (i = 0; i < n; i++) {
+      var cy = yb - (i + 0.5) * LH, r = LH * 0.56 + (hs(seed + i, 1) - 0.5) * 0.6, cx = x + (hs(seed, i) - 0.5) * 1.2;
+      c.fillStyle = m.dark || '#4a382c'; c.beginPath(); c.ellipse(cx, cy, r * 0.62 + 0.8, r + 0.8, 0, 0, 7); c.fill();          // the bark round the end
+      c.fillStyle = mix(wood, '#000000', (hs(seed + i, 3) - 0.3) * 0.18); c.beginPath(); c.ellipse(cx, cy, r * 0.62, r, 0, 0, 7); c.fill();
+      c.strokeStyle = ring; c.lineWidth = 0.45; c.beginPath(); c.ellipse(cx, cy, r * 0.36, r * 0.58, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(cx, cy, r * 0.14, r * 0.22, 0, 0, 7); c.stroke();
+      c.strokeStyle = 'rgba(70,46,26,0.5)'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + r * 0.5, cy - r * 0.6); c.stroke();     // a drying check
+      c.strokeStyle = INK; c.lineWidth = 0.7; c.beginPath(); c.ellipse(cx, cy, r * 0.62 + 0.8, r + 0.8, 0, 0, 7); c.stroke();
+    }
+  }
+  function floor(c, x, y, w, h, seed) {                  // split logs laid flat side up along x, three to a 24-deep tile
+    var n = 3, bh = h / n, i, k;
+    c.fillStyle = '#3a2c22'; c.fillRect(x, y, w, h);                                // the gaps
+    for (i = 0; i < n; i++) {
+      var row = Math.round((y + i * bh) / bh), y0 = y + i * bh, tone = (hs(row * 1.3, 4) - 0.5) * 0.14, face_ = mix('#b0906a', tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+      var top = [], bot = [], st = 4;
+      for (k = 0; k <= Math.ceil(w / st); k++) { var px = Math.min(x + w, x + k * st); top.push([px, y0 + 0.6 + wob(px, row) * 0.3]); bot.push([px, y0 + bh - 0.6 + wob(px, row + 5) * 0.3]); }
+      var poly = top.concat(bot.slice().reverse());
+      c.beginPath(); poly.forEach(function (p, j) { j ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); c.closePath(); c.fillStyle = '#6a5038'; c.fill();   // the rounded bark edges
+      c.save(); c.clip();
+      c.fillStyle = face_; c.fillRect(x - 1, y0 + bh * 0.2, w + 2, bh * 0.62);                                         // the split face
+      c.fillStyle = 'rgba(255,245,225,0.16)'; c.fillRect(x - 1, y0 + bh * 0.2, w + 2, bh * 0.12);
+      c.strokeStyle = 'rgba(70,48,30,0.45)'; c.lineWidth = 0.5;
+      for (k = 0; k < 3; k++) {                                                       // the adze's marks, short and slanting
+        var ax = x + ((hs(row + 7, k) + Math.floor(x / 32) * 0.37) % 1) * (w - 4) + 2, ay = y0 + bh * (0.3 + 0.3 * hs(row, k + 3));
+        c.beginPath(); c.moveTo(ax, ay); c.quadraticCurveTo(ax + 1.2, ay + 0.8, ax + 2.6, ay + 1.4); c.stroke();
+      }
+      c.strokeStyle = 'rgba(60,40,24,0.35)'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(x, y0 + bh * 0.5 + wob(x, row) * 0.4); c.lineTo(x + w, y0 + bh * 0.5 + wob(x + w, row) * 0.4); c.stroke();   // the grain
+      if (hs(row * 3 + Math.floor(x / 32), 8) < 0.25) { var kx = x + 4 + hs(row, 2 + Math.floor(x / 32)) * (w - 8), ky = y0 + bh * 0.5; c.fillStyle = 'rgba(70,46,28,0.6)'; c.beginPath(); c.ellipse(kx, ky, 1.5, 0.9, 0, 0, 7); c.fill(); }
+      c.restore();
+      c.strokeStyle = INK; c.globalAlpha = 0.5; c.lineWidth = 0.55; c.beginPath(); bot.forEach(function (p, j) { j ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); c.stroke(); c.globalAlpha = 1;
+    }
+  }
+  var BuildLogs = { face: face, ends: ends, floor: floor, LOG_H: LH, WALL: { name: 'Big logs', face: '#7a6250', top: '#94785e', dark: '#4a382c', tex: 'bigLogs' }, FLOOR: { name: 'Split logs', tile: 'logs' } };
+  return BuildLogs;
+})();
+/* build_elm.js: the elm's building pieces (Colin, AD, 2026-11-10; chapter 1 item 7, Clive, GD: "finer, paler, wide sawn boards"). Drawn
+   in code like every wall and floor (one small file, global BuildElm, also module.exports), in Build's own units (a tile 32 across, 24
+   deep; a wall 40 high). No pictures, no memory. Composite only (fills and strokes); nothing reads a pixel.
+   - A wall: a new WALLS entry { name: 'Elm boards', face: '#c49a66', top: '#d4ae7c', dark: '#8c6440', tex: 'elmBoards' }. In Build's face(),
+     for m.tex === 'elmBoards', call BuildElm.face(c, m, x, y, w, h, seed, vertical) inside the face's clip (as BuildLogs and BuildDetail
+     are called). A stave wall: wide pale boards standing side by side, three to a tile (against 'Planks' at five, narrow and brown),
+     sawn straight and fine-grained, between a sill beam at the foot and a wall plate along the top, each board pegged to both. Its
+     pattern follows the world's x, so a long wall runs on across its tiles without a seam.
+     The cap: for 'elmBoards' Build's cap() can draw as for 'planks'.
+   - Corners: BuildElm.post(c, m, x, yb, h, seed) draws a squared corner post centred on x from the wall's foot (yb) up its height h, the
+     sill and the plate pegged into it. Call it at a room's corners, after the walls, as the corner posts are drawn.
+   - A floor: a new FLOORS entry { name: 'Elm boards', tile: 'elm' }. For tile 'elm' call BuildElm.floor(c, x, y, w, h, seed) for the
+     tile's rectangle in place of the plain fill: wide sawn boards along x, two to a tile, their ends staggered row by row (boards near three tiles long) with two pegs
+     at each end, the fine grain along them, a thin dark gap between.
+   - A door: BuildElm.door(c, x, y, w, h, open, seed), Build's door() signature, for a door in an elm wall: two pale elm boards, two dark
+     battens, iron strap hinges with a curl, an iron ring; open, it stands edge-on at the jamb as Build's does. */
+var BuildElm = (function () {
+  'use strict';
+  var INK = '#231a16';
+  function hs(a, b) { var x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); }
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), r = ((pa >> 16) & 255) + ((((pb >> 16) & 255) - ((pa >> 16) & 255)) * t),
+      g = ((pa >> 8) & 255) + ((((pb >> 8) & 255) - ((pa >> 8) & 255)) * t), bl = (pa & 255) + (((pb & 255) - (pa & 255)) * t);
+    return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(bl) + ')';
+  }
+  function tone(base, t) { return mix(base, t > 0 ? '#fff6e6' : '#2a1c12', Math.abs(t)); }
+  function line(c, x0, y0, x1, y1, col, lw) { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
+  function peg(c, x, y) { c.fillStyle = '#6e4e34'; c.beginPath(); c.arc(x, y, 0.75, 0, 7); c.fill(); c.fillStyle = 'rgba(255,240,215,0.35)'; c.beginPath(); c.arc(x - 0.25, y - 0.25, 0.3, 0, 7); c.fill(); }
+  var BW = 32 / 3, SILL = 4.6, PLATE = 3.6;              // a board's width, the sill's and the plate's height, in Build's units
+  function beam(c, m, x, y, w, h, row) {                 // a squared beam along x: lit top, shaded under, the grain along it
+    c.fillStyle = tone(m.dark || '#8c6440', 0.12); c.fillRect(x, y, w, h);
+    c.fillStyle = 'rgba(255,240,215,0.28)'; c.fillRect(x, y, w, Math.min(1, h * 0.25));
+    c.fillStyle = 'rgba(30,18,10,0.28)'; c.fillRect(x, y + h * 0.72, w, h * 0.28);
+    for (var k = 0; k < 2; k++) line(c, x, y + h * (0.35 + 0.22 * k), x + w, y + h * (0.35 + 0.22 * k) + 0.15, 'rgba(70,46,26,0.32)', 0.35);
+    line(c, x, y + h, x + w, y + h, INK, 0.6); line(c, x, y, x + w, y, 'rgba(35,26,22,0.6)', 0.5);
+  }
+  function face(c, m, x, y, w, h, seed, vertical) {
+    var base = m.face || '#c49a66', i, k;
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    var top = y + PLATE, bot = y + h - SILL, i0 = Math.floor(x / BW) - 1, i1 = Math.ceil((x + w) / BW) + 1;
+    for (i = i0; i <= i1; i++) {                         // the boards: by the world's x, so the wall runs on without a seam
+      var bx = i * BW, t = (hs(i * 1.7 + 0.3, 5.1) - 0.5) * 0.12;
+      c.fillStyle = tone(base, t); c.fillRect(bx, top, BW, bot - top);
+      c.fillStyle = 'rgba(255,244,222,0.30)'; c.fillRect(bx + 0.3, top, 0.9, bot - top);          // the lit edge (the light from the left)
+      c.fillStyle = 'rgba(60,36,20,0.20)'; c.fillRect(bx + BW - 1.4, top, 1.4, bot - top);         // the shade at the right edge
+      for (k = 0; k < 4; k++) { var gx = bx + 2 + (k + hs(i, k + 2) * 0.6) * (BW - 4) / 4; line(c, gx, top, gx + (hs(i, k) - 0.5) * 0.5, bot, 'rgba(120,80,44,0.28)', 0.3); }   // the fine straight grain
+      if (hs(i, 23) < 0.5) { var sy = top + 4 + hs(i, 24) * (bot - top - 10); for (k = 0; k < 3; k++) line(c, bx + 1.5, sy + k * 1.6, bx + BW - 2, sy + k * 1.6 + 0.9, 'rgba(120,80,44,0.12)', 0.4); }   // the saw's faint marks, now and then
+      if (hs(i, 31) < 0.16) { var ky = top + 6 + hs(i, 32) * (bot - top - 12), kx = bx + 3 + hs(i, 33) * (BW - 6); c.fillStyle = mix(base, '#3a2414', 0.45); c.beginPath(); c.ellipse(kx, ky, 0.7, 1.2, 0, 0, 7); c.fill(); }
+      line(c, bx + BW, top, bx + BW, bot, INK, 0.55);                                              // the joint
+    }
+    beam(c, m, x - 1, bot, w + 2, SILL, 0); beam(c, m, x - 1, y, w + 2, PLATE, 1);
+    for (i = i0; i <= i1; i++) { peg(c, i * BW + BW / 2, bot + SILL * 0.45); peg(c, i * BW + BW / 2, y + PLATE * 0.5); }   // each board pegged to the sill and the plate
+    c.restore();
+  }
+  function post(c, m, x, yb, h, seed) {                  // a squared corner post
+    var pw = 5.2, x0 = x - pw / 2, y0 = yb - h - 1.2, dark = m.dark || '#8c6440';
+    c.fillStyle = tone(dark, 0.1); c.fillRect(x0, y0, pw, h + 1.2);
+    c.fillStyle = 'rgba(255,240,215,0.3)'; c.fillRect(x0, y0, pw * 0.45, h + 1.2);
+    c.fillStyle = 'rgba(30,18,10,0.25)'; c.fillRect(x0 + pw * 0.72, y0, pw * 0.28, h + 1.2);
+    line(c, x0 + pw * 0.45, y0, x0 + pw * 0.45, yb, 'rgba(60,38,22,0.45)', 0.4);
+    for (var k = 0; k < 3; k++) line(c, x0 + 0.8 + k * 1.1, y0 + 1, x0 + 0.8 + k * 1.1 + 0.2, yb - 1, 'rgba(90,60,34,0.22)', 0.3);
+    peg(c, x, yb - SILL * 0.55); peg(c, x, y0 + PLATE * 0.6 + 1.2);
+    c.fillStyle = tone(dark, 0.2); c.beginPath(); c.moveTo(x0 - 0.6, y0); c.lineTo(x0 + pw + 0.6, y0); c.lineTo(x0 + pw, y0 - 1.4); c.lineTo(x0, y0 - 1.4); c.closePath(); c.fill();   // its top cut square, a little proud
+    c.strokeStyle = INK; c.lineWidth = 0.7; c.strokeRect(x0, y0, pw, h + 1.2);
+  }
+  function floor(c, x, y, w, h, seed) {                  // wide sawn boards along x, two to a 24-deep tile, ends staggered
+    var n = 2, bh = h / n, i, k, L = 88;
+    c.fillStyle = '#4a3624'; c.fillRect(x, y, w, h);                                              // the gaps
+    for (i = 0; i < n; i++) {
+      var row = Math.round((y + i * bh) / bh), y0 = y + i * bh, off = hs(row, 1) * L, j0 = Math.floor((x - off) / L) - 1, j1 = Math.ceil((x + w - off) / L) + 1;
+      for (var j = j0; j <= j1; j++) {
+        var bx = j * L + off, t = (hs(row * 3.1 + j, 4.4) - 0.5) * 0.12, col = tone('#c9a272', t);
+        c.save(); c.beginPath(); c.rect(x, y0 + 0.45, w, bh - 0.9); c.clip();
+        c.fillStyle = col; c.fillRect(bx + 0.35, y0 + 0.45, L - 0.7, bh - 0.9);
+        c.fillStyle = 'rgba(255,246,226,0.22)'; c.fillRect(bx + 0.35, y0 + 0.45, L - 0.7, bh * 0.14);   // the lit near edge
+        c.fillStyle = 'rgba(60,36,20,0.14)'; c.fillRect(bx + 0.35, y0 + bh * 0.8, L - 0.7, bh * 0.2 - 0.45);
+        for (k = 0; k < 3; k++) { var gy = y0 + bh * (0.28 + 0.22 * k) + (hs(row + j, k) - 0.5); line(c, bx + 1, gy, bx + L - 1, gy + (hs(j, k + 7) - 0.5) * 0.6, 'rgba(120,80,44,0.22)', 0.3); }   // the grain
+        if (hs(row * 7 + j, 9) < 0.18) { c.fillStyle = 'rgba(80,50,28,0.55)'; c.beginPath(); c.ellipse(bx + 6 + hs(row, j) * (L - 12), y0 + bh * 0.5, 1.2, 0.6, 0, 0, 7); c.fill(); }
+        line(c, bx + 0.35, y0 + 0.45, bx + 0.35, y0 + bh - 0.45, 'rgba(35,26,22,0.7)', 0.5);      // the board's end
+        peg(c, bx + 2, y0 + bh * 0.32); peg(c, bx + 2, y0 + bh * 0.68);
+        c.restore();
+      }
+      line(c, x, y0 + bh - 0.45, x + w, y0 + bh - 0.45, 'rgba(35,26,22,0.55)', 0.5);
+    }
+  }
+  function door(c, x, y, w, h, open, seed) {             // pale elm boards, two dark battens, strap hinges with a curl, a ring
+    if (open) { c.fillStyle = '#a07a50'; c.fillRect(x, y, 3.2, h); c.fillStyle = 'rgba(255,240,215,0.3)'; c.fillRect(x, y, 1.1, h); c.strokeStyle = INK; c.lineWidth = 0.7; c.strokeRect(x, y, 3.2, h); return; }
+    var nb = 2, bw = w / nb, i;
+    for (i = 0; i < nb; i++) {
+      var bx = x + i * bw; c.fillStyle = tone('#c49a66', (hs(seed + i, 3) - 0.5) * 0.12); c.fillRect(bx, y, bw, h);
+      c.fillStyle = 'rgba(255,244,222,0.3)'; c.fillRect(bx + 0.3, y, 0.9, h); c.fillStyle = 'rgba(60,36,20,0.2)'; c.fillRect(bx + bw - 1.3, y, 1.3, h);
+      for (var k = 0; k < 3; k++) line(c, bx + 2 + k * (bw - 4) / 2.4, y, bx + 2 + k * (bw - 4) / 2.4 + 0.3, y + h, 'rgba(120,80,44,0.26)', 0.3);
+      if (i) line(c, bx, y, bx, y + h, INK, 0.55);
+    }
+    [0.2, 0.7].forEach(function (t) {                    // the battens, and the strap hinges over them from the left, each ending in a curl
+      var by = y + h * t; c.fillStyle = '#8c6440'; c.fillRect(x + 1, by, w - 2, 2.6); c.fillStyle = 'rgba(255,240,215,0.25)'; c.fillRect(x + 1, by, w - 2, 0.6);
+      c.strokeStyle = INK; c.lineWidth = 0.45; c.strokeRect(x + 1, by, w - 2, 2.6);
+      c.strokeStyle = '#3a3a40'; c.lineWidth = 1.0; c.beginPath(); c.moveTo(x, by + 1.3); c.lineTo(x + w * 0.62, by + 1.3); c.stroke();
+      c.lineWidth = 0.8; c.beginPath(); c.arc(x + w * 0.62 + 1.1, by + 0.4, 1.1, 2.6, 7.4); c.stroke(); c.beginPath(); c.arc(x + w * 0.62 + 1.1, by + 2.2, 1.1, -1.1, 3.6); c.stroke();
+    });
+    c.strokeStyle = '#3a3a40'; c.lineWidth = 1.1; c.beginPath(); c.arc(x + w - 4.5, y + h * 0.48, 1.9, 0, 7); c.stroke(); c.fillStyle = '#2a2a30'; c.beginPath(); c.arc(x + w - 4.5, y + h * 0.4, 0.8, 0, 7); c.fill();
+    c.strokeStyle = INK; c.lineWidth = 0.7; c.strokeRect(x, y, w, h);
+  }
+  var BuildElm = { face: face, post: post, floor: floor, door: door, BOARD_W: BW,
+    WALL: { name: 'Elm boards', face: '#c49a66', top: '#d4ae7c', dark: '#8c6440', tex: 'elmBoards' }, FLOOR: { name: 'Elm boards', tile: 'elm' } };
+  return BuildElm;
+})();
 var WALLS = [
   { name: 'Logs', face: '#6e5540', top: '#8c6e52', dark: '#3e2d20', tex: 'logs' },      // the earth palette of the art direction (2026-10-07)
   { name: 'Planks', face: '#7d634a', top: '#9a7c5c', dark: '#4a3626', tex: 'planks' },
@@ -17,14 +222,17 @@ var WALLS = [
   { name: 'Stone', face: '#7e7f84', top: '#9a9ba0', dark: '#4f5058', tex: 'blocks' },
   { name: 'Turf', face: '#5d7a48', top: '#72915a', dark: '#3b5230', tex: 'turf' },
   { name: 'Timber frame', face: '#d8cfb8', top: '#6a5238', dark: '#4a3626', tex: 'frame' },     // the lowlands (2026-10-07): plaster panels between dark timbers
-  { name: 'Cut stone', face: '#a9a39a', top: '#c2bcb2', dark: '#6b655c', tex: 'ashlar' }        // dressed blocks in courses, the church's and the hall's
+  { name: 'Cut stone', face: '#a9a39a', top: '#c2bcb2', dark: '#6b655c', tex: 'ashlar' },       // dressed blocks in courses, the church's and the hall's
+  { name: 'Big logs', face: '#7a6250', top: '#94785e', dark: '#4a382c', tex: 'bigLogs' },       /* chapter 1 (Robin, 2026-11-10: "thicker and more loggy", from the old pine's timber; Colin, AD's BuildLogs) */
+  { name: 'Elm boards', face: '#c49a66', top: '#d4ae7c', dark: '#8c6440', tex: 'elmBoards' }    /* (the elm's: wide pale boards; Colin, AD's BuildElm) */
 ];
 // Floors go on any land tile, so they make paths, yards and decks round a house as well as the floor in it. The dock
 // (water: true) also goes on water beside land or another dock, and can be walked on.
 var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' },
   { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
   { name: 'Dock', tile: 'plank', water: true },
-  { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
+  { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true },
+  { name: 'Split logs', tile: 'logs' }, { name: 'Elm boards', tile: 'elm' }];   /* (12 and 13: drawn by BuildLogs.floor and BuildElm.floor over a plank tile, the page's floorDetail) */   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
 var STRAW_RIDGE = '#a48c4a';   // the straw cap sewn over a thatch ridge (Robin, 2026-10-23: no green turf on the ridge; the sod cap of 2026-10-20 is gone)
 var CFG = { wallH: 40, thick: 5, overhang: 10, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   /* (lean: a trial on the Destruction Editor's board; on by default for an hour on 2026-10-14 and taken back, Robin: a wall at an angle might look odd; the build cursor marks the edge instead) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
@@ -364,13 +572,15 @@ function face(c, m, x, y, w, h, seed, vertical) {
   } else if (m.tex === 'turf') {
     var th2 = 4.6, nt = Math.ceil(h / th2);
     for (i = 0; i < nt; i++) { var ty = y + h - (i + 1) * th2, tone4 = (hs(seed, i) - 0.5) * 0.14, pts = [[x - 1, ty + th2]], k; for (k = 0; k <= 8; k++) pts.push([x - 1 + (w + 2) * k / 8, ty + 0.8 + (hs(seed + i, k) - 0.5) * 1.6]); pts.push([x + w + 1, ty + th2]); ink(c, pts, mix(i % 2 ? m.face : m.top, tone4 > 0 ? '#ffffff' : '#000000', Math.abs(tone4)), { wob: 0, flat: true, noLine: true }); stroke(c, [[x, ty + th2 - 0.3], [x + w, ty + th2 - 0.3]], INK.faint, 0.6); for (k = 0; k < 4; k++) { var gx = x + 2 + hs(seed + i + 3, k) * (w - 4); stroke(c, [[gx, ty + 2], [gx + (hs(seed, k + i) - 0.5) * 2, ty - 1.5]], m.dark, 0.7, 0.8); } }
+  } else if (m.tex === 'bigLogs') { BuildLogs.face(c, m, x, y, w, h, seed, vertical);
+  } else if (m.tex === 'elmBoards') { BuildElm.face(c, m, x, y, w, h, seed, vertical);
   }
   c.restore();
 }
 // the cap: the top of a wall seen from above (plan), with the material's grain running along it
 function cap(c, m, x, y, w, h, seed, along) {
   ink(c, rect(x, y, w, h), m.top, { wob: 0.5, seed: seed + 50, flat: true, lw: 0.7, heavy: 1.2 });
-  if (m.tex === 'logs' || m.tex === 'planks') stroke(c, along ? [[x + 2, y + h / 2], [x + w - 2, y + h / 2]] : [[x + w / 2, y + 1], [x + w / 2, y + h - 1]], INK.faint, 0.6);
+  if (m.tex === 'logs' || m.tex === 'planks' || m.tex === 'bigLogs' || m.tex === 'elmBoards') stroke(c, along ? [[x + 2, y + h / 2], [x + w - 2, y + h / 2]] : [[x + w / 2, y + 1], [x + w / 2, y + h - 1]], INK.faint, 0.6);
   else if (m.tex === 'blocks') { var i; for (i = 6; i < (along ? w : h); i += 7) stroke(c, along ? [[x + i, y + 0.5], [x + i + 0.6, y + h - 0.5]] : [[x + 0.5, y + i], [x + w - 0.5, y + i + 0.6]], INK.faint, 0.6); }
 }
 function post(c, x, y, w, h, m, seed) {                              // a short fence post: a split timber with a lit side and a cut top
@@ -964,6 +1174,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;

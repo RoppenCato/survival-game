@@ -39,6 +39,7 @@ var KINDS = {
 var MATS = {
   wood: { name: 'Wooden', face: '#b98a5a', dark: '#8a5a3a', edge: '#e9cfa0', glow: '255,230,170', power: 0.7, grain: true },
   stone: { name: 'Stone', face: '#6e6a6a', dark: '#3f3b3c', edge: '#b9b4b0', glow: '220,220,230', power: 0.85 },   /* field stone on a haft: the first tools (chapter 0's; they were called flint until 2026-11-10, when flint became a thing of its own found on the beaches of the islands round: Robin) */
+  elm: { name: 'Elm', face: '#c9a36c', dark: '#8c6440', edge: '#ead2a4', glow: '255,230,170', power: 0.9, grain: true },   /* the elm bow (Robin, 2026-11-10: the better bow of chapter 1; wood is 0.7; the number mine) */
   flint: { name: 'Flint', face: '#4c484b', dark: '#2a2729', edge: '#cfc9c2', glow: '220,220,230', power: 0.95 },   /* knapped flint: chapter 1's tools and weapons, a step over stone and under copper (the number mine) */
   copper: { name: 'Copper', face: '#c8784a', dark: '#8a4a2a', edge: '#f0b48a', glow: '255,170,110', power: 1 },
   bronze: { name: 'Bronze', face: '#b8903f', dark: '#7a5a22', edge: '#efd27a', glow: '255,210,120', power: 1.15 },
@@ -242,7 +243,7 @@ function tintCanvas(im, tint) {
 function iconImage(c, it, s) {
   var set = SPR.imgs && (it.kind === 'sword' && it.mat === 'wood' && SPR.imgs.ashSword ? SPR.imgs.ashSword : SPR.imgs[it.kind]); if (!set) return false;   /* the Wooden Sword's own icon (Colin, AD's sword_ash, 2026-10-26) */
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
-  if (it.mat === 'flint' && ok(set.flint)) { var sf = (s || 14) * 1.42; c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(set.flint, -sf / 2, -sf / 2, sf, sf); c.restore(); return true; }   /* a flint thing's own icon (Colin, AD's <kind>_flint, 2026-11-10: one picture, no tint, turned as the others are) */
+  if ((it.mat === 'flint' || it.mat === 'elm') && ok(set[it.mat])) { var sf = (s || 14) * 1.42; c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(set[it.mat], -sf / 2, -sf / 2, sf, sf); c.restore(); return true; }   /* a flint thing's own icon (Colin, AD's <kind>_flint, 2026-11-10: one picture, no tint, turned as the others are) */
   if (!ok(wood) && !ok(metal)) return false;
   var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
   c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were

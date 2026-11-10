@@ -3052,6 +3052,7 @@ function make(kit, opts) {
      bounds (the fall, the trunk's length, the shadows, the fade when you stand behind it) grows with it; the planted scale (s)
      and the trunk's collision radius are as they were. A pine is about 125 units tall now, three heroes and a bit; it was 43, barely one. */
   function tile(t, gx, gy) {
+    if (!kit.TILES[t]) t = 'plank';   /* (a floor the kit has no tile for, the split logs and the elm boards: a plank tile under the page's own drawing) */
     if (!tiles[t]) { kit.setup(BASE); tiles[t] = []; for (var m = 0; m < kit.TILES[t].n; m++) tiles[t].push(kit.bakeTile(t, m)); }
     return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];
   }
