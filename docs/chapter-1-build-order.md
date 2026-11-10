@@ -1,0 +1,21 @@
+# Chapter 1: the order to build what is missing
+
+Set up 2026-11-10 from Robin's two rounds of answers. The list of what must be true is `docs/chapter-1-checklist.md`; this
+page is the order, as rungs: each is tried by itself and has a done-when before the next begins. All of it is built on main
+(the dev version); nothing here touches chapter 0's checklist unless a line says so. The numbers are mine, first settings.
+
+| # | The rung | Checklist | Waits on | Done when |
+| --- | --- | --- | --- | --- |
+| 1 | **The islands round and what lies on them.** The generator gives home water its islands with roles: the fisherman's (Gamli moves there), the trading hamlet, the yew island, and home sites that differ (a land feature, more of one resource, or an old ruin). Flint on every outer beach and none on the big island; wild flax on some; old pines on two and at the mountain's foot. | 3.1, 3.2, 3.3, 3.6, 2.4 | Nothing (stand-in pictures) | A script lists every island of ten seeds with its role and what grows there; each seed has the three special islands, flint on all outer beaches, flax and pines on at least two. |
+| 2 | **Flint gear.** The flint axe and pick, the flint sword and knife opened and tuned, flint arrows (five for a flint, a wood and a fibre, a quarter more damage) beside the wooden ones in the quiver. | 2.12, 2.13, 2.14 | Nothing (the flint kinds exist) | A bot fells and mines faster with flint than stone; the tests for blows and the bow print the new numbers; both arrows stack and shoot. |
+| 3 | **The old pine and the big log.** Felled only with a flint axe or better; one heavy log a tree, carried on the shoulder, laid in the boat or towed behind it; the sitting log, log walls and log floors on the Building board. | 2.18 | Colin, AD (the tree, the log, the pieces); stand-ins until then | A log felled on another island reaches home by boat; a room of log walls roofs itself. |
+| 4 | **The hamlet, the loom and the ship's price.** Barter on a board like Old Aslak's: flint, wolf pelts and deer leather in, salt and the loom's parts out. The loom at home weaves sailcloth from flax. Salt in the better dishes. The sail ship asks for sailcloth, a big log and a flint axe. | 2.16, 2.17, 2.19, 1.13 | Alistair, LD (the trader's words); Colin, AD (the loom) | A scripted run from nothing to the sail ship counts what had to be gathered and where; it visits at least three islands. |
+| 5 | **The wolf: blood, the stone, the skin.** Wolf's blood from the butcher's table. The claim stone laid flat, carved (E held), filled (one press), raised (E held), the place named. The cudgel knocks out only a wolf at low health. The wolf-skin cloak, hood and lined tunic. | 1.15, 1.8, 2.15 | Colin, AD (the stone's four states, the three garments); Derek, SD (the chisel) | The three acts play through in about twenty seconds and survive a save between each; wolves notice a man in wolf skin from less far in a test. |
+| 6 | **The yew island and the bear.** Yew and the yew bow. The lone bear: six times a wolf's health, two blows fell an unarmoured man; it keeps to its ground. Its pelt makes a rug and a cloak. | 3.7 | Colin, AD (yew, the bow, the rug, the cloak); the bear exists | A bot with wooden gear dies to it, one with flint and wolf skin and a yew bow can win; it never leaves its island. |
+| 7 | **The mountain.** The lookout opens the islands round on the map. Roseroot on the high rock and the healing drink. | 3.4, 2.20 | Colin, AD (roseroot) | Standing at the lookout draws the islands on the map; the drink heals. |
+| 8 | **Glimpses and marks.** The southern trader with copper goods at the hamlet now and then, a raided ruin on one island, the lore's rumours from villagers; `!` and `?` over Old Aslak, Hallveig and Gamli. | 3.5, 2.10, 2.11 | Alistair, LD (the trader, the ruin, rumours) | Each glimpse is met once in a scripted run; every quest shows its mark. |
+| 9 | **The whole chapter in one run, and the balance.** The scripted playthrough goes on from the blót to the sail out; what each step costs is weighed so the ship comes last; save and load, the error log and the frame rate checked. | 5.1 to 5.5 | Nothing | The run ends at sea past the swell with no error; then it is Robin's to play. |
+
+## What changed
+
+- 2026-11-10: set up.

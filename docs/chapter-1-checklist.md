@@ -1,7 +1,7 @@
 # Chapter 1, home water: the checklist
 
 **The chapter: Not started as a chapter** (chapter 0 is current). **Second draft, 2026-11-10**: what is already built (two rounds, 2026-10-29), what `docs/chapters.md` asks for, and
-Robin's answers to the questionnaire of 2026-11-10. The Not built items are the work ahead.
+Robin's answers to the questionnaire of 2026-11-10. The Not built items are the work ahead, in the order of `docs/chapter-1-build-order.md`.
 
 How the list works is in `docs/chapter-checks.md`: **To fix**, **Built** (built and tested by Clive, GD; Robin has not said
 yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits on Robin), and here also **Not built**.
@@ -25,7 +25,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
 | 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. **It needs sailcloth from your loom, a big log for the mast and flint tools** (Robin, 2026-11-10), so it comes when most of the big island and the islands near it are done. | The ship Built; its new cost Not built |
 | 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
-| 1.15 | **The first claim stone** at your home, of stone and a wolf's blood, no blót: laid flat, carved with E, filled with blood with E, raised with E; the place named; Arnor its only villager (Robin, 2026-11-10; D29). | The stone Built as a recipe (snake blood today); the three steps and the wolf's blood Not built |
+| 1.15 | **The first claim stone** at your home, of stone and a wolf's blood, no blót: laid flat, carved with E, filled with blood with E, raised with E; the place named; Arnor its only villager (Robin, 2026-11-10: carve held, fill one press, raise held). | The stone Built as a recipe (snake blood today); the three steps and the wolf's blood Not built |
 
 ## 2. What chapter 1 adds
 
@@ -46,7 +46,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.15 | **Wolf-skin gear**: a cloak, a hood and a lined tunic; a little more armor than leather each, and wolves notice you from less far. | Not built (art: Colin, AD) |
 | 2.16 | **Barter** at the trading hamlet: it takes flint, wolf pelts and deer leather; it gives salt and what a loom needs. | Not built (Old Aslak's board is the model) |
 | 2.17 | **The loom**, a new bench at home: sailcloth and more woven from **wild flax** gathered on the islands round. | Not built (art: Colin, AD) |
-| 2.18 | **The big-log tree** (D45): needs at least a flint axe; gives single, bigger logs for the mast, a sitting log, and thicker log walls and floors. | Not built (art: Colin, AD) |
+| 2.18 | **The old pines** (Robin's yes, 2026-11-10: on two of the islands round and a few at the mountain's foot; a log is carried and towed): the big-log tree needs at least a flint axe; gives single, bigger logs for the mast, a sitting log, and thicker log walls and floors. | Not built (art: Colin, AD) |
 | 2.19 | **Salt**: the better dishes ask for it. | Not built |
 | 2.20 | **The healing herb** from the mountain: a healing drink. | Not built |
 | 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |

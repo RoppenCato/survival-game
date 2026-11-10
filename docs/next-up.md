@@ -8,7 +8,7 @@ Last updated: 2026-11-10.
 
 ## Now (Clive, GD)
 
-1. Chapter 1's list is drafted with Robin's answers of 2026-11-10 (`docs/chapter-1-checklist.md`): about twenty items Not built. Next: Robin's word on D29 and D45, a build order, and the asks to Colin, AD and Alistair, LD.
+1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`, step 1 first (the islands round and what lies on them), on main only.
 2. Fix whatever Robin's next chapter 0 run finds.
 
 ## Waiting on Robin
@@ -27,7 +27,7 @@ Last updated: 2026-11-10.
 10. The error log empty after the run: Escape, Admin, download `errorlog.txt` (needs `npm start`) (3.2).
 11. The alpha's cap: I test it when the alpha is made (3.7); nothing for you yet.
 
-**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22, D29 and D45 for chapter 1.
+**To decide:** `docs/decisions.md`, D1 to D8 for chapter 0, D22 for chapter 1.
 
 ## Waiting on a studio
 
@@ -37,7 +37,9 @@ Last updated: 2026-11-10.
 | Colin, AD | The blót's ritual clips and props (the cut-scene uses stand-ins) | 2026-10-29 |
 | Colin, AD | Pictures for the cave mushrooms and angelica (stand-ins today) | 2026-10-29 |
 | Alistair, LD | 44 `LORE?` marks in the game's code: most have words since handoff 23 and only need the mark taken off; I sort which are left | 2026-10-31 |
-| Derek, SD | Nothing asked | |
+| Colin, AD | Chapter 1's new things (asked 2026-11-10): flint gear, the old pine and its log, log walls and floors, the loom, wild flax, the wolf-skin cloak, hood and tunic, the bear rug and cloak, the yew and the yew bow, roseroot, the claim stone lying, carved, reddened and standing, salt | 2026-11-10 |
+| Alistair, LD | Chapter 1's new people and names (asked 2026-11-10): the trading hamlet and its trader, the southern trader, the raided ruin, the yew island and its bear, the fisherman's island, lines for the claim stone and the loom | 2026-11-10 |
+| Derek, SD | Nothing asked yet (step 5's chisel and step 6's bear when they are built) | |
 
 ## After that
 

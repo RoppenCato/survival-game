@@ -22,13 +22,11 @@ Set up 2026-11-10. What I am doing now, and what waits on a studio, is in `docs/
 
 ## Chapter 1
 
-D10 to D28 were answered by Robin on 2026-11-10 in two rounds (`docs/chapters.md`, chapter 1's table). What is left:
+D10 to D29 and D45 were answered by Robin on 2026-11-10 (`docs/chapters.md`, chapter 1's table). What is left:
 
 | # | The choice | Mine |
 | --- | --- | --- |
 | D22 | **`leysingi`** for a freed thrall, and the three variants of each raid line (Alistair, LD's). | Take them as `in-game` under your rule of 2026-10-31; nothing to decide unless you dislike one. |
-| D29 | **The claim stone's three steps** (yours: laid flat, E to carve, E to fill with blood, E to raise): is it monotonous? | Keep your three steps, but make each a different act, done once and over in twenty seconds: **carve** is E held about four seconds with the chisel's ring and chips flying; **fill** is one press, the wolf's blood poured and the runes running red along the carving; **raise** is E held as he heaves it upright, then the place's name in the map's lettering. Arnor watches if he lives there. |
-| D45 | **The big-log tree**: which tree, and where does it grow? | Old pines, tall and thick: a stand on two of the islands round and a few at the mountain's foot, so the first log can be had on the big island and the mast's on a sail away. A log is a heavy thing: carried, and towed behind the boat. |
 
 ## Later chapters (nothing waits on these today)
 
