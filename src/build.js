@@ -956,13 +956,19 @@ function drawSmokeHole(c, x, yBase, a, t, o) {   /* o: { smithy, night 0..1, dri
   ink(c, [[x - w / 2 - 1.5, yBase - h - 2], [x + w / 2 + 1.5, yBase - h - 2.4], [x + w / 2 + 0.5, yBase - h - 4.4], [x - w / 2 - 0.5, yBase - h - 4]], '#5a4030', { wob: 0.5, seed: seed + 3, lw: 0.7, heavy: 1.3 });   // the plank hood
   c.restore();
   /* the smoke (Colin, AD's numbers, 2026-11-10: smoke from above is what says people live here): seven puffs on a five-second round, rising 42 units and leaning with the wind, each a pale body over a cooler under-puff so it has a form lit from the upper left; a smithy's thicker and darker; by night half as strong, the lowest puff warm from the fire under it */
-  var n = o.smithy ? 9 : 7, y0 = yBase - (h + 5) * SC, dr = o.drift != null ? o.drift : 14, nt = o.night || 0, ak = 1 - 0.5 * nt, body = o.smithy ? [150, 146, 140, 0.55] : [234, 230, 222, 0.46], under = o.smithy ? [90, 94, 104, 0.3] : [150, 158, 176, 0.22];
+  var n = o.smithy ? 9 : 7, y0 = yBase - (h + 5) * SC, dr = o.drift != null ? o.drift : 14, nt = o.night || 0, ak = 1 - 0.5 * nt, body = o.smithy ? [150, 146, 140, 0.55] : [234, 230, 222, 0.46], under = o.smithy ? [90, 94, 104, 0.3] : [150, 158, 176, 0.22], uo = 1.2;
+  if (o.thatch && !o.smithy) { under = [118, 126, 148, 0.34]; uo = 1.6; body = [234, 230, 222, 0.5]; }   /* (over pale thatch a darker cool edge carries it against the straw: Colin, AD, 2026-11-10) */
   if (nt > 0) body = [body[0] - 60 * nt, body[1] - 50 * nt, body[2] - 30 * nt, body[3]];
   for (i = 0; i < n; i++) { var u = ((t * 0.2 + i / n) % 1), px = x + Math.sin(t * 0.8 + i * 1.7) * 2.5 + u * dr, py = y0 - u * 42, r = (o.smithy ? 3 : 2.5) + u * (o.smithy ? 10 : 8);
-    c.fillStyle = 'rgba(' + under[0] + ',' + under[1] + ',' + under[2] + ',' + ((1 - u) * under[3] * ak).toFixed(3) + ')'; c.beginPath(); c.arc(px + 1.2, py + 1.2, r, 0, 7); c.fill();
+    c.fillStyle = 'rgba(' + under[0] + ',' + under[1] + ',' + under[2] + ',' + ((1 - u) * under[3] * ak).toFixed(3) + ')'; c.beginPath(); c.arc(px + uo, py + uo, r, 0, 7); c.fill();
     c.fillStyle = 'rgba(' + Math.round(body[0]) + ',' + Math.round(body[1]) + ',' + Math.round(body[2]) + ',' + ((1 - u) * body[3] * ak).toFixed(3) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
     if (nt > 0.3 && u < 0.16) { c.fillStyle = 'rgba(255,170,90,' + ((0.16 - u) * 2.2 * nt).toFixed(3) + ')'; c.beginPath(); c.arc(px, py + r * 0.4, r * 0.8, 0, 7); c.fill(); } }
   c.restore();
+}
+function drawSteam(c, x, y, t, drift) {   /* steam over a boiling salt pan (Colin, AD's numbers, 2026-11-10): six puffs on a three-second round, rising 30, a white body over a cool under-puff */
+  for (var i = 0; i < 6; i++) { var u = ((t / 3 + i / 6) % 1), px = x + Math.sin(t * 0.9 + i * 1.9) * 2 + u * (drift || 0), py = y - u * 30, r = 2 + u * 6;
+    c.fillStyle = 'rgba(160,170,186,' + ((1 - u) * 0.25).toFixed(3) + ')'; c.beginPath(); c.arc(px + 1.2, py + 1.2, r, 0, 7); c.fill();
+    c.fillStyle = 'rgba(242,242,238,' + ((1 - u) * 0.5).toFixed(3) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill(); }
 }
 function drawChimney(c, x, yBase, h, a, t) {
   var w = 9, i, sm = WALLS[3], seed = Math.round(x); c.save(); c.globalAlpha = a;
@@ -1214,6 +1220,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { roofAged: BuildRoof.aged, logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { roofAged: BuildRoof.aged, logs: BuildLogs, elm: BuildElm, detail: BuildDetail, window: BuildWindow, gate: BuildGate, DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, drawSteam: drawSteam, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;

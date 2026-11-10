@@ -1403,6 +1403,7 @@ __COMBAT__
     if (nfT === clock) return nfL; nfT = clock; nfL = []; var P = hero(), i;
     function add(f, torch) { if (Math.abs(f.x - cam.x) > 200 / cam.z + 260 || Math.abs(f.y * K - cam.y) > 125 / cam.z + 260) return; var fl = flick(nfL.length); nfL.push({ src: f, x: f.x, y: f.y, r: (f.lamp ? 58 : torch ? 170 : 145), lamp: !!f.lamp, torch: !!torch, lvl: f.lvl || 0, fl: fl }); }
     if (hearth) add(hearth); for (i = 0; i < B.items.length; i++) if ((isHearth(B.items[i]) || B.items[i].light) && !(B.items[i].lamp && B.items[i].name === 'lantern' && day.t > 1470 && day.t < 1740)) add(B.items[i]);   /* (a house's lantern goes out at midnight; the hall's torch, the gate's and the watch's burn on: the dark a raid wants, the Art Director's note of 2026-10-20) */
+    boilPans().forEach(function (p) { add(p); });   /* (the fire under a boiling salt pan) */
     if (torchHeld()) add({ x: P.x, y: P.y, lvl: P.lvl || 0 }, true);
     if (light() > 0.3) Combat.dbg().W.enemies.forEach(function (e) { if (e.watch && !e.dead && !e.asleep && e.awake === false) add(e.watch === 'walk' ? { x: e.x, y: e.y, lvl: 0 } : { x: e.x + 10, y: e.y, lvl: 0, lamp: true }, e.watch === 'walk'); });   /* (a watchman's torch; the gate watch's lantern) */
     blazeLights(function (q) { var n0 = nfL.length; add(q); if (nfL.length > n0) { nfL[n0].blaze = true; nfL[n0].big = q.big; } });   // a house on fire
@@ -7772,6 +7773,9 @@ __COMBAT__
   /* ---------- scene ---------- */
   var cam = { x: 0, y: 0, z: 1 };
   // The chimneys of a room's fireplaces: drawn after its roof (sort key sy, alpha a) and as tall as the storeys above.
+  function boilPans() {   /* the boiling salt pans of the villages in the world (the generator's props marked steam, Saltvik's: Colin, AD, 2026-11-10), kept on each village's plan */
+    var out = []; villages.forEach(function (v) { var V2 = v && v.V; if (!V2 || V2.ruin) return; if (!V2.boilL) V2.boilL = (V2.props || []).filter(function (p) { return p.steam; }).map(function (p) { return { x: p.x, y: p.y, lvl: 0 }; }); V2.boilL.forEach(function (p) { out.push(p); }); }); return out; }
+  function steamPans(items, hw, hh) { boilPans().forEach(function (p) { if (Math.abs(p.x - cam.x) > hw + 60 || Math.abs(p.y * K - cam.y) > hh + 80) return; items.push({ y: p.y + 3, f: function () { Build.drawSteam(ctx, p.x, p.y * K - 12, clock, (typeof wind !== 'undefined' && wind ? Math.cos(wind.a || 0) : 1) * 10); } }); }); }
   function chimneys(room, L, sy, a, dy) {
     B.items.forEach(function (it) {
       if (!it.chimney || (it.lvl || 0) !== L) return; var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), R = RI(L);
@@ -7784,7 +7788,7 @@ __COMBAT__
       if (hole || !(isHearth(it) || it.name === 'firePit' || livedIn) || (it.lvl || 0) !== L) return; var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), R = RI(L);
       if (!R || R.rooms[R.at(tx, ty)] !== room) return; var m = Build.ridgeMid(room, roofCfg(room, L)); if (!m) return; hole = true;
       var smithy = B.items.some(function (q) { return /^(forge|anvil|smithy)/.test(q.name || '') && (q.lvl || 0) === L && R.rooms[R.at(Math.floor(q.x / T), Math.floor(q.y / T))] === room; });
-      sceneItems.push({ y: sy, f: function () { Build.drawSmokeHole(ctx, m.x, m.y + dy, a, clock, { smithy: smithy, night: Math.max(0, Math.min(1, (light() - 0.3) / 0.5)), drift: (typeof wind !== 'undefined' && wind ? Math.cos(wind.a || 0) : 1) * 14 }); } });
+      sceneItems.push({ y: sy, f: function () { Build.drawSmokeHole(ctx, m.x, m.y + dy, a, clock, { smithy: smithy, thatch: roofCfg(room, L).roof === 1, night: Math.max(0, Math.min(1, (light() - 0.3) / 0.5)), drift: (typeof wind !== 'undefined' && wind ? Math.cos(wind.a || 0) : 1) * 14 }); } });
     });
   }
   var sceneItems = null;
@@ -7989,6 +7993,7 @@ __COMBAT__
         items.push({ y: (r.maxY + 1) * T + 1, f: function () { drawRoofCached(ctx, r, roofA[r.id], roofCfg(r), 0); } });
         sceneItems = items; chimneys(r, 0, (r.maxY + 1) * T + 2, roofA[r.id], 0);
       });
+      steamPans(items, hw, hh);
       if (BURN.length || lighting || B.ruin) pushFlames(items, hw, hh);
       sceneItems = items; upperFloor(items, L, here, hw, hh);
       for (i = 0; i < drops.length; i++) (function (d) { items.push({ y: d.y, f: function () { drawDrop(ctx, d); } }); })(drops[i]);

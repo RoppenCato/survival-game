@@ -12,7 +12,7 @@
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 4;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10); a save made under another should not keep its villages' walls
+var VERSION = 5;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -143,7 +143,7 @@ function make(seed, site, opts) {
   function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
   function tile(x, y) { return [(x + 0.5) * T, (y + 0.5) * T]; }
   var CALLINGS = ['farmer', 'farmer', 'fisher', 'smith', 'weaver', 'elder', 'thrall'];
-  function rollCalling() { var c = shore && R() < 0.35 ? 'fisher' : CALLINGS[Math.floor(R() * CALLINGS.length)]; return c; }   // a household's calling, rolled on its house so its inside fits it (the work thing by the calling, docs/interiors-plan.md)
+  function rollCalling() { var c = shore && R() < 0.35 ? 'fisher' : CALLINGS[Math.floor(R() * CALLINGS.length)]; return A.lone ? 'fisher' : c; }   // a household's calling, rolled on its house so its inside fits it (the work thing by the calling, docs/interiors-plan.md)
   function earthPatch(cx, cy, rx, ry, fill) {           // trodden earth as one shape: dabs on a close grid over an ellipse, solid in the middle, thinning to a ragged rim with islands of grass (the game's ground is a field of tiles: a lone dab is a lone tile, 2026-10-22). The rim thins in CLUSTERS of about a tile and a half, never one tile (Robin, 2026-10-22, through the Art Director): every cell of 48 units keeps or drops all its dabs together
     var sx, sy, cells = {}, CS = 48;
     function keepCell(x2, y2) { var ck = key(Math.floor((x2 + rx) / CS), Math.floor((y2 + ry) / CS)); if (cells[ck] == null) { var ccx = (Math.floor((x2 + rx) / CS) + 0.5) * CS - rx, ccy = (Math.floor((y2 + ry) / CS) + 0.5) * CS - ry, d = Math.hypot(ccx / rx, ccy / ry); cells[ck] = d <= 0.55 || R() <= fill * (1.15 - d); } return cells[ck]; }
@@ -250,7 +250,7 @@ function make(seed, site, opts) {
       if (LG >= 7) inH('crate', 0.55 + (nearOk ? 0 : 1), nearOk ? (Math.abs(Lc - nearW) > 1 ? cc(nearW) + side * 0.95 : cc(farW)) : cc(farW) - 0.9 * side, { loot: { berries: 2, fiber: 2 }, opt: true });   /* (the crate beside the barrel, not on it, and inside the walls: 2026-10-22) */
       var work = calling === 'weaver' ? 'loom' : calling === 'farmer' || calling === 'thrall' ? 'quern' : calling === 'fisher' || calling === 'fisherman' ? 'dryingRack' : calling === 'smith' ? 'workbench' : calling === 'guard' ? 'spearRack' : (R() < 0.5 ? 'quern' : 'shelf');
       inH(work, LG * 0.32 + 1, cc(nearOk ? nearW : farW), { opt: true, work: calling || null, bench: work === 'workbench' ? true : undefined });
-      var cupN = wealth > 0.55 ? (R() < 0.5 ? 'cupboard' : 'shelf') : null, cradle = nearOk && LG >= 6 && RD() < 0.35;   // a cradle at the foot of the parents' bed in a third of the houses, where a rich house keeps its cupboard (Robin, 2026-10-22: "Yes to both")
+      var cupN = wealth > 0.55 ? (R() < 0.5 ? 'cupboard' : 'shelf') : null, cradle = nearOk && LG >= 6 && RD() < 0.35 && !A.lone;   // a cradle at the foot of the parents' bed in a third of the houses, where a rich house keeps its cupboard (Robin, 2026-10-22: "Yes to both")
       if (cradle) inH('cradle', LG - 2.0, cc(nearW), { opt: true, r: 5 }); else if (cupN) inH(cupN, LG - 2.0, cc(nearOk ? nearW : farW), { opt: true });
       if (R() < 0.3) inH('stool', hA < LG * 0.5 ? hA + 1.2 : hA - 1.2, cc(hc), { seat: true, opt: true });   // a stool by the fire, on its far side when the fire stands nearer the door (it stood in the fire, 2026-10-22)
     } else if (BUILD[l.id].inside === 'store') {
@@ -295,7 +295,7 @@ function make(seed, site, opts) {
     // the door that is lit at night, an awning on the open-fronted buildings, a sign on the hall and the trading stores
     if (G.clutter && !V.ruin) {
       var wy = (l.y + l.h) * T;
-      l.wins.forEach(function (wx) { item('windowBox', (wx + 0.5) * T, wy + 4, { r: 0, wall: true }); });
+      if (!A.lone) l.wins.forEach(function (wx) { item('windowBox', (wx + 0.5) * T, wy + 4, { r: 0, wall: true }); });   // (no flower boxes on the old fisherman's hut)
       if (l.door === 's' && (l.big || l.id === 'house' || l.id === 'bath')) item(l.big && U.hall ? 'torchBracket' : 'lantern', l.dx * T - 6, wy + 2, { r: 0, wall: true, light: 1, lamp: true });   /* (a torch in a bracket at a hall's door, a lantern elsewhere: the night raid's light) */
       if (l.door === 's' && (l.id === 'store' || l.id === 'smithy' || l.id === 'boathouse')) item('awning', (l.dx < l.x + l.w / 2 ? (l.x + l.w - 0.6) : (l.x + 0.6)) * T, wy + 9, { r: 2 });
       if (l.door === 's' && ((U.hall && l.big) || (U.stores && l.id === 'store'))) item('sign', l.dx * T + T + 7, wy + 2, { r: 0, wall: true });
@@ -321,12 +321,14 @@ function make(seed, site, opts) {
       if (best) L.lots.push(best); return best;
     }
     var bigId = U.big, bs = bigId === 'house' ? houseSize('s') : size(bigId, 's', U.long), bigLot = null, shrink;
+    if (U.kind === 'hut') bs = { w: 4, h: 6 + (bs.h > 9 ? 1 : 0) };   // the fisherman's hut: small, six metres across and nine or ten long, its gable and door to the yard (2026-11-10: it was a farm's house)
     for (shrink = 0; shrink < 4 && !bigLot; shrink++) { bigLot = tryPlace({ id: bigId, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2) + (U.bigX || 0), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n', big: true }, 1); if (!bigLot && bs.w > 4) bs.w -= 2; }
     if (!bigLot) { C = old; return null; }
     var gxm = yx + Math.floor(yw / 2), hx0 = bigLot.x, hx1 = bigLot.x + bigLot.w;
     // the houses: beside the yard east and west, running back from it with their doors to it; south of it either side of the way in,
     // their doors to that way; and north, either side of the big building, deep, their gables south. A long yard takes two a side.
-    var nHouses = pickRange(R, U.houses, 0), slots = U.slots || ['e', 'w', 'se', 'sw', 'ne', 'nw'].concat(yh >= 11 ? ['e2', 'w2'] : []), order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si, usedSlot = {};
+    var nHouses = pickRange(R, U.houses, 0); if (U.kind === 'hut') nHouses = 0;   // (the fisherman's hut alone: pickRange never gives less than one, 2026-11-10)
+    var slots = U.slots || ['e', 'w', 'se', 'sw', 'ne', 'nw'].concat(yh >= 11 ? ['e2', 'w2'] : []), order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si, usedSlot = {};
     for (si = 0; si < order.length && placedHouses < nHouses; si++) {
       if (!U.full && R() < G.emptySlots && si < order.length - 1) continue;
       var sl = order[si], door = sl === 'e' || sl === 'e2' || sl === 'se' ? 'w' : (sl === 'w' || sl === 'w2' || sl === 'sw' ? 'e' : 's'), hs, lot = null, two = yh >= 11, below = U.compact ? 1 : Math.max(G.yardGap, G.gap);
@@ -348,7 +350,7 @@ function make(seed, site, opts) {
       if (ll.x < 1 || ll.y < 1 || ll.x + ll.w > U.w - 1 || ll.y + ll.h > U.h - 1) return; if (overlaps(ll, L.yard, G.yardGap - 1)) return; var i2; for (i2 = 0; i2 < L.lots.length; i2++) { if (L.lots[i2] === hl) continue; if (overlaps(ll, L.lots[i2], 1)) return; } L.lots.push(ll);
     });
     // the outbuildings: each near what it serves (a smithy at the edge for its fire; the store by the big house; the byre by a house)
-    var outs = (U.outs || ['store', 'byre', 'smithy', 'pit', 'bath']).slice(), nOut = pickRange(R, U.out, 0), placedOut = 0, oi;
+    var outs = (U.outs || ['store', 'byre', 'smithy', 'pit', 'bath']).slice(), nOut = pickRange(R, U.out, 0), placedOut = 0, oi; if (U.kind === 'hut') nOut = 0;   // (no outbuilding by the fisherman's hut: Robin via Clive, GD, 2026-11-10, the lore's one hut)
     if (story === 'smith' && outs.indexOf('smithy') >= 0 && U.kind === 'farm') { outs.splice(outs.indexOf('smithy'), 1); outs.unshift('smithy'); }
     if (U.stores) outs.unshift('store'); if (U.shore && !U.compact) outs.unshift('boathouse');
     var L0 = bigLot;
@@ -604,6 +606,7 @@ function make(seed, site, opts) {
     var U = { kind: A.hut ? 'hut' : A.chapel ? 'chapel' : 'farm', big: A.chapel ? 'church' : A.hut ? 'house' : 'longhouse', houses: A.houses, out: A.out, yard: A.yard, long: A.long, w: w, h: h, x: tx, y: ty, front: 's', index: 0, firePit: !A.chapel && !A.hut, well: !A.hut, stores: A.stores, shore: shore, church: A.chapel, chapel: A.chapel, table: true, zone: A.chapel ? 'private' : 'semi' };
     var L = ringUnit(U); if (!L) return; var u = stamp(L, U); nUnitsWanted = 1;
     focus = u.wc; V.yard = u.yard; V.lots.forEach(function (l) { hugRects.push(l); });
+    if (A.lone && shore === 's') fisherKit(ty + h - 4);   // the lone fisherman's shore: racks, nets, fish, kelp
     var L0 = u.big, gx = V.yard.x + Math.floor(V.yard.w / 2) + 0.5, side = R() < 0.5 ? 1 : -1;
     gateX = Math.floor(gx);
     if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = side > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= tx + 1 || backGateX >= tx + w - 2) backGateX = side > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= tx + 1 || backGateX >= tx + w - 2) backGateX = null; }
@@ -691,6 +694,19 @@ function make(seed, site, opts) {
      On the shore strip west of the racks: a stone-lined pool at the water's edge where the sea is let in to settle, two pans on their
      hearths (one boiling, its fire lit: the game adds the steam; one boiled down to its crust), the brine tub between, the salt in its
      baskets, the driftwood for the fires. Their own random stream: nothing else moves. For a place named Saltvik, or opts.salt. */
+  /* the lone fisherman's shore (2026-11-10, Colin, AD; Robin via Clive, GD: Gamli's place, "the lore says one hut, kelp, drying racks";
+     Tangholm is the kelp islet): his nets on their poles and a tangle of net, fish hung to dry under a rail, kelp spread to dry on a flat
+     rock and heaped above the tide line. Its own random stream. */
+  function fisherKit(ry) {
+    var RF = rngOf(seed * 19 + 5), fx = focus[0] / T, j = function () { return (RF() - 0.5) * 0.8; }, Y = V.yard, yb = Y ? Y.y + Y.h : ry - 6, yl = Y ? Y.x : fx - 3, yr = Y ? Y.x + Y.w : fx + 3;
+    prop({ name: 'dryingRack', x: (fx - 1.6 + j()) * T, y: (yb + 1.6) * T, solid: 6 }); prop({ name: 'dryingRack', x: (fx + 1.6 + j()) * T, y: (yb + 1.8) * T, solid: 6 });   // his two racks of split fish, below his yard
+    prop({ name: 'fishingNet', x: (yl - 1.6 + j()) * T, y: (yb - 1 + j()) * T, solid: 6 });                  // his nets on their poles beside the yard
+    prop({ name: 'netTangle', x: (yl - 0.4 + j()) * T, y: (yb + 0.6) * T, solid: 0 });
+    prop({ name: 'hangingFish', x: (yr + 1.4 + j()) * T, y: (yb - 1.2 + j()) * T, solid: 6 });               // fish hung under a rail
+    prop({ name: 'kelpRock', x: (fx + 4.5 + j()) * T, y: (ty + h - 1.5) * T, solid: 14 });                     // kelp spread to dry on a flat rock at the shore, and heaped above the tide line
+    prop({ name: 'kelpHeap', x: (fx + 1.5 + j()) * T, y: (ty + h - 1.9) * T, solid: 8 });
+    prop({ name: 'kelpHeap', x: (fx - 3.5 + j()) * T, y: (yb + 3.5 + j()) * T, solid: 8, v: 2 });             // a heap carried up toward the hut
+  }
   function saltWorks(ry) {
     V.saltWorks = true; var RS = rngOf(seed * 17 + 3), fx = focus[0] / T, j = function () { return (RS() - 0.5) * 0.8; }, wx = function (dx) { return (fx - dx + j()) * T; };
     prop({ name: 'seaPool', x: wx(9.5), y: (ty + h - 1.4) * T, solid: 26, under: true });   // (solid: its stones and water stop the feet, and nothing grows in it)
@@ -780,7 +796,7 @@ function make(seed, site, opts) {
   resample();
   var fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
   if (A.chapel && gateX != null) prop({ name: 'lychGate', x: (gateX + 0.5) * T, y: (ey1 + 0.02) * T });   // the churchyard's roofed gate
-  if (shore && !V.ruin && R() < 0.7) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : focus[0] / T - (V.saltWorks ? 17 : 9) + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : focus[1] / T; prop({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
+  if (shore && !V.ruin && (R() < 0.7 || A.lone)) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : focus[0] / T - (V.saltWorks ? 17 : 9) + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : focus[1] / T; prop({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
   if (fk === 'palisade' && !A.townwall) {              // a ring of sharpened stakes round the whole place. Since 2026-10-21 (the Art Director's step 2 notes, mine to build): a POLYGON of eight to twelve straight runs hugging the buildings (V.fence.poly), each corner a little off its even angle and a little outside the hugging ellipse (every unit's corner inside), the gate two tiles wide at the start of the run on the road, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (stake.mended: stake_new; the raid's weak run), banners either side of the gate; the stakes a tile apart (G.stakeStep)
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     hugRects.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
