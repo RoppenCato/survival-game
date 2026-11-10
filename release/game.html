@@ -21072,29 +21072,36 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function seaW(x, y) { return w.isWater(x, y) && !(w.fresh && w.fresh(x, y)); }   /* the sea's water, not a lake's or a river's: no gulls, seals or whales inland (Colin, AD, 2026-11-10) */
   /* The water birds (Colin, AD's out/waterbirds, 2026-11-10; Robin's yes, through him, to ducks and a swan in place of the gulls on fresh water): drakes and hens in twos to fives on every lake, a pair of whooper swans on the lake of an island named for them (Svanesey) and now and then one on another big lake. They paddle about, up-end to feed, swim off when the hero comes within three tiles and rest at night. Nothing is saved: they are where the lake is. The pictures are 65 px a metre, a third of a unit a pixel, drawn about the water point under the bird. */
-  var WBIRDS = null, wbWorld = null, WB_DIRS = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'];
+  var WBIRDS = null, wbWorld = null, wbRetry = 3, WB_DIRS = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'];
   function wbMake() {
-    WBIRDS = []; wbWorld = w; if (!w.inland || !SEA_IMG.drake_e_0) return; var m = null; try { m = wmap(); } catch (e0) {}
+    WBIRDS = []; wbWorld = w; if (!w.inland || !SEA_IMG.drake_e_0) { WBIRDS.named = true; return; } var m = null; try { m = wmap(); } catch (e0) {} WBIRDS.named = !!(m && m.isles && m.isles.some(function (qn) { return qn && qn.name; }));   /* (the names are given when the map is first prepared) */
     w.inland.forEach(function (q, qi) {
       if (q.kind !== 'lake') return; var hs = function (k) { var x = Math.sin((qi + 1) * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
       var nm = (m && m.isles && m.isles[q.isle] && m.isles[q.isle].name) || '', swans = /^Svan/.test(nm) ? 2 : (q.r > 7 * T && hs(1) < 0.5 ? 1 : 0), n = 2 + Math.floor(hs(2) * 4), i;
       function put(kind, k) { for (var t = 0; t < 14; t++) { var a = hs(k * 13 + t) * 6.283, d = (0.3 + hs(k * 17 + t + 5) * 0.45) * q.r, x = q.x + Math.cos(a) * d, y = q.y + Math.sin(a) * d * 0.87; if (wbWater(x, y)) { WBIRDS.push({ kind: kind, lake: q, x: x, y: y, a: a, tx: x, ty: y, wait: hs(k) * 4, feed: 0, sp: kind === 'swan' ? 6 : 6 + hs(k + 3) * 4, seed: k + qi * 31, moving: false }); return; } } }
       for (i = 0; i < n; i++) put(i % 2 ? 'duck' : 'drake', i + 1); for (i = 0; i < swans; i++) put('swan', 20 + i);
     });
+    /* the swan's isle always has its swans (Colin, AD, 2026-11-10: "the swan's isle without swans reads wrong"; mine to build, Robin may overrule): where an island named for them has no lake, the pair keeps to calm water close in on its own shore, within two tiles of the beach, slow and never far out; no ducks with them */
+    if (m && m.isles) w.isles.forEach(function (q, qi) {
+      var nm2 = (m.isles[qi] && m.isles[qi].name) || ''; if (!/^Svan/.test(nm2) || WBIRDS.some(function (b) { return b.kind === 'swan' && b.lake.isle === qi; })) return;
+      var k, best = null; for (k = 0; k < 24 && !best; k++) { var a = (k * 7 % 24) / 24 * 6.283 + 1.57, d; for (d = q.r * T * 0.4; d < q.r * T * 1.4; d += 12) { var x = q.x * T + Math.cos(a) * d, y = q.y * T + Math.sin(a) * d * 0.9; if (w.isWater(x, y) && !w.isLand(x, y) && !w.fresh(x, y)) { var x2 = x + Math.cos(a) * 30, y2 = y + Math.sin(a) * 30 * 0.9; if (w.isWater(x2, y2) && !w.isLand(x2, y2)) best = { x: x2, y: y2 }; break; } } }
+      if (!best) return; var home = { x: best.x, y: best.y, r: 56, isle: qi, sea: true };
+      for (k = 0; k < 2; k++) WBIRDS.push({ kind: 'swan', lake: home, x: best.x + k * 14 - 7, y: best.y + k * 5, a: k * 3, tx: best.x + k * 14 - 7, ty: best.y + k * 5, wait: 1 + k * 2, feed: 0, sp: 5, seed: 900 + k, moving: false });
+    });
   }
-  function wbWater(x, y) { return w.isWater(x, y) && !w.isLand(x, y) && w.fresh(x, y) === 1; }
+  function wbWater(x, y, b) { if (b && b.lake.sea) return w.isWater(x, y) && !w.isLand(x, y) && Math.hypot(x - b.lake.x, y - b.lake.y) < 64; return w.isWater(x, y) && !w.isLand(x, y) && w.fresh(x, y) === 1; }
   function wbTick(dt) {
-    if (inCave || SCENE) return; if (!WBIRDS || wbWorld !== w) wbMake(); if (!WBIRDS.length) return; var P = hero(), night = light() > 0.6;
+    if (inCave || SCENE) return; if (!WBIRDS || wbWorld !== w) wbMake(); else if (!WBIRDS.named && (wbRetry -= dt) < 0) { wbRetry = 3; wbMake(); }   /* (the islands' names come with the map, which is made a little after the world: until then the swan's isle is not known) */ if (!WBIRDS.length) return; var P = hero(), night = light() > 0.6;
     WBIRDS.forEach(function (b) {
       if (Math.abs(b.x - P.x) > 900 || Math.abs(b.y - P.y) > 700) return;
       var dh = Math.hypot(b.x - P.x, b.y - P.y), flee = dh < 96;
-      if (flee) { b.feed = 0; b.wait = 0; var fa = Math.atan2(b.y - P.y, b.x - P.x), fx = b.x + Math.cos(fa) * 70, fy = b.y + Math.sin(fa) * 70; if (wbWater(fx, fy)) { b.tx = fx; b.ty = fy; } else { var ca = Math.atan2(b.lake.y - b.y, b.lake.x - b.x); b.tx = b.x + Math.cos(ca) * 70; b.ty = b.y + Math.sin(ca) * 70; } }
+      if (flee) { b.feed = 0; b.wait = 0; var fa = Math.atan2(b.y - P.y, b.x - P.x), fx = b.x + Math.cos(fa) * 70, fy = b.y + Math.sin(fa) * 70; if (wbWater(fx, fy, b)) { b.tx = fx; b.ty = fy; } else { var ca = Math.atan2(b.lake.y - b.y, b.lake.x - b.x); b.tx = b.x + Math.cos(ca) * 70; b.ty = b.y + Math.sin(ca) * 70; } }
       if (b.feed > 0) { b.feed -= dt; b.moving = false; return; }
       if (b.wait > 0) { b.wait -= dt; b.moving = false; return; }
       var dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy);
-      if (d < 4) { b.moving = false; if (night) { b.wait = 6; return; } if (Math.random() < 0.3) b.feed = 2 + Math.random() * 2; else b.wait = 0.5 + Math.random() * 3; var a = Math.random() * 6.283, r = (0.25 + Math.random() * 0.5) * b.lake.r, nx = b.lake.x + Math.cos(a) * r, ny = b.lake.y + Math.sin(a) * r * 0.87; if (wbWater(nx, ny) && Math.hypot(nx - b.x, ny - b.y) < 260) { b.tx = nx; b.ty = ny; } return; }
+      if (d < 4) { b.moving = false; if (night) { b.wait = 6; return; } if (Math.random() < 0.3) b.feed = 2 + Math.random() * 2; else b.wait = 0.5 + Math.random() * 3; var a = Math.random() * 6.283, r = (0.25 + Math.random() * 0.5) * b.lake.r, nx = b.lake.x + Math.cos(a) * r, ny = b.lake.y + Math.sin(a) * r * 0.87; if (wbWater(nx, ny, b) && Math.hypot(nx - b.x, ny - b.y) < 260) { b.tx = nx; b.ty = ny; } return; }
       var sp = b.sp * (flee ? 1.8 : 1), mx = b.x + dx / d * sp * dt, my = b.y + dy / d * sp * dt;
-      if (wbWater(mx, my)) { b.x = mx; b.y = my; b.a = Math.atan2(dy, dx); b.moving = true; } else { b.tx = b.x; b.ty = b.y; b.moving = false; }
+      if (wbWater(mx, my, b)) { b.x = mx; b.y = my; b.a = Math.atan2(dy, dx); b.moving = true; } else { b.tx = b.x; b.ty = b.y; b.moving = false; }
     });
   }
   function wbItems(items, hw, hh) {
