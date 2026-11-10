@@ -6,10 +6,16 @@ The detail lives in the chapter checklists (`docs/chapter-0-checklist.md`, `docs
 
 Last updated: 2026-11-10.
 
-## Now (Clive, GD)
+## Now (Clive, GD), in order (Robin asked for the list, 2026-11-10)
 
-1. Build chapter 1's missing things in the order of `docs/chapter-1-build-order.md`: steps 1 to 5 and 7 are built, and the core of step 8 (clues, quest marks). **Next: look at everything of today in the pane when it can be shown (the three stone acts, the wolf-skin gear, a clue's `?`, the tow on the water); step 6's cape and rug when Colin, AD's drop comes; the rest of step 8; step 9 (the scripted run and the balance).**
-2. Fix whatever Robin's next chapter 0 run finds. A greyed bench recipe already says "It needs a roof over it" on its card (D7: for Robin to see); bird nests are out of the world (D6).
+1. **See today's work in the game.** Needs the browser pane showing, or Robin's play: the claim stone's three acts at a real stone, a clue's `?` on the map, the Old Man's new look, the bear rug, the log towed on the water, the rune screens with upgrading off, Eadric and the ruin's lines. Fix what is off. Until the pane shows, go on with 2.
+2. **Finish step 8:** Old Aslak's two clues (old pines, sailcloth), Arnor's line about the loom, the three whispered rumours of chapter 2, and the steading's houses mended when you come back from another island (read how the steading's houses are stored first; it is chapter 0's ground).
+3. **Small leftovers of steps 1 and 3:** the spring, the bay and the hill as things you see on the home islands; more deer, fish or birds where an island has more; the walls' corner ends and posts; the elm door; the log drawn behind him when he faces west to north; the picked states of herbs, flax and roseroot; Eadric's own look and Jorunn always a woman.
+4. **Step 9, the scripted run:** extend `tools/visual/play0.js` from the blót to the sail out (home, Arnor, flint, the old pine and its log, Saltvik, the loom, the claim stone, the ship, the swell), a step a call.
+5. **Step 9, the balance:** from that run, count what each thing costs and where it comes from, and set the numbers so the ship comes last and no island is skipped for nothing (flint, flax, timber, pelts, salt).
+6. **The foundations for chapter 1:** save and load at every step, the error log after a full run, the frame rate in a village and at sea, no leaks of chapter 2.
+7. **Chapter 0's loose ends:** fix whatever Robin's next run finds; the frame log from his work computer; sort the `LORE?` marks left in the code against the lore.
+8. **Write up chapter 1 for Robin's play:** the checklist's states made exact, and a short list of what to try, as for chapter 0.
 
 ## Waiting on Robin
 
