@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-11-10T11:57:47.372Z",
+ "built": "2026-11-10T12:04:45.606Z",
  "entries": [
   {
    "id": "world.realm",
@@ -895,6 +895,66 @@
    "tags": "the south, raids, the White Christ",
    "game": "Village ARCH church and town; ROLES.priest",
    "body": "Cut stone, a slate roof, a bell tower at the side, silver on the altar and a priest who will not lift a hand. Robin's \"lucky\nstrikes, though an army may turn up\".\n\nSAID: \"Peace be upon this house, stranger.\" — a priest\nSAID: \"The silver on the altar is God's, not mine. He will know who took it.\" — a priest\n\nPROPOSED: Folk belief says the [[being.vasen|väsen]] cannot bear church bells, so the country round a church has fewer of\nthem, and the folk there are less careful."
+  },
+  {
+   "id": "thing.flint",
+   "title": "Flint",
+   "kind": "thing",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "norse": "tinna",
+   "summary": "The stone that takes an edge. It lies on the beaches of the islands round, and never on the big island.",
+   "region": "home",
+   "chapter": "chapter.2",
+   "tags": "flint, tools, the islands round",
+   "sources": "the beach flint of Norway, carried from the south by the ice; the strike-a-light of flint and steel",
+   "book": "A grey stone with a glassy break. Struck right, it gives an edge no field stone will take. The sea leaves it on the beaches of the islands round, and none on the big island. Folk carry a piece for fire, with a bit of steel.",
+   "body": "Real first: in Norway flint is not in the rock. It lies on beaches, carried up from the south long ago by the ice, which is why\none island has it and the next does not. Flint and steel made fire through the Viking age.\n\nSaid of it: [[rumour.flint.beaches]]."
+  },
+  {
+   "id": "thing.wild-flax",
+   "title": "Wild flax",
+   "kind": "thing",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "norse": "lín",
+   "summary": "Flax gone wild in old fields and wet ground on the islands round. Its blue flowers are gone by noon. Sailcloth is woven from it.",
+   "region": "home",
+   "chapter": "chapter.2",
+   "tags": "flax, the loom, sailcloth, the islands round",
+   "sources": "the flax plant (its flowers open in the morning and drop by afternoon); linen-making: retting, breaking, scutching, spinning",
+   "book": "Thin stems and small blue flowers that open in the morning and are gone by noon. It grows wild where old fields went untended, and where the ground is wet. Steeped, beaten and spun, it is woven into cloth, and into sails.",
+   "body": "Real first: flax for linen was soaked to rot the stems (retting), broken, scutched and combed, then spun. A field left alone\ngoes on seeding itself.\n\nSaid of it: [[rumour.flax.wild]], [[rumour.aslak.sailcloth]]."
+  },
+  {
+   "id": "thing.old-pine",
+   "title": "The old pines",
+   "kind": "thing",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "norse": "fura",
+   "summary": "Tall old pines, red and resinous at the heart: mast timber. Too hard for a stone axe.",
+   "region": "home",
+   "chapter": "chapter.2",
+   "tags": "pine, timber, the mast, the islands round",
+   "sources": "malmfuru, the resinous heartwood of slow-grown Norwegian pine; the Gokstad ship's mast (pine)",
+   "book": "Pines so old their hearts have turned red with resin. The wood does not rot and does not bend. One trunk makes a mast. A stone axe only bounces off it.",
+   "body": "Real first: Norwegians called the heartwood of old, slow-grown pine *malm*, rich in resin and near rot-proof, and prized it for\nships and buildings. The Gokstad ship's mast was pine.\n\nSaid of them: [[rumour.aslak.pines]]."
+  },
+  {
+   "id": "thing.roseroot",
+   "title": "Roseroot",
+   "kind": "thing",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "norse": "rosenrot",
+   "summary": "A fleshy herb of the high rock that smells of roses when its root is cut. Folk say it closes wounds.",
+   "region": "home",
+   "chapter": "chapter.2",
+   "tags": "roseroot, healing, the mountain",
+   "sources": "Rhodiola rosea (rosenrot), which grows on mountain ledges and sea cliffs and whose cut root smells of roses",
+   "book": "A thick-leaved herb that grows on the high rock, where goats will not go. Its root smells of roses when it is cut. Folk say it closes a wound and puts the strength back.",
+   "body": "Real first: roseroot grows on mountain ledges and cliffs across the North, and the cut root smells of roses. Its use in folk\nhealing is old.\n\nSaid of it: [[rumour.roseroot]]."
   },
   {
    "id": "thing.arm-ring",
@@ -2379,9 +2439,9 @@
    "lines": [
     "Nothing there I can't pick up off my own beach.",
     "Come back with pelts. Wolf, not hare.",
-    "Flint I can use. Flint we haven't got."
+    "Flint I can use. Ours was picked off the beach long ago."
    ],
-   "body": ""
+   "body": "Line 3 changed in its place on 2026-11-10: every outer beach has flint, Saltvik's too. Before: \"Flint I can use. Flint we haven't\ngot.\""
   },
   {
    "id": "line.jorunn.loom",
@@ -3093,6 +3153,183 @@
    "body": "`{place}` is the island he is on. If the game cannot fill it, line 1 reads: \"He's out on one of the islands round now. Grey to\nthe ears, and slower than he was.\""
   },
   {
+   "id": "rumour.flint.beaches",
+   "title": "Flint on the beaches round",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "Flint lies on the beaches of the islands round, never here, and takes a better edge than field stone.",
+   "about": "thing.flint",
+   "lines": [
+    "You'll find no flint on this island. The beaches round, though. The sea brings it.",
+    "I heard better weapons can be made from flint, if you've the hands for it.",
+    "Flint takes an edge field stone never will. My father shaved with it."
+   ],
+   "body": "ROBIN DECIDED: On 2026-11-10 (Robin, 2026-11-10, through Clive, GD) **the player is steered subtly by what people say**, and a\nclue heard leaves a question mark on the map where the place is. Robin's examples: \"Theres an old bear walking around the woods\nat X island, i'd be careful around that area\" and \"I heard greater weapons can be created from flint\". Nothing is said as a\ngoal.\n\nThe second line is Robin's own example, made plain English. It marks no one island: every outer beach has flint."
+  },
+  {
+   "id": "rumour.flax.wild",
+   "title": "Flax gone wild",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "Where wild flax grows: on {place}, and in Ulfarstad's old fields.",
+   "about": "thing.wild-flax, place.ulfarstad",
+   "lines": [
+    "There's flax gone wild in Ulfar's old fields. Blue flowers, gone by noon.",
+    "Wild flax grows on {place}, down where the ground's wet."
+   ],
+   "body": "Line 1 marks Ulfarstad; line 2 marks `{place}`, another flax island."
+  },
+  {
+   "id": "rumour.aslak.sailcloth",
+   "title": "Old Aslak on sailcloth",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "person.aslak",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "Old Aslak",
+   "mode": "variants",
+   "summary": "Old Aslak on what a sail is made of.",
+   "about": "thing.wild-flax",
+   "lines": [
+    "A sail's woven from flax. Grow it, steep it, beat it, spin it. Then weave. Then swear.",
+    "No sail, no going further than you can row. And you can't row far."
+   ],
+   "body": "A shipwright's clue, in Aslak's voice. It marks no island; [[rumour.flax.wild]] does."
+  },
+  {
+   "id": "rumour.aslak.pines",
+   "title": "Old Aslak on the old pines",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "person.aslak",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "Old Aslak",
+   "mode": "variants",
+   "summary": "The old pines on {place}: mast timber, too hard for stone.",
+   "about": "thing.old-pine",
+   "lines": [
+    "There are old pines on {place}. Red at the heart. That's mast timber.",
+    "You'll not fell one with stone. You'd blunt the axe, and your temper."
+   ],
+   "body": "Line 1 marks `{place}`. Aslak suits it: Hogni went after timber too."
+  },
+  {
+   "id": "rumour.saltvik.trade",
+   "title": "Jorunn at Saltvik",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "Jorunn at Saltvik trades salt for pelts, leather and flint.",
+   "about": "place.saltvik, person.jorunn",
+   "lines": [
+    "Jorunn at Saltvik boils salt. She'll swap it for pelts, if they're good ones.",
+    "Saltvik wants flint and leather. Their beach gives them nothing but salt."
+   ],
+   "body": ""
+  },
+  {
+   "id": "rumour.tangholm.gamli",
+   "title": "Gamli on Tangholm",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "Gamli on Tangholm knows the fish and teaches whoever asks.",
+   "about": "place.tangholm, person.fisherman",
+   "lines": [
+    "Gamli out on Tangholm knows every fish by its first name. Ask him.",
+    "Want to fish? Row out to Gamli's. He'll teach you, and grumble the whole time."
+   ],
+   "body": ""
+  },
+  {
+   "id": "rumour.ulfarstad",
+   "title": "Ulfar's old place",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "Where Ulfarstad is, and that nobody goes there.",
+   "about": "place.ulfarstad",
+   "lines": [
+    "Ulfar's old place is on {place}. Burnt. Nobody's farmed it since.",
+    "Nobody goes to Ulfar's. The land's unlucky, they say. The fields don't know it."
+   ],
+   "body": "The lead that marks the ruin on the map. [[line.folk.ruin]] stays what folk say once it has been seen, and marks nothing. The\nsecond line's \"the fields don't know it\" points at the flax."
+  },
+  {
+   "id": "rumour.roseroot",
+   "title": "The root on the mountain",
+   "kind": "rumour",
+   "status": "in-game",
+   "decided": "in the game since 2026-11-10 (Alistair, LD's words, under Robin's rule of 2026-10-31; Robin may change them later)",
+   "speaker": "role.villager",
+   "chapter": "chapter.2",
+   "place": "village.green",
+   "time": "dusk",
+   "with": "fire",
+   "tier": "lead",
+   "heard": "villagers of the big island",
+   "mode": "variants",
+   "summary": "An herb high on the mountain that closes wounds.",
+   "about": "thing.roseroot",
+   "lines": [
+    "High on the mountain there's a root that smells of roses when you cut it. Closes a wound.",
+    "Roseroot grows where the goats won't go. My mother kept some for the bad cuts."
+   ],
+   "body": ""
+  },
+  {
    "id": "rumour.south.town",
    "title": "The jarl's town in the south",
    "kind": "rumour",
@@ -3589,6 +3826,14 @@
   "rumour.almey.elm",
   "rumour.old-man.name",
   "rumour.old-man.age",
+  "rumour.flint.beaches",
+  "rumour.flax.wild",
+  "rumour.aslak.sailcloth",
+  "rumour.aslak.pines",
+  "rumour.saltvik.trade",
+  "rumour.tangholm.gamli",
+  "rumour.ulfarstad",
+  "rumour.roseroot",
   "rumour.south.town",
   "rumour.south.tribute",
   "rumour.north.trolls",

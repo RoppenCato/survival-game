@@ -4428,7 +4428,7 @@ function homeRoles(isles, home, R) {
   if (wild) { wild.role = 'home'; wild.feat = 'pines'; wild.pines = true; }
   homes.forEach(function (q, k) { q.role = 'home'; if (k % 3 === 2) q.res = res[k % res.length]; else q.feat = feats[k % feats.length]; if (k === 0) q.pines = true; if (k < 2) q.flax = true; });
   var bear = wild || elm || homes[0]; if (bear) bear.bear = true;
-  rest.forEach(function (q) { q.flint = true; });
+  rest.forEach(function (q) { q.flint = q !== hamlet; });   /* (Saltvik's own beach was picked clean long ago, Alistair, LD's line: so its trader wants flint) */
 }
 function hash(x, y, s) { var h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
 function vnoise(x, y, s) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); var a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }

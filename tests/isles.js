@@ -17,7 +17,7 @@ seeds.forEach(seed => {
     roles[q.role] = (roles[q.role] || 0) + 1; const g = per[j];
     if (q.flint && !g.flint) flintless++; if (g.flax) flax++; if (g.oldPine && q.role !== 'big') pines++; if (q.bear) bear++;
     console.log('   ' + j + ' r' + Math.round(q.r) + ' ' + (q.role || '-') + (q.feat ? ' feat:' + q.feat : '') + (q.res ? ' more:' + q.res : '') + (q.bear ? ' BEAR' : '') + '  ' + JSON.stringify(g));
-    if ((q.role === 'starter' || q.role === 'big') && g.flint) { bad++; console.log('!! flint on the ' + q.role + ' island'); }
+    if ((q.role === 'starter' || q.role === 'big' || q.role === 'hamlet') && g.flint) { bad++; console.log('!! flint on the ' + q.role + ' island'); }
   });
   const want = (ok, what) => { if (!ok) { bad++; console.log('!! seed ' + seed + ': ' + what); } };
   want(roles.hamlet === 1 && roles.elm === 1 && roles.fisher === 1, 'the three islands with a reason: ' + JSON.stringify(roles));
