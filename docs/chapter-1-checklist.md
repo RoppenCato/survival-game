@@ -1,8 +1,7 @@
 # Chapter 1, home water: the checklist
 
-**The chapter: Not started as a chapter** (chapter 0 is current). **This list is a first draft, 2026-11-10**: it holds what
-is already built (two rounds, 2026-10-29) and what `docs/chapters.md` asks for. Robin and Clive, GD go through it together
-to decide what is missing before it counts.
+**The chapter: Not started as a chapter** (chapter 0 is current). **Second draft, 2026-11-10**: what is already built (two rounds, 2026-10-29), what `docs/chapters.md` asks for, and
+Robin's answers to the questionnaire of 2026-11-10. The Not built items are the work ahead.
 
 How the list works is in `docs/chapter-checks.md`: **To fix**, **Built** (built and tested by Clive, GD; Robin has not said
 yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits on Robin), and here also **Not built**.
@@ -25,7 +24,8 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 1.11 | **Arnor comes over** the morning after the blót and works about your home as its smith. | Built |
 | 1.12 | **The shipwright's craft** learnt: a pier and a shipyard built, a rowboat made. | Built |
 | 1.13 | **The sail** learnt: the small karve built; it carries you past the swell at home water's edge. | Built |
-| 1.14 | **How the chapter ends** (D17). | Open |
+| 1.14 | **The chapter ends when you can leave** (Robin, 2026-11-10): with the sail boat the swell no longer turns you back; no farewell moment. | Built |
+| 1.15 | **The first claim stone** raised at your home and the place named; Arnor its only villager. | Built as a system (the stone costs snake blood and wants a keeper: to fit to chapter 1) |
 
 ## 2. What chapter 1 adds
 
@@ -36,10 +36,15 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | 2.3 | **A meat for each beast**; dishes learnt by E at a village's pot; mushrooms and angelica. | Built (pictures stand in) |
 | 2.4 | **Fishing**, taught by Gamli the fisherman: the rod, the cast, the bite, the fish dishes. | Built (he is on the big island; an island of his own: Not built) |
 | 2.5 | **The runes**: the first one from the blót, the rune screen (O), binding at an altar. | Built |
-| 2.6 | **Your own altar and the autumn blót** (D15). | Built as a system; its place in the chapter Open |
+| 2.6 | **Your own altar and blót**: taught after the village's; seasons are independent of the chapter (Robin, 2026-11-10). | Built as a system; not played in the chapter |
 | 2.7 | **The year**: the first summer four days, autumn's look, what a season gives. | Built |
 | 2.8 | **Piers and the shipyard**: built from the beach, the boat launched into free water, taken down safely. | Built |
 | 2.9 | **Ship looks** from Old Aslak's lessons: sail colours and patterns, shield paints, stem heads; Refit. | Built |
+| 2.12 | **Flint tools**: a flint axe and pick, faster than wood and stone. | Not built (the flint kinds exist in the code; recipes, numbers and where flint comes from are new) |
+| 2.13 | **Flint weapons**: the flint sword and knife beside the spear. | Not built (both exist, hidden; to open and tune) |
+| 2.14 | **Flint arrows** in the quiver, beside wooden ones. | Not built |
+| 2.15 | **Wolf-skin gear**: stronger leather gear with wolf skin added (D24). | Not built (art: Colin, AD) |
+| 2.16 | **Barter** at the trading hamlet: things for things (D25). | Not built (Old Aslak's board is the model) |
 | 2.10 | **Quest marks and the book**: `!` and `?` over Old Aslak, Hallveig and Gamli, as over Arnor. | Not built (only Arnor and his boat have them) |
 | 2.11 | **Rumours** from villagers (trolls gone north, and more from the lore). | Built for two lines; surfacing the lore's rumours Not built |
 
@@ -48,10 +53,12 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 | # | What to try | State |
 | --- | --- | --- |
 | 3.1 | **Small unguarded villages that differ** from island to island. | Built by the generator; not looked at for chapter 1 |
-| 3.2 | **A reason to visit each** (D13): the fisherman, a trading hamlet, yew for a better bow. | Not built |
-| 3.3 | **Places to want to build a home on**, each with something of its own. | Not built |
-| 3.4 | **The mountain** without copper (D12): the cave, a lookout. | Built (the lookout exists; nothing asks you up there) |
-| 3.5 | **The glimpses of chapter 2** (D21): a southern trader with copper goods, a raided ruin, troll traces. | Troll traces Built; the other two Not built |
+| 3.2 | **Three islands with a reason** (Robin, 2026-11-10): the fisherman's island, a trading hamlet, a yew island. | Not built (Gamli is on the big island today) |
+| 3.6 | **Flint on the beaches of every island round**, never on the big island. | Not built |
+| 3.7 | **The yew island**: yew for a better bow, and **the lone bear**: avoided at first, then a hard, optional hunt; its pelt (D27). | Not built (the bear's model and fight exist; the yew bow does not) |
+| 3.3 | **Places to want to build a home on**, each with one good thing (D26). | Not built |
+| 3.4 | **The mountain** (Robin, 2026-11-10): the wolves' cave; **a lookout that shows the islands round on the map**; **something rare to gather** only up there (D23). | The cave Built; the lookout opening the map and the rare thing Not built |
+| 3.5 | **The glimpses of chapter 2** (Robin, 2026-11-10): a southern trader with copper goods, a raided ruin, troll traces, rumours from villagers. | Troll traces Built; the trader, the ruin and the lore's rumours Not built |
 
 ## 4. The six areas, for what chapter 1 shows
 
@@ -76,4 +83,5 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-10: Robin's questionnaire: three islands with a reason, the bear, flint gear and wolf-skin gear, flint on the outer beaches, barter, the lookout and a rare thing on the mountain, the claim stone, four glimpses; the end is being able to leave; no practice ground, no hirdman; seasons independent.
 - 2026-11-10: the list drafted from what is built and from `docs/chapters.md`.

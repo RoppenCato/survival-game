@@ -20,23 +20,19 @@ Set up 2026-11-10. What I am doing now, and what waits on a studio, is in `docs/
 | D7 | **Arnor's workbench with no roof** shows greyed-out recipes and says nothing. A word from Arnor, or leave it found? | A single line from Arnor when you first try it ("Not in the rain. Get a roof on."), from Alistair, LD. | `docs/state/game.md` |
 | D8 | **A hall is 14 tiles of floor or more** for the house hearth's size and pot. | Keep 14. | `docs/state/game.md` |
 
-## Chapter 1 (to settle when we write its list together)
+## Chapter 1
+
+D10 to D21 were answered by Robin on 2026-11-10 (`docs/chapters.md`, chapter 1's table). What his answers opened:
 
 | # | The choice | Mine |
 | --- | --- | --- |
-| D10 | **A practice ground for base building** on one island, now that the workbench opens building in chapter 0? | Not needed; let the islands differ in what they offer a home instead (D13). |
-| D11 | **The first claim stone and your home as a village**: chapter 1, or chapter 2? | Chapter 1 ends with the stone raised and Arnor as the only villager; more people in chapter 2. |
-| D12 | **The mountain without copper**: what is up there? | The wolves' cave (built), a lookout that shows the islands round, yew for a better bow. |
-| D13 | **What the other islands are for**, and how many have something. | Three with a reason each: the fisherman (built), a trading hamlet, a yew island; the rest are places to build on, each with one good thing (a spring, a sheltered bay, a meadow). |
-| D14 | **Trading with no currency**: barter, or no trade until silver? | Barter, as Old Aslak's lessons already are (things for things). |
-| D15 | **The second blót, at your own altar**: the end of chapter 1 or the start of chapter 2? | The end of chapter 1: it proves the player can do alone what the village showed. |
-| D16 | **Winter**: must the player get through one in chapter 1? | No. Chapter 1 is summer and autumn; winter opens chapter 2. |
-| D17 | **How chapter 1 ends**: "you can leave", or a moment? | A moment: the village sees the sail boat off, and the first of chapter 2 is seen from the swell's edge. |
-| D18 | **A threat or event beyond wolves** (a storm at sea, raiders seen passing, a bear glimpsed)? | One event, not a threat: Ormr's sail seen passing at the autumn blót. |
-| D19 | **New gear**: only the spear and the cudgel today. A yew bow, a shield, leather armour? | The yew bow and the wooden shield in chapter 1; leather armour is already in chapter 0's bench. |
-| D20 | **The hird**: does anyone join in chapter 1? | Nobody; Arnor is a villager. The first hirdman is chapter 2's, with the first raid. |
-| D21 | **Chapter 2's glimpses in chapter 1**: a southern trader with copper goods, a raided ruin, troll traces. The right three? | Yes, plus rumours from villagers (the lore has them; they are not surfaced yet). |
 | D22 | **`leysingi`** for a freed thrall, and the three variants of each raid line (Alistair, LD's). | Take them as `in-game` under your rule of 2026-10-31; nothing to decide unless you dislike one. |
+| D23 | **The rare thing on the mountain**: what is it? | Cloudberries on the high bog: a dish that gives the chapter's best stamina buff, and a dye for the sail. |
+| D24 | **The wolf-skin gear**: which pieces, and what do they give? | A wolf-skin cloak, hood and a lined tunic: 1 to 2 armor points over leather each, and wolves notice you from less far. Made at a bench from leather and wolf pelts. |
+| D25 | **The trading hamlet**: what does it swap? | It wants pelts, flint and dried fish; it gives salt (for the better dishes), linen (the sail) and seeds or a hen for your home. |
+| D26 | **The other islands' one good thing each.** | A spring, a sheltered bay for a pier, a wide meadow, a wood of tall pines, a hill with a view: one each, by the generator. |
+| D27 | **The bear**: how strong, and what does its pelt make? | About four times a wolf's health, a blow that takes half yours; the pelt makes a bear rug (the best comfort) or a cloak. |
+| D28 | **Flint arrows**: the cost and the gain. | 5 for a flint, a wood and a fibre; a quarter more damage than wooden ones. |
 
 ## Later chapters (nothing waits on these today)
 
