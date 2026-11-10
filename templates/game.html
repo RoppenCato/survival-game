@@ -3896,7 +3896,7 @@ __COMBAT__
       w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
       if (v.jetty) { var jr = v.jetty.root; w.eachProp(function (o) { if (Math.abs(o.x - (jr[0] + 0.5) * T) < 60 && Math.abs(o.y - (jr[1] + 0.5) * T) < 60) list.push(o); }); }
       list.forEach(function (o) { w.removeProp(o); });
-      v.V = Village.make(v.seed, { tx: v.tx, ty: v.ty, w: v.w, h: v.h, shore: v.shore }, { arch: v.arch, wealth: v.wealth, G: hamletCfg, name: v.name, biome: v.biome });
+      v.V = Village.make(v.seed, { tx: v.tx, ty: v.ty, w: v.w, h: v.h, shore: v.shore }, { arch: v.arch, wealth: v.wealth, G: hamletCfg, name: v.name, biome: v.biome, land: function (tx, ty) { return isLand((tx + 0.5) * T, (ty + 0.5) * T); } });   /* (land: the generator knows no terrain; with it the shore pieces find the real water's edge, Colin, AD 2026-11-10) */
       if (vi === 0) hamletV = v.V;
       var R = kit.rng(v.seed * 29 + 7), i;
       for (i = 0; i < v.V.folk.length; i++) {
@@ -4014,6 +4014,7 @@ __COMBAT__
       var chL = V2.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chL) TOWERS.push({ v: v, l: chL });   /* the church's tower, drawn in code (the depth board's item 8), in place of the old bell tower piece */
       railsOf(V2);
       V2.props.forEach(function (pr) { if (!(kit.PROPS[pr.name] || World.IMAGES[pr.name] || World.IMAGES[pr.name + '_1']) || !isLand(pr.x, pr.y)) return;   /* (a piece in variants only, railPost_1.., counts: 2026-10-22) */ if (chL && pr.name === 'bellTower') return;   /* (a set piece with no drawn prop of its name counts: the yard pieces, 2026-10-20) */ var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
+      if (V2.saltArea) { var sa = V2.saltArea, goneS = []; w.eachProp(function (o) { if (o.x >= sa.x * T && o.x < (sa.x + sa.w) * T && o.y >= sa.y * T && o.y < (sa.y + sa.h) * T && !/^(seaPool|saltPan|brineTub|saltBaskets|driftwood)/.test(o.name || '') && goneS.indexOf(o) < 0) goneS.push(o); }); goneS.forEach(function (o) { w.removeProp(o); }); }   /* the salt works' ground cleared of the world's own trees and bushes */
       (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
       (V2.lots || []).forEach(function (l) {                                   // the doorways kept clear (Robin, 2026-10-09: things stood in front of doors): no prop within a tile and a half of the tile outside a door, nor the one beyond
         var pts = l.door === 's' ? [[l.dx, l.y + l.h], [l.dx, l.y + l.h + 1]] : l.door === 'n' ? [[l.dx, l.y - 1], [l.dx, l.y - 2]] : l.door === 'e' ? [[l.x + l.w, l.dy], [l.x + l.w + 1, l.dy]] : [[l.x - 1, l.dy], [l.x - 2, l.dy]], gone2 = [];

@@ -701,20 +701,28 @@ function make(seed, site, opts) {
     var RF = rngOf(seed * 19 + 5), fx = focus[0] / T, j = function () { return (RF() - 0.5) * 0.8; }, Y = V.yard, yb = Y ? Y.y + Y.h : ry - 6, yl = Y ? Y.x : fx - 3, yr = Y ? Y.x + Y.w : fx + 3;
     prop({ name: 'dryingRack', x: (fx - 1.6 + j()) * T, y: (yb + 1.6) * T, solid: 6 }); prop({ name: 'dryingRack', x: (fx + 1.6 + j()) * T, y: (yb + 1.8) * T, solid: 6 });   // his two racks of split fish, below his yard
     prop({ name: 'fishingNet', x: (yl - 1.6 + j()) * T, y: (yb - 1 + j()) * T, solid: 6 });                  // his nets on their poles beside the yard
-    prop({ name: 'netTangle', x: (yl - 0.4 + j()) * T, y: (yb + 0.6) * T, solid: 0 });
+    prop({ name: 'netTangle', x: (yl - 2.6 + j() * 0.5) * T, y: (yb + 0.2) * T, solid: 0 });                  // a tangle of net at the poles' foot
     prop({ name: 'hangingFish', x: (yr + 1.4 + j()) * T, y: (yb - 1.2 + j()) * T, solid: 6 });               // fish hung under a rail
-    prop({ name: 'kelpRock', x: (fx + 4.5 + j()) * T, y: (ty + h - 1.5) * T, solid: 14 });                     // kelp spread to dry on a flat rock at the shore, and heaped above the tide line
-    prop({ name: 'kelpHeap', x: (fx + 1.5 + j()) * T, y: (ty + h - 1.9) * T, solid: 8 });
-    prop({ name: 'kelpHeap', x: (fx - 3.5 + j()) * T, y: (yb + 3.5 + j()) * T, solid: 8, v: 2 });             // a heap carried up toward the hut
+    var wr2 = waterRow(fx - 2, fx + 6, yb + 2), sea2 = wr2 != null ? wr2 : ty + h - 0.4;
+    prop(onLand({ name: 'kelpRock', x: (fx + 4.5 + j()) * T, y: (sea2 - 1.1) * T, solid: 14 }));                     // kelp spread to dry on a flat rock at the shore, and heaped above the tide line
+    prop(onLand({ name: 'kelpHeap', x: (fx + 1.5 + j()) * T, y: (sea2 - 1.5) * T, solid: 8 }));
+    prop({ name: 'kelpHeap_2', x: (fx - 3.5 + j()) * T, y: (yb + 3.5 + j()) * T, solid: 8 });             // a heap carried up toward the hut
   }
+  /* the water's real edge below a run of columns (2026-11-10, Clive, GD: on the game's own world Saltvik's works lay in a meadow, the
+     sea further south than the site's edge): with opts.land(tx, ty) from the page, the first row of water south of the strip, the median
+     over the columns; null without it, or with no water near. onLand(x, y): a spot stepped north (up to four tiles) until it is on land. */
+  function waterRow(x0, x1, from) { if (!opts.land) return null; var rows = [], x, y; for (x = Math.floor(x0); x <= Math.ceil(x1); x++) { for (y = Math.floor(from); y < ty + h + 14; y++) if (!opts.land(x, y)) { rows.push(y); break; } } if (!rows.length) return null; rows.sort(function (a, b) { return a - b; }); return rows[Math.floor(rows.length / 2)]; }
+  function onLand(o) { if (!opts.land) return o; var k; for (k = 0; k < 9 && !opts.land(Math.floor(o.x / T), Math.floor(o.y / T)); k++) o.y -= T / 2; return o; }
   function saltWorks(ry) {
     V.saltWorks = true; var RS = rngOf(seed * 17 + 3), fx = focus[0] / T, j = function () { return (RS() - 0.5) * 0.8; }, wx = function (dx) { return (fx - dx + j()) * T; };
-    prop({ name: 'seaPool', x: wx(9.5), y: (ty + h - 1.4) * T, solid: 26, under: true });   // (solid: its stones and water stop the feet, and nothing grows in it)
-    prop({ name: 'saltPan_boil', x: wx(7), y: (ry + j() * 0.5) * T, solid: 14, light: 1, steam: true });
-    prop({ name: 'saltPan_crust', x: wx(11.5), y: (ry + j() * 0.5) * T, solid: 14 });
-    prop({ name: 'brineTub', x: wx(9.4), y: (ry + 1.1) * T, solid: 6 });
-    prop({ name: 'saltBaskets', x: wx(13.6), y: (ry - 1.2) * T, solid: 8, loot: { salt: 3 } });
-    prop({ name: 'driftwood', x: wx(4.6), y: (ry - 1.3) * T, solid: 9 });
+    var wr = waterRow(fx - 14, fx - 4, ry - 2), sea = wr != null ? wr : ty + h - 0.4, py = Math.max(ry, sea - 3.6);   // the pool on the last row of land, the pans a few tiles up from it
+    prop(onLand({ name: 'seaPool', x: wx(9.5), y: (sea - 1) * T, solid: 26, under: true }));   // (solid: its stones and water stop the feet, and nothing grows in it)
+    prop(onLand({ name: 'saltPan_boil', x: wx(7), y: (py + j() * 0.5) * T, solid: 14, light: 1, steam: true }));
+    prop(onLand({ name: 'saltPan_crust', x: wx(11.5), y: (py + j() * 0.5) * T, solid: 14 }));
+    prop(onLand({ name: 'brineTub', x: wx(9.4), y: (py + 1.1) * T, solid: 6 }));
+    prop(onLand({ name: 'saltBaskets', x: wx(13.6), y: (py - 1.2) * T, solid: 8, loot: { salt: 3 } }));
+    prop(onLand({ name: 'driftwood', x: wx(4.6), y: (py - 1.3) * T, solid: 9 }));
+    V.saltArea = { x: Math.floor(fx - 15), y: Math.floor(py - 2.5), w: 12, h: Math.max(4, Math.ceil(sea - py + 2)) }; V.yards.push(V.saltArea);   // the works' ground kept clear of bushes and trees (V.saltArea, in tiles: the page clears its own world's things there too, as the works may reach past the site's edge)
   }
   function growRow() {                                // the shore row (Ribe, Birka): plots with their short side to a street a few tiles up from the water, the market strip between
     var sy = ty + h - 7.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
@@ -1127,6 +1135,36 @@ function make(seed, site, opts) {
       for (i3 = 0; i3 < spots.length; i3++) { var c3 = inRoom(spots[i3], HANG_W[nm]); if (fits(c3, HANG_W[nm])) { hang(nm, c3); break; } }
     }
   });
+  /* the raided ruin (2026-11-10, Colin, AD; Robin via Clive, GD: "the ruin does not read as raided": a whole bench, a well, only broken
+     fence posts say ruin). Burnt and gone back to green: most of the furniture taken or burnt (the chests and crates kept, they hold the
+     finds), charred beams and burnt heaps inside every house and more where the roof fell, a roof tree down in a big one, the woodsheds burnt
+     to heaps, a broken door lying before one door in two, arrows in the ground, a shield left in the grass; fireweed (the first flower on
+     burnt ground) and nettles (where people lived and left) on the floors and round the walls, saplings in the open shells. Bright, not
+     grim: the green has come back. Its own random stream: the walls do not move. */
+  if (V.ruin) (function ruinDress() {
+    var RR = rngOf(seed * 23 + 9), pick = function (a) { return a[Math.floor(RR() * a.length)]; };
+    var GONE = { bed: 0.75, table: 0.6, chair: 0.7, bench: 0.55, loom: 0.85, stool: 0.6, shelf: 0.75, cupboard: 0.85, cradle: 1, rug: 1, foodTable: 1, logSeat: 0.5, haystack: 1 };
+    V.items = V.items.filter(function (it) { return !(GONE[it.name] && RR() < GONE[it.name]) && !/^wallHanging/.test(it.name); });
+    V.props.forEach(function (o) { if (o.name === 'woodshed') { o.name = pick(['burntHeap_1', 'burntHeap_2']); o.solid = 8; } });
+    var BEAMS = ['charBeamA', 'charBeamB', 'charBeamC', 'charredBeam_1', 'charredBeam_2', 'charredBeam_3'], HEAPS = ['burntHeap_1', 'burntHeap_2', 'charPile', 'ashHeap'];
+    var roofAt = {}; V.roofs.forEach(function (r) { roofAt[r.tx + ',' + r.ty] = 1; });
+    function inLot(l, m) { return [(l.x + m + RR() * Math.max(0.2, l.w - 2 * m)) * T, (l.y + m + RR() * Math.max(0.2, l.h - 2 * m)) * T]; }
+    function nearDoor(l, x, y) { if (l.dx == null && l.dy == null) return false; var d = l.door === 's' ? [l.dx, l.y + l.h - 1] : l.door === 'n' ? [l.dx, l.y] : l.door === 'e' ? [l.x + l.w - 1, l.dy] : [l.x, l.dy]; return Math.hypot(x - (d[0] + 0.5) * T, y - (d[1] + 0.5) * T) < T * 1.6; }
+    function weed(x, y) { prop({ name: (RR() < 0.55 ? 'fireweed_' : 'nettles_') + (1 + Math.floor(RR() * 3)), x: x, y: y, solid: 0 }); }
+    V.lots.forEach(function (l) {
+      if (l.id === 'lean') return; var open = !roofAt[l.x + ',' + l.y], area = l.w * l.h, n = Math.max(1, Math.round(area / (open ? 14 : 24))), k, q;
+      for (k = 0; k < n; k++) { q = inLot(l, 1); if (nearDoor(l, q[0], q[1])) continue; prop({ name: k % 2 ? pick(HEAPS) : pick(BEAMS), x: q[0], y: q[1], solid: 4 }); }
+      if (open && (l.id === 'longhouse' || l.id === 'hall') && RR() < 0.8) { q = inLot(l, 2); if (!nearDoor(l, q[0], q[1])) prop({ name: 'roofTree', x: q[0], y: q[1], solid: 6 }); }
+      if (open) { for (k = 0; k < Math.round(area / 10); k++) { q = inLot(l, 0.6); if (!nearDoor(l, q[0], q[1])) weed(q[0], q[1]); } if (RR() < 0.6) { q = inLot(l, 1.2); if (!nearDoor(l, q[0], q[1])) V.nature.push({ name: 'birch', x: q[0], y: q[1], s: 0.45 + RR() * 0.2, r: 6, v: Math.floor(RR() * 3) }); } }
+      for (k = 0; k < 2 + Math.floor(RR() * 3); k++) {                    // weeds along the walls outside
+        var side = Math.floor(RR() * 4), u = RR(), wx2 = side < 2 ? (l.x + u * l.w) * T : (side === 2 ? l.x * T - 10 : (l.x + l.w) * T + 10), wy2 = side >= 2 ? (l.y + u * l.h) * T : (side === 0 ? l.y * T - 8 : (l.y + l.h) * T + 12);
+        if (!nearDoor(l, wx2, wy2)) weed(wx2, wy2);
+      }
+      if (l.dx != null && l.door === 's' && RR() < 0.5) prop({ name: 'brokenDoor', x: (l.dx + 0.5) * T + (RR() - 0.5) * 20, y: (l.y + l.h) * T + 22, solid: 0 });
+      if (RR() < 0.4) prop({ name: 'arrowWoodGround_' + Math.floor(RR() * 2), x: (l.x + RR() * l.w) * T, y: (l.y + l.h) * T + 18 + RR() * 20, solid: 0 });
+    });
+    var Y = V.yard; if (Y) { prop({ name: 'lostShield', x: (Y.x + 0.5 + RR() * Math.max(0.5, Y.w - 1)) * T, y: (Y.y + 0.5 + RR() * Math.max(0.5, Y.h - 1)) * T, solid: 0 }); for (var k9 = 0; k9 < 4; k9++) weed((Y.x + RR() * Y.w) * T, (Y.y + RR() * Y.h) * T); }
+  })();
   V.tactic = tacticOf(V, R);               // the place's plan of defence (raid step 6)
   V.wanted = nUnitsWanted;
   if (opts.debug) V.dbg = { bestCandidate: bestCandidate, boxFree: boxFree, spinePts: spinePts, hugRects: hugRects };   // (a test's way in to the growth's own checks)
@@ -1260,6 +1298,7 @@ function plan(env, opts) {
     }
     return null;
   }
+  function shoreScan(q, arch) { var sz = siteFor(arch, opts.G), dx, sg, cx, cy; for (dx = 0; dx <= q.r; dx += 2) for (sg = 1; sg >= -1; sg -= 2) { cx = Math.floor(q.x + sg * dx); for (cy = Math.floor(q.y + q.r * 1.1); cy > q.y - q.r; cy -= 2) { if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue; var sh = shoreOf(cx, cy, sz.h); if (sh) return { cx: cx, cy: cy, tx: cx - Math.ceil(sz.w / 2), ty: cy - Math.ceil(sz.h / 2), w: sz.w, h: sz.h, shore: sh }; } if (!dx) break; } return null; }   /* a shore site found by trying the island's columns from its middle outward, south to north; no random draw */
   var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
   var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; for (fi = 1; fi < isles.length; fi++) if (isles[fi].role === 'fisher') best = fi; fisherIsle = best; })();   /* (chapter 1: the island the world gave him, role fisher) */   // the fisherman lives alone on the smallest island
   /* The sea as waters (2026-10-20, docs/build-plan-waters.md step 3): home water (ring 0) gets only peaceful places and exactly one
@@ -1290,6 +1329,7 @@ function plan(env, opts) {
     if (roled && i === fisherAt && i !== fisherIsle) wants.push(['fisher', true]);
     wants.forEach(function (wq) {
       var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = (wq[0] === 'fisher' && i === fisherAt && fisherSite) || find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+      if (!st && roled && q.role === 'hamlet' && wq[1]) st = shoreScan(q, arch);   /* (Saltvik boils the sea: before any inland site, every south shore of its island is tried in order; Clive, GD 2026-11-10: the random search had missed and the works stood 35 tiles from the water) */
       if (!st && roled && q.ring === 0 && i > 1) st = find(q, arch, wq[1], true);   /* (a place the chapter needs: by the shore or not, wherever the island has room) */
       var isleAt = i; if (!st && roled && q.ring === 0 && i > 1 && (q.role === 'hamlet' || q.role === 'ruin')) for (var oi = 2; oi < isles.length && !st; oi++) if (oi !== i && isles[oi].ring === 0 && isles[oi].r >= 60) { st = find(isles[oi], arch, false, true); if (st) isleAt = oi; }   /* (and if its own island has none, another middle-sized island round) */
       if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
