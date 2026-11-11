@@ -980,7 +980,8 @@ function make(seed, site, opts) {
     else if (role === 'merchant') { var stl = V.items.filter(function (it) { return it.name === 'stall'; })[0]; if (stl) spots.push([stl.x, stl.y + 14, 'guard']); }
     else if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1));
     var nu = R(), fem = R() < 0.5, NL = fem ? NAMES_F : NAMES_M;   /* (the same two draws in the same order as before, so no place moves) */
-    V.folk.push({ name: NL[Math.floor(nu * NL.length)], role: role, home: [home.x, home.y], unit: home.unit, x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: fem, out: R() < G.outsideShare });
+    var nI = Math.floor(nu * NL.length), nTry = 0, nameTaken = function (nm) { return V.folk.some(function (q) { return q.name === nm; }); }; while (nTry < NL.length && nameTaken(NL[(nI + nTry) % NL.length])) nTry++;   /* (no two of one name in a place where the list allows: two Dagnys stood side by side at Saltvik, 2026-11-11; the next free name of the list, no new draw) */
+    V.folk.push({ name: NL[(nI + (nTry < NL.length ? nTry : 0)) % NL.length], role: role, home: [home.x, home.y], unit: home.unit, x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: fem, out: R() < G.outsideShare });
   }
   // ---- the ground worn where the people walk (2026-10-22, settlements-plan.md step 9): every household's ways between its spots, counted a tile at a time; the busy tiles are earth, the busiest gravel ----
   function passable(x2, y2) { return x2 >= tx - 1 && y2 >= ty - 1 && x2 < tx + w + 1 && y2 < ty + h + 1 && !V.floors[key(x2, y2)]; }

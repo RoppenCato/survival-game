@@ -11,6 +11,7 @@ window.P1 = (function () {
   var T = 32, got = {}, spent = {}, isles = {};
   function D() { return Combat.api.debug(); } function P() { return Combat.dbg().P; }
   function fast(n) { for (var i = 0; i < (n || 1); i++) D().tick(1 / 30); }
+  function frames(n) { if (window.H2 && H2.ready()) H2.step((n || 1) * 2); else fast(n); }   /* (driven by drive.js the whole frame runs: the drops move and are taken only in a frame, found 2026-11-11 with the pane hidden) */
   function inv(k) { return D().inv[k] || 0; }
   function give(k, n, why) { D().addItem(k, n); got['given ' + k] = (got['given ' + k] || 0) + n; return k + ' x' + n + ' (given: ' + why + ')'; }
   function isle(test) { var w = D().world(), i = w.isles.findIndex(test); return i < 0 ? null : { i: i, q: w.isles[i] }; }
@@ -24,7 +25,7 @@ window.P1 = (function () {
   function make(id, n) { var r = D().recipes2.filter(function (q) { return q.id === id; })[0]; if (!r) return '!! no recipe ' + id; var out = []; for (var k = 0; k < (n || 1); k++) { for (var m in r.needs) spent[m] = (spent[m] || 0) + r.needs[m]; var ok = D().craft(r); fast(160); out.push(ok === false ? 'refused' : 'ok'); } return id + ': ' + out.join(','); }
   function e(want) { var w = D().eWhat(); if (want && !(w && want.test(w))) return '!! E says "' + w + '", wanted ' + want; D().eDo(); fast(8); return w; }
   function eHold(want, secs) { var w = D().eWhat(); if (want && !(w && want.test(w))) return '!! E says "' + w + '", wanted ' + want; D().fishing().hold(true); D().eDo(); fast(Math.ceil(secs * 30)); D().fishing().hold(false); fast(4); return w; }
-  function pickUp(kind, tries) { for (var k = 0; k < (tries || 14); k++) { var dr = D().drops.filter(function (z) { return z.kind === kind; }); if (!dr.length) { if (k > 2) break; fast(15); continue; } P().x = dr[0].x; P().y = dr[0].y; fast(18); } }   /* stand on each drop of a kind until none lies (a drop cannot be taken in its first moment) */
+  function pickUp(kind, tries) { for (var k = 0; k < (tries || 14); k++) { var dr = D().drops.filter(function (z) { return z.kind === kind; }); if (!dr.length) { if (k > 2) break; fast(15); continue; } P().x = dr[0].x; P().y = dr[0].y; frames(18); } }   /* stand on each drop of a kind until none lies (a drop cannot be taken in its first moment) */
   function errs() { var el = D().errlog(); return el.length ? ' !! errors: ' + el.slice(-2).join(' | ') : ''; }
   var P1 = {};
   P1.setup = function () {   // where play0 leaves off, as flags: the blót held, Old Aslak's craft open, both lessons learnt; stone tools, the bow and a quiver
@@ -36,7 +37,7 @@ window.P1 = (function () {
   P1.flint = function () {   // an outer beach: nodules struck open with the hands, one flint each; none on the big island
     var w = D().world(), n0 = inv('flint'), big = 0, st = 0; w.eachProp(function (o) { if (o.is === 'flint') { var i = isleOf(o.x, o.y); if (w.isles[i].role === 'big') big++; if (w.isles[i].role === 'starter') st++; } });
     var q = isle(function (z) { return z.flint && z.role === 'home'; }); P().x = q.q.x * T; P().y = q.q.y * T; fast(5); away(); var k, f, where = null, t0 = Date.now();
-    for (k = 0; k < 14 && Date.now() - t0 < 25000; k++) { f = nearest(function (o) { return o.is === 'flint'; }); if (!f) break; P().x = f.x - 14; P().y = f.y + 2; P().face = 0; P().faceVis = 0; fast(4); swing(3); fast(40); var d = D().drops.filter(function (z) { return z.kind === 'flint'; })[0]; if (d) { P().x = d.x; P().y = d.y; fast(30); } where = where || went(f.x, f.y, 'flint'); }
+    for (k = 0; k < 14 && Date.now() - t0 < 25000; k++) { f = nearest(function (o) { return o.is === 'flint'; }); if (!f) break; P().x = f.x - 14; P().y = f.y + 2; P().face = 0; P().faceVis = 0; fast(4); swing(3); frames(40); var d = D().drops.filter(function (z) { return z.kind === 'flint'; })[0]; if (d) { P().x = d.x; P().y = d.y; frames(30); } where = where || went(f.x, f.y, 'flint'); }
     var n = inv('flint') - n0; got.flint = (got.flint || 0) + n;
     return 'flint: ' + n + ' picked on island ' + where + ' with bare hands in ' + k + ' nodules' + (n < 8 ? ' !! fewer than 8' : '') + '; on the big island ' + big + (big ? ' !!' : '') + ', on the starter ' + st + (st ? ' !!' : '') + errs();
   };
@@ -54,7 +55,7 @@ window.P1 = (function () {
     var tr = D().trunks().filter(function (t) { return t.tree === 'oldPine' && t.dying == null; }).sort(function (a, b) { return Math.hypot(a.x - P().x, a.y - P().y) - Math.hypot(b.x - P().x, b.y - P().y); })[0]; if (!tr) return '!! no old pine trunk lies here';
     var big0 = D().B.items.filter(function (q) { return q.bigLog; }).length; P().x = tr.x; P().y = tr.y + 14; P().face = -Math.PI / 2; P().faceVis = P().face; hold('axe', 'flint'); var n = 0; while (D().trunks().indexOf(tr) >= 0 && tr.logs > 0 && n < 12) { swing(1); n++; } fast(60);
     var logs = D().B.items.filter(function (q) { return q.bigLog; }), made = logs.length - big0, lg = logs[logs.length - 1]; if (!lg) return '!! the trunk gave no log';
-    P().x = lg.x - 10; P().y = lg.y + 12; fast(6); away(); var e1 = e(/Shoulder/), car = JSON.stringify(D().raidInfo().carrying), v0 = P().x; Combat.key('KeyD', true); fast(60); Combat.key('KeyD', false); var pace = (P().x - v0) / 2; var e2 = e(/Set it down/); hold('axe', 'flint'); var lg2 = D().B.items.filter(function (q) { return q.bigLog; }).pop(); P().x = lg2.x - 10; P().y = lg2.y + 12; fast(6); var t0 = inv('timber'), e3 = e(/Split/); fast(30); pickUp('timber', 24); var tm = inv('timber') - t0; got.timber = (got.timber || 0) + tm; got['old pines felled'] = (got['old pines felled'] || 0) + 1;
+    P().x = lg.x - 10; P().y = lg.y + 12; fast(6); away(); var e1 = e(/Shoulder/), car = JSON.stringify(D().raidInfo().carrying), v0 = P().x; Combat.key('KeyD', true); fast(60); Combat.key('KeyD', false); var pace = (P().x - v0) / 2; var e2 = e(/Set it down/); hold('axe', 'flint'); var lg2 = D().B.items.filter(function (q) { return q.bigLog; }).pop(); P().x = lg2.x - 10; P().y = lg2.y + 12; fast(6); var t0 = inv('timber'), e3 = e(/Split/); frames(30); pickUp('timber', 24); var tm = inv('timber') - t0; got.timber = (got.timber || 0) + tm; got['old pines felled'] = (got['old pines felled'] || 0) + 1;
     return 'the log: the trunk gave ' + made + (made === 1 ? '' : ' !!') + ' in ' + n + ' blows; E "' + e1 + '", carrying ' + car + ', pace ' + Math.round(pace) + ' a second; E "' + e2 + '"; E "' + e3 + '": timber ' + tm + (tm === 6 ? '' : ' !!') + errs();
   };
   P1.saltvik = function () {   // Jorunn: flint, a wolf's pelt and leather for salt and the loom's parts

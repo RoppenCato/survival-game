@@ -59,4 +59,5 @@ leather two nights, Saltvik and the loom 15, flax 10, the pier, yard and ship 10
 
 - The same seventeen steps, clean to the sail out. The ship still asks 20 wood, 12 timber, 4 sailcloth and 4 leather; six islands set foot on.
 - **Found:** a lake on the hamlet's island left no room for Saltvik, which was planned on the elm island instead (the script's step at Jorunn failed). No lake is made on the hamlet's or the ruin's island now, and `tests/isles.js` checks the island Saltvik and Ulfarstad stand on.
+- **Since 2026-11-11 his blow is 40** (Robin's yes): three blows fell an unarmoured man, and wolf-skin gear lets you take one more. The line below is the measurement at 55.
 - **The Old Man:** the hero standing by him for five seconds was killed (two blows of 55). With a flint spear, thrusting without rest, he fell in about 40 seconds and 50 thrusts (2.6 health a thrust on average, misses counted). First settings still; a suggestion waits in `docs/next-up.md`.

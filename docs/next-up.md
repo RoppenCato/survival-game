@@ -4,7 +4,7 @@ The one page to open for "what's next". Kept short: what Clive, GD is doing now,
 The detail lives in the chapter checklists (`docs/chapter-0-checklist.md`, `docs/chapter-1-checklist.md`), the decisions
 (`docs/decisions.md`) and the idea bank (`docs/idea-bank.md`). Update this page whenever something moves.
 
-Last updated: 2026-11-10.
+Last updated: 2026-11-11.
 
 ## Now (Clive, GD), in order
 
@@ -15,11 +15,13 @@ Last updated: 2026-11-10.
 
 ## Waiting on Robin
 
+**Chapter 1 after the looking pass of 2026-11-11** (`docs/chapter-1-checklist.md`, the top line of What changed): nothing of the chapter is Not built now. The crafting list's `new` is a red mark alone: it is on chapter 0's board too, yours to look at. Still not seen by me: Hallveig's and Gamli's marks, a spring, the claim stone after a save and load in the pane.
+
 **Chapter 0 after Robin's run of 2026-11-11:** left to check are 1.10 (the boar quest's `!`), 1.13 (the boat: oars, the turn), 2a.5 (no window light in a ruin), 2c.7 (Take apart), 2d.3 (the map's mark), 3.5 (the controls), 3.7 (the alpha's cap), 4.2 (the ragged outfit, once Colin, AD's pictures are in). **Colin, AD the same day:** the rowboat's hole mended, the salt works set into the ground and the new field gate are in the game; `shirtRag` and `shortsRag` are in the kit (`out/rags`, `assets/sprites/hero-kit/RAGS.md`); the bare hero is the body in its own drawers.
 
 **Sounds of chapter 1 with no sound yet** (each wants a reference Robin likes before Derek, SD makes it): the loom's beat, an old pine falling and its log split, the claim stone carved and raised, the salt pans' boil, a river's run and a lake's lap, ducks and a swan, the Old Man's roar.
 
-**The Old Man, measured 2026-11-10:** a blow of his takes 55 of the hero's 100, so two blows kill; with a flint spear the fight is about 40 seconds and 50 thrusts with none of his blows landing twice. Mine to suggest: 40 a blow, so wolf-skin gear lets you take three. Yours to say.
+**The Old Man's blow is 40 since 2026-11-11 (your yes).** Before: **The Old Man, measured 2026-11-10:** a blow of his takes 55 of the hero's 100, so two blows kill; with a flint spear the fight is about 40 seconds and 50 thrusts with none of his blows landing twice. Mine to suggest: 40 a blow, so wolf-skin gear lets you take three. Yours to say.
 
 **To play (chapter 0, thirteen items; `/dev/` or `npm start`):**
 
