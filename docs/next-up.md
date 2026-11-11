@@ -15,11 +15,13 @@ Last updated: 2026-11-11.
 
 ## Waiting on Robin
 
+**The winter ice, first rung (2026-11-11):** in the dev version; `docs/ice.md` says how to try it and asks three questions. Next on it, when you say: ice fishing, wolves on the ice, its sounds.
+
 **Chapter 1 after the looking pass of 2026-11-11** (`docs/chapter-1-checklist.md`, the top line of What changed): nothing of the chapter is Not built now. The crafting list's `new` is a red mark alone: it is on chapter 0's board too, yours to look at. Still not seen by me: Hallveig's and Gamli's marks, a spring, the claim stone after a save and load in the pane.
 
 **Chapter 0 after Robin's run of 2026-11-11:** left to check are 1.10 (the boar quest's `!`), 1.13 (the boat: oars, the turn), 2a.5 (no window light in a ruin), 2c.7 (Take apart), 2d.3 (the map's mark), 3.5 (the controls), 3.7 (the alpha's cap), 4.2 (the ragged outfit, once Colin, AD's pictures are in). **Colin, AD the same day:** the rowboat's hole mended, the salt works set into the ground and the new field gate are in the game; `shirtRag` and `shortsRag` are in the kit (`out/rags`, `assets/sprites/hero-kit/RAGS.md`); the bare hero is the body in its own drawers.
 
-**Sounds of chapter 1 with no sound yet** (each wants a reference Robin likes before Derek, SD makes it): the loom's beat, an old pine falling and its log split, the claim stone carved and raised, the salt pans' boil, a river's run and a lake's lap, ducks and a swan, the Old Man's roar.
+**The ice's sounds are stand-ins** (the creak, the long crack, the break and the splash): references wanted. **Sounds of chapter 1 with no sound yet** (each wants a reference Robin likes before Derek, SD makes it): the loom's beat, an old pine falling and its log split, the claim stone carved and raised, the salt pans' boil, a river's run and a lake's lap, ducks and a swan, the Old Man's roar.
 
 **The Old Man's blow is 40 since 2026-11-11 (your yes).** Before: **The Old Man, measured 2026-11-10:** a blow of his takes 55 of the hero's 100, so two blows kill; with a flint spear the fight is about 40 seconds and 50 thrusts with none of his blows landing twice. Mine to suggest: 40 a blow, so wolf-skin gear lets you take three. Yours to say.
 
