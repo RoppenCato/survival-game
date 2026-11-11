@@ -221,6 +221,7 @@ def prop_images():
             q = dict(pp['pieces'][name]); q['upp'] = pp['upp']; q['src'] = '../assets/pier/sheets/' + name + '.png?v=' + tag; q['set'] = 'pier'; j['pier_' + name] = q
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
+SRC['__ICE__'] = read('src', 'ice.js')   # the winter ice (2026-11-11)
 SRC['__PIER__'] = read('src', 'pier.js')   # the piers' rules (2026-10-30)
 def pier_art():                               # Colin, AD's pier pieces, assets/pier/sheets, with their numbers (not set pieces: no ink ring, no finish)
     jp = os.path.join(ROOT, 'assets', 'pier', 'sheets', 'pier.json')
