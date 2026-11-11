@@ -48,6 +48,7 @@ var MATS = {
   gold: { name: 'Golden', face: '#e2b63a', dark: '#9a7418', edge: '#fff0a8', glow: '255,220,100', power: 1.6 },
   bear: { name: 'Bear-skin', face: '#6b5644', dark: '#3e3024', edge: '#b8ab9c', glow: '255,230,200', power: 1, grain: true, armor: 1.8 },   /* the Old Man's pelt: the best of chapter 1 (Robin, 2026-11-10; the number mine: leather 1, wolf skin 1.4, iron 2.2) */
   wolf: { name: 'Wolf-skin', face: '#8d8a86', dark: '#55524e', edge: '#c9c6c0', glow: '230,230,240', power: 0.95, grain: true, armor: 1.4 },   /* leather lined and trimmed with wolf skin (Robin, 2026-11-10: stronger leather gear with wolf skin added; the number mine) */
+  rag: { name: 'Ragged', face: '#cfc6b2', dark: '#8f8674', edge: '#ece6d6', glow: '255,240,220', power: 0.5, grain: true, armor: 0 },   /* what the sea left him: the ragged shirt and shorts he wakes in (Robin, 2026-11-11); no armour */
   leather: { name: 'Leather', face: '#9a6a44', dark: '#5e3d26', edge: '#c9a07a', glow: '255,220,170', power: 0.9, grain: true, armor: 1 },
   wool: { name: 'Padded', face: '#c9bfa8', dark: '#8c8270', edge: '#ece6d6', glow: '255,240,220', power: 0.9, grain: true, armor: 1.35 },   // the gambeson: quilted wool and linen
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
@@ -64,6 +65,7 @@ function make(kind, mat, o) {
   return it;
 }
 function name(it) {
+  if (it.mat === 'rag') return it.kind === 'tunic' ? 'Ragged Shirt' : it.kind === 'trousers' ? 'Ragged Shorts' : 'Ragged ' + KINDS[it.kind].name;
   if (it.mat === 'wood' && it.kind === 'sword') return 'Wooden Sword';     /* the first weapon (Robin, 2026-10-26: the Strong Stick renamed, a sword's traits but very weak) */
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'elm' && it.kind === 'bow') return 'Elm Bow';
@@ -81,6 +83,7 @@ function name(it) {
 }
 function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
+  if (it.mat === 'rag') return it.kind === 'tunic' ? 'What the sea left of a shirt. It turns no blow.' : 'What the sea left of a pair of trousers, torn off at the knee.';
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A blade whittled from a split of ash and hardened in the fire. It cuts like a sword, if only just. Good enough for a young boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
   else if (it.kind === 'cudgel') bits.push('Short, heavy, bound in leather. A beast too weak to run goes out cold under it, and can be carried.');
@@ -110,7 +113,7 @@ function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club' || it.kind === 'cudgel' || it.kind === 'maul') ? 1 : 0.8 + it.sharp * 0.4;
   var weak = it.kind === 'sword' && it.mat === 'wood' ? WOOD_SWORD : 1;   /* the Wooden Sword: very weak (Robin, 2026-10-26; the number mine) */
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * weak * 100) / 100;
-  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear && K.armor ? Math.max(1, Math.round(K.armor * (M.armor || M.power))) : 0 };
+  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear && K.armor && M.armor !== 0 ? Math.max(1, Math.round(K.armor * (M.armor || M.power))) : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
   if (!dh) return hex;

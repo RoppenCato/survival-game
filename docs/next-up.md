@@ -15,6 +15,8 @@ Last updated: 2026-11-10.
 
 ## Waiting on Robin
 
+**Chapter 0 after Robin's run of 2026-11-11:** left to check are 1.10 (the boar quest's `!`), 1.13 (the boat: oars, the turn), 2a.5 (no window light in a ruin), 2c.7 (Take apart), 2d.3 (the map's mark), 3.5 (the controls), 3.7 (the alpha's cap), 4.2 (the ragged outfit, once Colin, AD's pictures are in). **Asked of Colin, AD the same day:** `underwear`, `shirtRag`, `shortsRag`; the hole in the rowboat's hull at some headings; his view on the salt works' ground; the field gate, shut and open.
+
 **Sounds of chapter 1 with no sound yet** (each wants a reference Robin likes before Derek, SD makes it): the loom's beat, an old pine falling and its log split, the claim stone carved and raised, the salt pans' boil, a river's run and a lake's lap, ducks and a swan, the Old Man's roar.
 
 **The Old Man, measured 2026-11-10:** a blow of his takes 55 of the hero's 100, so two blows kill; with a flint spear the fight is about 40 seconds and 50 thrusts with none of his blows landing twice. Mine to suggest: 40 a blow, so wolf-skin gear lets you take three. Yours to say.

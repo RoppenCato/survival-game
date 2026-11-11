@@ -717,12 +717,15 @@ function make(seed, site, opts) {
   function saltWorks(ry) {
     V.saltWorks = true; var RS = rngOf(seed * 17 + 3), fx = focus[0] / T, j = function () { return (RS() - 0.5) * 0.8; }, wx = function (dx) { return (fx - dx + j()) * T; };
     var wr = waterRow(fx - 14, fx - 4, ry - 2), sea = wr != null ? wr : ty + h - 0.4, py = Math.max(ry, sea - 3.6);   // the pool on the last row of land, the pans a few tiles up from it
-    prop(onLand({ name: 'seaPool', x: wx(9.5), y: (sea - 1) * T, solid: 26, under: true }));   // (solid: its stones and water stop the feet, and nothing grows in it)
-    prop(onLand({ name: 'saltPan_boil', x: wx(7), y: (py + j() * 0.5) * T, solid: 14, light: 1, steam: true }));
-    prop(onLand({ name: 'saltPan_crust', x: wx(11.5), y: (py + j() * 0.5) * T, solid: 14 }));
-    prop(onLand({ name: 'brineTub', x: wx(9.4), y: (py + 1.1) * T, solid: 6 }));
-    prop(onLand({ name: 'saltBaskets', x: wx(13.6), y: (py - 1.2) * T, solid: 8, loot: { salt: 3 } }));
+    var sw = [], keep = function (o) { sw.push(o); return o; };
+    keep(prop(onLand({ name: 'seaPool', x: wx(9.5), y: (sea - 1) * T, solid: 26, under: true })));   // (solid: its stones and water stop the feet, and nothing grows in it)
+    keep(prop(onLand({ name: 'saltPan_boil', x: wx(7), y: (py + j() * 0.5) * T, solid: 14, light: 1, steam: true })));
+    keep(prop(onLand({ name: 'saltPan_crust', x: wx(11.5), y: (py + j() * 0.5) * T, solid: 14 })));
+    keep(prop(onLand({ name: 'brineTub', x: wx(9.4), y: (py + 1.1) * T, solid: 6 })));
+    keep(prop(onLand({ name: 'saltBaskets', x: wx(13.6), y: (py - 1.2) * T, solid: 8, loot: { salt: 3 } })));
     prop(onLand({ name: 'driftwood', x: wx(4.6), y: (py - 1.3) * T, solid: 9 }));
+    /* The works' ground is worked ground (Robin, 2026-11-11: the pans and the pool "look like they are stickers on the ground"): bare trodden earth under and round each thing, wider on its south side where folk stand, and a worn way from the pool up to the tub and the pans. Mine; Colin, AD is asked for his view. */
+    sw.forEach(function (o, i) { var rr = (o.solid || 10) + 9, k; dab(o.x, o.y + 3, rr, 2); for (k = 0; k < 5; k++) { var a = RS() * 6.283, d = rr * (0.55 + RS() * 0.5); dab(o.x + Math.cos(a) * d, o.y + 3 + Math.sin(a) * d * 0.7 + 4, 6 + RS() * 6, 2); } if (i > 0) { var p0 = sw[0], n = Math.max(2, Math.round(Math.hypot(o.x - p0.x, o.y - p0.y) / 13)); for (k = 1; k < n; k++) dab(p0.x + (o.x - p0.x) * k / n + (RS() - 0.5) * 6, p0.y + (o.y - p0.y) * k / n + (RS() - 0.5) * 5, 5 + RS() * 2.5, 2); } });
     V.saltArea = { x: Math.floor(fx - 15), y: Math.floor(py - 2.5), w: 12, h: Math.max(4, Math.ceil(sea - py + 2)) }; V.yards.push(V.saltArea);   // the works' ground kept clear of bushes and trees (V.saltArea, in tiles: the page clears its own world's things there too, as the works may reach past the site's edge)
   }
   function growRow() {                                // the shore row (Ribe, Birka): plots with their short side to a street a few tiles up from the water, the market strip between
