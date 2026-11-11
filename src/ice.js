@@ -56,8 +56,13 @@ function distAt(I, wx, wy) {               // tiles to the nearest land, between
 }
 function thickAt(I, wx, wy) { var v = I.G.water(wx, wy) ? thickRaw(I, wx, wy) : 0; return v < DEF.open ? 0 : v; }   // the rule's own answer at a point (the tests)
 function thickRaw(I, wx, wy) {             // the ice's thickness at a point, 0 to 1, before the cut at DEF.open (the game asks thick(), from the baked pieces)
-  var G = I.G;   /* (asked on the shore's land too: the sheet's picture runs a little way up the beach and is faded there, see piece()) */
-  var d = distAt(I, wx, wy), T = G.T, s = I.seed, fr = G.fresh(wx, wy), base, th;
+  /* What kind of water it is (the sea, a lake, a river) is known by the tile: the three answers are blended between the four tiles' middles round the point, so a river's thin ice runs smoothly into its banks and into the sea's (it met them in tile-sized steps, seen 2026-11-11). Asked on the shore's land too: the sheet's picture runs a little way up the beach and is faded there, see piece(). */
+  var G = I.G, T = G.T, fx = wx / T - 0.5, fy = wy / T - 0.5, ix = Math.floor(fx), iy = Math.floor(fy), ux = fx - ix, uy = fy - iy, k, sum = 0, got = [null, null, null];
+  for (k = 0; k < 4; k++) { var wgt = (k & 1 ? ux : 1 - ux) * (k & 2 ? uy : 1 - uy); if (wgt <= 0) continue; var fr = G.fresh((ix + (k & 1) + 0.5) * T, (iy + (k >> 1) + 0.5) * T) || 0; if (got[fr] == null) got[fr] = thickOf(I, wx, wy, fr); sum += wgt * got[fr]; }
+  return clamp(sum, 0, 1);
+}
+function thickOf(I, wx, wy, fr) {          // the thickness there were the water of one kind: 0 the sea, 1 a lake, 2 a river
+  var G = I.G, d = distAt(I, wx, wy), T = G.T, s = I.seed, base, th;
   if (fr === 1) return clamp(1 - (1 - DEF.lakeMid) * sstep(DEF.lakeNear, DEF.lakeFar, d) - DEF.patchK * (noise(wx / (T * 6), wy / (T * 6), s + 5) - 0.5), 0, 1);
   if (fr === 2) return clamp(DEF.river + 0.12 * (noise(wx / (T * 4), wy / (T * 4), s + 6) - 0.5), 0, 1);
   var op = G.open(wx, wy); if (op > 0.5) return 0;
@@ -65,7 +70,7 @@ function thickRaw(I, wx, wy) {             // the ice's thickness at a point, 0 
   var vn = noise(wx / (T * DEF.vein), wy / (T * DEF.vein), s + 1), ridge = clamp(1 - Math.abs(vn - 0.5) / DEF.veinW, 0, 1);
   th = base + DEF.veinLift * ridge * ridge * (3 - 2 * ridge) * (1 - base);
   if (d > DEF.near) th -= DEF.patchK * (noise(wx / (T * DEF.patch), wy / (T * DEF.patch), s + 2) - 0.5) * 2 * sstep(DEF.near, DEF.near + 6, d);
-  if (base < DEF.leadFrom && ridge < 0.5) th *= 1 - sstep(DEF.leadAt - 0.05, DEF.leadAt, noise(wx / (T * DEF.lead), wy / (T * DEF.lead * 0.45), s + 3)) * (1 - sstep(0.1, 0.5, ridge));   /* a lead: long open water across the far ice, never across a vein */
+  if (base < DEF.leadFrom && ridge < 0.9) th *= 1 - sstep(DEF.leadAt - 0.05, DEF.leadAt, noise(wx / (T * DEF.lead), wy / (T * DEF.lead * 0.45), s + 3)) * (1 - sstep(0, 0.9, ridge));   /* a lead: long open water across the far ice, bridged where a vein crosses it */
   th *= 1 - sstep(0.1, 0.5, op);
   return clamp(th, 0, 1);   /* (under DEF.open it is no ice: thick() says 0 there; the picture fades out over the last of it) */
 }

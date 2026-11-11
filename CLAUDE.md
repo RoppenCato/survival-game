@@ -247,7 +247,7 @@ No bundler, linter or type checker. `.claude/launch.json`: `workbench` serves th
   look at a crop at full size. Reset the viewport afterwards.
 - **Driving a page in the pane:** a hidden pane stops animating; `tools/visual/drive.js` takes over `requestAnimationFrame`
   (`H2.step(n)`, `H2.sim`, `H2.snap`, `H2.part`). The page that `document.write` replaces is still alive: load `drive.js`,
-  wait a tenth of a second, `H2.drop()`, then write the page again. A tool call into the page must stay under about 45 real
+  wait a tenth of a second, `H2.drop()`, then write the page again. A call cut off by that limit in the middle of a frame leaves the page with no next frame asked for (`H2.ready()` false, every picture the same): `Combat.api.debug().kick()` asks again. `debug().tick` does not move drops (they move and are taken only in a frame): step frames where a thing is picked up. A tool call into the page must stay under about 45 real
   seconds. Sheets load lazily: let real time pass before judging people on screen. Results too big for the tool land in a
   file: decode them from there.
 - **Never read the canvas back** (`getImageData`) in the game's loop: Chrome drops the canvas to software drawing for good.
