@@ -453,8 +453,8 @@ __COMBAT__
   function heroLook(face) {
     var P = hero(), M = sprHero && sprHero.meta; if (!M || !sprHero.kit) return null;
     var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, mf = function (it, d) { return (it && Items.MATS[it.mat] && Items.MATS[it.mat].face) || d; };
-    /* What is worn is what shows (Robin, 2026-11-11): he wakes in a ragged shirt and ragged shorts, real things in the chest's and the legs' slots; with nothing there he is in his underwear. Colin, AD's layers `underwear`, `shirtRag` and `shortsRag` are asked for: until they are in the kit the shirt and the trousers stand in, bare too. The shirt lay over everything worn on the chest until this day (it had no place in the pile). */
-    var bare = has('underwear'), ragOf = function (it) { return !!it && it.mat === 'rag'; }, L = [{ l: 'body' }]; if (bare) L.push({ l: 'underwear' });
+    /* What is worn is what shows (Robin, 2026-11-11): he wakes in a ragged shirt and ragged shorts, real things in the chest's and the legs' slots; with nothing there he is in his underwear. Colin, AD's layers `shirtRag` and `shortsRag` are coming: until they are in the kit the shirt and the trousers stand in for the rags. The shirt lay over everything worn on the chest until this day (it had no place in the pile). */
+    var bare = true, ragOf = function (it) { return !!it && it.mat === 'rag'; }, L = [{ l: 'body' }];   /* (the body layer wears linen drawers of its own: Colin, AD, 2026-11-11, so nothing worn is the body alone, with no belt) */
     if (ragOf(equip.legs)) L.push(has('shortsRag') ? { l: 'shortsRag' } : { l: 'legs', t: S.legs }); else if (equip.legs) L.push({ l: 'legs', t: mf(equip.legs, S.legs) }); else if (!bare) L.push({ l: 'legs', t: S.legs });
     if (ragOf(equip.chest)) L.push(has('shirtRag') ? { l: 'shirtRag' } : has('shirt') ? { l: 'shirt' } : { l: 'tunic', t: S.tunic }); else if (!equip.chest && !bare) L.push(has('shirt') ? { l: 'shirt' } : { l: 'tunic', t: S.tunic });
     var chestAt = L.length; L.push({ l: equip.feet ? 'boots' : 'shoes' }); if (equip.chest || equip.legs || !bare) L.push({ l: 'belt' }); var chestOn = equip.chest && !ragOf(equip.chest);
@@ -4046,7 +4046,7 @@ __COMBAT__
     var by = {}; V2.props.forEach(function (pr) { if (pr.name !== 'railPost' || pr.fence == null || !isLand(pr.x, pr.y)) return; var k = pr.fence + ':' + pr.run; (by[k] || (by[k] = [])).push(pr); });
     Object.keys(by).forEach(function (k) { var L = by[k].sort(function (a, b) { return a.i - b.i; }), j;
       for (j = 0; j + 1 < L.length; j++) { var a = L[j], b = L[j + 1]; if (b.i !== a.i + 1 || Math.hypot(b.x - a.x, b.y - a.y) > 60) continue; var R = kit.rng(Math.round(a.x * 7 + a.y * 13));
-        RAILS.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, v: a.v || 0, sag: 1 + R() * 1.5, miss: [R() < 0.06, R() < 0.14], hang: R() < 0.04 }); } });
+        RAILS.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, gp: !!(a.gatePost && b.gatePost), v: a.v || 0, sag: 1 + R() * 1.5, miss: [R() < 0.06, R() < 0.14], hang: R() < 0.04 }); } });
   }
   /* Free fences (Robin, 2026-10-28, "do 1 and 2": fences and palisades as free runs, houses on the grid): a run is a line of posts set
      anywhere, each stretch at any angle, a post snapping to one already standing near it (B.runs: { kind, pts }). A rail fence is the
@@ -4070,9 +4070,12 @@ __COMBAT__
   function runGateToggle(g) { g.run.gates[g.i].open = !g.run.gates[g.i].open; sfx('build'); save(); }
   function drawRunGate(c, a, b, open, kind, seed) { Build.gate.draw(c, a, b, open, { K: K, kind: kind === 'stake' ? 'stake' : 'rail', seed: seed || Math.round(a[0] + a[1]) }); }   /* Colin, AD's gate for any angle (out/gate, 2026-10-28): open is 0 to 1, swung about a toward the viewer */
   function gateEase(g, dt) { g.k = g.k == null ? (g.open ? 1 : 0) : g.k + ((g.open ? 1 : 0) - g.k) * Math.min(1, dt * 7); return g.k; }
+  /* The ground under a work (Colin, AD's `<work>_ground` pictures, 2026-11-11: ash, wet sand, damp, spilt salt): laid at the work's foot under everything that stands, so a man on the ash is never under it. SKIRTS is filled when the villages are laid. */
+  var SKIRTS = [];
+  function drawSkirts(c, hw, hh) { if (inCave) return; SKIRTS.forEach(function (q) { if (Math.abs(q.x - cam.x) > hw + 60 || Math.abs(q.y * K - cam.y) > hh + 60) return; var im = World.IMAGES[q.n]; if (im && im.img && im.img.width) c.drawImage(im.img, q.x - im.ax * im.upp, q.y * K - im.ay * im.upp, im.w * im.upp, im.h * im.upp); }); }
   var VGATES = [];   /* the villages' farm gates (Colin, AD's F.gates in src/village.js): open by day as a farm's would stand (mine), E shuts and opens them, solid when shut; not saved */
   function vgateNear(P) { var best = null, bd = 34; VGATES.forEach(function (g) { var d = Math.hypot((g.a[0] + g.b[0]) / 2 - P.x, (g.a[1] + g.b[1]) / 2 - P.y); if (d < bd) { bd = d; best = g; } }); return best; }
-  function vgatePillars(P, out) { VGATES.forEach(function (g) { if (g.open || Math.abs(g.a[0] - P.x) > 300 || Math.abs(g.a[1] - P.y) > 300) return; var L = Math.hypot(g.b[0] - g.a[0], g.b[1] - g.a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 1; k < n; k++) out.push({ x: g.a[0] + (g.b[0] - g.a[0]) * k / n, y: g.a[1] + (g.b[1] - g.a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
+  function vgatePillars(P, out) { RAILS.forEach(function (r) { if (!r.gp || Math.abs(r.ax - P.x) > 300 || Math.abs(r.ay - P.y) > 300) return; var L = Math.hypot(r.bx - r.ax, r.by - r.ay), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: r.ax + (r.bx - r.ax) * k / n, y: r.ay + (r.by - r.ay) * k / n, r: RUN.pillarR, hide: true }); });   /* (the fence carried on from the old gap's posts to the gate's: the hidden barrier under it still has the whole gap open, so the rails themselves stop the feet) */ VGATES.forEach(function (g) { if (g.open || Math.abs(g.a[0] - P.x) > 300 || Math.abs(g.a[1] - P.y) > 300) return; var L = Math.hypot(g.b[0] - g.a[0], g.b[1] - g.a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 1; k < n; k++) out.push({ x: g.a[0] + (g.b[0] - g.a[0]) * k / n, y: g.a[1] + (g.b[1] - g.a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
   function runSegs(fn) { (B.runs || []).forEach(function (run, ri) { for (var i = 0; i + 1 < run.pts.length; i++) fn(run.pts[i], run.pts[i + 1], run, ri, i); }); }
   function runPillars(P) { var out = []; runSegs(function (a, b, run, ri, si) { if (runGateAt(run, si) && run.gates[si].open) return; if (Math.min(Math.abs(a[0] - P.x), Math.abs(b[0] - P.x)) > 260 || Math.min(Math.abs(a[1] - P.y), Math.abs(b[1] - P.y)) > 260) return; var L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / RUN.pillarGap)); for (var k = 0; k <= n; k++) out.push({ x: a[0] + (b[0] - a[0]) * k / n, y: a[1] + (b[1] - a[1]) * k / n, r: RUN.pillarR, hide: true }); }); return out; }
   var gridSnap = false; try { gridSnap = localStorage.getItem('game.gridSnap') === '1'; } catch (eG) {}
@@ -4086,7 +4089,8 @@ __COMBAT__
   }
   function pushRailsTowers(items, hw, hh) {
     runSegs(function (a, b, run, ri, i) { if (!runGateAt(run, i) || Math.abs(a[0] - cam.x) > hw + 60 || Math.abs(a[1] * K - cam.y) > hh + 60) return; var g = run.gates[i], k = gateEase(g, 1 / 60); items.push({ y: Math.max(a[1], b[1]) + (k > 0.5 ? 6 : -0.5), f: function () { drawRunGate(ctx, a, b, k, run.kind, i * 7); } }); });
-    VGATES.forEach(function (g) { if (Math.abs(g.a[0] - cam.x) > hw + 80 || Math.abs(g.a[1] * K - cam.y) > hh + 80) return; var k = gateEase(g, 1 / 60), mid = [(g.a[0] + g.b[0]) / 2, (g.a[1] + g.b[1]) / 2]; items.push({ y: Math.max(g.a[1], g.b[1]) + (k > 0.5 ? 6 : -0.5), f: function () { if (g.double) { drawRunGate(ctx, g.a, mid, k, 'rail', 3); drawRunGate(ctx, g.b, mid, k, 'rail', 5); } else drawRunGate(ctx, g.a, g.b, k, 'rail', 3); } }); });   /* the villages' farm gates, a double gate as two leaves meeting in the middle */   /* the free fences' gates */
+    VGATES.forEach(function (g) { if (Math.abs(g.a[0] - cam.x) > hw + 80 || Math.abs(g.a[1] * K - cam.y) > hh + 80) return; var k = gateEase(g, 1 / 60), mid = [(g.a[0] + g.b[0]) / 2, (g.a[1] + g.b[1]) / 2];
+      if (g.dir && World.IMAGES['fieldGate_' + g.dir + '_' + (g.dir === 'ew' ? 'W' : 'N') + '_0']) { var stp = Math.round(k * 4); [[g.a, g.dir === 'ew' ? 'W' : 'N'], [g.b, g.dir === 'ew' ? 'E' : 'S']].forEach(function (hf) { items.push({ y: hf[0][1] + 0.5, f: function () { var im = World.IMAGES['fieldGate_' + g.dir + '_' + hf[1] + '_' + stp]; if (im && im.img && im.img.width) ctx.drawImage(im.img, hf[0][0] - im.ax * im.upp, hf[0][1] * K - im.ay * im.upp, im.w * im.upp, im.h * im.upp); } }); }); return; }   /* Colin, AD's field gate (2026-11-11, Robin: "I couldnt even tell it was a gate"): two tiles wide on tall posts, each half its own picture at its post's foot, five steps of the swing, sorted at its post */ items.push({ y: Math.max(g.a[1], g.b[1]) + (k > 0.5 ? 6 : -0.5), f: function () { if (g.double) { drawRunGate(ctx, g.a, mid, k, 'rail', 3); drawRunGate(ctx, g.b, mid, k, 'rail', 5); } else drawRunGate(ctx, g.a, g.b, k, 'rail', 3); } }); });   /* the villages' farm gates, a double gate as two leaves meeting in the middle */   /* the free fences' gates */
     RAILS.concat(RUNRAILS).forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });   /* (the player's free fences' rails too) */
     TOWERS.forEach(function (tw) {
       var l = tw.l, cxw = ((l.door === 's' && l.dx != null ? l.dx : l.x + l.w / 2 - 0.5) + 0.5) * T, fy = (l.y + l.h) * T + T * 0.7; if (Math.abs(cxw - cam.x) > hw + 120 || Math.abs(fy * K - cam.y) > hh + 260 || !roomInfo) return;
@@ -4095,11 +4099,11 @@ __COMBAT__
     });
   }
   function hamletDress() {               /* every village's ground painted, its props and its own trees planted, its doorways and gates kept clear, the roads laid and cleared (at every start, 2026-10-20: these stood in the world at a fresh start only, so a loaded game had lost them, and the save keeps only what the player painted over this ground) */
-    TOWERS = []; RAILS = []; VGATES = [];
+    TOWERS = []; RAILS = []; VGATES = []; SKIRTS = [];
     bridgeWays();
     villages.forEach(function (v, vgi) {
-      var V2 = v.V; if (!V2) return; (V2.fences || []).forEach(function (F) { (F.gates || []).forEach(function (g) { VGATES.push({ a: g.a, b: g.b, double: !!g.double, open: true, vi: vgi }); }); });
-      V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
+      var V2 = v.V; if (!V2) return; (V2.fences || []).forEach(function (F) { (F.gates || []).forEach(function (g) { VGATES.push({ a: g.a, b: g.b, double: !!g.double, dir: g.dir || null, open: true, vi: vgi }); }); });
+      V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); }); V2.props.forEach(function (pr) { if (World.IMAGES[pr.name + '_ground']) SKIRTS.push({ x: pr.x, y: pr.y, n: pr.name + '_ground' }); });
       w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
       var chL = V2.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chL) TOWERS.push({ v: v, l: chL });   /* the church's tower, drawn in code (the depth board's item 8), in place of the old bell tower piece */
       railsOf(V2);
@@ -7994,7 +7998,7 @@ __COMBAT__
       if (!inCave && !PERF.skip.grass) w.drawGrass(c, cam, hw, hh, clock, seasonGrass());
       if (bDirty) rebuildRooms();
       bldShadows(c, hw, hh);   /* the buildings' and the walls' shadows, under the set pieces' */
-      drawCastShadows(c, hw, hh); pierShadows(c, hw, hh);
+      drawSkirts(c, hw, hh); drawCastShadows(c, hw, hh); pierShadows(c, hw, hh);
       drawFireShadows(c, hw, hh);
     },
     items: function (items) {

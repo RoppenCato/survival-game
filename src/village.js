@@ -477,7 +477,25 @@ function make(seed, site, opts) {
       else { var gx = (g[0] + g[2]) / 2, gy = (g[1] + g[3]) / 2, bd = 60; for (k = 0; k < n; k++) { var p = mine[k], q = mine[(k + 1) % n], d = Math.hypot((p.x + q.x) / 2 - gx, (p.y + q.y) / 2 - gy); if (q.run !== p.run && d < bd) { bd = d; pa = p; pb = q; } } if (!pa) return; }
       var L = Math.hypot(pb.x - pa.x, pb.y - pa.y); if (L > 240 || pa === pb) return;
       ins.forEach(function (k2) { var at = C.props.indexOf(mine[k2]); if (at >= 0) C.props.splice(at, 1); });
-      pa.gatePost = pb.gatePost = 1; F2.gates.push({ a: [pa.x, pa.y], b: [pb.x, pb.y], double: L > 76 }); });
+      pa.gatePost = pb.gatePost = 1;
+      /* (Robin, 2026-11-11, after chapter 0: "I couldnt even tell it was a gate when i came first"; the Art Director's out/field_gate) the gate is
+         two tiles wide (a cart's way) in the middle of the gap, square to the box's side (dir 'ew' or 'ns'), hung between two tall posts that
+         are the studio's fieldGate pictures; the fence is carried on from the gap's own posts to them, a post every 30 or so in the same runs,
+         so the rails reach the gate. a is the west (or north) post, b the east (or south). No random draws: every village keeps its layout.
+         A gap too narrow for it keeps the old gate between its own posts (no dir: drawn with BuildGate as before). */
+      var GW = 2 * T, ew = Math.abs(pb.x - pa.x) >= Math.abs(pb.y - pa.y), ux = (pb.x - pa.x) / L, uy = (pb.y - pa.y) / L;
+      if (L < GW + 24) { F2.gates.push({ a: [pa.x, pa.y], b: [pb.x, pb.y], double: L > 76 }); return; }
+      var gmx = (g[0] + g[2]) / 2, gmy = (g[1] + g[3]) / 2, tm = clamp((gmx - pa.x) * ux + (gmy - pa.y) * uy, GW / 2 + 12, L - GW / 2 - 12), mx = Math.round(pa.x + ux * tm), my = Math.round(pa.y + uy * tm);
+      var A = ew ? [mx - GW / 2, my] : [mx, my - GW / 2], Bq = ew ? [mx + GW / 2, my] : [mx, my + GW / 2], aFirst = Math.hypot(A[0] - pa.x, A[1] - pa.y) <= Math.hypot(Bq[0] - pa.x, Bq[1] - pa.y), qa = aFirst ? A : Bq, qb = aFirst ? Bq : A;
+      function carry(p0, p1, run, i0, step) {   // posts from p0 (excluded) to p1 (included) when step +1; from p1 (included) back toward p0 when step -1 (excluded)
+        var d = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), m = Math.max(1, Math.round(d / 30)), j;
+        for (j = 1; j <= m; j++) { var u = j / m, x = Math.round((p0[0] + (p1[0] - p0[0]) * u) * 10) / 10, y = Math.round((p0[1] + (p1[1] - p0[1]) * u) * 10) / 10, end = j === m;
+          if (end) { x = p1[0]; y = p1[1]; }
+          prop({ name: 'railPost', x: x, y: y, solid: 3, v: Math.abs(Math.round(x * 7 + y * 13)) % 3, fence: fi, run: run, i: step > 0 ? i0 + j : i0 - j, gatePost: 1 }); }
+      }
+      carry([pa.x, pa.y], qa, pa.run, pa.i, 1);   // the gap's first post on to the gate's near post
+      carry([pb.x, pb.y], qb, pb.run, pb.i, -1);  // and the gap's last post back to the gate's far post
+      F2.gates.push({ a: A, b: Bq, double: true, dir: ew ? 'ew' : 'ns', w: GW }); });
     V.fences.push(F2); return F2;
   }
   function unitFence(u, kind, m) {
@@ -718,9 +736,9 @@ function make(seed, site, opts) {
     V.saltWorks = true; var RS = rngOf(seed * 17 + 3), fx = focus[0] / T, j = function () { return (RS() - 0.5) * 0.8; }, wx = function (dx) { return (fx - dx + j()) * T; };
     var wr = waterRow(fx - 14, fx - 4, ry - 2), sea = wr != null ? wr : ty + h - 0.4, py = Math.max(ry, sea - 3.6);   // the pool on the last row of land, the pans a few tiles up from it
     var sw = [], keep = function (o) { sw.push(o); return o; };
-    keep(prop(onLand({ name: 'seaPool', x: wx(9.5), y: (sea - 1) * T, solid: 26, under: true })));   // (solid: its stones and water stop the feet, and nothing grows in it)
-    keep(prop(onLand({ name: 'saltPan_boil', x: wx(7), y: (py + j() * 0.5) * T, solid: 14, light: 1, steam: true })));
-    keep(prop(onLand({ name: 'saltPan_crust', x: wx(11.5), y: (py + j() * 0.5) * T, solid: 14 })));
+    keep(prop(onLand({ name: 'seaPool', x: wx(9.5), y: (sea - 1) * T, solid: 26, under: true, noShadow: true, bare: true })));   // (solid: its stones and water stop the feet, and nothing grows in it)
+    keep(prop(onLand({ name: 'saltPan_boil', x: wx(7), y: (py + j() * 0.5) * T, solid: 14, light: 1, steam: true, bare: true })));
+    keep(prop(onLand({ name: 'saltPan_crust', x: wx(11.5), y: (py + j() * 0.5) * T, solid: 14, bare: true })));
     keep(prop(onLand({ name: 'brineTub', x: wx(9.4), y: (py + 1.1) * T, solid: 6 })));
     keep(prop(onLand({ name: 'saltBaskets', x: wx(13.6), y: (py - 1.2) * T, solid: 8, loot: { salt: 3 } })));
     prop(onLand({ name: 'driftwood', x: wx(4.6), y: (py - 1.3) * T, solid: 9 }));
