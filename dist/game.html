@@ -18685,7 +18685,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var bare = true, ragOf = function (it) { return !!it && it.mat === 'rag'; }, L = [{ l: 'body' }];   /* (the body layer wears linen drawers of its own: Colin, AD, 2026-11-11, so nothing worn is the body alone, with no belt) */
     if (ragOf(equip.legs)) L.push(has('shortsRag') ? { l: 'shortsRag' } : { l: 'legs', t: S.legs }); else if (equip.legs) L.push({ l: 'legs', t: mf(equip.legs, S.legs) }); else if (!bare) L.push({ l: 'legs', t: S.legs });
     if (ragOf(equip.chest)) L.push(has('shirtRag') ? { l: 'shirtRag' } : has('shirt') ? { l: 'shirt' } : { l: 'tunic', t: S.tunic }); else if (!equip.chest && !bare) L.push(has('shirt') ? { l: 'shirt' } : { l: 'tunic', t: S.tunic });
-    var chestAt = L.length; L.push({ l: equip.feet ? 'boots' : 'shoes' }); if (equip.chest || equip.legs || !bare) L.push({ l: 'belt' }); var chestOn = equip.chest && !ragOf(equip.chest);
+    var chestAt = L.length; if (equip.feet) L.push({ l: 'boots' });   /* (barefoot with nothing on his feet: the body's own feet are skin, Colin, AD 2026-11-11; the leather shoes he makes are the first on them) */ if (equip.chest || equip.legs || !bare) L.push({ l: 'belt' }); var chestOn = equip.chest && !ragOf(equip.chest);
     var wolfC = chestOn && equip.chest.mat === 'wolf' && has('tunicWolf');   /* the wolf-skin tunic in the tunic's place, untinted (Colin, AD's, 2026-11-10) */
     if (wolfC) L.splice(chestAt, 0, { l: 'tunicWolf' });
     else if (chestOn) L.splice(chestAt, 0, { l: 'tunic', t: S.tunic });   /* the basic outfit is the undyed shirt (Robin, 2026-11-10; Colin, AD's `shirt`, no tint, the lowest worn layer); the tunic goes on with what is worn on the chest (mine) */
