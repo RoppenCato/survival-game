@@ -275,7 +275,7 @@ var T = 32, TS = 24, K = 0.75;
   function headingK(J, h) { var n = J.headings; return ((Math.round(h / (2 * Math.PI) * n) % n) + n) % n; }
   /* A model's picture at any heading: the 32 pictures turned the rest of the way on the ground (Robin, 2026-10-31): the nearest picture, held a little past the half-way point. G: a group, json.front or json.groups[g]; a frame may be a list of pieces. */
   /* (2026-11-13, Robin: the cross-fade of 2026-11-11 showed "two images trying to show", two stems at once. It is gone: one picture at a time, and the picture is held a little past the half-way point (PIC_HOLD) so a heading that hovers at a switch does not flip between two. What is left of the shake is the pictures themselves, eleven degrees apart: more headings are asked of Colin, AD.) */
-  var PIC_HOLD = 0.62, holdK = null;
+  var PIC_HOLD = 0.55, holdK = null;
   function picHold(v, J) { if (!J || !J.headings) { holdK = null; return; } var n = J.headings, u = v.h / (2 * Math.PI / n); if (v._fk == null) v._fk = Math.round(u); else { var d = u - v._fk; d -= Math.round(d / n) * n; if (Math.abs(d) > PIC_HOLD) v._fk = Math.round(u); } holdK = v._fk; }   /* the picture this vessel shows, kept by the vessel; called before each of its drawings, so her back, her front and her rig are of one picture */
   function artFrame(c, sheet, J, h, x, y, G) {
     if (!sheet) return; var n = J.headings, step = 2 * Math.PI / n, u = h / step, k = Math.round(u), s = 1 / J.px_unit, kg = J.k_ground || K;

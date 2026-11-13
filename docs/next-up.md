@@ -15,7 +15,7 @@ Last updated: 2026-11-13.
 
 ## Waiting on Robin
 
-**Chapter 0 after Robin's run of 2026-11-13:** everything Checked but the boat's turn (1.13). It waits on Colin, AD's 64 headings of the rowboat, then on Robin's look. After that the alpha is made (3.7 tested then). **Robin wants to rewrite Arnor's lines himself:** asked of Alistair, LD the same day where; the Sagabók has a dialogue register and session (`site/index.html#dialogue`).
+**Chapter 0 after Robin's run of 2026-11-13:** everything Checked but the boat's turn (1.13). Colin, AD's 96 headings of the rowboat are in (2026-11-13): it waits on Robin's look at her turn. After that the alpha is made (3.7 tested then). **Robin wants to rewrite Arnor's lines himself:** asked of Alistair, LD the same day where; the Sagabók has a dialogue register and session (`site/index.html#dialogue`).
 
 **The winter ice, first rung (2026-11-11):** in the dev version; `docs/ice.md` says how to try it and asks three questions. Next on it, when you say: ice fishing, wolves on the ice, its sounds.
 
