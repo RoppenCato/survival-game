@@ -3089,9 +3089,10 @@ __COMBAT__
     order.forEach(function (m, k) { var q = places[k]; if (!q) return; m.x = raft.x + ch * q.x - sh * q.y; m.y = raft.y + sh * q.x + ch * q.y; m.face = raft.h + q.face; m.sitting = true; m.moving = false; m.place = q; if (m.state !== undefined) { m.vx = 0; m.vy = 0; } });   // (a man of the engine aboard is placed the same)
     if (raft.aboard) {
       var st = Yard.heroSeat(raft); P.x = raft.x + ch * st; P.y = raft.y + sh * st; P.vx = P.vy = 0; P.sprinting = false;
-      P.anim.sit = order.length === 0 && !Yard.rigged(raft.kind) ? 1 : 0;
+      var aimB = P.bowDraw > 0 || P.atk.ph !== 'none'; if (aimB) boatAimUntil = clock + 0.7; boatAimT = boatAimUntil > clock ? 1 : 0;   /* (the bow drawn or just loosed: he is up from the oars and faces where he aims, and sits again a moment after) */
+      P.anim.sit = order.length === 0 && !Yard.rigged(raft.kind) && !(boatAimT > 0) ? 1 : 0;
       P.anim.row = P.anim.sit && raft.rowing && sprHero && sprHero.meta && sprHero.meta.anims.row ? Yard.strokePhase(raft) : null; if (P.anim.row != null && !heroRowWarm) { heroRowWarm = true; Sprites.peopleWarm(sprHero, heroLook(P.faceVis), ['row']); }   /* at the oars alone: the kit's row clip (2026-10-21) */
-      if (P.atk.ph === 'none' && !P.guard) { if (order.length > 0) { P.face = raft.h; P.faceVis = raft.h; } else if (!Yard.rigged(raft.kind)) { P.face = raft.h + Math.PI; P.faceVis = P.face; } }   /* with a crew he stands in the bow looking ahead and turns only to strike or shoot; alone at the oars he faces aft (Robin, 2026-10-21) */
+      if (P.atk.ph === 'none' && !P.guard && !(boatAimT > 0)) { if (order.length > 0) { P.face = raft.h; P.faceVis = raft.h; } else if (!Yard.rigged(raft.kind)) { P.face = raft.h + Math.PI; P.faceVis = P.face; } }   /* with a crew he stands in the bow looking ahead and turns only to strike or shoot; alone at the oars he faces aft (Robin, 2026-10-21) */
     }
   }
   function witsOf(m) { return m.person && m.person.stats ? (m.person.stats.wits || 0) : 0; }
@@ -5989,7 +5990,11 @@ __COMBAT__
   function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
   var noArrowT = 0;
   Combat.api.afloat = function () { return !!(raft && raft.aboard); };   /* aboard, hunters leave: beasts wander off, a town's men go back to their posts; your own men still fight whoever is on the shore (Robin, 2026-10-30) */
-  Combat.api.noArms = function () { return swim.on; };   /* no weapon in deep water, the shallows as on land (Robin, 2026-10-30) */
+  /* Aboard (Robin, 2026-11-13: "you should only be able to attack when the boat is still ... Only bow for now"): no blow and no guard from a boat; the bow alone, and only while she lies still (BOAT_STILL units a second, mine). */
+  var BOAT_STILL = 6, boatAimT = 0, boatAimUntil = 0;
+  function boatStill() { return !!raft && Math.abs(raft.speed || 0) < BOAT_STILL && Math.hypot(raft.vx || 0, raft.vy || 0) < BOAT_STILL; }
+  function boatNoArms() { if (!(raft && raft.aboard)) return false; var hb = handItem('fight'); return !(hb && hb.kind === 'bow') || !boatStill(); }
+  Combat.api.noArms = function () { return swim.on || boatNoArms(); };   /* no weapon in deep water, the shallows as on land (Robin, 2026-10-30) */
   Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow' && (!equip.quiver || quiverCount() <= 0) && !ADMIN.free) { if (clock - noArrowT > 1.5) { noArrowT = clock; toast(equip.quiver ? 'No arrows' : 'No quiver'); } return false; } return true; };   /* a bow shoots only with arrows in the quiver (Robin, 2026-10-26) */   /* (2026-10-13, Robin: the arrow slots are gone and a bow or a sling shoots without ammo until a better way is found; a thrown thing still flies away) */
   var TRAP_STACK = { tripper: 'trapTripper', poison: 'trapPoison' };
   Combat.api.trapHave = function (kind) { if (ADMIN.free) return 99; return inv[TRAP_STACK[kind]] || 0; };   /* the Trapper's traps come from the bag (Robin, 2026-10-24) */
