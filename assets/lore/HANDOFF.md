@@ -1,29 +1,80 @@
-# Lore handoff 28: the Old Man's rune, no jarl, the chapter's end (2026-11-10, evening)
+# Lore handoff 29: Robin's own words for Arnor (2026-11-13)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-27.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-28.md`.
 
-Robin's three decisions of the evening are recorded as Robin's in the canon (`chapter.2`, `beast.old-man`, `line.rune.strong-back`,
-`quest.aslak.boat`). Everything here is `in-game`. lore.json: 210 entries.
+Robin rewrote Arnor's lines in the Sagabók's new "Rewrite Arnor's words" page. They are Robin's own words, now `canon`, each entry
+with its before in the canon. The ids and the line positions are the same; every line is under 130 characters. lore.json: 210 entries.
+The only edit of mine is a stray space ("Hello there ." to "Hello there.").
 
-## Changed
+## For the game (Robin's notes, as written)
 
-- `line.rune.strong-back`: the card for your `strongBack`, now **Bear strength (ᛘ maðr)**, the Old Man's rune. It was proposed and is now
-  in-game. The name is Robin's own words, and it stays. Line 1 (the rune poem's verse for *maðr*) is unchanged. Line 2 changed in its
-  place to "Folk say the Old Man was a man once. Whoever has his rune carries like a bear, and never feels the load." The sign stays
-  *maðr*, "man": folk say the Old Man was a man once.
+- **`line.arnor.wait.no-walls`** is now one line, from Robin's note on the meeting: "After this, let him say 'If you fix that house,
+  we will have somewhere to stay the night.' when you talk to him over and over til house is fixed." Your `arnorLineId` already
+  gives it from the meeting until the house is mended, so it should only need the new lore.json.
+- **`line.arnor.wait.meat`** has three lines now, and an order, from Robin's note: "After this, let him say 'Please see if you can
+  find us something to eat.' or number 2 every time you talk to him until a boar is slaughtered." So **line 1 the first time** after
+  the roof is up, **then line 2 or line 3** every talk until the boar is slaughtered (like the deer's first line and its wait).
+  How you do that is yours.
+- **`line.arnor.graves`** is five lines now: Robin cut line 6.
+- **`line.arnor.wait.no-hearth`** is two lines now: Robin cut line 3. (I don't think your `arnorLineId` uses it any more.)
+- **`line.arnor.supper`** no longer says he'll see to the boat. `quest.arnor.deer`'s book_more and `quest.arnor.boat`'s book still
+  say he did. I've asked Robin about it; nothing changes there until Robin answers.
 
-## New
+## The lines as they now stand
 
-- `quest.aslak.boat`, **"A boat for deep water"**: the chapter's last quest. Giver Old Aslak; given when he is talked to after Hogni is
-  found (it is the teaching `quest.aslak.brother` ends on). Done when the new boat is built and sailed out into the deeper waters.
-  - `book`: "Aslak says Arnor's boat is a fine boat for a fjord. Out past the last island the waves are long, and she'd fill. What I need
-    is a mast of old pine and a sail of flax, and he'll show me the rest. His hands remember, he says, even if his knees don't."
-  - `book_more`: "She's built, mast and sail. Past the last island the water turned dark and deep, and the waves came long and slow under
-    her. She rode them."
-  - It names what a boat is made of, mast and sail, never how many or where; that is yours. No farewell, as Robin wants.
+### `line.arnor.meet` (sequence, 4 lines)
 
-## Held (not in lore.json, for your information)
+1. Hello there. Out of the sea, washed upon my beach.
+2. I am Arnor. I was the smith, before our village was attacked.
+3. I've salvaged what I could, but I am alone. He always leaves one alive. Someone has to tell the tale they say.
+4. The house by the well still has its bones. If you help me get those planks up, there would be a place to sleep.
 
-No jarl in chapter 1. Jarl Fridmund the Peaceful, his household and Tingvoll (all proposed, never delivered) were written as home
-water's. They are held for the chapter with the seat, and no longer carry `chapter.2`. Nothing in-game in chapter 1 named a jarl of
-home water. The southern jarl stays a rumour (`rumour.south.town`, `rumour.south.tribute`, `line.eadric.talk`).
+### `line.arnor.wait.no-walls` (variants, 1 line)
+
+1. If you fix that house, we will have somewhere to stay the night.
+
+### `line.arnor.wait.meat` (variants, 3 lines)
+
+1. The roof is up again. Thank you traveler. Please see if you can find us something to eat.
+2. Bring a boar to the table in the yard and we will both eat.
+3. Please see if you can find us something to eat.
+
+### `line.arnor.deer` (sequence, 2 lines)
+
+1. Ah you found sinew from a boar. You could make a bow out of that at a workbench.
+2. Catching a deer is hard, attacking from a distance makes it easier.
+
+### `line.arnor.wait.deer` (variants, 3 lines)
+
+1. You'll need a bow to catch those deer.
+2. Downwind, and slow. They hear you before they see you.
+3. Please bring me cooked meat of a deer.
+
+### `line.arnor.supper` (variants, 1 line)
+
+1. Thank you traveler. Once the night enters, feel free to sleep inside.
+
+### `line.arnor.teach` (sequence, 3 lines)
+
+1. That's a home again. This will be of great help come winter.
+2. My boat's been broken down ever since the raid. I've mended her. She's yours.
+3. Sail east. There you will find a village.
+
+### `line.arnor.taught` (variants, 3 lines)
+
+1. She pulls to the left. Lean right and she'll forgive you.
+2. Tell them in the village you met Arnor. They'll know the rest.
+3. I'll be here. Somebody has to keep the graves.
+
+### `line.arnor.graves` (sequence, 5 lines)
+
+1. Thorgunna. She wouldn't pay.
+2. Her boys.
+3. Grímhild kept the bees.
+4. Thorkel built our boats.
+5. I cut her runes myself. She'd have laughed at them.
+
+### `line.arnor.wait.no-hearth` (variants, 2 lines)
+
+1. A fire by the door. A roof with no fire near it is a cave.
+2. We need a fire.
