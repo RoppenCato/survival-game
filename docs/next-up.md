@@ -4,7 +4,7 @@ The one page to open for "what's next". Kept short: what Clive, GD is doing now,
 The detail lives in the chapter checklists (`docs/chapter-0-checklist.md`, `docs/chapter-1-checklist.md`), the decisions
 (`docs/decisions.md`) and the idea bank (`docs/idea-bank.md`). Update this page whenever something moves.
 
-Last updated: 2026-11-11.
+Last updated: 2026-11-13.
 
 ## Now (Clive, GD), in order
 
@@ -14,6 +14,8 @@ Last updated: 2026-11-11.
 4. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 
 ## Waiting on Robin
+
+**Chapter 0 after Robin's run of 2026-11-13:** everything Checked but the boat's turn (1.13). It waits on Colin, AD's 64 headings of the rowboat, then on Robin's look. After that the alpha is made (3.7 tested then). **Robin wants to rewrite Arnor's lines himself:** asked of Alistair, LD the same day where; the Sagabók has a dialogue register and session (`site/index.html#dialogue`).
 
 **The winter ice, first rung (2026-11-11):** in the dev version; `docs/ice.md` says how to try it and asks three questions. Next on it, when you say: ice fishing, wolves on the ice, its sounds.
 

@@ -29,10 +29,10 @@ wrong with the rest.
 | 1.7 | **The workbench opens building** everywhere (Valheim-like): before it, only the comfort pieces, the workbench and the campfire. | Checked (Robin, 2026-10-31) |
 | 1.8 | **Hunting a boar** with the wooden sword or the bow, then carrying it (the slower walk, E to set it down). **A body lies five minutes even when the beast died off screen.** | Checked (Robin, 2026-10-31) |
 | 1.9 | **Butchering at Arnor's table**: meat, leather and the boar's sinew. | Checked (Robin, 2026-10-31) |
-| 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Built (Checked 2026-10-31; changed 2026-11-11: the talk that ends the house quest no longer gives the boar quest: Arnor stands with a ! and the next talk gives it) |
+| 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Checked (Robin, 2026-11-13) |
 | 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its words are canon (lore handoff 21). | Checked (Robin, 2026-10-31) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Checked (Robin, 2026-10-31) |
-| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built (Works, Robin 2026-11-11; changed the same day: no quest mark over the boat, both oars under the rower when his back is to us, the two nearest pictures cross-faded in a turn so the boat does not shake; the hole in the hull mended in Colin, AD's pictures) |
+| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built (Robin, 2026-11-13: the quest mark, the oars and the hull Work; the turn does not: the cross-fade showed "two images trying to show". Changed the same day: one picture at a time again, held a little past the half-way point; what is left of the shake is the pictures, eleven degrees apart: 64 headings asked of Colin, AD) |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Checked (Robin, 2026-10-31) |
 
 ## 2. Robin's six areas, for what chapter 0 shows
@@ -44,7 +44,7 @@ wrong with the rest.
 | 2a.2 | The boar and the deer: walking, running, falling, lying, carried. | Checked (Robin, 2026-10-31) |
 | 2a.3 | Arnor, his house, the steading, the wreck, the butcher's table, the straw bed, the boat in each of its states. | Checked (Robin, 2026-10-31) |
 | 2a.4 | The island's look: ground, coasts, trees, rocks, grass; set pieces with their cast shadow and foot grass, no sticker look. | Checked (Robin, 2026-10-31) |
-| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Built (Works, Robin 2026-11-11; changed the same day: a fire in a roofless ruin lights no window) |
+| 2a.5 | Building pieces: walls with their detail, windows, doors, roofs, fences and the campfire. | Checked (Robin, 2026-11-13) |
 | **2b** | **Combat and gathering** | |
 | 2b.1 | The wooden sword: a swing, a held swing, the guard, the parry. | Checked (Robin, 2026-11-11) |
 | 2b.2 | The bow: the draw on K, the release on J, the snap shot against the full draw, the aim line, arrows that stick and are picked up. | Checked (Robin, 2026-10-31) |
@@ -59,11 +59,11 @@ wrong with the rest.
 | 2c.4 | The Building board on a right click: the pieces you know, their icons, the costs. | Checked (Robin, 2026-10-31) |
 | 2c.5 | Chests: Q sort, Z stack, V fill up, N quick stack. | Checked (Robin, 2026-11-11) |
 | 2c.6 | The basic outfit: chest, trousers, leather shoes. | Checked (Robin, 2026-10-31) |
-| 2c.7 | **Take apart** (Robin, 2026-11-11): right click on a made thing in the bag, Take apart: half of each thing its recipe asked, rounded down; the rags give one fibre. | Built (the list and the rags' fibre by script, not clicked) |
+| 2c.7 | **Take apart** (Robin, 2026-11-11): right click on a made thing in the bag, Take apart: half of each thing its recipe asked, rounded down; the rags give one fibre. | Checked (Robin, 2026-11-13) |
 | **2d** | **The interface** | |
 | 2d.1 | The prompts over the hero, and E's rule: the right thing at each place. | Checked (Robin, 2026-10-31) |
 | 2d.2 | The book (O, the Quests tab; L, the Lore Book): the quests page and its plaque, which now waits until a talk window is closed. | Checked (Robin, 2026-10-31) |
-| 2d.3 | The map (M): what has been seen, the lettering's big turns. | Built (Works, Robin 2026-11-11; changed the same day: the map's quest mark is Arnor's, not the boat's) |
+| 2d.3 | The map (M): what has been seen, the lettering's big turns. | Checked (Robin, 2026-11-13) |
 | 2d.4 | Health, stamina, the food buffs, the comfort buff by the fire. | Checked (Robin, 2026-10-31) |
 | 2d.5 | Esc: the menu, the music and world-sound bars, Save to a file, Load from a file. | Checked (Robin, 2026-10-31) |
 | 2d.6 | **The "Building" board** still announces building. Robin, 2026-11-10: keep the board for now. | Checked (Robin, 2026-11-11): keep the board for now |
@@ -83,10 +83,10 @@ wrong with the rest.
 | # | Item: what to try | State |
 | --- | --- | --- |
 | 3.1 | **Save and load at every step** of part 1: quit, load, and everything is where it was (also from a file). | Checked (Robin, 2026-11-11) |
-| 3.2 | **No errors**: the error log (Admin, at home) is empty after a full play. | Checked (Robin, 2026-11-11): the log he sent holds only twenty lines of 2026-10-26, from the Admin board |
+| 3.2 | **No errors**: the error log (Admin, at home) is empty after a full play. | Checked (Robin, 2026-11-13): the log he sent holds only the old lines of 2026-10-26, none from this run |
 | 3.3 | **A steady frame rate** at Robin's size, at home. | Checked (Robin, 2026-10-31) |
 | 3.4 | **The frame rate on a weaker computer**: Robin's work computer found the online game laggy (2026-10-29). | To fix (Robin: leave it for now) |
-| 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Built (Robin, 2026-11-11: "Not sure what you mean with this"; explained to him, waits) |
+| 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Checked (Robin, 2026-11-13) |
 | 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Checked (Robin, 2026-10-31) |
 | 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (tested by script 2026-10-30) |
 
@@ -95,13 +95,14 @@ wrong with the rest.
 | # | Item | State |
 | --- | --- | --- |
 | 4.1 | **The glimpses** of chapter 0: none (Robin, 2026-11-10: "Dont think we need any"; a far smoke or sail cannot be shown from above). | Checked (nothing to build) |
-| 4.2 | **The outfit he wakes in is ragged** (Robin, 2026-11-11: "you should start with rugged shirt and rugged shorts. Naked hero only having underwear"): a Ragged Shirt and Ragged Shorts, worn, no armour. It was the undyed shirt (Robin, 2026-11-10). | Built (Robin, 2026-11-11: "Works weird"; changed the same day: the leather tunic lies over the shirt; the outfit is a ragged shirt and ragged shorts, real things in the chest's and the legs' slots, and with nothing worn he is in his underwear; Colin, AD's `shirtRag` and `shortsRag` in the kit the same day; the bare hero is the body in its own drawers; seen in the pane from behind: the rags, bare, the leather tunic over the shorts) |
+| 4.2 | **The outfit he wakes in is ragged** (Robin, 2026-11-11: "you should start with rugged shirt and rugged shorts. Naked hero only having underwear"): a Ragged Shirt and Ragged Shorts, worn, no armour. It was the undyed shirt (Robin, 2026-11-10). | Checked (Robin, 2026-11-13) |
 | 4.3 | **The steading's other houses** stay ruin through chapter 0; **Arnor has mended them once you have landed on another island** (Robin, 2026-11-10: "Arnor fixed them"). That is chapter 1's (its checklist, 1.16). | Checked for chapter 0 (they are ruin) |
 | 4.4 | **Wild herbs and fallen trees as pictures** (Robin, 2026-11-10; Colin, AD's four herbs and two fallen trees), no code drawings left near the start; bird nests gone. | Checked (Robin, 2026-11-11) |
 | 4.5 | **The first tools are stone** (2026-11-10, with chapter 1's flint: the Stone Axe, Stone Pickaxe and Stone Knife; they were called flint; their numbers and look are unchanged). | Checked (Robin, 2026-11-11) |
 
 ## What changed (newest first)
 
+- 2026-11-13: Robin's sixth run over nine things: eight Checked (the ragged outfit, Take apart, the boar quest's `!`, no window light in a ruin, the map's mark, the crafting list's red mark, the controls, the error log). **Left: 1.13, the boat's turn**, waiting on Colin, AD's 64 headings; 3.4 (the work computer's frame rate, left by Robin) and 3.7 (the alpha's cap, mine when the alpha is made).
 - 2026-11-11: Robin's fifth run over the fifteen items left: ten Checked. Fixed: the shirt over the leather tunic, the ragged outfit and Take apart (his ask), the boar quest given in its own talk, no quest mark on the boat, no window light from a roofless ruin, the oars under the rower's back, the boat's shake in a turn. Asked of Colin, AD: the ragged clothes and the underwear, the hole in the rowboat's hull, the salt works and the field gate (both of chapter 1).
 - 2026-10-31: a workbench in Arnor's house from the start, working once the house has its roof (Robin); it cannot be taken down.
 - 2026-10-31: Robin's fourth run, fixed: the orange dots (an attack's warning, its dust and sparks gone), the east and west window's light on the outer side only, a bigger smoke hole, the door's light not across the hero, the map arrow follows the boat, the far oar under the hero, the boat turns smoothly, ! and ? quest marks over Arnor and the boat and on the maps, the bow and quiver at the workbench.

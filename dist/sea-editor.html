@@ -8090,13 +8090,14 @@ var T = 32, TS = 24, K = 0.75;
     var s = A.I.hull ? composeBig(A.I, lk, A.J) : composeShip(A.I, lk); ARTC.push({ key: key, kind: v.kind, s: s }); if (ARTC.length > ART_KEEP) ARTC.shift(); return s;
   }
   function headingK(J, h) { var n = J.headings; return ((Math.round(h / (2 * Math.PI) * n) % n) + n) % n; }
-  /* A model's picture at any heading: the 32 pictures turned the rest of the way on the ground (Robin, 2026-10-31), and since 2026-11-11 the two nearest cross-faded round the half-way point between them (Robin: turning, the boat "is shaking": the nearest picture alone popped at every switch, eleven degrees apart, ten times a second in a hard turn). Outside the band of FADE_BAND round the half-way point it is one picture. G: a group, json.front or json.groups[g]; a frame may be a list of pieces. */
-  var FADE_BAND = 0.36, fadeB = 0;   /* (fadeB: the band this frame; it closes in half a second once she stops turning, so a boat lying still is one sharp picture) */
+  /* A model's picture at any heading: the 32 pictures turned the rest of the way on the ground (Robin, 2026-10-31): the nearest picture, held a little past the half-way point. G: a group, json.front or json.groups[g]; a frame may be a list of pieces. */
+  /* (2026-11-13, Robin: the cross-fade of 2026-11-11 showed "two images trying to show", two stems at once. It is gone: one picture at a time, and the picture is held a little past the half-way point (PIC_HOLD) so a heading that hovers at a switch does not flip between two. What is left of the shake is the pictures themselves, eleven degrees apart: more headings are asked of Colin, AD.) */
+  var PIC_HOLD = 0.62, holdK = null;
+  function picHold(v, J) { if (!J || !J.headings) { holdK = null; return; } var n = J.headings, u = v.h / (2 * Math.PI / n); if (v._fk == null) v._fk = Math.round(u); else { var d = u - v._fk; d -= Math.round(d / n) * n; if (Math.abs(d) > PIC_HOLD) v._fk = Math.round(u); } holdK = v._fk; }   /* the picture this vessel shows, kept by the vessel; called before each of its drawings, so her back, her front and her rig are of one picture */
   function artFrame(c, sheet, J, h, x, y, G) {
-    if (!sheet) return; var n = J.headings, step = 2 * Math.PI / n, u = h / step, k0 = Math.floor(u), t = u - k0, s = 1 / J.px_unit, kg = J.k_ground || K, a0 = c.globalAlpha, b = Math.max(0.0001, fadeB / 2);
-    var a1 = t <= 0.5 ? 1 : Math.max(0, 1 - (t - 0.5) / b), a2 = t >= 0.5 ? 1 : Math.max(0, 1 - (0.5 - t) / b);
-    var one = function (k, d, a) { if (a < 0.02) return; var fr = (G || J).frames[((k % n) + n) % n], ps = typeof fr[0] === 'number' ? [fr] : fr, j; c.save(); c.globalAlpha = a0 * a; c.translate(x, y); c.scale(1, kg); c.rotate(d); c.scale(1, 1 / kg); for (j = 0; j < ps.length; j++) { var f = ps[j]; if (f[2]) c.drawImage(sheet, f[0], f[1], f[2], f[3], -f[4] * s, -f[5] * s, f[2] * s, f[3] * s); } c.restore(); };
-    one(k0, t * step, a1); one(k0 + 1, (t - 1) * step, a2);
+    if (!sheet) return; var n = J.headings, step = 2 * Math.PI / n, u = h / step, k = Math.round(u), s = 1 / J.px_unit, kg = J.k_ground || K;
+    if (holdK != null) { var dk = u - holdK; dk -= Math.round(dk / n) * n; if (Math.abs(dk) <= PIC_HOLD) k = Math.round(u - dk); }
+    var fr = (G || J).frames[((k % n) + n) % n], ps = typeof fr[0] === 'number' ? [fr] : fr, j; c.save(); c.translate(x, y); c.scale(1, kg); c.rotate((u - k) * step); c.scale(1, 1 / kg); for (j = 0; j < ps.length; j++) { var f = ps[j]; if (f[2]) c.drawImage(sheet, f[0], f[1], f[2], f[3], -f[4] * s, -f[5] * s, f[2] * s, f[3] * s); } c.restore();
   }
   function markAt(J, p, h) { var ch = Math.cos(h), sh = Math.sin(h); return [p[0] * ch - p[1] * sh, (p[0] * sh + p[1] * ch) * (J.k_ground || K) - (p[2] || 0) * (J.z_screen || 0.8192)]; }
   function imgOk(im) { return !!im && (im.complete === undefined ? !!(im.width || im.naturalWidth) : (im.complete && im.naturalWidth > 0)); }
@@ -8401,7 +8402,7 @@ var T = 32, TS = 24, K = 0.75;
   }
   function drawModel(c, v, MS, bob, clock, o) {   // a model's ship: the shadow and the water (from the marks), the composed back; whole, the front and the oars too
     var A = artOf(v), J = A.J, pr = profileOf(v), L = pr.L, W = pr.Wmax, h = v.h, H = HULLS[v.kind];
-    if (v._fh == null || Math.abs(Math.atan2(Math.sin(h - v._fh), Math.cos(h - v._fh))) > 0.0008) v._ft = clock; v._fh = h; fadeB = FADE_BAND * Math.max(0, Math.min(1, 1 - Math.abs(clock - v._ft) / 0.5));
+    picHold(v, J);
     c.save(); c.translate(v.x + 3, v.y * K + 3); c.scale(1, K); c.rotate(h); c.fillStyle = 'rgb(18,42,64)';
     [[1.14, 1.75, 0.07], [1.07, 1.38, 0.1], [1.0, 1.08, 0.17]].forEach(function (q) { c.globalAlpha = q[2]; c.beginPath(); shapedPath(c, pr, q[0], q[1]); c.fill(); });   // the shadow on the water, the rail's outline turned with her
     c.restore();
@@ -8418,7 +8419,7 @@ var T = 32, TS = 24, K = 0.75;
     if (!big) drawOars(c, v, clock, rw);
   }
   function drawBigRig(c, v, MS, J, sy) {   // the mast, the ropes, the sail set or furled by sailSet, the sheets with the sail
-    var M = J.marks, h = v.h, set = Math.max(0, Math.min(1, v.sailSet || 0)), a0 = c.globalAlpha;
+    var M = J.marks, h = v.h, set = Math.max(0, Math.min(1, v.sailSet || 0)), a0 = c.globalAlpha; picHold(v, J);
     artFrame(c, MS.rig, J, h, v.x, sy, J.groups.rig);
     function rope(ra, rb) { var p = markAt(J, ra, h), q = markAt(J, rb, h); c.beginPath(); c.moveTo(v.x + p[0], sy + p[1]); c.lineTo(v.x + q[0], sy + q[1]); c.stroke(); }
     c.save(); c.strokeStyle = 'rgba(196,174,128,0.9)'; c.lineWidth = 0.7; (M.ropes || []).forEach(function (r) { rope(r[0], r[1]); }); c.restore();
@@ -8512,7 +8513,7 @@ var T = 32, TS = 24, K = 0.75;
   function parts0(v, id) { return !!(v.parts || []).some(function (p) { return p.id === id; }); }
   function drawVesselFront(c, v, clock, figs) {
     if (!HULLS[v.kind]) return;
-    var MSf = composeOf(v); if (MSf) { var Jf = artOf(v).J, syf = v.y * K + bobOf(v, clock); artFrame(c, MSf.front, Jf, v.h, v.x, syf, MSf.rig ? Jf.front : null); if (MSf.head && Jf.bowNear && Jf.bowNear[headingK(Jf, v.h)]) artFrame(c, MSf.head, Jf, v.h, v.x, syf, Jf.groups['head_' + MSf.headKind]); return; }   // (a model: its front mask, whole, over everyone aboard)
+    var MSf = composeOf(v); if (MSf) { var Jf = artOf(v).J, syf = v.y * K + bobOf(v, clock); picHold(v, Jf); artFrame(c, MSf.front, Jf, v.h, v.x, syf, MSf.rig ? Jf.front : null); if (MSf.head && Jf.bowNear && Jf.bowNear[headingK(Jf, v.h)]) artFrame(c, MSf.head, Jf, v.h, v.x, syf, Jf.groups['head_' + MSf.headKind]); return; }   // (a model: its front mask, whole, over everyone aboard)
     var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02, i;
     if (typeof figs === 'number') figs = [{ x: v.x + Math.cos(v.h) * (v.seat || 0), y: figs }];
     function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); shapedPath(c, pr, k1, k2); c.restore(); }
