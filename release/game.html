@@ -14678,7 +14678,8 @@ if (typeof module !== 'undefined') module.exports = Ice;
      hero-kit): loaded lazily like the people, drawn by drawKit through person(), the clip and frame chosen by pick() as before. */
   function hero(SP, storage) { var nm = heroName(SP, storage); if (!nm) return null; if (!isKit(SP, nm)) return load(SP, nm); var H = loadLazy(SP, nm); H.kit = true; H.clip = null; H.fireT = 0; H.deadT = 0; H.last = null; return H; }
   function scaleOf(storage) { var s = 1; try { var v = parseFloat(storage && storage.getItem('game.blenderScale')); if (v > 0) s = v; } catch (e) {} return s; }
-  function dirOf(M, face) {
+  function dirOf(M, face, A) {   /* (A: the clip, when it has facings of its own, `dirs`: Colin, AD's row clip at 32, 2026-11-13: row r of its rects is direction r, in the set's turning order from the south) */
+    if (A && A.dirs) { var nA = A.dirs.length, iA = Math.round((face - Math.PI / 2) / (2 * Math.PI / nA)); return ((iA % nA) + nA) % nA; }
     var n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
     var want = (n === 8 ? DIRS8 : DIRS4)[i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
   }
@@ -14810,11 +14811,11 @@ if (typeof module !== 'undefined') module.exports = Ice;
   }
   // where a hand is for a drawn frame: [dx, dy, depth] from the feet in world units (null when the sheet has no hands); which is 0 right, 1 left
   function hand(H, pk, face, which, scale) {
-    var M = H.meta, A = M.anims[pk.a]; if (!A.hands) return null; var d = M.dirs[dirOf(M, face)], rows = A.hands[d]; if (!rows || !rows[pk.f]) return null;
+    var M = H.meta, A = M.anims[pk.a]; if (!A.hands) return null; var d = (A.dirs || M.dirs)[dirOf(M, face, A)], rows = A.hands[d]; if (!rows || !rows[pk.f]) return null;
     var h = rows[pk.f][which || 0], s = (scale || 1) / PX, AN = A.anchor || M.anchor; return h ? [(h[0] - AN.x) * s, (h[1] - AN.y) * s, h[2]] : null;
   }
   function tip(H, pk, face, scale) {        /* the rod's end on a fishing or rod-carrying clip (Colin, AD's tip meta, 2026-10-25: laid out as hands, one point a frame) */
-    var M = H.meta, A = M.anims[pk.a]; if (!A || !A.tip) return null; var d = M.dirs[dirOf(M, face)], rows = A.tip[d]; if (!rows || !rows[pk.f]) return null;
+    var M = H.meta, A = M.anims[pk.a]; if (!A || !A.tip) return null; var d = (A.dirs || M.dirs)[dirOf(M, face, A)], rows = A.tip[d]; if (!rows || !rows[pk.f]) return null;
     var h = rows[pk.f], s = (scale || 1) / PX, AN = A.anchor || M.anchor; return [(h[0] - AN.x) * s, (h[1] - AN.y) * s, h[2]];
   }
   function silOf(H, im, file, hue) {
@@ -14846,7 +14847,7 @@ if (typeof module !== 'undefined') module.exports = Ice;
   // draws the hero at (x, y) (the feet, in the camera's space). opts: scale (1 is the render's size), shadow (true), shadowHue, layers (['body'] plus gear)
   function draw(c, H, x, y, face, an, dashing, P, opts) {
     opts = opts || {}; var M = H.meta, pk = pick(H, P, an, opts); H.last = pk; if (!pk) return;
-    var A = M.anims[pk.a], d = dirOf(M, face), F0 = A.frame || M.frame, AN = A.anchor || M.anchor, fw = F0.w, fh = F0.h,   /* (a clip may have a frame and an anchor of its own: the death, which no other clip's frame holds) */
+    var A = M.anims[pk.a], d = dirOf(M, face, A), F0 = A.frame || M.frame, AN = A.anchor || M.anchor, fw = F0.w, fh = F0.h,   /* (a clip may have a frame and an anchor of its own: the death, which no other clip's frame holds) */
         s = (opts.scale || 1) * (M.scale || 1) / PX, layers = opts.layers || ['body'];
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing && !(dashing === 3 && /^sneak/.test(pk.a))) c.scale(dashing === 2 ? 1.3 : dashing === 3 ? 1.03 : 1.1, dashing === 2 ? 0.7 : dashing === 3 ? 0.9 : 0.92);   /* (3: sneaking, a little crouched where the set has no sneak clip; Colin, AD's clips crouch for themselves) */
@@ -14919,7 +14920,7 @@ if (typeof module !== 'undefined') module.exports = Ice;
     if (opts.clip && A[opts.clip] && opts.clipK == null) loopN = nm;
     if (loopN && opts.blend !== false && blends(nm, A[nm])) { var lp = loopAt(A[nm], ph); f = lp.f; if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) mixB = lp; }   // a slow loop: between two frames
     if (H.src && !imgOf(H, A[nm].sheets.body)) { nm = 'idle'; f = loopFrame(A.idle, ph); mixB = null; }   // this clip's sheet is still on its way: the idle, which is there
-    var An = A[nm], d = dirOf(M, st.face), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.src ? imgOf(H, file) : H.img[file];
+    var An = A[nm], d = dirOf(M, st.face, An), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.src ? imgOf(H, file) : H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
     var p = pieceOf(H, An, nm, 'body', d, f, BP); if (An.rects) mixB = null; if (!p.w) return true;   /* (a packed clip: the frame's own piece; an empty frame draws nothing) */
     var sx = p.sx, sy = p.sy, pw = p.w, ph = p.h, dx0 = (p.ox - AN.x) * s, dy0 = (p.oy - AN.y) * s, dw0 = pw * s, dh0 = ph * s;
@@ -14933,7 +14934,7 @@ if (typeof module !== 'undefined') module.exports = Ice;
     if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), sx, sy, pw, ph, dx0, dy0, dw0, dh0); c.globalAlpha = ga; }
     if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), sx, sy, pw, ph, dx0, dy0, dw0, dh0); }
     c.restore();
-    if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - AN.x) * s, (h[1] - AN.y) * s]; }); }
+    if (An.hands) { var rows = An.hands[(An.dirs || M.dirs)[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - AN.x) * s, (h[1] - AN.y) * s]; }); }
     return true;
   }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); if (H.kit) drawKit(c, H, x, y, face, an, false, P, opts || {}, (opts && opts.look) || kitLook(H, null)); else draw(c, H, x, y, face, an, false, P, opts || {}); } }
@@ -15090,7 +15091,7 @@ if (typeof module !== 'undefined') module.exports = Ice;
       if (x1 < 0) return null; U = H.ubox[uk] = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
     }
     var ord = [], ok = true;
-    for (i = 0; i < look.L.length; i++) { q = look.L[i]; if (!A.sheets[q.l]) continue; if (!imgOf(H, A.sheets[q.l])) ok = false; ord.push({ z: q, r: rankOf(q, d) + i * 0.001 }); }
+    for (i = 0; i < look.L.length; i++) { q = look.L[i]; if (!A.sheets[q.l]) continue; if (!imgOf(H, A.sheets[q.l])) ok = false; ord.push({ z: q, r: rankOf(q, A.dirs ? Math.round(d * 8 / A.dirs.length) % 8 : d) + i * 0.001 }); }   /* (a clip with facings of its own: the pile's order from the nearest of the eight) */
     if (!ok) return null;                                            // still loading (every sheet has been asked for now): nothing is kept
     ord.sort(function (m, k) { return m.r - k.r; });
     var cv2 = cvOf(U.w, U.h), g = cv2.getContext('2d');
@@ -15119,7 +15120,7 @@ if (typeof module !== 'undefined') module.exports = Ice;
   function person(c, H, look, st, x, y, opts) {
     opts = opts || {}; var M = H.meta, clip = M.anims[st.clip] ? st.clip : 'idle', A = M.anims[clip]; if (!A) return false;
     if (H.lazy) { if (!H.use) H.use = {}; H.use[clip] = now(); }
-    var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
+    var d = dirOf(M, st.face || 0, A), f, f2 = -1, w = 0;
     if (st.f != null) { f = Math.max(0, Math.min(A.frames - 1, st.f)); if (st.f2 != null && opts.blend !== false && blends(clip, A)) { if (st.w >= 0.97) f = st.f2; else if (st.w > 0.03) { f2 = st.f2; w = st.w; } } }   /* (the kit hero: pick() gives the frame) */
     else if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
     else if (A.stride > 0 && st.d != null) f = strideFrame(A, st.d, (look.s || 1) * (opts.scale || 1));   /* (feet locked to the ground: st.d, the ground he has walked) */
