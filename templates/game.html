@@ -3091,7 +3091,7 @@ __COMBAT__
       var st = Yard.heroSeat(raft); P.x = raft.x + ch * st; P.y = raft.y + sh * st; P.vx = P.vy = 0; P.sprinting = false;
       var aimB = P.bowDraw > 0 || P.atk.ph !== 'none'; if (aimB) boatAimUntil = clock + 0.7; boatAimT = boatAimUntil > clock ? 1 : 0;   /* (the bow drawn or just loosed: he is up from the oars and faces where he aims, and sits again a moment after) */
       P.anim.sit = order.length === 0 && !Yard.rigged(raft.kind) && !(boatAimT > 0) ? 1 : 0;
-      P.anim.row = P.anim.sit && raft.rowing && sprHero && sprHero.meta && sprHero.meta.anims.row ? Yard.strokePhase(raft) : null; if (P.anim.row != null && !heroRowWarm) { heroRowWarm = true; Sprites.peopleWarm(sprHero, heroLook(P.faceVis), ['row']); }   /* at the oars alone: the kit's row clip (2026-10-21) */
+      P.anim.row = P.anim.sit && sprHero && sprHero.meta && sprHero.meta.anims.row ? (raft.rowing ? Yard.strokePhase(raft) : 0) : null;   /* (not pulling, he holds the row clip's first frame, the oars at rest: the row clip has 32 facings and turns with her, the land's sit has eight; Colin, AD, 2026-11-13) */ if (P.anim.row != null && !heroRowWarm) { heroRowWarm = true; Sprites.peopleWarm(sprHero, heroLook(P.faceVis), ['row']); }   /* at the oars alone: the kit's row clip (2026-10-21) */
       if (P.atk.ph === 'none' && !P.guard && !(boatAimT > 0)) { if (order.length > 0) { P.face = raft.h; P.faceVis = raft.h; } else if (!Yard.rigged(raft.kind)) { P.face = raft.h + Math.PI; P.faceVis = P.face; } }   /* with a crew he stands in the bow looking ahead and turns only to strike or shoot; alone at the oars he faces aft (Robin, 2026-10-21) */
     }
   }
