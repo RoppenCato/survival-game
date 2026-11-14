@@ -33,7 +33,7 @@ wrong with the rest.
 | 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its words are canon (lore handoff 21). | Checked (Robin, 2026-10-31) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Checked (Robin, 2026-10-31) |
 | 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Checked (Robin, 2026-11-14: the rower's turn at 32 facings, the oars at rest, his feet, the bow aboard and Arnor's lines all Work) |
-| 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Checked (Robin, 2026-10-31) |
+| 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Built (changed 2026-11-14: after a fall that wakes you on another island than your boat lies on, the boat lies at the nearest shore of where you wake; found in chapter 1's played run. It was Checked by Robin on 2026-10-31) |
 
 ## 2. Robin's six areas, for what chapter 0 shows
 
@@ -102,6 +102,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-11-14, night: from chapter 1's played run: 1.14 back to Built (the boat comes to where you wake); **a new game's first summer is four days again** (it starts on its day 2; a once-reset for an older save had been running on every new game and made it six).
 - 2026-11-14, later: the alpha pushed on Robin's word. The online builds' home water made identical to the full sea's; every tile's planting follows the tile alone now, so **the trees and rocks of the starter island stand in new places** (its coast, ground, steading and wreck are as they were). Mine to note under Robin's rule: 2a's look of the island is the same kind of island, not the same trees.
 - 2026-11-14, evening: Robin's three notes. "Roast berries" at sea fixed (3.6 back to Built); the chapter to start from on the name screen (1.1 back to Built); the big island nearer (chapter 1's). The chapter is Not done again until he has looked at the two.
 - 2026-11-14: **Robin checked the boat (1.13): chapter 0 is Done and the first alpha is made** (`alpha 0.1`, the `alpha` branch). The cap (3.7) follows the island's shore now, for his check in the alpha.

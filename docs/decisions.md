@@ -46,3 +46,7 @@ Each is one line; the full text is in the doc named. They are answered when thei
 | D42 | **Settlements: the ladder's numbers**; interiors beyond what is built. | `docs/settlements-plan.md`, `docs/interiors-plan.md` |
 | D43 | **Releasing the game, and co-op with two or three friends.** | `docs/release-and-coop.md` |
 | D44 | **The next game in an engine, probably 3D.** | `docs/idea-bank.md` |
+
+## Chapter 1's balance (2026-11-14)
+
+Eight questions from the played run, each with my recommendation, are in `docs/chapter-1-goals.md` under "Questions for Robin". They hold up chapter 1's tuning, nothing else.
