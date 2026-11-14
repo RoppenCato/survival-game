@@ -1,80 +1,44 @@
-# Lore handoff 29: Robin's own words for Arnor (2026-11-13)
+# Lore handoff 30: home water's villagers, after your played run (2026-11-14)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-28.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-29.md`.
 
-Robin rewrote Arnor's lines in the Sagabók's new "Rewrite Arnor's words" page. They are Robin's own words, now `canon`, each entry
-with its before in the canon. The ids and the line positions are the same; every line is under 130 characters. lore.json: 210 entries.
-The only edit of mine is a stray space ("Hello there ." to "Hello there.").
+Your played run of chapter 1 (`docs/chapter-1-goals.md`, finding 15) found three pairs that no longer fit home water. They have new
+words of mine, `in-game` under Robin's rule of 2026-10-31; Robin may change them. lore.json: 211 entries. Every line is under 130
+characters.
 
-## For the game (Robin's notes, as written)
+## 1. `line.folk.greeting`: pairs 8 and 9 have new words, in their places
 
-- **`line.arnor.wait.no-walls`** is now one line, from Robin's note on the meeting: "After this, let him say 'If you fix that house,
-  we will have somewhere to stay the night.' when you talk to him over and over til house is fixed." Your `arnorLineId` already
-  gives it from the meeting until the house is mended, so it should only need the new lore.json.
-- **`line.arnor.wait.meat`** has three lines now, and an order, from Robin's note: "After this, let him say 'Please see if you can
-  find us something to eat.' or number 2 every time you talk to him until a boar is slaughtered." So **line 1 the first time** after
-  the roof is up, **then line 2 or line 3** every talk until the boar is slaughtered (like the deer's first line and its wait).
-  How you do that is yours.
-- **`line.arnor.graves`** is five lines now: Robin cut line 6.
-- **`line.arnor.wait.no-hearth`** is two lines now: Robin cut line 3. (I don't think your `arnorLineId` uses it any more.)
-- **`line.arnor.supper`** no longer says he'll see to the boat. `quest.arnor.deer`'s book_more and `quest.arnor.boat`'s book still
-  say he did. I've asked Robin about it; nothing changes there until Robin answers.
+Lines 15 to 18 changed; the ids and the other positions are the same. Your `linesOf('line.folk.greeting')` pairs them as before, so
+the new lore.json should be enough. (The fallback `FOLK_LINES` in `templates/game.html` still has the old pairs; that is yours.)
 
-## The lines as they now stand
+- Pair 8, for the raft (he came in Arnor's boat):
+  - "You came in Arnor's boat. He'd not give her to just anyone."
+  - "Good in the sound. Out where the water goes dark, she'd not last a morning."
+- Pair 9, for the troll in the hill cave (there are none in home water; other villagers already say the trolls went north):
+  - "Come summer's end, Hallveig lays the table for the gods. Half the island comes."
+  - "The other half sends something, so the gods don't notice who stayed home."
 
-### `line.arnor.meet` (sequence, 4 lines)
+Pair 9 now points to Hallveig and the blót, which only Hallveig spoke of before. It decides nothing about your question 1 (the blót
+gating the ship).
 
-1. Hello there. Out of the sea, washed upon my beach.
-2. I am Arnor. I was the smith, before our village was attacked.
-3. I've salvaged what I could, but I am alone. He always leaves one alive. Someone has to tell the tale they say.
-4. The house by the well still has its bones. If you help me get those planks up, there would be a place to sleep.
+The troll pair is not lost: it is saved for the north as `line.folk.troll-cave` (`proposed`, not in lore.json).
 
-### `line.arnor.wait.no-walls` (variants, 1 line)
+## 2. New: `line.folk.merchant-home`, for the merchants of home water
 
-1. If you fix that house, we will have somewhere to stay the night.
+Speaker `role.merchant`, chapter 1. Two lines, for the merchants' place in `ROLES` while in home water:
 
-### `line.arnor.wait.meat` (variants, 3 lines)
+1. "Ormr's men had our wool, friend. The stalls stay bare till the traders come back."
+2. "Old Aslak at {place} built half the boats round here. The other half, his brother."
 
-1. The roof is up again. Thank you traveler. Please see if you can find us something to eat.
-2. Bring a boar to the table in the yard and we will both eat.
-3. Please see if you can find us something to eat.
+- `{place}` is Old Aslak's village, so a merchant points to it (your finding 10). If you cannot fill it, or the merchant stands in
+  Aslak's own village, line 2 reads: "Old Aslak built half the boats round here. The other half, his brother."
+- Line 1 says why the stalls are bare, so five merchants with nothing to swap make sense.
+- The order is yours, and so is Robin's question 7 (a clue as the first line).
+- The old pair ("Wool, salt, iron" and "Silver by weight") stays in `line.folk.roles` for later chapters, where there is trade.
 
-### `line.arnor.deer` (sequence, 2 lines)
+## Changed ids
 
-1. Ah you found sinew from a boar. You could make a bow out of that at a workbench.
-2. Catching a deer is hard, attacking from a distance makes it easier.
-
-### `line.arnor.wait.deer` (variants, 3 lines)
-
-1. You'll need a bow to catch those deer.
-2. Downwind, and slow. They hear you before they see you.
-3. Please bring me cooked meat of a deer.
-
-### `line.arnor.supper` (variants, 1 line)
-
-1. Thank you traveler. Once the night enters, feel free to sleep inside.
-
-### `line.arnor.teach` (sequence, 3 lines)
-
-1. That's a home again. This will be of great help come winter.
-2. My boat's been broken down ever since the raid. I've mended her. She's yours.
-3. Sail east. There you will find a village.
-
-### `line.arnor.taught` (variants, 3 lines)
-
-1. She pulls to the left. Lean right and she'll forgive you.
-2. Tell them in the village you met Arnor. They'll know the rest.
-3. I'll be here. Somebody has to keep the graves.
-
-### `line.arnor.graves` (sequence, 5 lines)
-
-1. Thorgunna. She wouldn't pay.
-2. Her boys.
-3. Grímhild kept the bees.
-4. Thorkel built our boats.
-5. I cut her runes myself. She'd have laughed at them.
-
-### `line.arnor.wait.no-hearth` (variants, 2 lines)
-
-1. A fire by the door. A roof with no fire near it is a cave.
-2. We need a fire.
+- `line.folk.greeting`: lines 15 to 18 (in-game).
+- `line.folk.merchant-home`: new (in-game).
+- `line.folk.troll-cave`: new (proposed, the north; not in lore.json).
+- `line.folk.roles`, `being.bergtroll`: a note each, no change to their lines.

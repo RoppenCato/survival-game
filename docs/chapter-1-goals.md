@@ -139,17 +139,19 @@ Each row: who tells you, what it asks, what it cost in the run.
 
 9. **The first village you meet is a blank wall.** Dagnysnes has a dry-stone wall with no gate on the landing's side, only a
    back gate on the far side. Its five merchants say "Wool, salt, iron. What have you got?" and "Silver by weight", and have
-   nothing to trade.
-10. **Nothing points to Aslak's village.** The quest East closes on landing and the book is then empty.
+   nothing to trade. **Since the same evening** (the lore's handoff 30) they say why the stalls are bare, and that Old Aslak
+   lives at Brynjasstad. The wall is as it was.
+10. **Nothing points to Aslak's village.** The quest East closes on landing and the book is then empty. **Since the same
+    evening** Dagnysnes' merchants name his village in their second line.
 11. **The clues are buried.** A villager says one line a talk, and his clue is the fifth and sixth of seven. Twelve seconds
     pass between talks.
 12. **The bag is full on day 4.** Thirty slots: ten tools and weapons and twenty kinds of thing, in stacks of 25.
 13. **Flint weapons are a small step.** The flint spear does 1.05 against the stone spear's 0.94. The flint axe's worth is the
     old pines.
 14. **The big log is never carried or towed.** It is split where it falls and the timber goes in the bag.
-15. **Lines that no longer fit** (the lore's, sent to Alistair, LD): "There is a troll in the hill cave" (three villagers; the
-    cave is the wolves'), "You built that raft yourself?" (he came in Arnor's boat), and the merchants' two lines above
-    (these are mine, in `src/village.js`).
+15. **Lines that no longer fit: replaced the same evening** (Alistair, LD's handoff 30). The troll in the hill cave and the
+    raft you built are gone from home water; in their place a pair on Arnor's boat and a pair on Hallveig's blót. The
+    merchants' "Wool, salt, iron" and "Silver by weight" are kept for chapters with trade.
 16. **The Chapter 1 start has no sinew**, so the first lesson asks for a boar. That reads well; I left it.
 
 ## Questions for Robin
