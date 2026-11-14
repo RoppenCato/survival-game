@@ -26,7 +26,8 @@ var DEF = {
   safe: 0.6,                              // from here up nothing strains it
   rate: 1.0, pow: 1.5,                    // strain a second on ice of no thickness, walking; the curve by thinness
   ease: 0.15, easeThick: 0.6,             // what eases off a second: on thin ice, on thick ice
-  still: 1.3, stillAfter: 1.2,            // standing: its share, after so many seconds still
+  still: 0, stillAfter: 0.4,              // standing: no strain at all once he has stood so long (Robin, 2026-11-14: "Standing is safe": only moving strains the ice, you can always stop and think; it was 1.3 after 1.2 s, worse than walking)
+  coldRate: 2.5,                          // health a second the winter water takes while he is in it (Robin, 2026-11-14: "Harsher": the cold keeps biting, so a long swim can kill; the number mine)
   creep: 0.5, creepV: 48,                 // creeping (the sneak's pace and under)
   runV: 100, run: 3,                      // running (a sprint)
   heavy: 2,                               // a beast or a log on the shoulder

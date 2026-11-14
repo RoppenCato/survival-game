@@ -1266,6 +1266,7 @@ __COMBAT__
   function iceTick(dt) {
     var P = hero(); if (!iceOn()) { if (ICE && (ICE.holes.length || ICE.marks.length)) Ice.morning(ICE); return; }
     var I = iceGet(); I.clock = clock; ICEP.edgeT = Math.max(0, ICEP.edgeT - dt);
+    if (swim.on && !P.dead && !ADMIN.immortal && !(raft && raft.aboard)) { P.hp = Math.max(0, P.hp - Ice.DEF.coldRate * dt); ICEP.coldT = (ICEP.coldT || 0) - dt; if (ICEP.coldT <= 0) { ICEP.coldT = 1.2; P.flash = Math.max(P.flash || 0, 0.25); } if (P.hp <= 0 && Combat.api.die) Combat.api.die(); }   /* the winter water keeps biting (Robin, 2026-11-14: Harsher) */
     var v = dt > 0 ? Math.hypot(P.x - ICEP.x, P.y - ICEP.y) / dt : 0; if (v > 900) v = 0; ICEP.v += (v - ICEP.v) * Math.min(1, dt * 12); ICEP.x = P.x; ICEP.y = P.y;
     var on = !P.dead && !P.deck && !(raft && raft.aboard) && !ADMIN.fly && Ice.carries(I, P.x, P.y) && !w.isLand(P.x, P.y);
     Ice.step(I, dt, { x: P.x, y: P.y, v: ICEP.v, heavy: !!carrying, on: on }).forEach(function (ev) {
@@ -4707,9 +4708,9 @@ __COMBAT__
     for (d = 400; d < L && !land; d += 8) { var x = home.x + ux * d, y = home.y + uy * d; if (w.isLand(x, y) && isleAt(x, y) === bi && w.isLand(x + ux * 70, y + uy * 70) && w.isLand(x + ux * 110, y + uy * 110)) land = { x: x + ux * 100, y: y + uy * 100, sx: x, sy: y }; }
     if (land) { P.x = land.x; P.y = land.y; P.face = Math.atan2(uy, ux); if (P.faceVis != null) P.faceVis = P.face; var sp = raftSpot(land.sx - ux * 40, land.sy - uy * 40); if (raft && sp) { raft.x = sp.x; raft.y = sp.y; raft.h = Math.atan2(-uy, -ux); raft.vx = raft.vy = 0; raftFit(); } }
     for (d = 0; d < SLOTS; d++) slots[d] = null;
-    equip.chest = Items.make('tunic', 'rag'); equip.legs = Items.make('trousers', 'rag'); equip[Items.KINDS.boots.gear] = Items.make('boots', 'leather'); equip.shield = Items.make('shield', 'wood'); equip.quiver = Items.make('quiver', 'leather'); quiver = { slots: [{ kind: 'arrow', n: 20 }, null, null], sel: 0 };
+    ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); }); equip.shield = Items.make('shield', 'wood'); equip.quiver = Items.make('quiver', 'leather'); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };   /* (Robin, 2026-11-14: "Richer": the whole leather set and more in the bag, as a thorough player has) */
     [['sword', 'wood'], ['bow', 'wood'], ['axe', 'stone'], ['pick', 'stone'], ['knife', 'stone']].forEach(function (g) { barPut(Items.make(g[0], g[1])); });
-    [['wood', 12], ['stone', 8], ['fiber', 10], ['leather', 3], ['berries', 6], ['torch', 2], ['roastBoar', 2], ['roastVenison', 2]].forEach(function (g) { addItem(g[0], g[1]); });
+    [['wood', 25], ['stone', 15], ['fiber', 20], ['leather', 6], ['berries', 10], ['torch', 4], ['roastBoar', 4], ['roastVenison', 4]].forEach(function (g) { addItem(g[0], g[1]); });
     recount();
   }
   /* The screen a game opens on (Robin, 2026-10-31: read the keys, choose the name, and the map loaded here rather than a lag when it first opens): the world map's chart read and the tiles round the hero painted while it shows. A game coming back passes by itself once ready. */

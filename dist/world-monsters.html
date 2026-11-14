@@ -2397,13 +2397,14 @@ function make(kit, opts) {
   var w = { T: T, TS: TS, K: K, CT: CT, o: o, hash: hash, vnoise: vnoise, fbm: fbm };
   var s = o.seed, R = kit.rng(s * 53 + 9), i, x, y, tries;
   function rnd(a, b) { return a + R() * (b - a); }
+  function tileR(tx, ty, k) { return kit.rng(Math.imul(tx | 0, 73856093) ^ Math.imul(ty | 0, 19349663) ^ Math.imul((s | 0) + k * 977, 83492791)); }   /* the draws of one tile, from its place and the seed: what grows on a tile and how its ground is dabbed no longer hangs on every tile scanned before it, so an island keeps its trees when another island moves or is left out (2026-11-14: the online builds' home water against the full sea's) */
   var BASE = kit.STYLE, tiles = {}, sprites = {}, chunkCv = {}, chunkOrder = [], noise = noiseSheet(), white = whiteSheet(), MB = null, PKC = {}, PKS = null;
 
   /* 1. place the islands: the home island first, then each new one beside an earlier one */
   function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, o.isle / 2 * (1 + (f - 1) * o.sizeVar)); }
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
   var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0, biome: 0 }];   // o.isle0: the first island's width (the starter island is small)
-  var waters = null, WD = null;
+  var waters = null, WD = null, cornerKeep = null;
   if (!o.waters) for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
     var bm = o.biomes ? (o.biomes[i] || 0) : 0, par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2; if (o.sizes && o.sizes[i]) r = o.sizes[i] / 2;   // o.big: the second island's width; o.sizes: every island's width
     if (bm) { var south = isles.slice().sort(function (p1, p2) { return p2.y - p1.y; }); par = south[Math.floor(R() * Math.min(2, south.length))]; a = 0.95 + R() * 1.25; g = g * 1.7 + 18; }   // o.biomes: the second biome's islands lie to the south, a bit further off (Robin)
@@ -2418,7 +2419,7 @@ function make(kit, opts) {
     waters = [{ id: 'home', ring: 0, dir: null, cx: 0, cy: 0, r: WD.homeR, seed: s * 101 + 1, isles: [] }];
     ['north', 'south', 'east', 'west'].forEach(function (nm, wi) {
       var a = ANCHORS[wi].a + rndW(-WD.jitter, WD.jitter), rr = rndW(WD.ringR[0], WD.ringR[1]), d = WD.homeR + WD.crossing * rndW(WD.crossVar[0], WD.crossVar[1]) + rr;
-      if (WD.rings !== 0) waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });   /* (rings 0: home water alone, the test build's sea, 2026-10-27; the draws are made either way so home water's islands stay the same) */
+      waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });   /* (rings 0: home water alone, the test build's sea, 2026-10-27; the draws are made either way so home water's islands stay the same) */
     });
     isles = [];
     var placeAt = function (wt, cx, cy, r, role, slot, biome) { var rec = { x: cx, y: cy, r: r, gap: rndW(WD.inGap[0], WD.inGap[1]), biome: biome || 0, water: waters.indexOf(wt), ring: wt.ring, slot: !!slot, role: role || null, seed: wt.seed * 31 + isles.length * 17 }; isles.push(rec); wt.isles.push(isles.length - 1); return rec; };
@@ -2443,6 +2444,10 @@ function make(kit, opts) {
       for (j = 0; j < nI; j++) { var rr2 = j < nBig ? rndW(WD.ringBig[0], WD.ringBig[1]) : j === nBig ? rndW(WD.ringMid[0], WD.ringMid[1]) : rndW(WD.ringSmall[0], WD.ringSmall[1]), rec2 = placeIn(wt, rr2, null, false, south); if (rec2 && j === nBig) mid = rec2; }
       if (mid) mid.slot = true; else if (wt.isles.length > 1) isles[wt.isles[1]].slot = true;   // the slot: the medium island
     });
+    if (WD.rings === 0) {   /* home water alone (the online builds), with the map's corner left where the full sea has it: an island's shape, its ground and what grows on it follow its tile coordinates, so home water is the same in both (Robin, 2026-11-14: "Make them identical"); the outer waters are laid out as ever, their corner kept, and then left out */
+      var fx = 1e9, fy = 1e9; isles.forEach(function (q9) { var e9 = q9.r * 1.45 + 30; fx = Math.min(fx, q9.x - e9); fy = Math.min(fy, q9.y - e9); }); cornerKeep = { x: fx, y: fy };
+      isles = isles.filter(function (q9) { return q9.water === 0; }); waters.length = 1;
+    }
     o.count = isles.length; if (!(o.maxTiles > 2e7)) o.maxTiles = 2e7;   // (nothing is dropped for size: the budget is measured instead)
   }
   /* 2. size the map to fit them; if it would be too big, leave out the last islands */
@@ -2450,6 +2455,7 @@ function make(kit, opts) {
   for (;;) {
     x0 = y0 = 1e9; x1 = y1 = -1e9;
     for (i = 0; i < n; i++) { var q = isles[i], e = q.r * 1.45 + 30; x0 = Math.min(x0, q.x - e); y0 = Math.min(y0, q.y - e); x1 = Math.max(x1, q.x + e); y1 = Math.max(y1, q.y + e); }
+    if (cornerKeep) { x0 = cornerKeep.x; y0 = cornerKeep.y; }
     GW = Math.ceil((x1 - x0) / CT) * CT; GH = Math.ceil((y1 - y0) / CT) * CT;
     if (GW * GH <= o.maxTiles || n <= 2) break;
     n--;
@@ -4050,6 +4056,7 @@ function make(kit, opts) {
     var TREES = ['birch', 'pine', 'birch', 'pine', 'oak'].filter(function (nm) { return !!kit.PROPS[nm]; }), LOW = ['oak', 'beech', 'ash', 'beech', 'oak', 'apple'].filter(function (nm) { return !!kit.PROPS[nm]; }), home = w.home;   // the lowlands: oak, beech, ash, an apple tree now and then
     for (y = 3; y < GH - 3; y++) for (x = 3; x < GW - 3; x++) {
       var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
+      R = tileR(x, y, 1);
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
       var mcell = mtn ? cellAt(wx, wy) : 0, mlv = mcell & 3;
@@ -4082,6 +4089,7 @@ function make(kit, opts) {
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }
+    R = kit.rng(s * 53 + 211);
     if (mtn) {
       mtn.ledges.forEach(function (lg) {                                      // a small tree or a bush on every ledge: it stands in the face, nobody reaches it (no kind: it is not gathered)
         if (!kit.PROPS[lg.kind]) return; var tree = lg.kind === 'dwarfBirch';
@@ -4143,6 +4151,7 @@ function make(kit, opts) {
     var n = 0;
     for (y = 4; y < GH - 4; y++) for (x = 4; x < GW - 4; x++) {
       if (grid[y * GW + x] < 2) continue;
+      R = tileR(x, y, 2);
       var gv = vnoise(x / 7, y / 7, s + 20);
       var bmd = w.biomeAt(x, y), cld = waters ? climateT(x, y) : null, wetD = cld ? Math.max(0, cld.wet - 0.5) * 2 : 0, mossD = cld ? Math.max(0, 0.5 - cld.warm) * 2 * wetD : 0;
       if ((bmd > 0.55 || wetD * CLIMATE.wet.marsh > 0.4) && eTile(x, y) < beachAt(x, y) + 2.2 && gv < 0.55 && R() < 0.14) { dab((x + 0.5) * T, (y + 0.5) * T, 16 + R() * 18, 6); n++; continue; }   // the lowlands: marsh on the low ground by the water
@@ -4150,15 +4159,16 @@ function make(kit, opts) {
       if (gv > 0.76 && R() < 0.22) { dab((x + 0.5) * T, (y + 0.5) * T, 18 + R() * 16, 2); n++; }            // earth under the thickest canopy
       else if (gv > 0.62 && gv < 0.7 && R() < 0.1 + 0.35 * mossD * CLIMATE.wet.moss) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge, more where it is cold and wet
     }
-    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation' || p.name === 'chalkRock') { dab(p.x, p.y + 4, 14 + R() * 6, p.name === 'chalkRock' || w.biome(p.x, p.y) > 0.5 ? 5 : 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
+    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; R = tileR(Math.round(p.x), Math.round(p.y), 3); if (p.name === 'rockFormation' || p.name === 'chalkRock') { dab(p.x, p.y + 4, 14 + R() * 6, p.name === 'chalkRock' || w.biome(p.x, p.y) > 0.5 ? 5 : 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
     return n;
   };
   // bog iron (2026-10-07, the lowlands' metal): rusty lumps in the marsh, a few to a bog, planted on the marsh cells after dressing
   w.plantBog = function () {
     var k, n = 0, placed = [];
     for (k in w.ground) {
-      if (w.ground[k] !== 6 || R() > 0.035) continue;
-      var q = k.split(','), x = (+q[0] + 0.5) * GQ + (R() - 0.5) * 6, y = (+q[1] + 0.5) * GQ + (R() - 0.5) * 6, i, ok = w.isLand(x, y);
+      if (w.ground[k] !== 6) continue;
+      var q = k.split(','); R = tileR(+q[0], +q[1], 4); if (R() > 0.035) continue;
+      var x = (+q[0] + 0.5) * GQ + (R() - 0.5) * 6, y = (+q[1] + 0.5) * GQ + (R() - 0.5) * 6, i, ok = w.isLand(x, y);
       for (i = 0; ok && i < placed.length; i++) if (Math.hypot(placed[i][0] - x, placed[i][1] - y) < 44) ok = false;
       if (!ok || !kit.PROPS.bogIron) continue;
       var p = { name: 'bogIron', x: x, y: y, s: 0.85 + R() * 0.2, r: 7, v: Math.floor(R() * 3), kind: 'stone', bog: true }; p.max = p.hp = HP.bogIron * (0.7 + 0.6 * p.s); p.leanDir = 1;

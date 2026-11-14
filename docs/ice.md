@@ -19,11 +19,13 @@ Escape, Admin, the sky board, Winter. Then walk out onto the sea or a lake. Spri
 - **Open leads** lie across the far ice: long patches of open water to go round.
 - **A lake** is thick at its rim; the middle of a big one is thinner (it creaks under a man standing, holds a man walking). A
   **river** is thin all over.
-- **Strain.** Thin ice strains under him and eases off by itself. How fast: standing still (after 1.2 seconds) 1.3, creeping on C
+- **Strain.** Thin ice strains under him and eases off by itself. **Standing is safe** (Robin, 2026-11-14: only moving strains the
+  ice, you can always stop and think; it was the worst thing to do). How fast: creeping on C
   0.5, walking 1, sprinting 3, with a beast or a log on the shoulder twice that, and a dash's landing a lump at once. Ice cracked
   before is weaker.
 - **It creaks three times** as the strain grows, and each time cracks are drawn round him, forked and kinked. Then it gives way.
-- **Through the ice:** a hole, shards afloat, the cold takes 8 health once, and he swims (the swim's own stamina rule). What he
+- **Through the ice:** a hole, shards afloat, the cold takes 8 health at once **and 2.5 a second for as long as he is in the winter
+  water** (Robin, 2026-11-14: "Harsher"; the number mine: about 35 seconds from full health), and he swims (the swim's own stamina rule). What he
   carried is left on the ice by the hole. One word the first time: "The ice gives way".
 - **Out again:** swimming onto ice of 0.3 or more he climbs out, and stands on strained ice. Thinner ice breaks before him, a
   moment and 3 stamina a piece, so far out he must break his way back toward thicker ice.
@@ -39,10 +41,10 @@ Escape, Admin, the sky board, Winter. Then walk out onto the sea or a lake. Spri
 | Thickness | Standing | Creeping | Walking | Sprinting | Walking with a load |
 | --- | --- | --- | --- | --- | --- |
 | 0.55 and up | holds | holds | holds | holds | holds |
-| 0.45 | 13.6 s | holds | holds | 2.4 s | 4.4 s |
-| 0.35 | 3.7 s | holds | 3.9 s | 1.0 s | 1.5 s |
-| 0.25 | 2.3 s | 5.3 s | 1.9 s | 0.6 s | 0.8 s |
-| 0.15 | 1.7 s | 2.8 s | 1.2 s | 0.4 s | 0.6 s |
+| 0.45 | holds | holds | holds | 2.4 s | 4.4 s |
+| 0.35 | holds | holds | 3.9 s | 1.0 s | 1.5 s |
+| 0.25 | holds | 5.3 s | 1.9 s | 0.6 s | 0.8 s |
+| 0.15 | holds | 2.8 s | 1.2 s | 0.4 s | 0.6 s |
 
 ## Sounds
 
@@ -59,8 +61,9 @@ through. Real ones need a reference Robin likes first (the ice's creak, its long
 6. **Bone skates** (the idea bank): fast travel on thick ice.
 7. A slide in the step on bare ice, if it reads well. Not started: it must not feel like a punishment.
 
-## Questions for Robin
+## Robin's answers (2026-11-14)
 
-1. Is the whole of home water one walk in winter right, or should some islands stay out of reach until a later winter?
-2. Should a fall through the ice cost more than 8 health and a swim? It is meant as a fright, not a death, unless you are far out.
-3. Standing still breaks thin ice faster than walking (your rule). Does that feel right in the hand?
+1. All of home water is one walk in winter: yes.
+2. A fall through the ice: harsher. The cold keeps biting while he is in the water (built).
+3. Standing still is safe; only moving strains the ice (built).
+4. Nothing more on the ice for now: chapter 1 comes first.
