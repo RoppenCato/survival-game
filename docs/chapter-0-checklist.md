@@ -1,6 +1,6 @@
 # Chapter 0, the starter island: the checklist
 
-**The chapter: Not done.** Most items are Checked; the ones still Built or To fix are what is left. Started on 2026-10-30.
+**The chapter: Done, 2026-11-14** (Robin's last check that day: the boat, 1.13). **The first alpha, `alpha 0.1`, is made from it.** Two notes, mine: 3.4 (the work computer's frame rate) Robin left for now, so it is not counted; 3.7 (the alpha's cap) was changed when the alpha was made and can only be seen in the alpha itself, so it is Built and Robin checks it there. Started on 2026-10-30.
 
 How this list works is in `docs/chapter-checks.md`:
 
@@ -32,7 +32,7 @@ wrong with the rest.
 | 1.10 | **The boar quest** (A boar for Arnor, Alistair, LD's title): a boar butchered at the table gives the sinew for the bow; talk to him to end it. | Checked (Robin, 2026-11-13) |
 | 1.11 | **The meal quest** (A roast for Arnor, Alistair, LD's title): a deer shot with the bow and butchered, its venison roasted at a fire, the roast handed to him in a talk; the day then runs down to night. Its words are canon (lore handoff 21). | Checked (Robin, 2026-10-31) |
 | 1.12 | **Sleeping** on the straw bed in the evening: the night is skipped, the boat is mended in the morning, **and the next day runs at its normal pace**. | Checked (Robin, 2026-10-31) |
-| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Built (Robin, 2026-11-13: the quest mark, the oars and the hull Work; the turn does not: the cross-fade showed "two images trying to show". Changed the same day: one picture at a time again, held a little past the half-way point; what is left of the shake is the pictures, eleven degrees apart: Colin, AD's 96 headings are in since the same evening: for Robin's look); **aboard only the bow, and only while the boat lies still; he stands and faces his aim** (Robin, 2026-11-13; built and seen in the pane the same day); Robin the same evening: "The boat turn works now"; the rower's feet came through the hull (fixed: drawn only inside her below the hip) and his body flips between eight facings as she turns (Colin, AD's row clip at 32 facings is in since the same night, the oars held at rest when he is not pulling: for Robin's look) |
+| 1.13 | **Arnor gives the boat.** You launch it and sail; the quest East is in the book. | Checked (Robin, 2026-11-14: the rower's turn at 32 facings, the oars at rest, his feet, the bow aboard and Arnor's lines all Work) |
 | 1.14 | **Falling**: you wake at the bed, or at the wreck before the bed. Nothing is lost that should not be. | Checked (Robin, 2026-10-31) |
 
 ## 2. Robin's six areas, for what chapter 0 shows
@@ -88,7 +88,7 @@ wrong with the rest.
 | 3.4 | **The frame rate on a weaker computer**: Robin's work computer found the online game laggy (2026-10-29). | To fix (Robin: leave it for now) |
 | 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Checked (Robin, 2026-11-13) |
 | 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Checked (Robin, 2026-10-31) |
-| 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (tested by script 2026-10-30) |
+| 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (changed 2026-11-14: the cap follows the island's own shore, 300 units off its furthest land each way; the old circle cut through the wreck's beach. Seen in the pane in the alpha's build at twelve headings, the boat turned back in open sea each time; the lettering not seen. For Robin's check in the alpha) |
 
 ## 4. Choices that wait on Robin
 
@@ -102,6 +102,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-11-14: **Robin checked the boat (1.13): chapter 0 is Done and the first alpha is made** (`alpha 0.1`, the `alpha` branch). The cap (3.7) follows the island's shore now, for his check in the alpha.
 - 2026-11-13, evening: the boat's turn works for Robin with Colin, AD's 96 headings. Aboard only the bow, at rest (his ask). Open on 1.13: the rower's eight facings. **Arnor's lines are Robin's own words now** (handoff 29).
 - 2026-11-13: Robin's sixth run over nine things: eight Checked (the ragged outfit, Take apart, the boar quest's `!`, no window light in a ruin, the map's mark, the crafting list's red mark, the controls, the error log). **Left: 1.13, the boat's turn**, waiting on Colin, AD's 64 headings; 3.4 (the work computer's frame rate, left by Robin) and 3.7 (the alpha's cap, mine when the alpha is made).
 - 2026-11-11: Robin's fifth run over the fifteen items left: ten Checked. Fixed: the shirt over the leather tunic, the ragged outfit and Take apart (his ask), the boar quest given in its own talk, no quest mark on the boat, no window light from a roofless ruin, the oars under the rower's back, the boat's shake in a turn. Asked of Colin, AD: the ragged clothes and the underwear, the hole in the rowboat's hull, the salt works and the field gate (both of chapter 1).

@@ -4,7 +4,7 @@ The one page to open for "what's next". Kept short: what Clive, GD is doing now,
 The detail lives in the chapter checklists (`docs/chapter-0-checklist.md`, `docs/chapter-1-checklist.md`), the decisions
 (`docs/decisions.md`) and the idea bank (`docs/idea-bank.md`). Update this page whenever something moves.
 
-Last updated: 2026-11-13.
+Last updated: 2026-11-14.
 
 ## Now (Clive, GD), in order
 
@@ -14,6 +14,8 @@ Last updated: 2026-11-13.
 4. **Chapter 0's loose ends:** whatever Robin's next run finds; the frame log from his work computer; the `LORE?` marks.
 
 ## Waiting on Robin
+
+**Chapter 0 is Done (2026-11-14) and the first alpha is online at `/alpha/`.** One thing to look at there: row out from the starter island until the sea turns the boat back with "The end of the alpha" (3.7; the cap follows the shore now, changed the day the alpha was made). **The current chapter is 1.**
 
 **Chapter 0 after Robin's run of 2026-11-13:** everything Checked but the boat's turn (1.13). Colin, AD's 96 headings of the rowboat are in (2026-11-13): it waits on Robin's look at her turn. After that the alpha is made (3.7 tested then). **Robin wants to rewrite Arnor's lines himself:** asked of Alistair, LD the same day where; the Sagabók has a dialogue register and session (`site/index.html#dialogue`).
 

@@ -61,7 +61,7 @@ versions.
 - Its `RELEASE.json` names the alpha and its last chapter, for example `"version": "alpha 0.6"` and `"chapter": 0`.
 - **The chapter cap:** with `"chapter": 0` the sea a little off the starter island turns the boat back (`capTick`), and the
   map's lettering says "The end of the alpha".
-- **Until chapter 0 is Done there is no alpha branch**, and `/alpha/` says the alpha comes when chapter 0 is checked.
+- **The first alpha is `alpha 0.1`, chapter 0, made 2026-11-14.** The cap follows the starter island's own shore (`capReach`: 300 units off its furthest land each way), not a circle: the island reaches past its circle in places.
 
 **To make an alpha**, once every item of a chapter is Checked:
 

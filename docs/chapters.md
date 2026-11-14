@@ -18,7 +18,7 @@ the git history.
 
 ## How we work
 
-- **One chapter at a time.** **The current chapter is 0, the starter island.**
+- **One chapter at a time.** **Chapter 0, the starter island, is Done (2026-11-14) and in the alpha; the current chapter is 1.**
 - **A chapter is finished when Robin is happy with it**, in its content and in six areas, each perfected for what the chapter shows
   (Robin, 2026-10-20): models and art; combat and gathering; menus and crafting; the interface; music, sound and effects; the day and
   night. A system is perfected in the chapter where the player first meets it.
@@ -58,7 +58,7 @@ the git history.
 **Summary.** You wake at the wreck with nothing. You learn to make tools and simple clothes, hunt and butcher, mend Arnor's house
 and sleep in it, keep a fire, and earn Arnor's boat by helping him, and you leave.
 
-**Status (2026-10-30): Not done; its checklist is `docs/chapter-0-checklist.md`, nothing Checked yet.** Before that, **(2026-10-27): built** but for the glimpses (proposed in `docs/glimpses-chapter0.md`, waiting for Robin); the "Cooking" tag built 2026-10-27; played through by script on 2026-10-27 (`docs/playtest-2026-10-27.md`) (`CLAUDE.md`, "Chapter 0 as rebuilt"):
+**Status (2026-11-14): Done; its checklist is `docs/chapter-0-checklist.md`, and the alpha `alpha 0.1` is made from it.** Before that, **(2026-10-27): built** but for the glimpses (proposed in `docs/glimpses-chapter0.md`, waiting for Robin); the "Cooking" tag built 2026-10-27; played through by script on 2026-10-27 (`docs/playtest-2026-10-27.md`) (`CLAUDE.md`, "Chapter 0 as rebuilt"):
 the wooden sword (the strong stick renamed, a sword not a blunt weapon, very weak: Robin, 2026-10-26), leather shoes, the bow, wooden arrows and the quiver, butchering at Arnor's table in Colin, AD's pieces, his two
 quests in the book's Quests page, his house mended with the Building board (a plank wall only in its marked gaps, 2026-10-27), the straw bed and waking by it, berries raw with their wait, no
 wolves, altar, cooking or free building, his boat mended overnight and given; the steading tidied of what a farm would not have.
