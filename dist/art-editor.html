@@ -4491,8 +4491,8 @@ function make(kit, opts) {
       return null;
     };
     // home: the starter island and the big island as they were (o.sizes, o.gap, o.dir), the pair in the middle of the water; then the others round them
-    var rS = (o.sizes ? o.sizes[0] : o.isle0 || o.isle) / 2, rB = (o.sizes ? o.sizes[1] : o.big || o.isle) / 2, dir = o.dir != null ? o.dir : 0.1, D = rS + rB + o.gap, px = Math.cos(dir) * D, py = Math.sin(dir) * D * 0.9;
-    placeAt(waters[0], -px / 2 - (rB - rS) / 2, -py / 2, rS, 'starter'); placeAt(waters[0], px / 2 - (rB - rS) / 2, py / 2, rB, 'big');
+    var rS = (o.sizes ? o.sizes[0] : o.isle0 || o.isle) / 2, rB = (o.sizes ? o.sizes[1] : o.big || o.isle) / 2, dir = o.dir != null ? o.dir : 0.1, D = rS + rB + o.gap, px = Math.cos(dir) * D, py = Math.sin(dir) * D * 0.9, D1 = rS + rB + (o.bigGap != null ? o.bigGap : o.gap), sx0 = -px / 2 - (rB - rS) / 2, sy0 = -py / 2;   /* (o.bigGap: the big island nearer or further with the starter island left where o.gap puts it, so its shape, which follows its place, stays: Robin, 2026-11-14) */
+    placeAt(waters[0], sx0, sy0, rS, 'starter'); placeAt(waters[0], sx0 + Math.cos(dir) * D1, sy0 + Math.sin(dir) * D1 * 0.9, rB, 'big');
     for (i = 0; i < WD.homeMid[0]; i++) placeIn(waters[0], rndW(WD.homeMid[1], WD.homeMid[2]));
     for (i = 0; i < WD.homeSmall[0]; i++) placeIn(waters[0], rndW(WD.homeSmall[1], WD.homeSmall[2]));
     homeRoles(isles, waters[0], kit.rng(s * 101 + 991));   /* chapter 1 (Robin, 2026-11-10): what each island round is for */

@@ -1,6 +1,6 @@
 # Chapter 0, the starter island: the checklist
 
-**The chapter: Done, 2026-11-14** (Robin's last check that day: the boat, 1.13). **The first alpha, `alpha 0.1`, is made from it.** Two notes, mine: 3.4 (the work computer's frame rate) Robin left for now, so it is not counted; 3.7 (the alpha's cap) was changed when the alpha was made and can only be seen in the alpha itself, so it is Built and Robin checks it there. Started on 2026-10-30.
+**The chapter: Not done again since the evening of 2026-11-14, by Robin's rule (a Done chapter that changes): two items went back to Built, 1.1 and 3.6, and 3.7 waits for his look in the alpha.** It was Done that morning (Robin's last check: the boat, 1.13), and **the first alpha, `alpha 0.1`, is made from that state** (commit `c10c4dc1`) and keeps it. Two notes, mine: 3.4 (the work computer's frame rate) Robin left for now, so it is not counted; 3.7 (the alpha's cap) was changed when the alpha was made and can only be seen in the alpha itself, so it is Built and Robin checks it there. Started on 2026-10-30.
 
 How this list works is in `docs/chapter-checks.md`:
 
@@ -20,7 +20,7 @@ wrong with the rest.
 
 | # | Item: what to try | State |
 | --- | --- | --- |
-| 1.1 | **The start.** A new game wakes at the wreck. The first key reminders show, then go. | Checked (Robin, 2026-10-31) |
+| 1.1 | **The start.** A new game wakes at the wreck. The first key reminders show, then go. | Built (changed 2026-11-14, Robin's ask: the name screen has a row to choose the chapter to start from, Chapter 0 or Chapter 1, in the dev version only; Chapter 0 is the default and starts as before. It was Checked by Robin on 2026-10-31) |
 | 1.2 | **The first quest**, The shore: the book's words (handoff 20, 2026-10-29); the quest is done when you reach the steading. | Checked (Robin, 2026-10-31) |
 | 1.3 | **Gathering by hand**: planks and litter at the wreck; wood, stone and fibre; a punch reaches the tree or rock you stand by. | Checked (Robin, 2026-10-31) |
 | 1.4 | **The first recipes** show once their key ingredient is held, never as question marks. | Checked (Robin, 2026-10-31) |
@@ -87,7 +87,7 @@ wrong with the rest.
 | 3.3 | **A steady frame rate** at Robin's size, at home. | Checked (Robin, 2026-10-31) |
 | 3.4 | **The frame rate on a weaker computer**: Robin's work computer found the online game laggy (2026-10-29). | To fix (Robin: leave it for now) |
 | 3.5 | **The controls** as listed under Controls in `CLAUDE.md`, all of them, with nothing doubled or dead. | Checked (Robin, 2026-11-13) |
-| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Checked (Robin, 2026-10-31) |
+| 3.6 | **No leaks of a later chapter** on the starter island: no wolves, altar, village dishes, fishing, runes or hird, no pier pieces (they open with the shipwright's craft). | Built (changed 2026-11-14: Robin saw "Roast berries" come up as new while sailing east. The island he is on is now the one he last stood on, so nothing opens at sea. It was Checked by Robin on 2026-10-31) |
 | 3.7 | **The alpha's cap**: at sea a little off the starter island the boat turns back with "The end of the alpha". | Built (changed 2026-11-14: the cap follows the island's own shore, 300 units off its furthest land each way; the old circle cut through the wreck's beach. Seen in the pane in the alpha's build at twelve headings, the boat turned back in open sea each time; the lettering not seen. For Robin's check in the alpha) |
 
 ## 4. Choices that wait on Robin
@@ -102,6 +102,7 @@ wrong with the rest.
 
 ## What changed (newest first)
 
+- 2026-11-14, evening: Robin's three notes. "Roast berries" at sea fixed (3.6 back to Built); the chapter to start from on the name screen (1.1 back to Built); the big island nearer (chapter 1's). The chapter is Not done again until he has looked at the two.
 - 2026-11-14: **Robin checked the boat (1.13): chapter 0 is Done and the first alpha is made** (`alpha 0.1`, the `alpha` branch). The cap (3.7) follows the island's shore now, for his check in the alpha.
 - 2026-11-13, evening: the boat's turn works for Robin with Colin, AD's 96 headings. Aboard only the bow, at rest (his ask). Open on 1.13: the rower's eight facings. **Arnor's lines are Robin's own words now** (handoff 29).
 - 2026-11-13: Robin's sixth run over nine things: eight Checked (the ragged outfit, Take apart, the boar quest's `!`, no window light in a ruin, the map's mark, the crafting list's red mark, the controls, the error log). **Left: 1.13, the boat's turn**, waiting on Colin, AD's 64 headings; 3.4 (the work computer's frame rate, left by Robin) and 3.7 (the alpha's cap, mine when the alpha is made).

@@ -4504,8 +4504,8 @@ function make(kit, opts) {
       return null;
     };
     // home: the starter island and the big island as they were (o.sizes, o.gap, o.dir), the pair in the middle of the water; then the others round them
-    var rS = (o.sizes ? o.sizes[0] : o.isle0 || o.isle) / 2, rB = (o.sizes ? o.sizes[1] : o.big || o.isle) / 2, dir = o.dir != null ? o.dir : 0.1, D = rS + rB + o.gap, px = Math.cos(dir) * D, py = Math.sin(dir) * D * 0.9;
-    placeAt(waters[0], -px / 2 - (rB - rS) / 2, -py / 2, rS, 'starter'); placeAt(waters[0], px / 2 - (rB - rS) / 2, py / 2, rB, 'big');
+    var rS = (o.sizes ? o.sizes[0] : o.isle0 || o.isle) / 2, rB = (o.sizes ? o.sizes[1] : o.big || o.isle) / 2, dir = o.dir != null ? o.dir : 0.1, D = rS + rB + o.gap, px = Math.cos(dir) * D, py = Math.sin(dir) * D * 0.9, D1 = rS + rB + (o.bigGap != null ? o.bigGap : o.gap), sx0 = -px / 2 - (rB - rS) / 2, sy0 = -py / 2;   /* (o.bigGap: the big island nearer or further with the starter island left where o.gap puts it, so its shape, which follows its place, stays: Robin, 2026-11-14) */
+    placeAt(waters[0], sx0, sy0, rS, 'starter'); placeAt(waters[0], sx0 + Math.cos(dir) * D1, sy0 + Math.sin(dir) * D1 * 0.9, rB, 'big');
     for (i = 0; i < WD.homeMid[0]; i++) placeIn(waters[0], rndW(WD.homeMid[1], WD.homeMid[2]));
     for (i = 0; i < WD.homeSmall[0]; i++) placeIn(waters[0], rndW(WD.homeSmall[1], WD.homeSmall[2]));
     homeRoles(isles, waters[0], kit.rng(s * 101 + 991));   /* chapter 1 (Robin, 2026-11-10): what each island round is for */
@@ -12055,7 +12055,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND, GAME);
   var DEF = { kind: 'karve', fit: null, steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, windK: 0.5, windA: 0.6, windS: 0.45, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
-    isle: 160, sizeVar: 0.8, count: 2, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 120, big: 400, lowFrom: 9, lowSize: 130 };   // the game's two islands (2026-10-09)
+    isle: 160, sizeVar: 0.8, count: 2, gap: 240, bigGap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 120, big: 400, lowFrom: 9, lowSize: 130 };   // the game's two islands (2026-10-09)
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {};
   var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), stat = document.getElementById('stat');

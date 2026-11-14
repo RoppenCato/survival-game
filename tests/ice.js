@@ -17,7 +17,7 @@ console.log('how long ice of one thickness holds (still / creeping 39 / walking 
 [0.7, 0.55, 0.45, 0.35, 0.25, 0.15].forEach(th => console.log('   thickness ' + th + ': ' + [0, 39, 78, 130].map(v => holds(th, v, false)).join(' / ') + ' / ' + holds(th, 78, true)));
 want(holds(0.7, 130, true) === 'holds', 'thick ice gave way'); want(holds(0.15, 130, false) !== 'holds', 'running on the thinnest ice held'); want(holds(0.45, 78, false) === 'holds', 'walking on middling ice gave way');
 seeds.forEach(seed => {
-  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: { rings: 0 }, inland: { auto: 1 } };
+  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, bigGap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: { rings: 0 }, inland: { auto: 1 } };
   const w = World.make(kit, spec); let t0 = Date.now();
   const I = Ice.make({ GW: w.GW, GH: w.GH, T: T, land: (tx, ty) => w.isLand((tx + 0.5) * T, (ty + 0.5) * T), water: (x, y) => w.isWater(x, y), fresh: (x, y) => w.fresh(x, y), open: (x, y) => w.swellAt ? w.swellAt(x, y) : 0 }, seed);
   const tMake = Date.now() - t0;

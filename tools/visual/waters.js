@@ -10,7 +10,7 @@ const WSP = process.env.WSPEC ? JSON.parse(process.env.WSPEC) : true;
 const T = 32, CW = 900, CH = 900, cv = createCanvas(CW * seeds.length, CH), c = cv.getContext('2d');
 c.fillStyle = '#1f2e3c'; c.fillRect(0, 0, cv.width, cv.height);
 seeds.forEach((seed, i) => {
-  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: WSP };
+  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, bigGap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: WSP };
   const t0 = Date.now(), w = World.make(kit, spec), tMake = Date.now() - t0, ch = w.chart(CW - 20), sc = (CW - 20) / Math.max(w.GW, w.GH), ox = i * CW + 10, oy = 10;
   c.drawImage(ch, ox, oy, w.GW * sc, w.GH * sc);
   (w.waters || []).forEach(wt => { c.strokeStyle = wt.ring ? 'rgba(255,220,120,0.5)' : 'rgba(120,230,255,0.7)'; c.lineWidth = 1.5; c.setLineDash([6, 4]); c.beginPath(); c.arc(ox + wt.cx * sc, oy + wt.cy * sc, wt.r * sc, 0, 7); c.stroke();

@@ -10,7 +10,7 @@ const kit = S.kit; kit.setup(kit.STYLE);
 (async () => {
   const seed = +process.argv[2] || 11, out = path.join(__dirname, '..', '..', 'docs', 'pictures', 'inland-water'); fs.mkdirSync(out, { recursive: true });
   await DI.load(World);
-  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, inland: { lakes: 2, river: 1, minR: 150 } };
+  const spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, bigGap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, inland: { lakes: 2, river: 1, minR: 150 } };
   const w = World.make(kit, spec); w.meadowLook = World.GRASS_INK; w.plant();
   const lakes = w.inland.filter(q => q.kind === 'lake'), river = w.inland.filter(q => q.kind === 'river')[0];
   // what would stand by it, from pieces the game already has: reeds on the banks, boulders at the water's edge, a ford of stepping stones

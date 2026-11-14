@@ -18,7 +18,7 @@ the git history.
 
 ## How we work
 
-- **One chapter at a time.** **Chapter 0, the starter island, is Done (2026-11-14) and in the alpha; the current chapter is 1.**
+- **One chapter at a time.** **Chapter 0, the starter island, was Done on 2026-11-14 and is in the alpha (two items changed that evening wait for Robin's look again); the current chapter is 1.** A chapter can be started from on the name screen (Robin, 2026-11-14).
 - **A chapter is finished when Robin is happy with it**, in its content and in six areas, each perfected for what the chapter shows
   (Robin, 2026-10-20): models and art; combat and gathering; menus and crafting; the interface; music, sound and effects; the day and
   night. A system is perfected in the chapter where the player first meets it.
