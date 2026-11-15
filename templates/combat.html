@@ -64,13 +64,38 @@ details.panel>summary::before,details.sub>summary::before{content:'';flex:none;b
 details[open]>summary::before{transform:rotate(90deg)}
 details.panel[open]>summary{margin-bottom:8px}
 .group select{max-width:100%}
+.note{color:var(--ink2);font-size:.86rem}
+.lab{font-size:.74rem;color:var(--ink2);margin:10px 2px 5px;text-transform:uppercase;letter-spacing:.05em;font-weight:650}
+.lab:first-of-type{margin-top:2px}
+.tiles{display:flex;flex-wrap:wrap;gap:6px}
+.tiles button{min-height:0;width:78px;padding:6px 3px 5px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;font-size:.76rem;line-height:1.15;text-align:center}
+.tiles button canvas{width:40px;height:40px;display:block}
+.tiles.plain button{width:auto;min-width:72px;min-height:36px;padding:4px 10px;justify-content:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips button{min-height:32px;padding:0 11px;font-size:.84rem;border-radius:16px}
+.chips .sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+.bring{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bring button{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.bring button:hover{filter:brightness(1.1)}
+.runeslot{display:flex;align-items:center;gap:8px;margin:5px 0}
+.runeslot .sname{flex:none;width:9.5em;font-size:.84rem}
+.runeslot .sname small{display:block;color:var(--ink2);font-size:.72rem}
+.runeslot button{display:flex;align-items:center;gap:8px;min-height:38px;text-align:left;flex:1;min-width:0}
+.runeslot button.open{outline:2px solid var(--accent)}
+.runegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;margin:4px 0 10px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--log)}
+.runegrid button{display:block;text-align:left;min-height:46px;padding:5px 9px;font-size:.84rem;line-height:1.2}
+.runegrid button small{display:block;color:var(--ink2);font-size:.72rem;margin-top:2px}
+.runegrid button[aria-pressed="true"] small{color:#fff}
+.runegrid button.nb{opacity:.6}
+.runehow{margin:2px 0 8px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--log);border-radius:0 8px 8px 0;font-size:.84rem;color:var(--ink2)}
+.runehow button{margin-top:6px;min-height:32px;font-size:.84rem}
 </style>
 </head>
 <body>
 <main>
   <a href="index.html" style="display:inline-block;margin:0 0 6px;color:inherit;opacity:.7;font-size:.9rem;text-decoration:none">&larr; Back to menu</a>
   <h1>Combat Arena</h1>
-  <p class="lede">The fight on its own, on the game's own engine: what is tuned here is what the game and the raids fight with (<code>src/combat.js</code>, the weapons' numbers in <code>docs/weapons.md</code>, the men's in <code>MEN</code>). Beasts and men against you, hirdmen beside you, every weapon, the shield and the gear, the clock slowed, the blows drawn and written down. Everything works from the keyboard; the mouse only aims the bow.</p>
+  <p class="lede">The fight on its own, on the game's own engine: what is tuned here is what the game and the raids fight with (<code>src/combat.js</code>, the weapons' numbers in <code>docs/weapons.md</code>, the men's in <code>MEN</code>). The ring starts empty: bring men, hirdmen of your own and beasts from the panel. Every weapon, the shield and the gear, the runes, the clock slowed, the blows drawn and written down. Everything works from the keyboard; the mouse only aims the bow.</p>
 
   <div class="wrap">
     <div>
@@ -101,65 +126,64 @@ details.panel[open]>summary{margin-bottom:8px}
     <div>
       <details class="panel" data-k="you" open>
         <summary>You</summary>
-        <div class="group" id="melee"></div>
+        <div class="lab">In your hand</div>
+        <div class="tiles" id="melee"></div>
         <p class="desc" id="meleedesc"></p>
-        <div class="group" id="ranged" style="margin-top:8px"></div>
+        <div class="lab">For the far shot (F swaps to it)</div>
+        <div class="tiles" id="ranged"></div>
         <p class="desc" id="rangeddesc"></p>
-        <div class="group" style="margin-top:8px" id="mats"></div>
-        <div class="group" id="gear"></div>
-        <div class="group" style="margin-top:8px">
-          <button id="shield" aria-pressed="true">A shield on the arm</button>
-          <button id="heal">Heal</button>
-          <button id="immortal" aria-pressed="false">Never fall</button>
-        </div>
+        <div class="lab">Made of</div>
+        <div class="chips" id="mats"></div>
+        <div class="lab">You wear</div>
+        <div class="chips" id="gear"></div>
         <p class="desc" id="geardesc"></p>
+        <div class="chips" style="margin-top:8px">
+          <button id="shield" aria-pressed="true">A shield on the arm</button>
+          <button id="immortal" aria-pressed="false">Never fall</button>
+          <button id="heal">Heal</button>
+        </div>
       </details>
 
-      <details class="panel" data-k="men" open>
-        <summary>Men</summary>
-        <div class="group">
-          <label for="mwpn">Against you:</label>
-          <select id="mwpn" aria-label="The man's weapon"></select>
-          <select id="mgear" aria-label="What the man wears"></select>
-          <select id="mwits" aria-label="The man's wits"></select>
-          <select id="mblock" aria-label="When the man blocks"></select>
-          <button id="addman">Add one</button>
-        </div>
-        <div class="group" style="margin-top:8px">
-          <label for="fwpn">Beside you:</label>
-          <select id="fwpn" aria-label="The hirdman's weapon"></select>
-          <select id="fgear" aria-label="What the hirdman wears"></select>
-          <button id="addfriend">Add a hirdman</button>
-        </div>
-        <div class="group" id="sets" style="margin-top:8px">
-          <button id="setone">One against you</button>
-          <button id="settwo">Two</button>
-          <button id="setfriend">Two, one beside you</button>
+      <details class="panel" data-k="bring" open>
+        <summary>Bring to the ring</summary>
+        <p class="note" style="margin:0 0 4px">The ring starts empty. Choose what a man carries and wears, then bring him; a press on a beast brings it. Each press brings more.</p>
+        <div class="lab">A man against you carries</div>
+        <div class="tiles" id="mwpnT"></div>
+        <div class="chips" style="margin-top:6px" id="mgearC"></div>
+        <div class="chips" style="margin-top:6px" id="mwitsC"></div>
+        <div class="chips" style="margin-top:6px" id="mblockC"></div>
+        <div class="bring"><button id="addman">Bring one</button><button id="addman3">Bring three</button></div>
+        <div class="lab">A hirdman beside you carries</div>
+        <div class="tiles" id="fwpnT"></div>
+        <div class="chips" style="margin-top:6px" id="fgearC"></div>
+        <div class="bring"><button id="addfriend">Bring one</button><button id="addfriend3">Bring three</button></div>
+        <div class="lab">A beast</div>
+        <div class="tiles plain" id="beasts"></div>
+        <div class="lab">Several beasts at once</div>
+        <div class="chips" id="packs"></div>
+        <div class="lab">Trolls and väsen (later chapters)</div>
+        <div class="tiles plain" id="beasts2"></div>
+        <div class="lab">A whole fight</div>
+        <div class="chips" id="sets">
+          <button id="setone">One man across the ring</button>
+          <button id="settwo">Two men</button>
+          <button id="setfriend">Two, and a hirdman beside you</button>
           <button id="setfive">Five against five</button>
           <button id="setbows">Five against five, a bowman each</button>
           <button id="setline">Three against your line of three</button>
         </div>
-        <div class="group" id="ways" style="margin-top:8px"></div>
+        <div class="group" id="ways" style="margin-top:10px"></div>
         <p class="desc" id="waydesc"></p>
-        <div class="group" style="margin-top:8px">
-          <button id="sclear">Clear the field</button>
+        <div class="chips" style="margin-top:8px">
+          <button id="sclear">Empty the ring</button>
           <button id="sreset">Start over</button>
         </div>
+        <div style="display:none"><select id="mwpn"></select><select id="mgear"></select><select id="mwits"></select><select id="mblock"></select><select id="fwpn"></select><select id="fgear"></select></div>
       </details>
 
-      <details class="panel" data-k="beasts" open>
-        <summary>Beasts</summary>
-        <div class="group" id="beasts"></div>
-      </details>
-
-      <details class="panel" data-k="trial" open>
-        <summary>Rune trial</summary>
-        <p class="note">Every rune one by one (Robin, 2026-10-24): set the arena up for it, try it, say whether it stays, goes or needs changes, and write what you think. The notes are kept in this browser; Export shows them as text for the Game Developer.</p>
-        <div id="trial"></div>
-      </details>
       <details class="panel" data-k="runes" open>
         <summary>Runes</summary>
-        <p class="note">The rune in each slot, at a tier; the blood rings start full and fill on landed blows as in the game. What is set here is the arena's own (combatarena.runes); the game keeps its library.</p>
+        <p class="note" style="margin:0 0 6px">A rune a slot. Press a slot to see every rune that fits it; press a rune to bind it. What is set here is the arena's own (combatarena.runes); the game keeps its library.</p>
         <div id="runes"></div>
       </details>
       <details class="panel" id="tuning" data-k="tuning">
@@ -296,18 +320,19 @@ __SFX__
   }
   Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers, look: arenaLook });
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the Blender icons for the hotbar
-  function btnRow(hostId, list, isOn, onPick) {
+  function btnRow(hostId, list, isOn, onPick, iconOf) {   /* a row of choices, one pressed; with iconOf each is a tile with the thing's own icon over its name (2026-11-15, Robin: "easier to switch weapon ... in a more obvious way rather than those lists") */
     var host = document.getElementById(hostId); host.innerHTML = '';
-    list.forEach(function (q) { var b = document.createElement('button'); b.textContent = q.name; b.setAttribute('aria-pressed', isOn(q) ? 'true' : 'false'); b.addEventListener('click', function () { onPick(q); btnRow(hostId, list, isOn, onPick); b.blur(); }); host.appendChild(b); });
+    list.forEach(function (q) { var b = document.createElement('button'); if (iconOf) { var cvI = document.createElement('canvas'); cvI.width = 80; cvI.height = 80; b.appendChild(cvI); var c2 = cvI.getContext('2d'); c2.setTransform(2, 0, 0, 2, 40, 40); try { iconOf(q, c2); } catch (eI) {} var sp = document.createElement('span'); sp.textContent = q.name; b.appendChild(sp); } else b.textContent = q.name; if (q.tip) b.title = q.tip; b.setAttribute('aria-pressed', isOn(q) ? 'true' : 'false'); b.addEventListener('click', function () { onPick(q); btnRow(hostId, list, isOn, onPick, iconOf); b.blur(); }); host.appendChild(b); });
   }
+  function wpnIcon(mat) { return function (q, c2) { Items.icon(c2, Items.make(q.id, mat || arm.mat), 34); }; }
   function armRows() {
-    btnRow('melee', Items.MELEE.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.melee === q.id; }, function (q) { arm.melee = q.id; if (typeof tuneDraw === 'function' && TUNE) tuneDraw(); var P = Combat.dbg().P; P.atk.ph = 'none'; document.getElementById('meleedesc').textContent = Items.KINDS[q.id].desc; });
-    btnRow('ranged', Items.RANGED.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.ranged === q.id; }, function (q) { arm.ranged = q.id; document.getElementById('rangeddesc').textContent = Items.KINDS[q.id].desc; });
-    btnRow('mats', ['wood', 'flint', 'copper', 'bronze', 'iron'].map(function (m) { return { id: m, name: Items.MATS[m].name }; }), function (q) { return arm.mat === q.id; }, function (q) { arm.mat = q.id; });
+    btnRow('melee', Items.MELEE.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.melee === q.id; }, function (q) { arm.melee = q.id; if (typeof tuneDraw === 'function' && TUNE) tuneDraw(); var P = Combat.dbg().P; P.atk.ph = 'none'; document.getElementById('meleedesc').textContent = Items.KINDS[q.id].desc; }, wpnIcon());
+    btnRow('ranged', Items.RANGED.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.ranged === q.id; }, function (q) { arm.ranged = q.id; document.getElementById('rangeddesc').textContent = Items.KINDS[q.id].desc; }, wpnIcon());
+    btnRow('mats', ['wood', 'flint', 'copper', 'bronze', 'iron'].map(function (m) { return { id: m, name: Items.MATS[m].name }; }), function (q) { return arm.mat === q.id; }, function (q) { arm.mat = q.id; setTimeout(armRows, 0); });   /* (the tiles' icons take the new metal) */
     btnRow('gear', GEAR, function (q) { return gear === q; }, function (q) { gear = q; document.getElementById('geardesc').textContent = q.text; });
     document.getElementById('meleedesc').textContent = Items.KINDS[arm.melee].desc; document.getElementById('rangeddesc').textContent = Items.KINDS[arm.ranged].desc; document.getElementById('geardesc').textContent = gear.text;
   }
-  armRows();
+  armRows(); setTimeout(armRows, 700); setTimeout(armRows, 2500);   /* (again once the icons' pictures have come) */
   var codes = { Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyC: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {}, gDown = 0;
 
@@ -506,22 +531,31 @@ __SFX__
     if (!st.bound.guardBlow) { Runes2.learn(st, 'bash', 1); Runes2.bind(st, 'guardBlow', 'bash'); } if (!st.bound.dash) { Runes2.learn(st, 'dash', 1); Runes2.bind(st, 'dash', 'dash'); }
     Runes2.readyAll(st); Combat.api.runeState = st;
   }
-  function runesPanel() {                    // a select a slot (none, or every rune that fits it), a tier beside it; the game's starting runes stand where nothing is picked
+  var RUNE_OPEN = null;
+  function runesPanel() {                    /* a row a slot with the rune bound in it; a press opens every rune that fits the slot as a tile with what it does; a press on one binds it (2026-11-15, Robin: "easier to switch ... runes in a more obvious way rather than those lists which doesnt say much"). Tiers are not offered: upgrading is switched off (Robin, 2026-11-10). */
     var host = document.getElementById('runes'); if (!host) return; host.innerHTML = '';
+    var el = function (tag, cls, text) { var d = document.createElement(tag); if (cls) d.className = cls; if (text != null) d.textContent = text; return d; };
+    var short = function (t) { t = String(t || ''); var k = t.indexOf(': '), u = k > 0 && k < 40 ? t.slice(k + 2) : t, d = u.indexOf('. '); u = d > 20 ? u.slice(0, d + 1) : u; return u.length > 96 ? u.slice(0, 93) + '\u2026' : u; };
+    var save = function () { try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} runesApply(); };
     Runes2.SLOTS.forEach(function (sl) {
-      var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('span'); lab.textContent = sl.name + (sl.active ? ' (' + sl.input + ')' : ''); row.appendChild(lab);
-      var sel = document.createElement('select'); sel.setAttribute('aria-label', sl.name); var o0 = document.createElement('option'); o0.value = ''; o0.textContent = sl.active && (sl.id === 'guardBlow' || sl.id === 'dash') ? 'none (the base move)' : 'none';   /* (the Bash and the Dash are base moves, not runes: Robin, 2026-10-26) */ sel.appendChild(o0);
-      Runes2.LIST.filter(function (r) { return r.slot === sl.id; }).forEach(function (r) { var o = document.createElement('option'); o.value = r.id; o.textContent = r.name + (r.status === 'data' ? ' (not built)' : ''); sel.appendChild(o); });
-      var tier = document.createElement('select'); tier.setAttribute('aria-label', sl.name + ' tier'); ['I', 'II', 'III'].forEach(function (t, i) { var o = document.createElement('option'); o.value = i + 1; o.textContent = 'tier ' + t; tier.appendChild(o); });
-      var cur = ARUNES[sl.id] || {}; sel.value = cur.id || ''; tier.value = cur.tier || 1;
-      var change = function () { ARUNES[sl.id] = { id: sel.value, tier: +tier.value }; try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} runesApply(); };
-      sel.addEventListener('change', change); tier.addEventListener('change', change);
-      var tw = document.createElement('span'); tw.appendChild(sel); tw.appendChild(tier); row.appendChild(tw); host.appendChild(row);
+      var fit = Runes2.LIST.filter(function (r) { return r.slot === sl.id && r.id !== 'bash' && r.id !== 'dash'; }); if (!fit.length) return;   /* (the Bash and the Dash are his own moves, the slot's "none") */
+      var cur = ARUNES[sl.id] && Runes2.BY[ARUNES[sl.id].id] ? Runes2.BY[ARUNES[sl.id].id] : null, base = sl.id === 'guardBlow' ? 'The Bash (his own)' : sl.id === 'dash' ? 'The Dash (his own)' : 'Nothing';
+      var row = el('div', 'runeslot'), nm = el('div', 'sname', sl.name); nm.appendChild(el('small', null, sl.input)); row.appendChild(nm);
+      var b = el('button', RUNE_OPEN === sl.id ? 'open' : null); b.appendChild(el('b', null, cur ? cur.name : base)); b.setAttribute('aria-expanded', RUNE_OPEN === sl.id ? 'true' : 'false'); b.title = cur ? cur.text[0] : 'Press to choose a rune for this slot';
+      b.addEventListener('click', function () { RUNE_OPEN = RUNE_OPEN === sl.id ? null : sl.id; runesPanel(); }); row.appendChild(b); host.appendChild(row);
+      if (cur && RUNE_OPEN !== sl.id) { var H0 = TRIAL_HOW[cur.id]; if (H0 && H0.how) { var hw = el('div', 'runehow', H0.how); if ((H0.where || 'arena') === 'arena' && H0.set && H0.set !== 'none') { hw.appendChild(el('br')); var sb = el('button', null, 'Set the ring up for it'); sb.addEventListener('click', function () { trialSetup(cur, 1); sb.blur(); }); hw.appendChild(sb); } host.appendChild(hw); } }
+      if (RUNE_OPEN === sl.id) {
+        var grid = el('div', 'runegrid'), none = el('button'); none.appendChild(el('b', null, base)); none.appendChild(el('small', null, sl.id === 'guardBlow' || sl.id === 'dash' ? 'The base move, no rune.' : 'No rune in this slot.')); none.setAttribute('aria-pressed', cur ? 'false' : 'true');
+        none.addEventListener('click', function () { delete ARUNES[sl.id]; RUNE_OPEN = null; save(); runesPanel(); }); grid.appendChild(none);
+        fit.forEach(function (r) { var t = el('button', r.status === 'data' ? 'nb' : null); t.appendChild(el('b', null, r.name)); t.appendChild(el('small', null, (r.status === 'data' ? 'Not built yet. ' : '') + short(r.text[0]))); t.title = r.text[0]; t.setAttribute('aria-pressed', cur && cur.id === r.id ? 'true' : 'false');
+          t.addEventListener('click', function () { ARUNES[sl.id] = { id: r.id, tier: 1 }; RUNE_OPEN = null; save(); runesPanel(); }); grid.appendChild(t); });
+        host.appendChild(grid);
+      }
     });
-    var b2 = document.createElement('button'); b2.className = 'small'; b2.textContent = 'No runes'; b2.addEventListener('click', function () { ARUNES = {}; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
+    var b2 = el('button', null, 'No runes'); b2.style.marginTop = '6px'; b2.addEventListener('click', function () { ARUNES = {}; RUNE_OPEN = null; try { localStorage.removeItem('combatarena.runes'); } catch (eS) {} runesPanel(); runesApply(); }); host.appendChild(b2);
     runesApply();
   }
-  /* The Rune trial (Robin, 2026-10-24: "a trial of all the runes ... test the rune, decide if it should stay or be retired, if it needs modification; simple and clear, like the combat arena; go through each rune one by one and note what I think"): every rune in the library's order, each with how to try it and what the arena sets up for it; a verdict and a note a rune, kept in runetrial; Export gives the text for the Game Developer. The how-lines and the set-ups are mine. */
+  /* How to try each rune, and what the ring is set up with for it (mine; written for the Rune trial of 2026-10-24, whose verdicts are taken in: docs/archive/rune-trial-2026-10-24.md; its panel of verdicts and notes went in the cleanup of 2026-11-15, the lines show under the rune bound in a slot). */
   var TRIAL_HOW = {
     bash: { how: 'K held and J (or the right button held and the left) at a man with his shield up: it breaks and he stands open a moment, no throw: strike at once. With it down: a low blow and a push.', set: 'manHold' },
     charge: { how: 'K held and J: a rush; the first man in the way goes down three seconds and takes no harm while down: deal with the other.', set: 'men2' },
@@ -597,8 +631,6 @@ __SFX__
     allfathersEye: { how: 'In the game near a place: every man and beast within sight shows, walls or no walls.', set: 'none', where: 'game' },
     midgardsWall: { how: 'K: the guard stops everything, from every side; let men strike from behind.', set: 'men3' }
   };
-  var TR = { i: 0, v: {} }; try { TR = JSON.parse(localStorage.getItem('runetrial') || '{"i":0,"v":{}}') || TR; } catch (eT) {} if (!TR.v) TR.v = {};
-  function trialSave() { try { localStorage.setItem('runetrial', JSON.stringify(TR)); } catch (eS) {} }
   function trialSetup(r, tier) {             /* the arena set up for the rune: bound in its slot at the tier, the hero armed for it, the men or beasts it wants */
     var H = TRIAL_HOW[r.id] || {}; ARUNES[r.slot] = { id: r.id, tier: tier }; try { localStorage.setItem('combatarena.runes', JSON.stringify(ARUNES)); } catch (eS) {} runesPanel();
     if (H.wpn) { arm.melee = H.wpn; armRows(); } if (H.ranged) { arm.ranged = 'bow'; armRows(); }
@@ -610,31 +642,6 @@ __SFX__
     else if (H.set === 'friend') { spawnMan(1, P.x + 30, P.y + 20, 'sword', 1); spawnMan(0, P.x - 30, P.y - 100, wk, 1, wv); spawnMan(0, P.x + 30, P.y - 108, 'axe', 1, wv); }
     else if (H.set && H.set.indexOf('beast:') === 0) { want = H.set.slice(6); var be = Combat.spawn('beast'); if (holdAll) be.hold = true; }
     mblock.value = keepB; Runes2.readyAll(Combat.api.runeState);
-  }
-  function trialPanel() {
-    var host = document.getElementById('trial'); if (!host) return; host.innerHTML = ''; var L = Runes2.LIST, n = L.length; TR.i = Math.max(0, Math.min(n - 1, TR.i | 0)); var r = L[TR.i], H = TRIAL_HOW[r.id] || { how: '', set: 'none' }, V = TR.v[r.id] || {}, done = Object.keys(TR.v).filter(function (k) { return TR.v[k] && TR.v[k].verdict; }).length;
-    var el = function (tag, cls, text) { var d = document.createElement(tag); if (cls) d.className = cls; if (text != null) d.textContent = text; return d; };
-    var head = el('div', 'row'); var hb = el('b', null, 'Rune ' + (TR.i + 1) + ' of ' + n + ': ' + r.name); head.appendChild(hb); head.appendChild(el('span', 'note', '  ' + r.kind + ', ' + (Runes2.SLOTS.filter(function (q) { return q.id === r.slot; })[0] || { name: r.slot }).name + (r.status === 'data' ? ', not built' : '') + ' \u00b7 decided ' + done + ' of ' + n)); host.appendChild(head);
-    /* (Robin, 2026-10-25: "pick my runes like i did before ... messy that im at the last rune and i have to just click my way back to the first"): every rune in one drop-down, grouped by kind, each with your verdict; and a filter that Back and On keep to */
-    var MARK = { keep: '\u2713 keep', change: '\u270e change', retire: '\u2715 retire' }, pick = document.createElement('select'); pick.setAttribute('aria-label', 'Go to a rune'); pick.style.maxWidth = '100%';
-    var groups = {}; L.forEach(function (q, qi) { var g = groups[q.kind] || (groups[q.kind] = document.createElement('optgroup')); g.label = q.kind; var o = document.createElement('option'), vv = TR.v[q.id], pv = TR.prev && TR.prev[q.id]; o.value = qi; o.textContent = (qi + 1) + '. ' + q.name + (vv && vv.verdict ? '  [' + MARK[vv.verdict] + ']' : '') + (pv && pv.verdict ? '  (last round: ' + pv.verdict + ')' : ''); if (qi === TR.i) o.selected = true; g.appendChild(o); });
-    Object.keys(groups).forEach(function (k) { pick.appendChild(groups[k]); }); pick.addEventListener('change', function () { TR.i = +pick.value; trialSave(); trialPanel(); });
-    var frow = el('div', 'row'), flab = el('span', 'note', 'Back and On go through '), filt = document.createElement('select'); filt.setAttribute('aria-label', 'Which runes Back and On go through');
-    [['all', 'every rune'], ['change', 'the ones marked "needs changes"'], ['prevchange', 'the ones I asked to change last round'], ['open', 'the undecided'], ['keep', 'the kept'], ['retire', 'the retired']].forEach(function (f) { var o = document.createElement('option'); o.value = f[0]; o.textContent = f[1]; if ((TR.f || 'all') === f[0]) o.selected = true; filt.appendChild(o); });
-    filt.addEventListener('change', function () { TR.f = filt.value; trialSave(); trialPanel(); }); frow.appendChild(flab); frow.appendChild(filt); host.appendChild(pick); host.appendChild(frow);
-    var tierSel = document.createElement('select'); tierSel.setAttribute('aria-label', 'The tier to try'); ['I', 'II', 'III'].forEach(function (t, i) { var o = document.createElement('option'); o.value = i + 1; o.textContent = 'tier ' + t + ': ' + r.text[i]; tierSel.appendChild(o); }); tierSel.value = V.tier || H.tier || 1; tierSel.style.maxWidth = '100%'; host.appendChild(tierSel);
-    host.appendChild(el('p', 'note', 'How to try it: ' + H.how));
-    var where = H.where || 'arena'; var row = el('div', 'row');
-    if (where === 'arena') { var sb = el('button', null, 'Set the arena up for it'); sb.addEventListener('click', function () { trialSetup(r, +tierSel.value); sb.blur(); }); row.appendChild(sb); }
-    else if (where === 'runes') { var a1 = el('a', null, 'Open the Rune Editor'); a1.href = 'game.html?scene=runes'; a1.target = '_blank'; row.appendChild(a1); }
-    else if (where === 'game') { var a2 = el('a', null, 'Try it in the game'); a2.href = 'game.html'; a2.target = '_blank'; row.appendChild(a2); }
-    else row.appendChild(el('span', 'note', 'Nothing to try yet.'));
-    host.appendChild(row);
-    var vrow = el('div', 'row'); [['keep', 'Keep'], ['change', 'Needs changes'], ['retire', 'Retire']].forEach(function (q) { var lab = el('label'); var rb = document.createElement('input'); rb.type = 'radio'; rb.name = 'trialv'; rb.value = q[0]; rb.checked = V.verdict === q[0]; rb.addEventListener('change', function () { TR.v[r.id] = TR.v[r.id] || {}; TR.v[r.id].verdict = q[0]; TR.v[r.id].tier = +tierSel.value; trialSave(); trialPanel(); }); lab.appendChild(rb); lab.appendChild(document.createTextNode(' ' + q[1] + ' ')); vrow.appendChild(lab); }); host.appendChild(vrow);
-    var ta = document.createElement('textarea'); ta.rows = 3; ta.style.width = '100%'; ta.placeholder = 'What you think: what to change, what felt wrong or right'; ta.value = V.note || ''; ta.addEventListener('input', function () { TR.v[r.id] = TR.v[r.id] || {}; TR.v[r.id].note = ta.value; trialSave(); }); host.appendChild(ta); var PV = TR.prev && TR.prev[r.id]; if (PV && (PV.verdict || PV.note)) host.appendChild(el('p', 'note', 'Last round: ' + (PV.verdict || 'undecided') + (PV.note ? ' \u2014 ' + PV.note : '')));
-    function fits(q) { var f = TR.f || 'all', vv = TR.v[q.id], pv = TR.prev && TR.prev[q.id]; return f === 'all' || (f === 'open' ? !(vv && vv.verdict) : f === 'prevchange' ? !!(pv && pv.verdict === 'change') : !!(vv && vv.verdict === f)); } function step(d) { for (var k = 1; k <= n; k++) { var j = (TR.i + d * k + n * 4) % n; if (fits(L[j])) { TR.i = j; break; } } trialSave(); trialPanel(); }
-    var nav = el('div', 'row'); var fb = el('button', 'small', 'First'); fb.addEventListener('click', function () { TR.i = 0; for (var k = 0; k < n; k++) if (fits(L[k])) { TR.i = k; break; } trialSave(); trialPanel(); }); nav.appendChild(fb); var pb = el('button', 'small', '\u2190 Back'); pb.addEventListener('click', function () { step(-1); }); var nb = el('button', 'small', 'On \u2192'); nb.addEventListener('click', function () { step(1); }); var nu = el('button', 'small', 'Next undecided'); nu.addEventListener('click', function () { for (var k = 1; k <= n; k++) { var j = (TR.i + k) % n; if (!(TR.v[L[j].id] && TR.v[L[j].id].verdict)) { TR.i = j; break; } } trialSave(); trialPanel(); }); nav.appendChild(pb); nav.appendChild(nb); nav.appendChild(nu); host.appendChild(nav);
-    var xrow = el('div', 'row'); var xb = el('button', 'small', 'Export the notes'); var xa = document.createElement('textarea'); xa.rows = 8; xa.style.width = '100%'; xa.style.display = 'none'; xa.readOnly = true; xb.addEventListener('click', function () { var lines = ['Rune trial, ' + new Date().toISOString().slice(0, 10) + ': ' + done + ' of ' + n + ' decided']; L.forEach(function (q) { var v = TR.v[q.id]; if (!v || (!v.verdict && !v.note)) return; var pv = TR.prev && TR.prev[q.id]; lines.push(q.id + ' (' + q.name + '): ' + (v.verdict || 'undecided') + (v.tier ? ', tier ' + v.tier : '') + (v.note ? ' \u2014 ' + v.note.replace(/\s+/g, ' ') : '') + (pv && pv.verdict ? '  [last round: ' + pv.verdict + ']' : '')); }); xa.value = lines.join('\n'); xa.style.display = 'block'; xa.select(); }); var rb2 = el('button', 'small', 'New round'); rb2.title = 'Keep this round\'s verdicts and notes as "last round", shown under each rune, and start fresh'; rb2.addEventListener('click', function () { if (confirm('Start a new round? This round\'s verdicts and notes are kept and shown as "last round".')) { TR.prev = TR.v; TR.v = {}; TR.i = 0; TR.f = 'prevchange'; trialSave(); trialPanel(); } }); var cb = el('button', 'small', 'Clear every note'); cb.addEventListener('click', function () { if (confirm('Clear every verdict and note of the trial, this round and the last?')) { TR = { i: 0, v: {} }; trialSave(); trialPanel(); } }); xrow.appendChild(xb); xrow.appendChild(rb2); xrow.appendChild(cb); host.appendChild(xrow); host.appendChild(xa);
   }
   function sfxList() {
     var host = document.getElementById('sfxlist'); if (!host) return; host.innerHTML = '';
@@ -665,7 +672,7 @@ __SFX__
     pickText();
     document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound. What you choose in a drop-down is what the arena and the game play.';
   }
-  sfxList(); runesPanel(); trialPanel();
+  sfxList(); runesPanel();
 
   act('heal', function () { var P = Combat.dbg().P; P.hp = P.maxHp; P.st = 100; });
   var clockBtns = document.querySelectorAll('#clock button');
@@ -673,14 +680,22 @@ __SFX__
 
   /* the beasts */
   var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boarYoung', 'Young boar', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['unge', 'Troll young (Hårungen)', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
-  (function () { var host = document.getElementById('beasts'); BEAST_BTNS.forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.addEventListener('click', function () { want = q[0]; var e = Combat.spawn(q[2]); if (holdAll) e.hold = true; b.blur(); }); host.appendChild(b); });
-    [['A pair of wolves', ['wolf', 'wolf']], ['The night\u2019s pack (three wolves)', ['wolf', 'wolf', 'wolf']], ['Two boars', ['boar', 'boar']], ['Three young boars', ['boarYoung', 'boarYoung', 'boarYoung']], ['A boar and a wolf', ['boar', 'wolf']]].forEach(function (g) { var b2 = document.createElement('button'); b2.textContent = g[0]; b2.addEventListener('click', function () { g[1].forEach(function (kk) { want = kk; var e2 = Combat.spawn('beast'); if (holdAll) e2.hold = true; }); b2.blur(); }); host.appendChild(b2); }); })();   /* several at once (2026-10-15, for tuning fights against many) */
+  (function () { BEAST_BTNS.forEach(function (q, qi) { var host = document.getElementById(qi < 7 ? 'beasts' : 'beasts2'), b = document.createElement('button'); b.textContent = q[1]; b.title = 'Brings one into the ring'; b.addEventListener('click', function () { want = q[0]; var e = Combat.spawn(q[2]); if (holdAll) e.hold = true; b.blur(); }); host.appendChild(b); });
+    var hp = document.getElementById('packs'); [['A pair of wolves', ['wolf', 'wolf']], ['The night\u2019s pack (three wolves)', ['wolf', 'wolf', 'wolf']], ['Two boars', ['boar', 'boar']], ['Three young boars', ['boarYoung', 'boarYoung', 'boarYoung']], ['A boar and a wolf', ['boar', 'wolf']]].forEach(function (g) { var b2 = document.createElement('button'); b2.textContent = g[0]; b2.addEventListener('click', function () { g[1].forEach(function (kk) { want = kk; var e2 = Combat.spawn('beast'); if (holdAll) e2.hold = true; }); b2.blur(); }); hp.appendChild(b2); }); })();   /* several at once (2026-10-24) */
 
   /* the men */
   var MWPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], MGEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm and a shield', armor: 0.45, shield: true, mail: true, helm: true }], MWITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }], MBLOCK = [{ name: 'blocks as in the game' }, { name: 'blocks when you are close' }, { name: 'holds the shield up' }];   /* (Robin, 2026-10-24: "the men should block sometimes so i can try using it": a wary man keeps his shield up while you are in reach; holding it up, always, until a bash breaks it) */
   function fill(id, list, name) { var s = document.getElementById(id); s.innerHTML = ''; list.forEach(function (q, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = name(q); s.appendChild(o); }); return s; }
   var mwpn = fill('mwpn', MWPN, function (k) { return Items.KINDS[k].name; }), mgear = fill('mgear', MGEAR, function (g) { return g.name; }), mwits = fill('mwits', MWITS, function (w) { return w.name; }), mblock = fill('mblock', MBLOCK, function (b) { return b.name; }), fwpn = fill('fwpn', MWPN, function (k) { return Items.KINDS[k].name; }), fgear = fill('fgear', MGEAR, function (g) { return g.name; });
   mgear.value = '1'; mwits.value = '1'; fgear.value = '1'; mblock.value = '1';
+  /* what a man carries and wears as tiles and chips: each row sets its (hidden) select, which the rest of the page reads as before */
+  function pickRow(hostId, sel, names, iconOf, tips) { var list = names.map(function (n, i) { return { id: iconOf ? MWPN[i] : i, i: i, name: n, tip: tips ? tips[i] : '' }; }); btnRow(hostId, list, function (q) { return sel.value === String(q.i); }, function (q) { sel.value = String(q.i); }, iconOf); }
+  function menRows() { var wn = MWPN.map(function (k) { return Items.KINDS[k].name; });
+    pickRow('mwpnT', mwpn, wn, wpnIcon('iron')); pickRow('fwpnT', fwpn, wn, wpnIcon('iron'));
+    pickRow('mgearC', mgear, ['Cloth, no shield', 'Leather and a shield', 'Mail, a helm and a shield']); pickRow('fgearC', fgear, ['Cloth, no shield', 'Leather and a shield', 'Mail, a helm and a shield']);
+    pickRow('mwitsC', mwits, ['Dull', 'Steady', 'Sharp'], null, ['Slow to see an opening.', 'As most men are.', 'Quick to guard and to strike.']);
+    pickRow('mblockC', mblock, ['Blocks as in the game', 'Blocks when you are close', 'Holds the shield up'], null, ['His own judgment.', 'His shield comes up whenever you are near: for trying a rune on a guard.', 'The shield stays up, whatever you do.']); }
+  menRows(); setTimeout(menRows, 700); setTimeout(menRows, 2500);
   function spawnMan(side, x, y, wpn, gear, wits) {
     var G = MGEAR[gear] || MGEAR[1], P = Combat.dbg().P;
     x = Math.max(20, Math.min(AWp() - 20, x)); y = Math.max(40, Math.min(AHp() - 20, y));
@@ -705,10 +720,12 @@ __SFX__
   }
   act('addman', function () { var P = Combat.dbg().P; spawnMan(0, P.x + (Math.random() - 0.5) * 80, P.y - 100 - Math.random() * 30, MWPN[+mwpn.value], +mgear.value, MWITS[+mwits.value].v); });
   act('addfriend', function () { var P = Combat.dbg().P; spawnMan(1, P.x + (Math.random() - 0.5) * 60, P.y + 30 + Math.random() * 20, MWPN[+fwpn.value], +fgear.value); });
+  act('addman3', function () { var P = Combat.dbg().P, i; for (i = 0; i < 3; i++) spawnMan(0, P.x + (i - 1) * 44, P.y - 110 - (i % 2) * 18, MWPN[+mwpn.value], +mgear.value, MWITS[+mwits.value].v); });
+  act('addfriend3', function () { var P = Combat.dbg().P, i; for (i = 0; i < 3; i++) spawnMan(1, P.x + (i - 1) * 30, P.y + 34 + (i % 2) * 12, MWPN[+fwpn.value], +fgear.value); });
   [['setone', 'one'], ['settwo', 'two'], ['setfriend', 'friend'], ['setfive', 'five'], ['setbows', 'bows'], ['setline', 'line']].forEach(function (q) { act(q[0], function () { setPiece(q[1]); }); });
   act('sclear', clearField);
   act('sreset', function () { Combat.reset(); resetLog(); });   /* (the reset sets the base itself: afterReset) */
-  Combat.api.afterReset = function () { setTimeout(baseField, 0); };
+  Combat.api.afterReset = function () { setTimeout(resetLog, 0); };   /* (the ring is empty after Start over and after rising: Robin, 2026-11-15, "It shouldnt start with combat right away"; one man across the ring is the first of the whole fights) */
   var WAYTXT = { duel: 'One at a time: a second man joins after six seconds. The game runs this way.', pack: 'One, then more: a second after 2.5 s, a third after five; those who wait stand nearer.', press: 'Two at a time from the first moment, three on you.', odds: 'By the odds: as many to a man as the sides stand.', swarm: 'All at once, as it was before any pairing: everybody on the nearest.' };
   function wayRows() { btnRow('ways', Object.keys(Combat.WAYS).map(function (k) { return { id: k, name: Combat.WAYS[k].name }; }), function (q) { return (Combat.api.men.way || 'duel') === q.id; }, function (q) { Combat.way(q.id); document.getElementById('waydesc').textContent = WAYTXT[q.id] || ''; }); document.getElementById('waydesc').textContent = WAYTXT[Combat.api.men.way || 'duel']; }
   wayRows();
@@ -830,8 +847,7 @@ __SFX__
     if (go) go.addEventListener('click', function () { var b = btns()[+sel.value]; if (b) b.click(); go.blur(); });
     else sel.addEventListener('change', function () { var b = btns()[+sel.value]; if (b) b.click(); });
   }
-  asSelect('melee', 'Weapon'); asSelect('ranged', 'Ranged'); asSelect('mats', 'Metal'); asSelect('gear', 'Wearing');
-  asSelect('sets', 'Set piece', 'Set it up'); asSelect('ways', 'They come'); asSelect('beasts', 'Beast', 'Bring it');
+  asSelect('ways', 'They come');   /* (the weapons, the metal, the gear, the beasts and the whole fights are tiles and chips since 2026-11-15) */
   asSelect('clock', 'The clock'); asSelect('aim', 'Aiming'); asSelect('rng', 'The bow');
   (function () { var OPEN = {}; try { OPEN = JSON.parse(localStorage.getItem('combatarena.open') || '{}') || {}; } catch (eO) {}
     var ds = document.querySelectorAll('details[data-k]'); for (var i = 0; i < ds.length; i++) (function (d) { var k = d.getAttribute('data-k'); if (k in OPEN) d.open = !!OPEN[k];
@@ -846,7 +862,6 @@ __SFX__
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-  baseField();   /* the base: one man across the ring, once everything above is set up */
 })();
 </script>
 </body>
