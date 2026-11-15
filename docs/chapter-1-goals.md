@@ -160,7 +160,7 @@ All eight were answered in the questionnaire of 2026-11-15, each with the first 
 the picks marked mine are first settings.
 
 1. **The blót gates the ship: yes, Aslak waits.** Old Aslak's sail lesson is on his board only once you have stood at the
-   village's blót. With his craft learnt and no blót yet, his first words at a Trade say why (two lines, mine, placeholders
+   village's blót. With his craft learnt and no blót yet, his first words at a Trade say why (two lines; Alistair, LD's words since handoff 31 the same day, mine were placeholders
    for Alistair, LD); after the blót he has a ! over him and one line, and the lesson is there.
 2. **Three islands for the ship.** Flint stays on every beach. The old pines stand on one island, a home island (the biggest
    that is not the nearest). The flax grows on one other island: the old fields of Ulfar's ruin, as the lore's clue says, which
