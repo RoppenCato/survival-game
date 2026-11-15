@@ -12,16 +12,16 @@ seeds.forEach(seed => {
   const per = w.isles.map(() => ({})); let props = 0;
   w.eachProp(p => { props++; if (!p.is) return; let b = -1, bd = 1e9; w.isles.forEach((q, j) => { const d = Math.hypot(p.x / T - q.x, p.y / T - q.y) / q.r; if (d < bd) { bd = d; b = j; } }); per[b][p.is] = (per[b][p.is] || 0) + 1; });
   console.log('seed ' + seed + ': ' + w.isles.length + ' islands, ' + props + ' props, round ' + JSON.stringify(w.stats.round));
-  const roles = {}; let flintless = 0, flax = 0, pines = 0, bear = 0;
+  const roles = {}; let flintless = 0, flax = 0, pines = 0, bear = 0, flaxN = 0, pineN = 0, both = 0, nearHas = 0;
   w.isles.forEach((q, j) => {
     roles[q.role] = (roles[q.role] || 0) + 1; const g = per[j];
-    if (q.flint && !g.flint) flintless++; if (g.flax) flax++; if (g.oldPine && q.role !== 'big') pines++; if (q.bear) bear++;
-    console.log('   ' + j + ' r' + Math.round(q.r) + ' ' + (q.role || '-') + (q.feat ? ' feat:' + q.feat : '') + (q.res ? ' more:' + q.res : '') + (q.bear ? ' BEAR' : '') + '  ' + JSON.stringify(g));
+    if (q.flint && !g.flint) flintless++; if (g.flax) { flax++; flaxN = g.flax; } if (g.oldPine && q.role !== 'big') { pines++; pineN = g.oldPine; } if (q.bear) bear++; if (g.flax && g.oldPine && q.role !== 'big') both++; if (q.landing && (g.flax || g.oldPine)) nearHas++;
+    console.log('   ' + j + ' r' + Math.round(q.r) + ' ' + (q.role || '-') + (q.feat ? ' feat:' + q.feat : '') + (q.res ? ' more:' + q.res : '') + (q.bear ? ' BEAR' : '') + (q.landing ? ' NEAREST' : '') + '  ' + JSON.stringify(g));
     if ((q.role === 'starter' || q.role === 'big' || q.role === 'hamlet') && g.flint) { bad++; console.log('!! flint on the ' + q.role + ' island'); }
   });
   const want = (ok, what) => { if (!ok) { bad++; console.log('!! seed ' + seed + ': ' + what); } };
   want(roles.hamlet === 1 && roles.elm === 1 && roles.fisher === 1, 'the three islands with a reason: ' + JSON.stringify(roles));
-  want(flintless === 0, flintless + ' islands round without flint'); want(flax >= 2, 'flax on ' + flax + ' islands'); want(pines >= 2, 'old pines on ' + pines + ' islands round');
+  want(flintless === 0, flintless + ' islands round without flint'); want(flax === 1, 'flax on one island: ' + flax); want(pines === 1, 'old pines on one island round: ' + pines); want(both === 0, 'never both on one island'); want(nearHas === 0, 'neither on the island nearest the landing'); want(flaxN >= 24, 'flax plants enough for six bolts and to spare (24): ' + flaxN); want(pineN >= 4, 'old pines enough for three logs and to spare (4): ' + pineN);   /* Robin, 2026-11-15: three islands for the ship */
   const sites = Village.plan({ isles: w.isles, code: w.siteCode, shallow: (tx, ty) => w.siteCode(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7, R: kit.rng(seed * 23 + 11), home: [w.home.x / T, w.home.y / T], avoid: [] }, {});
   console.log('   places: ' + sites.map(st => st.isle + ':' + st.arch + ' ' + st.name).join(', '));
   const at = (role) => sites.filter(st => role === 'hamlet' ? st.name === 'Saltvik' : role === 'ruin' ? st.name === 'Ulfarstad' : role === 'fisher' ? st.role === 'fisher' : w.isles[st.isle].role === role && st.name !== 'Saltvik' && st.name !== 'Ulfarstad' && st.role !== 'fisher');
@@ -32,8 +32,10 @@ seeds.forEach(seed => {
   want(at('home').length === 0 && at('elm').length === 0, 'nobody on the homes or the elm island: ' + (at('home').length + at('elm').length));
   w.isles.forEach((q, j) => { if (q.feat === 'bay') { const bx = Math.floor(q.x + Math.cos(q.bay.a) * q.r * 0.92), by = Math.floor(q.y + Math.sin(q.bay.a) * q.r * 0.92 * 0.9); want(w.siteCode(bx, by) === 0, 'the bay of island ' + j + ' is water at its middle'); } if (q.feat === 'hill') want(!!q.hill, 'the hill of island ' + j + ' has its cairn'); });
   want(sites[0].isle === 1 && sites[0].arch !== 'ruin' && !sites.some(st => st.arch === 'seat'), 'the first village on the big island, no seat');
+  { const lx = sites.landing.x, ly = sites.landing.y, ds = sites.filter(st => st.isle === 1).map(st => Math.round(Math.hypot(st.cx - lx, st.cy - ly)));
+    console.log('   from the landing, in tiles: ' + sites.filter(st => st.isle === 1).map((st, k) => st.name + ' ' + ds[k]).join(', ')); want(ds.every((d, k) => k === 0 || d > ds[0]), 'Old Aslak\'s village is the nearest place to the landing: ' + ds.join(' ')); }   /* Robin, 2026-11-15 */
   want((per[1].roseroot || 0) >= 3, 'roseroot on the mountain: ' + (per[1].roseroot || 0));
-  want((per[1].oldPine || 0) >= 2 && (per[1].oldPine || 0) <= 9, 'a few old pines at the mountain foot (2 to 9): ' + (per[1].oldPine || 0));
+  want((per[1].oldPine || 0) === 2, 'two old pines at the mountain foot: ' + (per[1].oldPine || 0));
   want(w.isles.some((q, j) => q.role === 'elm' && per[j].elm >= 10), 'elms on the elm island');
   /* inland water (Robin, 2026-11-10): lakes and a river on the big island, a lake on some of the islands round, none on the starter island, every lake's middle water, nothing in a lake */
   const lk = w.inland.filter(q => q.kind === 'lake'), rv = w.inland.filter(q => q.kind === 'river'), isl = {}; lk.forEach(q => { isl[q.isle] = (isl[q.isle] || 0) + 1; });

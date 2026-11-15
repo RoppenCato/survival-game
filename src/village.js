@@ -12,7 +12,7 @@
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 5;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10); a save made under another should not keep its villages' walls
+var VERSION = 6;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -1335,6 +1335,15 @@ function plan(env, opts) {
     for (k = 0; k < cands.length && !fisherSite; k++) { var qf = isles[cands[k]], stf = find(qf, 'fisher', true, false, R2) || find(qf, 'fisher', true, true, R2); if (stf) { fisherSite = stf; fisherAt = cands[k]; if (cands[k] !== fisherIsle) { isles[fisherIsle].role = 'home'; qf.role = 'fisher'; fisherIsle = cands[k]; } } }
     if (!fisherSite) { var mids2 = []; for (k = 2; k < isles.length; k++) if (isles[k].ring === 0 && isles[k].r >= 60) mids2.push(k); mids2.sort(function (a, b) { return isles[a].r - isles[b].r; }); for (k = 0; k < mids2.length && !fisherSite; k++) { var stm = find(isles[mids2[k]], 'fisher', true, false, R2) || find(isles[mids2[k]], 'fisher', true, true, R2); if (stm) { fisherSite = stm; fisherAt = mids2[k]; } } }   /* (no small island with room: his hut on a shore of a middle-sized one, which keeps its own role and name) */
   })();
+  /* Old Aslak's village is the first place a man meets from the landing (Robin, 2026-11-15: "Yes, his is nearest"; in the played run of 2026-11-14 the first was a walled trading place with nothing to swap, and nothing pointed on to his). The landing: the big island's first grass on the line from the starter island. His village: the site nearest it on the big island, its middle a little way in; the island's other places are drawn until they lie further off. */
+  var landPt = null; if (roled && isles[1]) (function () { var qb = isles[1], dh = Math.hypot(env.home[0] - qb.x, env.home[1] - qb.y) || 1, ux = (env.home[0] - qb.x) / dh, uy = (env.home[1] - qb.y) / dh, rr, k, mine; for (rr = qb.r * 1.3; rr > qb.r * 0.3; rr -= 1) { var lx = qb.x + ux * rr, ly = qb.y + uy * rr; if (!grassAt(Math.floor(lx), Math.floor(ly))) continue; mine = true; for (k = 0; k < isles.length; k++) if (k !== 1 && Math.hypot(lx - isles[k].x, ly - isles[k].y) / isles[k].r < rr / qb.r) mine = false; if (mine) break; } landPt = { x: qb.x + ux * rr, y: qb.y + uy * rr }; })();
+  function findNear(q, arch, P) { var sz = siteFor(arch, opts.G), hw = Math.ceil(sz.w / 2) + 1, hh = Math.ceil(sz.h / 2) + 1, minD = Math.max(sz.w, sz.h) / 2 + 10, e = Math.ceil(q.r * 1.5), x0 = Math.floor(q.x - e), y0 = Math.floor(q.y - e), n = e * 2 + 1, I = new Int32Array((n + 1) * (n + 1)), c = [], x, y, k;   /* (no draws: every tile of the island, nearest the landing first, and the first that has room. A table of sums says in one look whether a site is all grass; a village is 88 tiles by 62 and the mountain stands by the landing, so the nearest room is often a minute's walk in) */
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) I[(y + 1) * (n + 1) + x + 1] = (grassAt(x0 + x, y0 + y) ? 0 : 1) + I[y * (n + 1) + x + 1] + I[(y + 1) * (n + 1) + x] - I[y * (n + 1) + x];
+    var bare = function (cx, cy) { var xa = cx - hw - x0, xb = cx + hw - x0 + 1, ya = cy - hh - y0, yb = cy + hh - y0 + 1; if (xa < 0 || ya < 0 || xb > n || yb > n) return 1; return I[yb * (n + 1) + xb] - I[ya * (n + 1) + xb] - I[yb * (n + 1) + xa] + I[ya * (n + 1) + xa]; };
+    for (y = y0 + hh; y <= y0 + n - hh; y++) for (x = x0 + hw; x <= x0 + n - hw; x++) { if (bare(x, y)) continue; var dd = Math.hypot(x - P.x, y - P.y); if (dd >= minD) c.push([dd, x, y]); }
+    c.sort(function (a, b) { return a[0] - b[0] || a[2] - b[2] || a[1] - b[1]; });
+    for (k = 0; k < c.length; k++) { var cx = c[k][1], cy = c[k][2]; if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy) || shoreOf(cx, cy, sz.h)) continue; return { cx: cx, cy: cy, tx: cx - Math.ceil(sz.w / 2), ty: cy - Math.ceil(sz.h / 2), w: sz.w, h: sz.h, shore: null }; }
+    return null; }
   var seatIsle = -1; if (!roled && isles.some(function (q) { return q.ring != null; })) { var meds = []; for (var mi = 2; mi < isles.length; mi++) if (isles[mi].ring === 0 && mi !== fisherIsle && isles[mi].r >= 60 && isles[mi].r <= 140) meds.push(mi); meds.sort(function (p, q) { return isles[q].r - isles[p].r; }); if (meds.length) seatIsle = meds[Math.floor(R() * Math.min(2, meds.length))];   /* (the seat wants room: one of the two biggest medium islands, 2026-10-22) */ }
   for (i = 1; i < isles.length; i++) {
     var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
@@ -1350,8 +1359,9 @@ function plan(env, opts) {
     else if (R() < 0.5) wants = [['farmstead', false]];
     if (roled && i === fisherIsle && fisherAt !== i) wants = [];
     if (roled && i === fisherAt && i !== fisherIsle) wants.push(['fisher', true]);
-    wants.forEach(function (wq) {
-      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = (wq[0] === 'fisher' && i === fisherAt && fisherSite) || find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+    wants.forEach(function (wq, wi) {
+      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = (wq[0] === 'fisher' && i === fisherAt && fisherSite) || (landPt && i === 1 && wi === 0 && findNear(q, arch, landPt)) || find(q, arch, wq[1]);
+      if (landPt && i === 1 && wi > 0 && sites[0] && st) { var dA = Math.hypot(sites[0].cx - landPt.x, sites[0].cy - landPt.y), trA = 0; while (Math.hypot(st.cx - landPt.x, st.cy - landPt.y) < dA + 20 && trA++ < 40) st = find(q, arch, wq[1]) || st; } if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
       if (!st && roled && q.role === 'hamlet' && wq[1]) st = shoreScan(q, arch);   /* (Saltvik boils the sea: before any inland site, every south shore of its island is tried in order; Clive, GD 2026-11-10: the random search had missed and the works stood 35 tiles from the water) */
       if (!st && roled && q.ring === 0 && i > 1) st = find(q, arch, wq[1], true);   /* (a place the chapter needs: by the shore or not, wherever the island has room) */
       var isleAt = i; if (!st && roled && q.ring === 0 && i > 1 && (q.role === 'hamlet' || q.role === 'ruin')) for (var oi = 2; oi < isles.length && !st; oi++) if (oi !== i && isles[oi].ring === 0 && isles[oi].r >= 60) { st = find(isles[oi], arch, false, true); if (st) isleAt = oi; }   /* (and if its own island has none, another middle-sized island round) */
@@ -1364,6 +1374,7 @@ function plan(env, opts) {
       sites.push(st);
     });
   }
+  sites.landing = landPt;   /* (where a man lands from the starter island, in tiles, or null: for the tests and the game's start from chapter 1) */
   return sites;
 }
 // draw a generated village on a canvas in world units (the editor): the ground paints, floors, pieces, props and people.

@@ -154,22 +154,37 @@ Each row: who tells you, what it asks, what it cost in the run.
     merchants' "Wool, salt, iron" and "Silver by weight" are kept for chapters with trade.
 16. **The Chapter 1 start has no sinew**, so the first lesson asks for a boar. That reads well; I left it.
 
-## Questions for Robin
+## Robin's answers (2026-11-15), and what was built
 
-1. **Should the blót gate the ship?** Mine: yes. Aslak sells the sail lesson only once you have stood at the blót ("you are
-   one of us now"). The main goal is then on the road to the end, as first decided on 2026-10-26.
-2. **Should the ship need more than one island round?** Mine: yes, three. Keep flint on every beach, put the old pines on one
-   island and the flax on another, and never both on the island nearest the landing.
-3. **How hard should the Old Man be?** Mine: faster (60, still slower than a jog), and his blow harder to block. He should
-   kill a careless player in full leather; today he cannot.
-4. **Should you be able to build a butcher's table?** Mine: yes, at your home once the claim stone stands. It gives the claim
-   stone a use and turns pelts from a chore into a hunt.
-5. **How long should chapter 1 be?** One hour on a known path is short for the islands it has. If you want two to three, the
-   levers are questions 1, 2 and 4, a dearer ship (salt for provisions, rope), and the wolf-skin gear asked for by the cold.
-6. **Should the first village from the landing be Aslak's?** Mine: yes. Swap the two places, or give Dagnysnes a gate on the
-   landing's side and a villager who says where Aslak lives.
-7. **Should a villager's clue come first?** Mine: yes, his first line when he has a clue you have not heard.
-8. **Should the night bite?** Today a bed removes it. Mine: leave it for now; decide with the wolf-skin gear and winter.
+All eight were answered in the questionnaire of 2026-11-15, each with the first choice. Built the same day; the numbers and
+the picks marked mine are first settings.
+
+1. **The blót gates the ship: yes, Aslak waits.** Old Aslak's sail lesson is on his board only once you have stood at the
+   village's blót. With his craft learnt and no blót yet, his first words at a Trade say why (two lines, mine, placeholders
+   for Alistair, LD); after the blót he has a ! over him and one line, and the lesson is there.
+2. **Three islands for the ship.** Flint stays on every beach. The old pines stand on one island, a home island (the biggest
+   that is not the nearest). The flax grows on one other island: the old fields of Ulfar's ruin, as the lore's clue says, which
+   is where the Old Man walks (mine). The island nearest the landing has neither. The mountain's foot keeps two old pines and
+   no more, so the third log is always a sail away (mine).
+3. **The Old Man: harder.** He walks at 60 (he walked at 44; the hero jogs at 78). His blow was heavy already, so "harder to
+   block" is less warning and more blows (mine): the wind-up 0.7 seconds for 0.9, the wait between blows 1.1 for 1.5. The same
+   simple fighter that killed him in 38 seconds now dies in 27, having taken a third of his health: blocking alone no longer
+   wins.
+4. **A butcher's table of your own: yes, after the claim stone.** On the Building board once a claim stone of yours stands;
+   8 wood and 2 stone (mine); it can only be put on your own ground.
+5. **About double the length.** Through 1, 2 and 4, and a dearer ship (mine in its numbers): 20 wood, 18 timber (three logs,
+   it was 12), 6 sailcloth (36 flax, it was 4), 4 leather, **6 rope** (new: 5 fibre each, laid up by hand once Aslak has
+   taught his craft) and **8 salt** (Jorunn's, for the voyage's provisions). Not timed yet: the chapter must be played again.
+6. **Aslak's village is the nearest.** His village is now the place nearest the landing on the big island, and its other
+   places lie further off. The village is 88 tiles by 62 and the mountain stands by the landing, so "nearest" is 54 to 266
+   tiles on ten seeds, 107 in the game's own world (about a minute's walk). Older saves are dropped (the world changed).
+7. **A villager's clue comes first.** His first words are his clue while nobody has told you it; then his other lines.
+8. **The night: decide later.** Nothing changed.
+
+Seen in the pane (hidden): the gate and both of Aslak's new lines, a clue as a villager's first words, the islands' new
+roles, the Old Man's numbers and one fight, a claim stone carved, filled and raised and the butcher's table built beside it
+(and refused off your ground), rope made, the karve's price. Not played: the chapter from its start to the sail out under the
+new rules, so its new length is not measured.
 
 ## Not played, and what the run cannot say
 
