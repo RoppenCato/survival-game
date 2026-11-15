@@ -46,7 +46,3 @@ Each is one line; the full text is in the doc named. They are answered when thei
 | D42 | **Settlements: the ladder's numbers**; interiors beyond what is built. | `docs/settlements-plan.md`, `docs/interiors-plan.md` |
 | D43 | **Releasing the game, and co-op with two or three friends.** | `docs/release-and-coop.md` |
 | D44 | **The next game in an engine, probably 3D.** | `docs/idea-bank.md` |
-
-## Chapter 1's length (2026-11-15)
-
-The second played run came to the same hour as the first. Three questions with my recommendation are in `docs/chapter-1-goals.md` under "The second run": is an hour on a known path enough; if not, what the ship should ask for that is play and not rowing (mine: provisions from fishing); should the Old Man walk the flax fields (mine: yes).

@@ -245,13 +245,19 @@ Ulfar's for flax, Torsey for pines), and that is where the new rowing went: 829 
 - Still not played: Gamli and fishing, the elm bow, the lookout and roseroot, the dishes, wolf-skin gear, the claim stone, the
   butcher's table at home, your own altar.
 
-### Three questions
+### Robin's answers (2026-11-15, the second questionnaire), and what was built
 
-1. **Is an hour on a known path enough?** My guess for a first player is still two to four hours.
-2. **If it should be longer, what should the ship ask for that is play, not rowing?** Mine: provisions from fishing (it brings
-   Gamli's island and the one system the way out never touches into the path). Other levers: Old Aslak teaches the sail only
-   to a man with land (the claim stone, and then the butcher's table matters); the wolf-skin gear asked for by the autumn sea.
-3. **Should the Old Man walk the flax fields?** Mine: yes, his place among the flax and a wider round. Today he is never met.
+1. **Length: longer, by play** (about an hour and a half on a known path).
+2. **What the ship asks for: a home with a claim stone.** Old Aslak teaches the sail only to a man with land: with his craft
+   learnt and no claim stone of yours standing, the lesson is off his board and he says why (two lines, mine, placeholders for
+   Alistair, LD). Built. **This alone adds about three minutes, not half an hour**: the wolf's blood is in the bag from the
+   pelts, the stone is 6 stone and three short acts. The chapter stays near an hour until more is asked for. The other three
+   (provisions from fishing, wolf-skin gear, oars of elm) were not chosen.
+3. **The Old Man: among the flax.** Built: his place is the flax nearest the big island, his round is 420 units for 140, and
+   while you stand among the flax of his island the middle of his round drifts to you; outside his round he strides to it.
+   In the pane he stood 7 tiles from the first flax and came at me after 20 seconds (the numbers mine).
+4. **The blót gate: left as it is.**
+5. **The rowing: judged after you have rowed it.**
 
 ## Not played, and what the run cannot say
 

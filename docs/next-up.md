@@ -15,6 +15,8 @@ Last updated: 2026-11-14.
 
 ## Waiting on Robin
 
+**Your second questionnaire on chapter 1 (2026-11-15), built:** Old Aslak teaches the sail only once a claim stone of yours stands; the Old Man walks the flax fields and comes to see who is in them. The blót gate and the islands are left; the rowing is yours to judge after rowing it. **The chapter is still about an hour on a known path**: the claim stone adds about three minutes, and you chose "longer, by play" (an hour and a half). The other things the ship could ask for (provisions from fishing, wolf-skin gear, oars of elm) wait for your word. **Waits on a studio:** Alistair, LD's words for Aslak's two lines about land.
+
 **Chapter 1 played again (2026-11-15, your ask): the same hour.** The ship sailed on day 3 at 21:41, 60 minutes awake; the first run took about 66. The blót's gate cost nothing, Aslak's village by the landing saved more than the dearer ship added, and the butcher's table at home was never needed. Three questions in `docs/chapter-1-goals.md`, "The second run".
 
 **The editors and menus gone through (2026-11-15, your ask), for you to try:** Admin is a board of choices (H opens it in the game): season, weather, hour, wind and every place by name. The four test scenes have the same kind of board on H. **The Raid Editor** is new (it was the Battle test): eight kinds of place, its men, your crew and the way in. **The Rune Editor's rite** offers stones again. **The Combat Arena** starts with an empty ring; men, hirdmen and beasts are brought from a panel; weapons are tiles, runes are picked by slot. Set pieces has one drop-down for its sets; World monsters' panel is laid out again. Faults found and fixed on the way are in the commits of that day. Not seen by you: all of it.

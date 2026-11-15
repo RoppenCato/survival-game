@@ -10570,7 +10570,7 @@ function wanderStep(e, dt) {
   if (w.tx == null) { var wkw = api.scene && api.scene.walk, tr; for (tr = 0; tr < 8; tr++) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; if (!wkw || wkw(w.tx, w.ty, e)) break; } w.tt = 7; }   // a place it can stand (2026-10-12: half a troll's ground by the cave is cliff)
   w.tt -= dt;
   if (w.tt <= 0 || Math.hypot(w.tx - e.x, w.ty - e.y) < 6) { w.tx = null; w.wait = 1.5 + Math.random() * 4; e.state = 'idle'; return; }
-  var ang = Math.atan2(w.ty - e.y, w.tx - e.x), sp = (e.cfg ? e.cfg.speed : 58) * 0.38, ox = e.x, oy = e.y;
+  var ang = Math.atan2(w.ty - e.y, w.tx - e.x), sp = (e.cfg ? e.cfg.speed : 58) * (w.pace || 0.38), ox = e.x, oy = e.y;   /* (w.pace: a page may have a beast stride to its ground instead of ambling: the Old Man coming to his fields, 2026-11-15) */
   e.face = turnToward(e.face, ang, dt * 3);
   moveCircle(e, Math.cos(e.face) * sp * dt, Math.sin(e.face) * sp * dt);
   if (Math.hypot(e.x - ox, e.y - oy) < sp * dt * 0.25) { w.tx = null; w.wait = 1; }   // something is in the way: try elsewhere
