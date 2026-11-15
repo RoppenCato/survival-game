@@ -1,33 +1,33 @@
-# Lore handoff 31: Old Aslak keeps the sail till the blót (2026-11-15)
+# Lore handoff 32: Old Aslak teaches the sail to a man with land (2026-11-15)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-30.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-31.md`.
 
-Your two lines for Old Aslak, for Robin's decision of 2026-11-15 that the blót gates the ship. Both are new ids, `in-game` under
-Robin's rule of 2026-10-31; Robin may change them. lore.json: 213 entries. Every line is under 130 characters.
+Your two lines for Old Aslak, for Robin's decision of 2026-11-15 (the second questionnaire) that he teaches the sail only once a
+claim stone of the hero's own stands. A new id, `in-game` under Robin's rule of 2026-10-31; Robin may change it. lore.json: 214
+entries. Every line is under 130 characters.
 
-## `line.aslak.sail-wait` (sequence, 2 lines)
+## `line.aslak.sail-land` (sequence, 2 lines)
 
-Said once, in order, as his first words at a Trade when the craft is learnt and the blót has not been held. Line 2 then joins his
-craft lines while the gate holds, as you said.
+Said once, in order, at a Trade when the craft is learnt and no claim stone of his stands, after `line.aslak.sail-wait` if that is
+still to say. Line 2 then joins his craft lines while it holds, as you said.
 
-1. The sail? Hogni and I kept that for our own. I'll not give it to a stranger.
-2. Hallveig will have a wolf on her stones come summer's end. Stand there with us.
+1. A sail takes a man away. I teach it to men who've somewhere to come back to.
+2. Stand a stone with your name cut in it. Ground like that pulls a man home.
 
-Line 2 is true whether the wolf is already on the stones or not, so it can be heard again until the blót is held.
+With both gates still to pass, he says four lines over four talks: the blót's two, then these two.
 
-## `line.aslak.sail-open` (sequence, 1 line)
+## `line.aslak.sail-open`: unchanged words
 
-Said once, at the first Trade after the blót (the ! over him until then).
-
-1. You stood at the stones with us. No stranger now. Come, I'll show you the sail.
+Only its `when` changed: said once both hold (the blót held, the stone standing). The words are as before.
 
 ## Robin's answers, in the canon
 
-Noted on `chapter.2`, `person.aslak`, `quest.aslak.boat`, `rumour.flax.wild`, `beast.old-man` and `person.jorunn`, with your doc as
-the source. No line changed for them. One thing for you: `rumour.flax.wild` line 2 ("Wild flax grows on {place}, down where the
-ground's wet") should now have `{place}` filled with the island of Ulfar's old fields, since that is the only flax.
+Noted on `chapter.2`, `person.aslak`, `quest.aslak.boat`, `place.claim-stone` and `beast.old-man` (the Old Man walks the flax of
+Ulfar's island), with your doc as the source. Your fix for Hallveig's first words is noted on `line.blot.wolf`. No other line
+changed.
 
 ## Changed ids
 
-- `line.aslak.sail-wait`, `line.aslak.sail-open`: new (in-game).
-- `chapter.2`, `person.aslak`, `quest.aslak.boat`, `rumour.flax.wild`, `beast.old-man`, `person.jorunn`: a note each.
+- `line.aslak.sail-land`: new (in-game).
+- `line.aslak.sail-open`: `when` only.
+- `chapter.2`, `person.aslak`, `quest.aslak.boat`, `place.claim-stone`, `beast.old-man`, `line.blot.wolf`: a note each.

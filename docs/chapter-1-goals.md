@@ -249,8 +249,7 @@ Ulfar's for flax, Torsey for pines), and that is where the new rowing went: 829 
 
 1. **Length: longer, by play** (about an hour and a half on a known path).
 2. **What the ship asks for: a home with a claim stone.** Old Aslak teaches the sail only to a man with land: with his craft
-   learnt and no claim stone of yours standing, the lesson is off his board and he says why (two lines, mine, placeholders for
-   Alistair, LD). Built. **This alone adds about three minutes, not half an hour**: the wolf's blood is in the bag from the
+   learnt and no claim stone of yours standing, the lesson is off his board and he says why (two lines; Alistair, LD's words since handoff 32 the same night). Built. **This alone adds about three minutes, not half an hour**: the wolf's blood is in the bag from the
    pelts, the stone is 6 stone and three short acts. The chapter stays near an hour until more is asked for. The other three
    (provisions from fishing, wolf-skin gear, oars of elm) were not chosen.
 3. **The Old Man: among the flax.** Built: his place is the flax nearest the big island, his round is 420 units for 140, and
