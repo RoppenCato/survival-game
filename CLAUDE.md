@@ -125,7 +125,7 @@ and not built (`docs/idea-bank.md`).
   iron, the bloomery, iron tools and weapons, mail, gambeson, helm, painted shield), the karve, new grounds (field, chalk,
   marsh), raiding with silver as the second currency, and a human jarl who holds the silver ring, won by raiding his hall.
   The draugr is a side threat for later.
-- **Villages:** across the islands with generated names; a jetty with a road up and moored boats that cannot be boarded;
+- **Villages:** **open, not fenced in** (Robin, 2026-11-15: "They shouldnt be enclosed in fences/walls ... There can be some fences etc where it makes sense"; built: no edge round an ordinary place; kept, mine: the town's wall, the chieftain's palisade, the churchyard's wall, one farm fence in three), **not crowded, the people spread out doing their own things, some together** (built), **every building entered from the south** (built), **with plots of land and flowerbeds so a place looks lived in** (built small: flowerbeds by the doors and three-row kitchen plots; `docs/state/world.md`, "Open villages"); across the islands with generated names; a jetty with a road up and moored boats that cannot be boarded;
   roads between villages uncommon; none thriving on the starter island. Lots of islands and many kinds of places, so every
   playthrough is new yet familiar.
 - **The raid (decided 2026-10-07 and 2026-10-13):** about twenty minutes, made of loot spread out behind doors to break (the

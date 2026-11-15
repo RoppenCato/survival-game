@@ -5556,7 +5556,7 @@ if (typeof module !== 'undefined') module.exports = Build;
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 6;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15); a save made under another should not keep its villages' walls
+var VERSION = 7;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15; 7: open villages, doors to the south, fewer people, 2026-11-15); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -5582,18 +5582,18 @@ var DEF = {
    forte), auto (street or green by the seed), row (plots along a shore street), town (plots in blocks inside a wall). farms and
    plots: how many units; green: the common's size; site: the tiles a page should find for it; people: the drawn folk. */
 var ARCH = {
-  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [12, 16], site: [42, 34], people: [3, 5] },
+  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [12, 16], site: [42, 34], people: [3, 4] },
   fisher: { name: 'Fisherman’s hut', tier: 0, family: 'single', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [22, 30], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
   church: { name: 'Church', tier: 0, family: 'single', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [34, 34], people: [2, 3], church: true, chapel: true, lowland: true },   // a lone church with its priest's house (the lucky strike, 2026-10-07)
-  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [6, 9] },
-  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [5, 8], shore: true, racks: 2 },
+  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [4, 6] },
+  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [4, 6], shore: true, racks: 2 },
   ruin: { name: 'Abandoned', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [0, 0], ruin: true },
-  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [88, 62], people: [10, 15] },
-  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [96, 72], people: [16, 24], hall: true, palisade: true },
-  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [84, 54], people: [8, 12], shore: true, stores: 2 },
-  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [120, 88], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
-  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [134, 100], people: [34, 44], hall: true, palisade: true },
-  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [148, 108], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true }
+  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [88, 62], people: [7, 10] },
+  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [96, 72], people: [11, 16], hall: true, palisade: true },
+  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [84, 54], people: [6, 8], shore: true, stores: 2 },
+  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [120, 88], people: [12, 18], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
+  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [134, 100], people: [22, 28], hall: true, palisade: true },
+  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [148, 108], people: [24, 32], hall: true, church: true, townwall: true, stores: 2, lowland: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -5675,8 +5675,9 @@ function make(seed, site, opts) {
     var b2 = (age === 'new' ? 0.2 : age === 'old' ? 1.25 : 0.75) + (l.id === 'hall' || l.id === 'church' ? -0.55 : l.id === 'store' || l.id === 'byre' || l.id === 'lean' || l.id === 'pit' ? 0.45 : 0) + (hv - 0.5) * 1.3;
     return b2 < 0.5 ? 0 : b2 < 1.3 ? 1 : 2; };
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
-  var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : 'rail'; if (A.chapel) fenceKind = 'drystone';   /* (wattle only for pens and the kitchen plot: Robin, 2026-10-22) */ if (A.hut && (fenceKind === 'palisade' || fenceKind === 'drystone')) fenceKind = 'fence';   // (the fisherman's hut keeps a wattle fence at most: a ring of stakes round two buildings shut its door, 2026-10-22)
-  var farmFence = A.family === 'single' ? null : wealth >= G.farmFenceAt ? 'rail' : null;   // a farm's own fence inside a village (section 9's question 1: both, by wealth)
+  var fenceKind = A.townwall ? 'townwall' : A.palisade ? 'palisade' : A.chapel ? 'drystone' : 'none';   /* Robin, 2026-11-15: "They shouldnt be enclosed in fences/walls, its too much of a hassle to get inside and walk around. There can be some fences etc where it makes sense": an ordinary place stands open (it had a rail fence, a dry-stone wall or, from wealth 0.7, a palisade round the whole of it). Kept, mine: the town's wall and the chieftain's palisade, which the raids are built on, and the churchyard's wall with its gate. */
+  var farmFence0 = A.family === 'single' ? null : wealth >= G.farmFenceAt ? 'rail' : null, curFront = 's';   /* a farm's own fence inside a village: one farm in three since 2026-11-15 (every farm had one: a village was a row of pens to walk round) */
+  function farmFenceFor() { return farmFence0 && R() < 0.34 ? farmFence0 : null; }
   // ---- what the generator writes goes into the current container C: the place itself, or a unit's box before it is stamped in ----
   var C = V;
   function newBox(bw, bh) { return { w: bw, h: bh, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], finds: [], yard: null, front: null }; }
@@ -5700,6 +5701,8 @@ function make(seed, site, opts) {
   function houseSize(door, lenRange, across) { var b = BUILD.house, lg = pickRange(R, lenRange || b.w, 0), ac = across || (b.h[0] + (wealth > 0.4 && R() < 0.35 ? 1 : 0)); if (HK !== 1) { lg = Math.round(lg * HK); ac = Math.round(ac * HK); } return door === 's' || door === 'n' ? { w: ac, h: lg } : { w: lg, h: ac }; }
   // ---- the pieces of a lot: walls in its material, a door on its front, a window or two, the floor, the roof later ----
   function pieces(l) {
+    var wantD = curFront === 's' ? 's' : curFront === 'n' ? 'n' : 'e';   /* Robin, 2026-11-15: "Entrance to buildings need to be from the south i think. Its too hard to see where to enter otherwise": the door goes on the wall that faces south in the world, whichever way the unit is turned when it is stamped (a unit grown facing east or west lies on its side: its east wall is the south one). A boathouse keeps its door to the water, a lean-to never opens through the wall it shares. */
+    if (l.door !== wantD && l.skip !== wantD && l.id !== 'boathouse') l.door = wantD;
     var b = BUILD[l.id], U = l.u || {}, m = l.mstep != null ? wallOf(l.mstep) : l.big ? wallOf(0) : (l.id === 'house' ? wallOf(1) : (l.id === 'store' || l.id === 'bath' ? 1 : 2)), roof = roofOf(!!l.big), x, y;
     if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4; if (l.id === 'church') { m = 6; roof = 4; }
     if (!lowland && (l.id === 'byre' || l.id === 'boathouse')) roof = 0;   // turf on the byres and the boathouses, so they tell apart from the thatched houses from above (Robin, 2026-11-10, via Clive, GD: yes)
@@ -5719,7 +5722,12 @@ function make(seed, site, opts) {
     if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof, age: roofAge(l) });   // (age: the roof's own, 0 fresh, 1 weathered, 2 old: Build tints it by BuildRoof.col; 2026-11-10)
     if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
-    furnish(l); roomCheck(l);
+    /* a long house is furnished for a door in its south wall; with the door in its north wall the same room is laid and then mirrored north to south, and with the door in a gable the room is laid as for a door at that end of the south wall */
+    var longD = (l.id === 'longhouse' || l.id === 'hall') && l.door !== 's', i0 = C.items.length, p0 = C.props.length, f0 = C.finds.length, dr0 = l.door, dx0 = l.dx;
+    if (longD) { l.door = 's'; if (dr0 === 'e') l.dx = l.x + l.w - 2; else if (dr0 === 'w') l.dx = l.x + 1; }
+    furnish(l);
+    if (longD) { l.door = dr0; l.dx = dx0; if (dr0 === 'n') { var flipY = function (o) { if (o.x >= l.x * T && o.x <= (l.x + l.w) * T && o.y >= (l.y - 0.2) * T && o.y <= (l.y + l.h + 0.2) * T) o.y = (2 * l.y + l.h) * T - o.y; }; C.items.slice(i0).forEach(flipY); C.props.slice(p0).forEach(flipY); C.finds.slice(f0).forEach(flipY); } }
+    roomCheck(l);
   }
   /* roomCheck(l): the room's things rasterised and tested (docs/interiors-plan.md section 4): the threshold (the door's inside tile and
      the next) free; the lane (a house: the door's column to the far wall; a long house: a tile either side of its fires) free; the
@@ -5852,7 +5860,7 @@ function make(seed, site, opts) {
      village: everything hugs its small yard and the box is tight), slots, outs, firePit, well, stores, shore, hall, heavy, town,
      market, fence, zone, yardDy, bigX }. Returns the unit's box with everything in it, and its front: the opening in its south side. */
   function ringUnit(U) {
-    var L = newBox(U.w, U.h), old = C; C = L;
+    var L = newBox(U.w, U.h), old = C; C = L; curFront = U.front || 's';
     var yw = U.yard[0], yh = U.yard[1], yx = Math.floor((U.w - yw) / 2), yy = Math.floor((U.h - yh) / 2) + (U.yardDy != null ? U.yardDy : 1);
     L.yard = { x: yx, y: yy, w: yw, h: yh };
     function fits(lot) {
@@ -5954,7 +5962,7 @@ function make(seed, site, opts) {
      at the front with its gable and door to the street, a workshop or a store behind it, the midden and the woodpile at the back.
      U { w, h, ac (the house across), len (its length range), behind ('pit' | 'store' | 'smithy' | null), mstep, fence, quarter }. */
   function plotUnit(U) {
-    var L = newBox(U.w, U.h), old = C; C = L;
+    var L = newBox(U.w, U.h), old = C; C = L; curFront = U.front || 's';
     var ac = Math.min(U.ac || 4, U.w - 2), len = Math.min(pickRange(R, U.len || [6, 7], 0), U.h - 3), hx = 1 + Math.floor(R() * Math.max(1, U.w - 1 - ac)), hy = U.h - 1 - len;
     var hl = { id: 'house', x: hx, y: hy, w: ac, h: len, door: 's', slot: 'plot', big: false, u: { kind: U.kind, stores: U.stores, calling: U.quarter === 'merchant' ? 'merchant' : U.quarter === 'gate' ? 'guard' : rollCalling() }, mstep: U.mstep, ruin: U.ruin }; L.lots.push(hl);
     if (U.behind && hy >= 4) { var bs = size(U.behind, 's'); if (bs.h <= hy - 2 && bs.w <= U.w - 2) L.lots.push({ id: U.behind, x: 1 + Math.floor(R() * Math.max(1, U.w - 1 - bs.w)), y: hy - 1 - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'plot', u: U }); }
@@ -6133,8 +6141,8 @@ function make(seed, site, opts) {
     var y0 = yFromAt(best); exitPl = { cls: 'lane', pts: [[best, y0], [best + (R() - 0.5) * 3, (ty + y0) / 2], [best, ty - 0.3]] }; V.spine.push(exitPl); backGateX = Math.floor(best); resample();
   }
   function farmSpec(rich) {
-    return rich ? { kind: 'farm', big: 'longhouse', long: [14, 16], houses: [1, 1], houseLen: [8, 9], out: [2, 3], yard: [7, 5], w: 22, h: 26, yardDy: 0, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFence, rich: true }
-      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [16, 16] : [11, 14], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 20, h: 20, compact: true, slots: [], firePit: false, well: false, fence: farmFence };   // (grown 2026-10-22 with the houses: a plain farm was 16 by 16, a rich one 17 by 23)
+    return rich ? { kind: 'farm', big: 'longhouse', long: [14, 16], houses: [1, 1], houseLen: [8, 9], out: [2, 3], yard: [7, 5], w: 22, h: 26, yardDy: 0, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFenceFor(), rich: true }
+      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [16, 16] : [11, 14], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 20, h: 20, compact: true, slots: [], firePit: false, well: false, fence: farmFenceFor() };   // (grown 2026-10-22 with the houses: a plain farm was 16 by 16, a rich one 17 by 23)
   }
   function hallSpec() { return { kind: 'hall', big: 'hall', houses: [1, 1], out: [1, 2], yard: [8, 5], w: 36, h: 24, yardDy: 3, roomy: 1, compact: true, slots: ['e', 'w'], outs: ['store', 'byre'], firePit: true, well: true, hall: true, heavy: true, town: !!A.townwall, fence: A.townwall ? 'drystone' : 'palisade', zone: 'private', table: true }; }
   function churchSpec() { return { kind: 'church', big: 'church', houses: [0, 0], out: [0, 0], yard: [4, 3], w: 12, h: 22, yardDy: 9, roomy: 1, bigX: -2, compact: true, slots: [], fire: false, well: false, church: true, fence: 'drystone', lych: true, zone: 'private' }; }
@@ -6371,7 +6379,8 @@ function make(seed, site, opts) {
   var fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
   if (A.chapel && gateX != null) prop({ name: 'lychGate', x: (gateX + 0.5) * T, y: (ey1 + 0.02) * T });   // the churchyard's roofed gate
   if (shore && !V.ruin && (R() < 0.7 || A.lone)) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : focus[0] / T - (V.saltWorks ? 17 : 9) + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : focus[1] / T; prop({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
-  if (fk === 'palisade' && !A.townwall) {              // a ring of sharpened stakes round the whole place. Since 2026-10-21 (the Art Director's step 2 notes, mine to build): a POLYGON of eight to twelve straight runs hugging the buildings (V.fence.poly), each corner a little off its even angle and a little outside the hugging ellipse (every unit's corner inside), the gate two tiles wide at the start of the run on the road, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (stake.mended: stake_new; the raid's weak run), banners either side of the gate; the stakes a tile apart (G.stakeStep)
+  if (fk === 'none') { V.fence = null; }   /* an open place: no edge, no gates */
+  else if (fk === 'palisade' && !A.townwall) {              // a ring of sharpened stakes round the whole place. Since 2026-10-21 (the Art Director's step 2 notes, mine to build): a POLYGON of eight to twelve straight runs hugging the buildings (V.fence.poly), each corner a little off its even angle and a little outside the hugging ellipse (every unit's corner inside), the gate two tiles wide at the start of the run on the road, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (stake.mended: stake_new; the raid's weak run), banners either side of the gate; the stakes a tile apart (G.stakeStep)
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     hugRects.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
     var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, gpt = tile(gateX != null ? gateX : Math.floor(focus[0] / T), ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx);
@@ -6480,6 +6489,15 @@ function make(seed, site, opts) {
     V.lots.forEach(function (l) {                      // a bush against a side wall now and then
       if (R() > 0.55) return; var sideB = R() < 0.5 ? -1 : 1, bx = sideB < 0 ? l.x * T - 10 : (l.x + l.w) * T + 10, by = (l.y + 0.3 + R() * (l.h - 0.6)) * T;
       if (!freeAt(bx, by, 4, true) || onUnitEdge(bx, by)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.85, r: 0, v: Math.floor(R() * 3) });
+    });
+    /* Plots and flowerbeds (Robin, 2026-11-15: "some plots of land, and some flowerbeds etc. To make it look more natural and living"): a bed of flowers along the south wall beside the door of one home in two, and beside one home in three a kitchen plot, three short dug rows with herbs in them (mine: the numbers and what grows). */
+    V.plots = [];
+    function bedFree(x2, y2, r, yardsToo) { var i, l; for (i = 0; i < V.lots.length; i++) { l = V.lots[i]; if (x2 > l.x * T - r && x2 < (l.x + l.w) * T + r && y2 > l.y * T - r && y2 < (l.y + l.h) * T + r) return false; } if (yardsToo) for (i = 0; i < V.yards.length; i++) { var yd = V.yards[i]; if (x2 > yd.x * T - r && x2 < (yd.x + yd.w) * T + r && y2 > yd.y * T - r && y2 < (yd.y + yd.h) * T + r) return false; } for (i = 0; i < spinePts.length; i++) if (Math.abs(spinePts[i][0] * T - x2) < r + 22 && Math.abs(spinePts[i][1] * T - y2) < r + 22) return false; for (i = 0; i < V.items.length; i++) if (Math.hypot(V.items[i].x - x2, V.items[i].y - y2) < r + 10) return false; for (i = 0; i < V.props.length; i++) if (Math.hypot(V.props[i].x - x2, V.props[i].y - y2) < r + 12) return false; return true; }   /* (lighter than freeAt: a bed lies against its own wall and beside its own yard) */
+    V.lots.forEach(function (l) {
+      if ((l.id !== 'house' && l.id !== 'longhouse') || l.door !== 's' || l.dx == null || l.dx < 0) return; var k;
+      if (R() < 0.5) { var sideF = l.dx + 0.5 < l.x + l.w / 2 ? 1 : -1, nF = 2 + Math.floor(R() * 3); for (k = 0; k < nF; k++) { var fx2 = (l.dx + 0.5 + sideF * (1.35 + k * 0.5)) * T, fy2 = (l.y + l.h) * T + 7 + R() * 4; if (fx2 > l.x * T + 5 && fx2 < (l.x + l.w) * T - 5 && bedFree(fx2, fy2, 2, false)) V.nature.push({ name: 'flower', x: fx2, y: fy2, s: 0.8 + R() * 0.3, r: 0, v: Math.floor(R() * 3), bed: 1 }); } }
+      if (R() < 0.6) { var sP = R() < 0.5 ? -1 : 1, px0, py0 = l.y + Math.max(0.3, l.h - 3.4), okP = false, cxk, cyk, tryS; for (tryS = 0; tryS < 2 && !okP; tryS++, sP = -sP) { px0 = sP < 0 ? l.x - 3.5 : l.x + l.w + 0.7; okP = true; for (cyk = 0; cyk <= 2 && okP; cyk++) for (cxk = 0; cxk <= 2 && okP; cxk++) if (!bedFree((px0 + 0.4 + cxk * 1.0) * T, (py0 + 0.5 + cyk * 0.9) * T, 8, true) || onUnitEdge((px0 + 0.4 + cxk) * T, (py0 + 0.5 + cyk * 0.9) * T)) okP = false; }
+        if (okP) { for (cyk = 0; cyk < 3; cyk++) { strokeTo([(px0 + 0.1) * T, (py0 + 0.5 + cyk * 0.9) * T], [(px0 + 2.7) * T, (py0 + 0.5 + cyk * 0.9) * T], 6, 2); for (cxk = 0; cxk < 3; cxk++) if (R() < 0.75) V.nature.push({ name: cyk === 1 && R() < 0.5 ? 'flower' : 'wildHerbs', x: (px0 + 0.4 + cxk * 1.0 + (R() - 0.5) * 0.3) * T, y: (py0 + 0.5 + cyk * 0.9) * T - 2, s: 0.8, r: 0, v: Math.floor(R() * 3), bed: 1 }); } V.plots.push({ x: px0, y: py0, w: 2.8, h: 2.8 }); } }
     });
   }
   // ---- the outside: the fields on the side with the room, the sacred at a corner, the midden behind, a grave beyond; the story's marks ----
@@ -6776,6 +6794,7 @@ function audit(V, D) {
   // the ways in: the count, the classes, the price bands
   var ways = V.ways || [], bands = {}, kinds = {}; ways.forEach(function (wv) { bands[wv.secs < 1 ? 'quiet' : wv.secs < 4 ? 'soft' : 'loud'] = 1; kinds[wv.kind] = 1; });
   var wantW = WAYS_BY_TIER[Math.min(5, A.tier)]; st.ways = ways.length;
+  if (!V.fence) wantW = 0;   /* (an open place has no ways in to count: you walk in, 2026-11-15) */
   say((ways.length < wantW || Object.keys(kinds).length < Math.min(3, wantW) ? '!! ' : '') + 'ways in: ' + ways.length + ' (wanted ' + wantW + '): ' + ways.map(function (wv) { return wv.kind + ' ' + wv.secs + 's/' + wv.noise; }).join(', ') + '; bands ' + Object.keys(bands).join('+'));
   // the landmark, the denial
   var lm = V.nodes.filter(function (n) { return n.kind === 'landmark'; })[0], prize = V.nodes.filter(function (n) { return n.kind === 'prize'; })[0];

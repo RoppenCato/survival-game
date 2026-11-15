@@ -93,6 +93,7 @@ yes), **Checked** (Robin played it and said yes), **Open** (a choice that waits 
 
 ## What changed (newest first)
 
+- 2026-11-15, later: **the villages reworked on Robin's word**: no fence or wall round an ordinary place, every door to the south, fewer people who spread out, flowerbeds and small kitchen plots (`docs/state/world.md`, pictures in `docs/pictures/villages/`). Every item that shows a village is for Robin's look again. An older save is dropped (`Village.VERSION` 7). The cave's mouth no longer takes you in from the mountain above it.
 - 2026-11-15, late: **Robin's second questionnaire**: the sail lesson also waits for a claim stone of yours (1.13, 1.15); the Old Man's place is among the flax nearest the big island, his round wider, and he comes to you in his fields (3.7). The blót gate, the islands and the rowing are left.
 - 2026-11-15, night: **the chapter played again under the new rules** (`docs/chapter-1-goals.md`, "The second run"): the ship sailed on day 3 at 21:41, 60 minutes awake, the same hour as before. Fixed in the run: E by the fire's bench reaches Old Aslak before a plain elder who sits nearer (1.3); Hallveig's first words when the wolf already lies on her stones (1.7).
 - 2026-11-15, later: **lore handoff 31** (Alistair, LD): Old Aslak's own words for why the sail waits and for when the blót is held, in place of my placeholders (1.13); the flax clue's second line now names the island the flax grows on, and its ? on the maps is that island (2.21).
