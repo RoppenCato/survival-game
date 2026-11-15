@@ -186,6 +186,73 @@ roles, the Old Man's numbers and one fight, a claim stone carved, filled and rai
 (and refused off your ground), rope made, the karve's price. Not played: the chapter from its start to the sail out under the
 new rules, so its new length is not measured.
 
+## The second run (2026-11-15): the new length
+
+Robin, 2026-11-15: "Play through chapter 1 again and measure the new length." Played the same way as the first run (the
+Chapter 1 start; real actions; long walks timed at 60 units a second), with one difference: **the sea legs were timed by distance**
+at the pace the first run measured (the rowboat 92 units a second, the karve 146), not steered. The error log stayed empty.
+
+**The ship sailed out on day 3 at 21:41: 60 minutes awake.** The first run sailed on day 4, ten minutes in, about 66 minutes.
+**The chapter is not longer on a known path. It is the same hour.**
+
+| Day | Awake | What was done |
+| --- | --- | --- |
+| 1 | 17:02 | Aslak's story; the cave, six wolves, Hogni's adze; a wolf to the village's altar; Aslak's craft open, Hallveig's quest; a boar and a deer hunted and butchered; the shipwright's craft; the hut, the pier and the shipyard; six ropes |
+| 2 | 21:27 | Three wolves from the cave, one a trip, butchered at the village's table; flint on the elm island; the flint axe; Saltvik for the loom's parts and nine salt |
+| 3 | 21:41 | 36 flax on Ulfar's island; three old pines on Torsey; the loom and six bolts; the blót at dusk; the sail learnt the same evening; the karve built; out past the swell |
+
+### Why it did not double
+
+1. **The blót's gate cost nothing.** The wolf lay on the altar from day 1. Everything for the ship was in the bag on day 3 at
+   15:05, an hour before the blót began at dusk. Old Aslak taught the sail the same evening.
+2. **Old Aslak's village by the landing saved more than the new costs added.** Every walk to him is 85 tiles now. It was 361.
+3. **The dearer ship added about three minutes**: the third pine 43 seconds, twelve more flax 20, six ropes with their grass a
+   minute, six more flint for the salt under a minute.
+4. **The butcher's table at home never came into it.** It wants a claim stone, which the way out does not ask for, and the
+   villages' tables lie nearer the wolves' cave (115 tiles) than any home by the shore (162).
+
+### Where the hour went
+
+| What | Time |
+| --- | --- |
+| Rowing and sailing | 18 min 37 s: to the flint 69 s, to Saltvik 184, home 114, to the flax 147, to the pines 213, home round the south 288, the sail out 102 |
+| Walking | 17 min 19 s |
+| The wolves' cave: Hogni on day 1, three pelts on day 2 (the fights, in and out, the butchering) | about 6 min 40 s |
+| Gathering: seven trees, 16 flint, 36 flax, three old pines, grass for the ropes | about 9 min |
+| Hunting and butchering a boar and a deer | about 1 min 40 s |
+| Talks, lessons, building, weaving, the blót | about 7 min |
+
+A wolf pelt is still three and a half minutes with its walking: 9 min 13 s for the three.
+Rowing and walking are 36 of the 60 minutes. The ship now takes four islands round (the elm island for flint, Saltvik,
+Ulfar's for flax, Torsey for pines), and that is where the new rowing went: 829 tiles home from Torsey alone.
+
+### What the run showed
+
+1. **Old Aslak sits on the fire's bench with six other elders a hand's breadth apart**, and E reached whoever was nearest.
+   Fixed: the one with something to say to you answers first.
+2. **Hallveig's first words were "the table's bare"** with the wolf already lying on it. Fixed: she says what she says of the wolf.
+3. **The Old Man never came within 79 tiles.** He keeps within four tiles of his place. Putting the flax on his island did not put
+   him in the way.
+4. **A dead wolf lies five minutes**, so a trip to the cave is one pelt whatever you kill.
+5. A stray pier piece again (6 wood) before the yard found its place.
+6. My walker swam after a far flint nodule and drowned the hero once: the script's fault. He was put back on the beach at the
+   time before it.
+
+### Not measured
+
+- The sea legs were not steered, and the frame rate was not seen (the pane was hidden).
+- The blót's cut-scene was let run for 40 seconds and then skipped; 85 seconds were counted for it.
+- Still not played: Gamli and fishing, the elm bow, the lookout and roseroot, the dishes, wolf-skin gear, the claim stone, the
+  butcher's table at home, your own altar.
+
+### Three questions
+
+1. **Is an hour on a known path enough?** My guess for a first player is still two to four hours.
+2. **If it should be longer, what should the ship ask for that is play, not rowing?** Mine: provisions from fishing (it brings
+   Gamli's island and the one system the way out never touches into the path). Other levers: Old Aslak teaches the sail only
+   to a man with land (the claim stone, and then the butcher's table matters); the wolf-skin gear asked for by the autumn sea.
+3. **Should the Old Man walk the flax fields?** Mine: yes, his place among the flax and a wider round. Today he is never met.
+
 ## Not played, and what the run cannot say
 
 - Gamli's lesson and fishing, the elm island and its bow, the mountain's lookout and roseroot, the dishes at the pots and the
