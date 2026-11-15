@@ -49,7 +49,12 @@ button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var
 .stat{margin:0 2px;font-size:.95rem;font-weight:600}
 .row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
 .row input{width:100%;accent-color:var(--accent);margin:0}
-.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.row output,.row .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.row label{color:var(--ink2);font-size:.86rem;line-height:1.2}
+.pick label{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--ink2)}
+select{min-height:38px;padding:0 10px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem}
+.note{color:var(--ink2);font-size:.86rem}
+p.note{margin:8px 2px 0}
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
 .sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
 .sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
@@ -73,8 +78,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
     <div class="right">
       <div class="panel">
         <h2>The monster</h2>
-        <div class="row"><label>Which <select id="monster" aria-label="The monster"><option value="kraken">The kraken</option></select></label></div>
-        <div class="row">
+        <div class="pick"><label>Which <select id="monster" aria-label="The monster"><option value="kraken">The kraken</option></select></label></div>
+        <div class="group" style="margin-top:8px">
           <button id="sceneArms">Between the arms</button>
           <button id="sceneHead">The beast turns up</button>
           <button id="sceneRoar">The rearing</button>
@@ -85,17 +90,17 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <div class="panel">
         <h2>The field</h2>
         <div id="sliders"></div>
-        <div class="row"><button id="newField">New field</button><button id="resetShip">The ship back to the edge</button></div>
+        <div class="group" style="margin-top:8px"><button id="newField">New field</button><button id="resetShip">The ship back to the edge</button></div>
       </div>
       <div class="panel">
         <h2>The ship</h2>
-        <div class="row"><label>Kind <select id="ship" aria-label="The ship"><option value="rowboat">Rowboat</option><option value="karve8" selected>Karve, eight rowers</option><option value="longship">Longship</option></select></label></div>
+        <div class="pick"><label>Kind <select id="ship" aria-label="The ship"><option value="rowboat">Rowboat</option><option value="karve8" selected>Karve, eight rowers</option><option value="longship">Longship</option></select></label></div>
         <p class="note">W forward, A and D turn, S back. The view pulls back by the hull as at sea in the game.</p>
       </div>
       <div class="panel">
         <h2>Settings</h2>
         <textarea id="settings" rows="4" readonly aria-label="The settings as text"></textarea>
-        <div class="row"><button id="useGame">Use in the game</button><span class="note" id="useNote">(kept as game.monsters; the game does not read it yet: where the kraken lives and what the meeting costs are not built)</span></div>
+        <div class="group" style="margin-top:8px;align-items:center"><button id="useGame">Use in the game</button><span class="note" id="useNote">(kept as game.monsters; the game does not read it yet: where the kraken lives and what the meeting costs are not built)</span></div>
       </div>
     </div>
   </div>
@@ -5157,8 +5162,8 @@ if (typeof module !== 'undefined') module.exports = Monsters;
   function remake() { var hw = F.head.want, hk = F.head.k; F = Monsters.make(spec, fx, fy, seed); F.head.want = hw; F.head.k = hk; }
   function saveSpec() { try { localStorage.setItem('monsters.spec', JSON.stringify(spec)); } catch (e1) {} settingsText(); }
   function settingsText() { var o = {}; SL.forEach(function (s) { o[s[0]] = spec[s[0]]; }); o.ship = ship.value; document.getElementById('settings').value = JSON.stringify(o); }
-  (function () { var host = document.getElementById('sliders'); SL.forEach(function (s) { var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('label'); lab.textContent = s[1] + ' '; var inp = document.createElement('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; inp.value = spec[s[0]]; inp.setAttribute('aria-label', s[1]); var val = document.createElement('span'); val.className = 'note'; val.textContent = ' ' + spec[s[0]];
-    inp.addEventListener('input', function () { spec[s[0]] = +inp.value; val.textContent = ' ' + inp.value; if (s[0] === 'arms' || s[0] === 'spacing' || s[0] === 'spread' || s[0] === 'cycle') remake(); else F.spec[s[0]] = spec[s[0]]; saveSpec(); }); lab.appendChild(inp); lab.appendChild(val); row.appendChild(lab); host.appendChild(row); }); })();
+  (function () { var host = document.getElementById('sliders'); SL.forEach(function (s) { var row = document.createElement('div'); row.className = 'row'; var lab = document.createElement('label'); lab.textContent = s[1]; var inp = document.createElement('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; inp.value = spec[s[0]]; inp.setAttribute('aria-label', s[1]); var val = document.createElement('span'); val.className = 'val'; val.textContent = spec[s[0]];
+    inp.addEventListener('input', function () { spec[s[0]] = +inp.value; val.textContent = inp.value; if (s[0] === 'arms' || s[0] === 'spacing' || s[0] === 'spread' || s[0] === 'cycle') remake(); else F.spec[s[0]] = spec[s[0]]; saveSpec(); }); row.appendChild(lab); row.appendChild(inp); row.appendChild(val); host.appendChild(row); }); })();
   document.getElementById('newField').addEventListener('click', function () { seed = (seed * 31 + 7) % 10007; remake(); });
   document.getElementById('sceneArms').addEventListener('click', function () { F.head.want = 0; });
   document.getElementById('sceneHead').addEventListener('click', function () { F.head.want = 1; });

@@ -3,7 +3,7 @@
 // Rows that reload the page or throw the world away are skipped (SKIP). Errors are read from the page's own error log
 // (Combat.api.debug().errlog(), which catches what a frame throws) and from window errors.
 (function () {
-  var SKIP = /start .*over|places:|houses:|heard as far|new island/i;
+  var SKIP = /start .*over|places as in the game|great places|new island/i;   /* (the boards' choices since 2026-11-15) */
   async function run(opt) {
     opt = opt || {}; var D = Combat.api.debug(), errors = [], cur = '(load)', n0 = D.errlog().length;
     function onErr(e) { errors.push({ row: cur, msg: String(e.message || e.reason || e).slice(0, 200) }); }

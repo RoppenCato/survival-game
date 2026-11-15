@@ -1,7 +1,9 @@
 // The battle scene played by script in the page (2026-10-13, docs/archive/battle-plan.md: what Node cannot see: that the clips match
 // the blows, that the shield is where the blow was stopped, that nobody slides). Load tools/visual/drive.js, write the page
-// again (game.html?scene=battle), then load this file.
-//   BP.set('one' | 'two' | 'friend' | 'five')   the board's own rows (BP.act(id) presses any row: 'wpn', 'gear', 'wits', 'again' ...)
+// again (game.html?scene=raid, the Raid Editor: it was the Battle test until 2026-11-15), then load this file.
+//   BP.act(id)                                  presses a choice of the board: a way in ('raid', 'town', 'walkin', 'nightraid'), the place
+//                                               ('pick.4'), its men ('def.own', 'def.20'), your crew ('crew.5'), 'again', 'heal', 'clearf'. The fights in the
+//                                               open ('one', 'two', 'friend', 'five') are gone from the board: they are the Combat Arena's
 //   BP.run({ bot: 'careful', secs: 20 })         the hero played by a bot (tests/battle.js has the same three); returns what happened:
 //                                               who fell, how long, what the hero has left, and a line for every change of a man's state
 //   BP.strip({ bot, n: 16, every: 4, when })     a film strip: n pictures every `every` frames round the hero, begun when `when(D)` is true

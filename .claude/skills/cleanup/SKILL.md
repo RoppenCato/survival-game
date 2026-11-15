@@ -56,8 +56,8 @@ How to tell what is unused:
 
 ## 3. The editors and test scenes, one by one
 
-The list (from `docs/state/pages.md`'s Pages table; check it has not grown): the start page; the game's scenes (`?scene=battle`, `ruin`,
-`mountain`, `models`, `dialogue`, `runes`); `combat-arena.html`; `art-editor.html` (Set pieces); `village-editor.html`;
+The list (from `docs/state/pages.md`'s Pages table; check it has not grown): the start page; the game's scenes (`?scene=raid`, `ruin`,
+`mountain`, `models`, `dialogue`, `runes`, `cutscene`); `combat-arena.html`; `art-editor.html` (Set pieces); `village-editor.html`;
 `sea-editor.html`; `rune-browser.html`; `world-monsters.html`.
 
 For each, open it in the pane with `?mute=1` at 1920 by 1080 and:
