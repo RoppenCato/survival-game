@@ -6300,7 +6300,7 @@ if (typeof module !== 'undefined') module.exports = World;
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 7;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15; 7: open villages, doors to the south, fewer people, 2026-11-15); a save made under another should not keep its villages' walls
+var VERSION = 8;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15; 7: open villages, doors to the south, fewer people, 2026-11-15); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -6997,7 +6997,7 @@ function make(seed, site, opts) {
     }
     if (placed < nUnitsWanted && maxUnits >= nUnitsWanted) V.notes.push((placed < nUnitsMin ? '!! ' : '') + (nUnitsWanted - placed) + ' of ' + nUnitsWanted + ' units found no room');
     makeExit(isGreen ? green.y - 1.5 : null, bx);
-    if (!isGreen) backLane();
+    /* (no back lane since 2026-11-24, Colin, AD: with the fence gone it looped round the whole place like a racetrack) */
     greenThings(green, false); V.yard = green;
     if (shore === 's' && !V.ruin) {                    // the shore strip below the street: racks, a boathouse, a boat drawn up
       var ry = ty + h - 3.5, k3; for (k3 = 0; k3 < (A.racks || 1); k3++) prop({ name: 'dryingRack', x: (focus[0] / T + (k3 - 0.5) * 4 + (R() - 0.5) * 2) * T, y: ry * T, solid: 6 });
@@ -7053,7 +7053,7 @@ function make(seed, site, opts) {
     c = bestCandidate(FU.w, FU.h); if (c && maxUnits > 0 && placeUnit(FU, c)) placed++;
     var tries = 0;
     while (placed < nUnitsWanted && placed < maxUnits && tries++ < 60) { var PU = plotSpec(R() < 0.3 ? 'merchant' : 'craft'); PU.behind = R() < 0.5 ? 'store' : 'pit'; c = bestCandidate(PU.w, PU.h); if (!c) break; if (placeUnit(PU, c)) placed++; }
-    makeExit(null, bx); backLane();
+    makeExit(null, bx);
     var k2; for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: green.x + 1 + k2 * 6, y: green.y + 1, w: 3, h: 3, door: 'n', slot: 'market', u: { stores: true } });
     greenThings(green, true); V.yard = green;
     for (k2 = 0; k2 < (A.racks || 2); k2++) prop({ name: 'dryingRack', x: (green.x - 2 - k2 * 3) * T, y: (ty + h - 2.5) * T, solid: 6 });
@@ -7225,11 +7225,18 @@ function make(seed, site, opts) {
       var inside2 = x >= ex0 && x < ex1 && y >= ey0 && y < ey1, px3 = (x + 0.2 + R() * 0.6) * T, py3 = (y + 0.3 + R() * 0.5) * T, roll = R(), nm = null, ns3 = 1, nr = 0;
       if (x < tx || y < ty || x >= tx + w || y >= ty + h) continue;
       if (!inside2 && (x === ex0 - 1 || x === ex1 || y === ey0 - 1 || y === ey1)) continue;   // nothing on the fence line itself
-      if (inside2) { if (roll < (A.tier >= 4 ? 0.02 : 0.05)) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.92 + R() * 0.12; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.8 + R() * 0.2; } }   /* (the scales were for the drawn props; the Art Director's pictures are at their true size, and a village's trees were half trees: Robin, 2026-10-21) */
+      if (inside2) { if (roll < 0.008) { nm = 'birch'; ns3 = 0.92 + R() * 0.12; nr = 11; } else if (roll < 0.05) { nm = R() < 0.35 ? 'bush' : 'flower'; ns3 = 0.8 + R() * 0.2; } }   /* (Colin, AD, 2026-11-24: the wood ran through the village, an oak over a thatch; the inside is cleared now, one guardian tree a farm below, and the wood starts past the fields. It was a tree on one tile in twenty) */   /* (the scales were for the drawn props; the Art Director's pictures are at their true size, and a village's trees were half trees: Robin, 2026-10-21) */
       else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.85 + R() * 0.15; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.8 + R() * 0.2; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.92 + R() * 0.12; nr = 11; } }
       if (!nm || onUnitEdge(px3, py3) || !freeAt(px3, py3, nr + 6)) continue;
       V.nature.push({ name: nm, x: px3, y: py3, s: ns3, r: nr, v: Math.floor(R() * 3) });
     }
+    V.units.forEach(function (u) {                     // the guardian tree (the vardtrad): one big oak by each farm's yard, where there is room
+      if (u.w == null || u.plot) return; var gk, spots = [[u.x - 1.2, u.y + u.h * 0.55], [u.x + u.w + 1.2, u.y + u.h * 0.55], [u.x + u.w * 0.5, u.y - 1.4], [u.x - 1.2, u.y + 1], [u.x + u.w + 1.2, u.y + 1]], st0 = Math.floor(R() * spots.length);
+      for (gk = 0; gk < spots.length; gk++) { var sp = spots[(st0 + gk) % spots.length], gx3 = sp[0] * T, gy3 = sp[1] * T; if (sp[0] < ex0 || sp[0] > ex1 || sp[1] < ey0 || sp[1] > ey1 || onUnitEdge(gx3, gy3) || !freeAt(gx3, gy3, 20)) continue; V.nature.push({ name: 'oak', x: gx3, y: gy3, s: 1.06, r: 11, v: Math.floor(R() * 3), guardian: 1 }); break; }
+    });
+    V.lots.forEach(function (l) {                      // trodden earth before a home's door
+      if ((l.id !== 'house' && l.id !== 'longhouse' && l.id !== 'hall') || l.door !== 's' || l.dx == null || l.dx < 0) return; earthPatch((l.dx + 0.5) * T, (l.y + l.h) * T + 11, 15, 8, 0.72);
+    });
     V.lots.forEach(function (l) {                      // a bush against a side wall now and then
       if (R() > 0.55) return; var sideB = R() < 0.5 ? -1 : 1, bx = sideB < 0 ? l.x * T - 10 : (l.x + l.w) * T + 10, by = (l.y + 0.3 + R() * (l.h - 0.6)) * T;
       if (!freeAt(bx, by, 4, true) || onUnitEdge(bx, by)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.85, r: 0, v: Math.floor(R() * 3) });
@@ -7246,10 +7253,30 @@ function make(seed, site, opts) {
   }
   // ---- the outside: the fields on the side with the room, the sacred at a corner, the midden behind, a grave beyond; the story's marks ----
   var roomE = tx + w - ex1, roomW = ex0 - tx, fieldSide = roomE >= roomW ? 1 : -1;
+  /* The infield (Colin, AD, 2026-11-24, on Robin's "plots of land": a farm of the time was ringed by its infield, the plough strips and the hay meadow right outside the houses; from afar, strips, hay and a scarecrow say "village"). On both sides where there is room: strips three tiles wide and six to ten long, lying north and south, ploughed (furrows), hay (stacks and flowers) or fallow; never on a road or a house. V.fields is the list, for the pictures to come. It was three short strokes on one side. */
+  V.fields = [];
+  function fieldFree(fx0, fy0, fw, fh) { var i, l; if (fx0 < tx + 0.5 || fy0 < ty + 0.5 || fx0 + fw > tx + w - 0.5 || fy0 + fh > ty + h - 0.5) return false;
+    for (i = 0; i < V.lots.length; i++) { l = V.lots[i]; if (fx0 < l.x + l.w + 1.5 && fx0 + fw > l.x - 1.5 && fy0 < l.y + l.h + 1.5 && fy0 + fh > l.y - 1.5) return false; }
+    for (i = 0; i < V.yards.length; i++) { l = V.yards[i]; if (fx0 < l.x + l.w + 1 && fx0 + fw > l.x - 1 && fy0 < l.y + l.h + 1 && fy0 + fh > l.y - 1) return false; }
+    for (i = 0; i < spinePts.length; i++) if (spinePts[i][0] > fx0 - 1.3 && spinePts[i][0] < fx0 + fw + 1.3 && spinePts[i][1] > fy0 - 1.3 && spinePts[i][1] < fy0 + fh + 1.3) return false;
+    for (i = 0; i < V.props.length; i++) if (V.props[i].x > (fx0 - 0.5) * T && V.props[i].x < (fx0 + fw + 0.5) * T && V.props[i].y > (fy0 - 0.5) * T && V.props[i].y < (fy0 + fh + 0.5) * T) return false;
+    for (i = 0; i < V.items.length; i++) if (V.items[i].x > (fx0 - 0.5) * T && V.items[i].x < (fx0 + fw + 0.5) * T && V.items[i].y > (fy0 - 0.5) * T && V.items[i].y < (fy0 + fh + 0.5) * T) return false;
+    return true; }
+  function fieldLay(fx0, fy0, fw, fh, kind) { var k;
+    V.fields.push({ x: fx0, y: fy0, w: fw, h: fh, kind: kind });
+    V.nature = V.nature.filter(function (o) { return !(o.x > (fx0 - 0.4) * T && o.x < (fx0 + fw + 0.4) * T && o.y > (fy0 - 0.4) * T && o.y < (fy0 + fh + 0.4) * T); });
+    if (kind === 'plough') { var nf = Math.round(fw / 0.62); for (k = 0; k < nf; k++) { var xx = (fx0 + 0.3 + k * (fw - 0.6) / (nf - 1)) * T; strokeTo([xx, (fy0 + 0.3) * T], [xx, (fy0 + fh - 0.3) * T], 5.2, 2); } }
+    else { var nh = 1 + Math.floor(R() * 2); for (k = 0; k < nh; k++) prop({ name: 'haystack', x: (fx0 + 0.8 + R() * (fw - 1.6)) * T, y: (fy0 + 1 + (k + R() * 0.6) * (fh - 2) / nh) * T, solid: 6 }); for (k = 0; k < Math.round(fw * fh / 3); k++) V.nature.push({ name: R() < 0.7 ? 'flower' : 'wildHerbs', x: (fx0 + 0.2 + R() * (fw - 0.4)) * T, y: (fy0 + 0.2 + R() * (fh - 0.4)) * T, s: 0.8 + R() * 0.2, r: 0, v: Math.floor(R() * 3), bed: 1 }); }
+  }
+  var roomE = tx + w - ex1, roomW = ex0 - tx, fieldSide = roomE >= roomW ? 1 : -1;
   if (G.fields && A.tier !== 0 && !V.ruin && story !== 'seal' || (G.fields && archId === 'farmstead')) {
-    var strips = G.fieldStrips + Math.floor(V.units.length / 3), fx = fieldSide > 0 ? ex1 + 2 : ex0 - 6, fy0 = ey0 + 1, s2;
-    if (fx > tx && fx + 4 < tx + w) for (s2 = 0; s2 < strips; s2++) { var sy3 = fy0 + s2 * 3; if (sy3 + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy3 + 1) * T], [(fx + 3.5) * T, (sy3 + 1) * T], 10, 2); if (s2 === 1) prop({ name: 'scarecrow', x: (fx + 2) * T, y: (sy3 + 0.3) * T }); }
-    if (fx > tx && fx + 4 < tx + w) prop({ name: 'haystack', x: (fx + 2) * T, y: Math.min(ty + h - 1, fy0 + Math.min(strips, Math.floor((ty + h - fy0) / 3)) * 3 + 0.5) * T });
+    var fCap = A.shore ? 3 : fenceKind !== 'none' ? 4 : 3 + V.units.length, fN = 0, crow = false, sI, sides2 = [fieldSide, -fieldSide];
+    for (sI = 0; sI < 2 && fN < fCap; sI++) { var sd2 = sides2[sI], room2 = sd2 > 0 ? roomE : roomW, fw2 = room2 >= 8.5 ? 6 : 3, nAc = Math.min(3, Math.floor((room2 - 1.5) / (fw2 + 0.8))), col;
+      for (col = 0; col < nAc && fN < fCap; col++) { var fxc = sd2 > 0 ? ex1 + 1.5 + col * (fw2 + 0.8) : ex0 - 1.5 - (col + 1) * (fw2 + 0.8) + 0.8, cur = Math.max(ty + 1, ey0 - 2 + R() * 3), yEnd = Math.min(ty + h - 1, ey1 + 2), guard = 0;
+        while (cur + 5 <= yEnd && fN < fCap && guard++ < 12) { var len = Math.min(7 + Math.floor(R() * 6), Math.floor(yEnd - cur)), rk = R(), kd = rk < 0.6 ? 'plough' : rk < 0.82 ? 'hay' : 'fallow';
+          if (!fieldFree(fxc, cur, fw2, len)) { cur += 2; continue; }
+          if (kd !== 'fallow') { fieldLay(fxc, cur, fw2, len, kd); fN++; if (kd === 'plough' && !crow) { crow = true; prop({ name: 'scarecrow', x: (fxc + fw2 / 2) * T, y: (cur + len * 0.45) * T }); } }
+          cur += len + 1 + R() * 1.5; } } }
   }
   if (G.sacred && !green) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); prop({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of ' + (opts.name || 'this place') + ' for one who did not come home.' }); find({ kind: 'stone', x: sc[0], y: sc[1] }); }
   if (story === 'oldseat') { var shp2 = tile(fieldSide > 0 ? ex0 - 4 : ex1 + 3, ey1 - 2); if (shp2[0] > tx * T && shp2[0] < (tx + w) * T) { prop({ name: 'stoneShip', x: shp2[0], y: shp2[1], solid: 14, lore: 'A ship of stones for a chieftain nobody remembers.' }); find({ kind: 'stone', x: shp2[0], y: shp2[1] }); } }
@@ -7533,7 +7560,7 @@ function audit(V, D) {
   // each road is a path through its junctions and its free ends: (junctions + free ends - 1) edges; nodes are the junctions and the free ends
   pls.forEach(function (p, pi) { var e = 0; [p.pts[0], p.pts[p.pts.length - 1]].forEach(function (pe) { if (!atGreen(pe) && !junctions.some(function (j, ji) { return ji !== gJ && Math.hypot(j[0] - pe[0], j[1] - pe[1]) < 3; })) e++; }); ends += e; E += Math.max(0, touch[pi].length + e - 1); });
   var N = junctions.length + ends, cycles = Math.max(0, E - N + 1); st.loops = cycles;
-  var loopsWanted = A.tier <= 0 ? 0 : A.family === 'town' ? 2 : 1;
+  var loopsWanted = A.family === 'town' ? 2 : 0;   /* (a village has no loop to keep since the back lane went, 2026-11-24) */
   say((cycles < loopsWanted ? '!! ' : '') + 'loops: ' + cycles + ' (wanted ' + loopsWanted + '), ' + pls.length + ' roads');
   // the ways in: the count, the classes, the price bands
   var ways = V.ways || [], bands = {}, kinds = {}; ways.forEach(function (wv) { bands[wv.secs < 1 ? 'quiet' : wv.secs < 4 ? 'soft' : 'loud'] = 1; kinds[wv.kind] = 1; });
