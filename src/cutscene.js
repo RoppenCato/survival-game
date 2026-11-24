@@ -22,7 +22,8 @@
      show / hide { who }
      walk   { who, to, speed, run }                walk (units a second; 40 a stroll, 70 a jog) along to, facing the way
      face   { who, dir | toward }
-     play   { who, clip, s, hold }                 a clip for s seconds, then back to standing (hold: keep it)
+     play   { who, clip, s, hold, with }           a clip for s seconds, then back to standing (hold: keep it); with: a hand layer, or a
+                                                   list of them, shown in the hand while the clip plays (2026-11-24: the blot's horn, torch, bowl)
      say    { who, text | lore, s }                the speech board over his head; waits s (or by the line's length)
      talk   { who, text | lore | lines }           the talk window; waits until the player has read it
      card   { title, sub }                         the place lettering
@@ -36,7 +37,8 @@
 
    The env (the game's side; the scene touches nothing else):
      env.place(name) -> { x, y } | null           env.actor(who, castDef) -> a handle | null      env.release()
-       handle: { x, y, face } read; set(x, y), turn(rad), moving(bool, run), clip(name | null, hold), say(text, s), show(bool)
+       handle: { x, y, face } read; set(x, y), turn(rad), moving(bool, run), clip(name | null, hold, with), say(text, s), show(bool)
+               (with: null, a layer name or a list of them; clip(null) takes them away again)
      env.camNow() -> { x, y, z }                   env.camera({ x, y, z } | null)                 (the player eases; null gives it back)
      env.fade(k)   env.bars(k)   env.card(title, sub)   env.talk(handle, lines, done)   env.lore(id) -> lines
      env.fx(name, args, done)   env.music(name)   env.sound(name)   env.flag(k, v)   env.call(fn, args, done)
@@ -86,7 +88,7 @@ function start(scene, env, opts) {
           h.turn(Math.atan2(dy, dx)); h.set(h.x + dx / d * st, h.y + dy / d * st); h.moving(true, !!s.run); return false; },
         finish: function () { if (!h) h = who(s.who); if (!h) return; var to = isPath(s.to) ? s.to[s.to.length - 1] : s.to, q = pos(to); h.set(q.x, q.y); h.moving(false); if (s.face != null) { var f = faceOf(h, s.face); if (f != null) h.turn(f); } } };
     }
-    if (k === 'play') { var hp = null; return { tick: function (dt) { if (!hp) { hp = who(s.who); if (!hp) return true; hp.clip(s.clip, !!s.hold); } T += dt; if (T >= (dur || 1)) { if (!s.hold) hp.clip(null); return true; } return false; }, finish: function () { var h2 = hp || who(s.who); if (h2 && !s.hold) h2.clip(null); } }; }
+    if (k === 'play') { var hp = null; return { tick: function (dt) { if (!hp) { hp = who(s.who); if (!hp) return true; hp.clip(s.clip, !!s.hold, s.with || null); } T += dt; if (T >= (dur || 1)) { if (!s.hold) hp.clip(null); return true; } return false; }, finish: function () { var h2 = hp || who(s.who); if (h2 && !s.hold) h2.clip(null); } }; }
     if (k === 'say') { var L = lines(s).join(' '), sd = dur || Math.max(2.2, Math.min(7, 1.4 + L.length * 0.055)); var hs = null; return { tick: function (dt) { if (!hs) { hs = who(s.who); if (hs) hs.say(L, sd); } T += dt; return T >= sd; }, finish: function () { var h2 = hs || who(s.who); if (h2) h2.say('', 0); } }; }
     if (k === 'talk') { var st2 = 0; return { tick: function () { if (!st2) { st2 = 1; var ht = who(s.who); env.talk(ht, lines(s), function () { st2 = 2; }); } return st2 === 2; }, finish: function () {} }; }
     if (k === 'card') return once(function () { env.card(s.title, s.sub); });

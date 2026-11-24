@@ -15,6 +15,8 @@ Last updated: 2026-11-24.
 
 ## Waiting on Robin
 
+**The blot's art from Colin, AD is in (2026-11-24)**, for your look at the village's blot: Hallveig, the clips, the posts, the kettle. I ran the scene at night and saw no errors; I did not see her by daylight.
+
 **Your third questionnaire on chapter 1 (2026-11-24), built:** the ship asks for ten fish, and the sail waits for a roofed house with a bed and a fire on your claimed ground. The mountain stays optional and Old Aslak alone asks. My guess is 15 to 20 minutes more; not measured by a run. Old Aslak's new lines (the house, the provisions) are my placeholders until Alistair, LD's words.
 
 **Your list of 2026-11-24, done without you, for your look:** the shadows under the boat and the ice (Admin, H, The deep sends each now), porpoises, geese and things adrift at sea, the villages' fields and meadows, ice fishing, and the unplayed parts of chapter 1 run in the pane. **From the studios, yours to see:** Colin, AD's boards for the Baltic raiders and the tropic islands (he presents them); Alistair, LD proposes the Wends for the raiders and the Warm Isles for the tropic islands, and asks how the Warm Isles lie within reach of Skargard (his question 65). **Not done from the list:** grass tufts over the path edges, a save at every step of chapter 1, the fishing hamlet facing the sea and the trading post's strand, the blót's cut-scene and the kettle (Colin, AD is on them).
