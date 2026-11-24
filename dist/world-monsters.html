@@ -4953,10 +4953,11 @@ if (typeof module !== 'undefined') module.exports = Yard;
 var Sea = (function () {
   var K = 0.75, UPM = 1 / 0.046, DIRS = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'];
   var CFG = { paws: 14, ruffle: 18, caps: 18, glints: 700, clouds: 2, shoalN: 90, gulls: [2, 5], gullOut: 230, gullR: [110, 230], whaleEvery: [150, 360], fishEvery: [5, 15], sealEvery: [70, 160], sun: [-0.6, -0.8],
+    pod: { every: [140, 320], n: [2, 4], life: [22, 40], minV: 35 }, skein: { every: [240, 520], n: [7, 13], v: 115, hgt: 62 },   /* (the sea made more alive, Robin, 2026-11-24: porpoises that run with the boat while she has way on, and a skein of geese crossing overhead in spring and autumn; the numbers mine) */
     deepFirst: [60, 200], deepEvery: [150, 420], deep: { fish: { w: 46, L: 64, W: 17, v: 58, a: 0.3, clear: 70, miss: [16, 110] }, whale: { w: 30, L: 250, W: 64, v: 36, a: 0.34, clear: 170, miss: [10, 120] }, great: { w: 16, L: 580, W: 136, v: 27, a: 0.4, clear: 260, miss: [0, 70] }, serpent: { w: 8, L: 2500, W: 88, v: 62, a: 0.5, clear: 320, miss: [0, 24] } } };   /* the deep (Robin, 2026-11-24: "huge sea creature shadow swimming past the boat at rare times, also under ice. It should be different sizes. One should be really huge, causing fright and terror on the player"): w the share of the passes, L and W the body in units (a unit is 4.6 cm: 3 m, 11 m, 27 m, 115 m), v its pace, a its darkness, clear the open water it needs round the boat, miss how far to the side it passes. The numbers mine */
   function rnd() { return Math.random(); }
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
-  function make() { return { t: 0, paws: [], caps: [], glints: [], clouds: [], swells: [], shoals: [], fish: [], gulls: [], whale: null, seal: null, deep: null, nextDeep: CFG.deepFirst[0] + rnd() * (CFG.deepFirst[1] - CFG.deepFirst[0]), nextWhale: 40 + rnd() * 120, nextSeal: 30 + rnd() * 90, nextFish: 6, chk: 0, on: false, keep: [] }; }
+  function make() { return { t: 0, paws: [], caps: [], glints: [], clouds: [], swells: [], shoals: [], fish: [], gulls: [], whale: null, seal: null, pod: null, nextPod: 50 + rnd() * 110, skein: null, nextSkein: 70 + rnd() * 200, deep: null, nextDeep: CFG.deepFirst[0] + rnd() * (CFG.deepFirst[1] - CFG.deepFirst[0]), nextWhale: 40 + rnd() * 120, nextSeal: 30 + rnd() * 90, nextFish: 6, chk: 0, on: false, keep: [] }; }
   function clear(x, y, env, r) {           // water here and all round within r (a patch never lies over land)
     if (!env.water(x, y)) return false; if (!r) return true;
     for (var a = 0; a < 6.283; a += 1.571) if (!env.water(x + Math.cos(a) * r, y + Math.sin(a) * r)) return false; return true;
@@ -4998,6 +4999,16 @@ var Sea = (function () {
     var se = S.seal;
     if (se) { se.t += dt; if (se.t > se.life || !inView(se, env, 300)) S.seal = null; }
     else if ((S.nextSeal -= dt) <= 0) { S.nextSeal = CFG.sealEvery[0] + rnd() * (CFG.sealEvery[1] - CFG.sealEvery[0]); for (i = 0; i < 10; i++) { var sa = rnd() * 6.283, sd = 120 + rnd() * 260, sx = env.x + Math.cos(sa) * sd, sy = env.y + Math.sin(sa) * sd; if (env.water(sx, sy) && !clear(sx, sy, env, 70)) { S.seal = { x: sx, y: sy, t: 0, life: 5 + rnd() * 6 }; break; } } }
+    // the porpoises: two to four that come up from astern and run beside the bow while she has way on, then drop back
+    var bo = env.boat, pd = S.pod;
+    if (pd) { pd.t += dt; if (!bo || pd.t > pd.life) S.pod = null; else { pd.slow = bo.v < 12 ? pd.slow + dt : 0; if (pd.slow > 4 && pd.life > pd.t + 3) pd.life = pd.t + 3; var ek = Math.max(0, Math.min(1, pd.t / 4, (pd.life - pd.t) / 3)), bc = Math.cos(bo.h), bs = Math.sin(bo.h);
+        pd.m.forEach(function (m) { var al = m.a - (1 - ek) * 150 + Math.sin(pd.t * 0.6 + m.ph) * 6, sd = m.s * (1 + (1 - ek) * 0.6); m.x = bo.x + bc * al - bs * sd; m.y = bo.y + bs * al + bc * sd; var cyc = (pd.t / m.per + m.ph) % 1; m.up = cyc < 0.3 ? Math.sin(Math.PI * cyc / 0.3) : 0; m.h = bo.h; }); } }
+    else if (bo && bo.v > CFG.pod.minV && env.night < 0.6 && !env.iced && !S.deep && (S.nextPod -= dt) <= 0) { S.nextPod = CFG.pod.every[0] + rnd() * (CFG.pod.every[1] - CFG.pod.every[0]);
+      if (clear(bo.x, bo.y, env, 150)) { var pn = CFG.pod.n[0] + Math.floor(rnd() * (CFG.pod.n[1] - CFG.pod.n[0] + 1)), pm = []; for (i = 0; i < pn; i++) pm.push({ a: 10 + rnd() * 50, s: (i % 2 ? 1 : -1) * (32 + rnd() * 26), ph: rnd(), per: 2.6 + rnd() * 1.3, x: bo.x, y: bo.y, up: 0, h: bo.h }); S.pod = { t: 0, life: CFG.pod.life[0] + rnd() * (CFG.pod.life[1] - CFG.pod.life[0]), slow: 0, m: pm }; } }
+    // the geese: a skein crossing high overhead in spring (north) and autumn (south)
+    var sk = S.skein;
+    if (sk) { sk.t += dt; sk.x += Math.cos(sk.h) * CFG.skein.v * dt; sk.y += Math.sin(sk.h) * CFG.skein.v * dt; if (sk.t > 4 && !inView(sk, env, 420)) S.skein = null; }
+    else if (env.geese != null && env.night < 0.3 && (S.nextSkein -= dt) <= 0) { S.nextSkein = CFG.skein.every[0] + rnd() * (CFG.skein.every[1] - CFG.skein.every[0]); var gh = env.geese + (rnd() - 0.5) * 0.5, gd = Math.hypot(env.hw, env.hh) + 160, gl = (rnd() - 0.5) * env.hw; S.skein = { x: env.x - Math.cos(gh) * gd - Math.sin(gh) * gl, y: env.y - Math.sin(gh) * gd + Math.cos(gh) * gl, h: gh, t: 0, n: CFG.skein.n[0] + Math.floor(rnd() * (CFG.skein.n[1] - CFG.skein.n[0] + 1)), seed: rnd() * 9 }; }
     // the deep: a shadow that passes under the boat (or under the ice he stands on), by the clock of the time spent out there
     var dp = S.deep;
     if (dp) { dp.t += dt; dp.s += dp.v * dt; if (dp.s > dp.run) S.deep = null; }
@@ -5074,10 +5085,19 @@ var Sea = (function () {
     if (S.whale && S.whale.state !== 'under') { var wh = S.whale; out.push({ y: wh.y, f: function (c) { piece(c, IM, 'whale_' + wh.state, wh.x, wh.y, { shadow: 6, flip: wh.dir < 0 }); if (wh.state === 'back1' || wh.state === 'back2') spout(c, wh.x + wh.dir * 20, wh.y - 36 / K, w.a, wh.state === 'back1' ? 0.8 : 0.5); } }); }
     if (S.seal) { var se = S.seal; out.push({ y: se.y, f: function (c) { piece(c, IM, 'seal_' + (Math.floor(se.t * 0.7) % 2), se.x, se.y, { rings: 2, ringR: 11 }); } }); }
     S.fish.forEach(function (f) { out.push({ y: f.y, f: function (c) { var fr = Math.min(2, Math.floor(f.t / 0.17)); piece(c, IM, 'fish_' + fr, f.x, f.y - (fr === 1 ? 6 : 0), { flip: f.flip, rings: fr === 2 ? 1 : 0, ringR: 9 }); } }); });
+    if (S.pod) S.pod.m.forEach(function (m) { out.push({ y: m.y, f: function (c) { var yk = m.y * K, dir = Math.cos(m.h) >= 0 ? 1 : -1; c.save();
+      if (m.up <= 0.02) { c.translate(m.x, yk); c.rotate(Math.atan2(Math.sin(m.h) * K, Math.cos(m.h))); c.globalAlpha = 0.26; c.fillStyle = 'rgb(8,22,42)'; c.beginPath(); c.ellipse(0, 0, 17, 4.2, 0, 0, 6.283); c.fill(); }
+      else { var hgt = 5 * m.up; c.strokeStyle = 'rgba(240,248,250,0.55)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(m.x, yk + 0.4, 13.5, 2.1, 0, 0, 6.283); c.stroke(); c.fillStyle = '#28333d'; c.beginPath(); c.ellipse(m.x, yk, 11.5, hgt, 0, Math.PI, 0); c.fill(); c.beginPath(); c.moveTo(m.x - dir * 1.5, yk - hgt * 0.92); c.lineTo(m.x - dir * 4.6, yk - hgt - 3.4 * m.up); c.lineTo(m.x - dir * 6, yk - hgt * 0.72); c.closePath(); c.fill(); c.fillStyle = 'rgba(150,170,185,0.5)'; c.beginPath(); c.ellipse(m.x + dir * 2, yk - hgt * 0.55, 3.4, hgt * 0.22, 0, 0, 6.283); c.fill(); }
+      c.restore(); } }); });   /* a porpoise: its shadow while it is under, its back and fin as it rolls */
     S.gulls.forEach(function (g) { out.push({ y: g.y - 1, f: function (c) { c.save(); c.globalAlpha = 0.14; c.fillStyle = '#102040'; c.beginPath(); c.ellipse(g.x + 2, g.y * K + 3, 3, 1, 0, 0, 7); c.fill(); c.restore(); } }); });   // the gulls' shadows on the water
     return out;
   }
   function drawGulls(c, S, env, IM) {      // after everything on the ground: the gulls in the air
+    if (S.skein) { var sk = S.skein, ch = Math.cos(sk.h), sh = Math.sin(sk.h), i; c.save(); c.lineCap = 'round';
+      for (i = 0; i < sk.n; i++) { var rk = Math.ceil(i / 2), sd = i % 2 ? 1 : -1, bx = sk.x - ch * rk * 12 - sh * sd * rk * 8.5 + Math.sin(sk.t * 0.9 + i) * 1.2, by = sk.y - sh * rk * 12 + ch * sd * rk * 8.5, gy = by * K, ay = gy - CFG.skein.hgt, fl = Math.sin(sk.t * 7.5 + i * 1.3 + sk.seed), wx = -sh * 4.6, wy = ch * 4.6 * K;
+        c.fillStyle = 'rgba(16,32,64,0.10)'; c.beginPath(); c.ellipse(bx + 8, gy + 6, 3.6, 1.2, 0, 0, 6.283); c.fill();
+        c.strokeStyle = '#2b2622'; c.lineWidth = 1; c.beginPath(); c.moveTo(bx + wx, ay + wy - fl * 1.8); c.lineTo(bx, ay); c.lineTo(bx - wx, ay - wy - fl * 1.8); c.stroke(); c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx - ch * 2, ay - sh * 2 * K); c.lineTo(bx + ch * 4.2, ay + sh * 4.2 * K); c.stroke(); }
+      c.restore(); }
     S.gulls.forEach(function (g) { var d = DIRS[((Math.round(((g.h + Math.PI / 2) / (Math.PI * 2)) * 8) % 8) + 8) % 8]; piece(c, IM, 'gull_' + d + '_' + g.f, g.x, g.y - g.hgt / K, { foam: false }); });
   }
   function pennant(c, x, y, wa, s) {       // a streamer from the masthead, the ship's red, blown out with the wind and rippling
