@@ -8,10 +8,11 @@
    only. No browser globals: the page passes what it has (the water and land tests, the camera, the ship, the night). */
 var Sea = (function () {
   var K = 0.75, UPM = 1 / 0.046, DIRS = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'];
-  var CFG = { paws: 14, ruffle: 18, caps: 18, glints: 700, clouds: 2, shoalN: 90, gulls: [2, 5], gullOut: 230, gullR: [110, 230], whaleEvery: [150, 360], fishEvery: [5, 15], sealEvery: [70, 160], sun: [-0.6, -0.8] };
+  var CFG = { paws: 14, ruffle: 18, caps: 18, glints: 700, clouds: 2, shoalN: 90, gulls: [2, 5], gullOut: 230, gullR: [110, 230], whaleEvery: [150, 360], fishEvery: [5, 15], sealEvery: [70, 160], sun: [-0.6, -0.8],
+    deepFirst: [60, 200], deepEvery: [150, 420], deep: { fish: { w: 46, L: 64, W: 17, v: 58, a: 0.3, clear: 70, miss: [16, 110] }, whale: { w: 30, L: 250, W: 64, v: 36, a: 0.34, clear: 170, miss: [10, 120] }, great: { w: 16, L: 580, W: 136, v: 27, a: 0.4, clear: 260, miss: [0, 70] }, serpent: { w: 8, L: 2500, W: 88, v: 62, a: 0.5, clear: 320, miss: [0, 24] } } };   /* the deep (Robin, 2026-11-24: "huge sea creature shadow swimming past the boat at rare times, also under ice. It should be different sizes. One should be really huge, causing fright and terror on the player"): w the share of the passes, L and W the body in units (a unit is 4.6 cm: 3 m, 11 m, 27 m, 115 m), v its pace, a its darkness, clear the open water it needs round the boat, miss how far to the side it passes. The numbers mine */
   function rnd() { return Math.random(); }
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
-  function make() { return { t: 0, paws: [], caps: [], glints: [], clouds: [], swells: [], shoals: [], fish: [], gulls: [], whale: null, seal: null, nextWhale: 40 + rnd() * 120, nextSeal: 30 + rnd() * 90, nextFish: 6, chk: 0, on: false, keep: [] }; }
+  function make() { return { t: 0, paws: [], caps: [], glints: [], clouds: [], swells: [], shoals: [], fish: [], gulls: [], whale: null, seal: null, deep: null, nextDeep: CFG.deepFirst[0] + rnd() * (CFG.deepFirst[1] - CFG.deepFirst[0]), nextWhale: 40 + rnd() * 120, nextSeal: 30 + rnd() * 90, nextFish: 6, chk: 0, on: false, keep: [] }; }
   function clear(x, y, env, r) {           // water here and all round within r (a patch never lies over land)
     if (!env.water(x, y)) return false; if (!r) return true;
     for (var a = 0; a < 6.283; a += 1.571) if (!env.water(x + Math.cos(a) * r, y + Math.sin(a) * r)) return false; return true;
@@ -53,8 +54,12 @@ var Sea = (function () {
     var se = S.seal;
     if (se) { se.t += dt; if (se.t > se.life || !inView(se, env, 300)) S.seal = null; }
     else if ((S.nextSeal -= dt) <= 0) { S.nextSeal = CFG.sealEvery[0] + rnd() * (CFG.sealEvery[1] - CFG.sealEvery[0]); for (i = 0; i < 10; i++) { var sa = rnd() * 6.283, sd = 120 + rnd() * 260, sx = env.x + Math.cos(sa) * sd, sy = env.y + Math.sin(sa) * sd; if (env.water(sx, sy) && !clear(sx, sy, env, 70)) { S.seal = { x: sx, y: sy, t: 0, life: 5 + rnd() * 6 }; break; } } }
+    // the deep: a shadow that passes under the boat (or under the ice he stands on), by the clock of the time spent out there
+    var dp = S.deep;
+    if (dp) { dp.t += dt; dp.s += dp.v * dt; if (dp.s > dp.run) S.deep = null; }
+    else if (env.over && (S.nextDeep -= dt) <= 0) { var tw = 0, kk, pk = null, rr; for (kk in CFG.deep) tw += CFG.deep[kk].w; rr = rnd() * tw; for (kk in CFG.deep) { if ((rr -= CFG.deep[kk].w) <= 0) { pk = kk; break; } } S.deep = deepMake(env, pk || 'fish'); S.nextDeep = S.deep ? CFG.deepEvery[0] + rnd() * (CFG.deepEvery[1] - CFG.deepEvery[0]) : 15; }
     // the gulls: a ring round the ship at sea, else round a point of the shore near the hero; none far out at night
-    var want = env.night > 0.5 && !env.shore ? 0 : (env.ship || env.shore ? Math.round(CFG.gulls[0] + rnd() * 0.001 + (CFG.gulls[1] - CFG.gulls[0]) * (S.gullK || (S.gullK = rnd()))) : 0);
+    var want = (env.night > 0.5 && !env.shore) || dread(S) > 0.05 ? 0 : (env.ship || env.shore ? Math.round(CFG.gulls[0] + rnd() * 0.001 + (CFG.gulls[1] - CFG.gulls[0]) * (S.gullK || (S.gullK = rnd()))) : 0);
     var cx = env.ship ? env.ship.x : (env.shore ? env.shore.x : env.x), cy = env.ship ? env.ship.y : (env.shore ? env.shore.y : env.y);
     if (!env.ship && env.shore) { var gux = env.shore.x - env.x, guy = env.shore.y - env.y, gul = Math.hypot(gux, guy) || 1, gox = env.shore.x + gux / gul * CFG.gullOut, goy = env.shore.y + guy / gul * CFG.gullOut; if (env.water(gox, goy)) { cx = gox; cy = goy; } if (want > 2) want = 2 + (want > 3 ? 1 : 0); }   /* ashore, the ring lies out over the water and there are fewer (2026-10-22, Robin: "Sea gulls are a bit too attached, they start circeling my hero a lot") */
     for (i = S.gulls.length - 1; i >= 0; i--) { p = S.gulls[i]; p.a += p.spin * dt; p.cx += (cx - p.cx) * Math.min(1, dt * 0.4); p.cy += (cy - p.cy) * Math.min(1, dt * 0.4); p.x = p.cx + Math.cos(p.a) * p.R; p.y = p.cy + Math.sin(p.a) * p.R; p.h = p.a + (p.spin > 0 ? Math.PI / 2 : -Math.PI / 2);
@@ -63,9 +68,35 @@ var Sea = (function () {
     if (S.gulls.length < want && rnd() < dt * 0.5) S.gulls.push({ cx: cx, cy: cy, a: rnd() * 6.283, R: env.ship ? 60 + rnd() * 90 : CFG.gullR[0] + rnd() * (CFG.gullR[1] - CFG.gullR[0]), spin: (rnd() < 0.5 ? 1 : -1) * (0.35 + rnd() * 0.35), hgt: 18 + rnd() * 30, f: 0, ft: rnd() * 3, glide: 0, life: 40 + rnd() * 60, x: cx, y: cy, h: 0 });
     if ((S.gullT = (S.gullT || 0) + dt) > 30) { S.gullT = 0; S.gullK = rnd(); }
   }
+  function deepMake(env, kind, force) {    // a pass laid through the water under the boat: from out of sight ahead to out of sight astern
+    var D = CFG.deep[kind], o = env.over || { x: env.x, y: env.y }; if (!D) return null; if (!force && !clear(o.x, o.y, env, D.clear)) return null;
+    var h = rnd() * 6.283, far = Math.hypot(env.hw, env.hh) * 1.15 + 90, miss = (D.miss[0] + rnd() * (D.miss[1] - D.miss[0])) * (rnd() < 0.5 ? -1 : 1), k = 0.85 + rnd() * 0.3;
+    return { kind: kind, h: h, x0: o.x - Math.cos(h) * far - Math.sin(h) * miss, y0: o.y - Math.sin(h) * far + Math.cos(h) * miss, s: 0, t: 0, v: D.v * (0.9 + rnd() * 0.2), L: D.L * k, W: D.W * k, a: D.a, run: far * 2 + D.L * k + 60, seed: Math.floor(rnd() * 999), ox: o.x, oy: o.y };
+  }
+  function deepCall(S, env, kind) { S.deep = deepMake(env, kind, true); return S.deep; }   /* Admin's and the tests' way to see one */
+  function dread(S) { var dp = S.deep; if (!dp || dp.kind !== 'serpent') return 0; var k = dp.s / dp.run; return Math.max(0, Math.min(1, k * 5, (1 - k) * 5)); }   /* 0 to 1 while the great one is under you: the page's cue (the gulls go, the music sinks, the camera draws back) */
+  function deepHalf(kind, u) {            // half the body's breadth at u (0 the snout, 1 the tail's end), as a share of W / 2
+    if (kind === 'serpent') return u < 0.012 ? Math.sqrt(u / 0.012) * 1.3 : u < 0.035 ? 1.3 - (u - 0.012) / 0.023 * 0.55 : u < 0.1 ? 0.75 + (u - 0.035) / 0.065 * 0.25 : u < 0.7 ? 1 : Math.max(0, 1 - (u - 0.7) / 0.3);
+    var body = u < 0.1 ? Math.sqrt(u / 0.1) * 0.78 : u < 0.3 ? 0.78 + (u - 0.1) / 0.2 * 0.22 : u < 0.88 ? 1 - (u - 0.3) / 0.58 * 0.9 : 0.1;
+    if (u > 0.9) body = kind === 'fish' ? 0.1 + (u - 0.9) / 0.1 * 0.32 : u < 0.97 ? 0.1 + (u - 0.9) / 0.07 * 0.5 : 0.6 - (u - 0.97) / 0.03 * 0.22;   /* the tail: a fish's fin, a whale's flukes */
+    return body;
+  }
+  function drawDeep(c, S, env, aK) {       // the shadow, in the world's frame (x, y * K): one flat dark shape and a darker core, no blur
+    var dp = S.deep; if (!dp) return; var n = dp.kind === 'serpent' ? 180 : dp.kind === 'fish' ? 20 : 40, ch = Math.cos(dp.h), sh = Math.sin(dp.h), hx = dp.x0 + ch * dp.s, hy = dp.y0 + sh * dp.s, i, u, P = [], amp, ph;
+    for (i = 0; i <= n; i++) { u = Math.pow(i / n, dp.kind === 'serpent' ? 1.35 : 1.6); var d = u * dp.L, off = 0;   /* (more points at the snout, where the outline turns fastest) */ if (dp.kind === 'serpent') { amp = 62 * Math.min(1, u * 9); off = amp * Math.sin(d / 96 - dp.t * 0.85); } else if (dp.kind === 'fish') off = dp.L * 0.07 * u * Math.sin(u * 5 - dp.t * 6); else off = dp.L * 0.012 * Math.sin(dp.s / 130 + u * 2);
+      P.push({ x: hx - ch * d - sh * off, y: hy - sh * d + ch * off, w: deepHalf(dp.kind, u) * dp.W / 2 }); }
+    var seen = false; for (i = 0; i <= n; i += 3) if (inView(P[i], env, dp.W + 40)) { seen = true; break; } if (!seen) return;
+    var fade = Math.min(1, dp.s / 160, (dp.run - dp.s) / 160), A = dp.a * (aK == null ? 1 : aK) * Math.max(0, fade) * (1 - 0.35 * (env.night || 0));
+    function shape(k) { var j, q, a, b, tx, ty, tl; c.beginPath(); for (j = 0; j <= n; j++) { q = P[j]; a = P[Math.max(0, j - 1)]; b = P[Math.min(n, j + 1)]; tx = b.x - a.x; ty = b.y - a.y; tl = Math.hypot(tx, ty) || 1; q.nx = -ty / tl; q.ny = tx / tl; if (j === 0) c.moveTo(q.x + q.nx * q.w * k, (q.y + q.ny * q.w * k) * K); else c.lineTo(q.x + q.nx * q.w * k, (q.y + q.ny * q.w * k) * K); } for (j = n; j >= 0; j--) { q = P[j]; c.lineTo(q.x - q.nx * q.w * k, (q.y - q.ny * q.w * k) * K); } c.closePath();
+      if (k === 1 && (dp.kind === 'whale' || dp.kind === 'great')) { var fi = Math.round(n * 0.44), f = P[fi], g2 = P[fi + Math.round(n * 0.17)], fl = dp.W * (dp.kind === 'great' ? 0.85 : 0.62), sd; for (sd = -1; sd <= 1; sd += 2) { c.moveTo(f.x + f.nx * f.w * 0.7 * sd, (f.y + f.ny * f.w * 0.7 * sd) * K); c.lineTo(g2.x + g2.nx * (g2.w + fl) * sd, (g2.y + g2.ny * (g2.w + fl) * sd) * K); c.lineTo(g2.x + g2.nx * g2.w * 0.6 * sd, (g2.y + g2.ny * g2.w * 0.6 * sd) * K); c.closePath(); } } }   /* (the flippers, in the same fill so nothing doubles) */
+    c.save(); c.fillStyle = 'rgb(6,18,38)'; c.globalAlpha = A * 0.62; shape(1); c.fill(); c.globalAlpha = A * 0.5; shape(0.55); c.fill();
+    if (dp.kind === 'serpent' || dp.kind === 'great') { c.fillStyle = 'rgb(226,240,244)'; var nb = dp.kind === 'serpent' ? 26 : 8; for (i = 0; i < nb; i++) { var slot = Math.floor(dp.t * 1.6 + i * 0.37), hv = hs(dp.seed + i, slot); if (hv > 0.55) continue; var q2 = P[Math.floor(hs(dp.seed + i * 3, slot + 5) * n)], bt = (dp.t * 1.6 + i * 0.37) % 1; if (!inView(q2, env, 20)) continue; c.globalAlpha = 0.5 * (1 - bt) * fade * (aK == null ? 1 : aK); c.beginPath(); c.arc(q2.x + (hs(i, slot) - 0.5) * q2.w * 1.6, (q2.y + (hs(i + 9, slot) - 0.5) * q2.w * 1.6) * K, 0.5 + bt * 1.6, 0, 6.283); c.fill(); } }   /* air rising off its back */
+    c.restore();
+  }
   function lin(c, x0, y0, x1, y1) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }
   function drawWater(c, S, env) {         // in the world's frame (x, y * K); the swell, the clouds, the cat's-paws and their ruffle, the whitecaps, the glitter, the shoals
     if (!S.on) return; var w = env.wind, i, j, p, g;
+    if (!env.iced) drawDeep(c, S, env);   /* under everything else on the water; under ice the page draws it over the sheet */
     c.save(); c.lineCap = 'round';
     S.swells.forEach(function (q) { g = c.createRadialGradient(0, 0, 0, 0, 0, 1); var col = q.light ? '255,255,255' : '0,10,40', a = (q.light ? 0.09 : 0.07) * Math.sin(Math.PI * Math.min(1, q.t / q.life)); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); c.save(); c.translate(q.x, q.y * K); c.rotate(w.a + 0.9); c.scale(q.L, q.W * K); c.fillStyle = g; c.fillRect(-1, -1, 2, 2); c.restore(); });
     S.clouds.forEach(function (q) { g = c.createRadialGradient(0, 0, 0, 0, 0, 1); var a = 0.22 * Math.sin(Math.PI * Math.min(1, q.t / q.life)); g.addColorStop(0, 'rgba(60,80,120,' + a + ')'); g.addColorStop(0.6, 'rgba(60,80,120,' + a * 0.55 + ')'); g.addColorStop(1, 'rgba(60,80,120,0)'); c.save(); c.translate(q.x, q.y * K); c.rotate(w.a); c.scale(q.R * 1.5, q.R * 0.55); c.fillStyle = g; c.fillRect(-1, -1, 2, 2); c.restore(); });
@@ -113,6 +144,6 @@ var Sea = (function () {
     c.save(); c.translate(x, y); c.rotate(h); c.fillStyle = 'rgba(240,248,250,0.8)'; var n = Math.round(14 * k), i;
     for (i = 0; i < n; i++) { var d = hs(i, Math.floor(t * 9)) * 8, s = (hs(i + 1, Math.floor(t * 9)) - 0.5) * 2; c.globalAlpha = 0.3 + hs(i + 2, Math.floor(t * 9)) * 0.5; c.beginPath(); c.arc(d, s * (2 + d * 0.5) * K, 0.3 + hs(i + 3, Math.floor(t * 9)) * 0.5, 0, 7); c.fill(); } c.restore();
   }
-  return { CFG: CFG, make: make, tick: tick, drawWater: drawWater, lifeItems: lifeItems, drawGulls: drawGulls, piece: piece, pennant: pennant, bowSpray: bowSpray, spout: spout };
+  return { CFG: CFG, make: make, tick: tick, drawWater: drawWater, lifeItems: lifeItems, drawGulls: drawGulls, piece: piece, pennant: pennant, bowSpray: bowSpray, spout: spout, drawDeep: drawDeep, deepCall: deepCall, dread: dread };
 })();
 if (typeof module !== 'undefined') module.exports = Sea;
