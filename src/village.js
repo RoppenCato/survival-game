@@ -12,7 +12,7 @@
 var Village = (function () {
 'use strict';
 var T = 32;
-var VERSION = 8;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15; 7: open villages, doors to the south, fewer people, 2026-11-15); a save made under another should not keep its villages' walls
+var VERSION = 9;                                       // the generator's version (2: the grammar of 2026-10-22; 4: the worn ways as curves, 2026-11-10; 5: the fisherman's hut alone and small, 2026-11-10; 6: Old Aslak's village nearest the landing, 2026-11-15; 7: open villages, doors to the south, fewer people, 2026-11-15); a save made under another should not keep its villages' walls
 var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   unitGap: 2,                                         // tiles between two farms or two plots: the lane behind
@@ -140,7 +140,8 @@ function make(seed, site, opts) {
   function H(x, y, t, m, hid) { C.H[key(x, y)] = hid ? { t: t, m: m, hidden: 1 } : { t: t, m: m }; } function Vw(x, y, t, m, hid) { C.V[key(x, y)] = hid ? { t: t, m: m, hidden: 1 } : { t: t, m: m }; }   // hidden: the barrier under a fence drawn as a run of posts (V.fences), not to be drawn itself (Robin, 2026-10-22, through the Art Director: fences as angled runs following the land, not on the grid)
   function item(name, x, y, extra) { var it = { name: name, x: x, y: y }; for (var q in extra || {}) it[q] = extra[q]; C.items.push(it); return it; }
   function prop(o) { C.props.push(o); return o; } function find(o) { C.finds.push(o); return o; }
-  function dab(x, y, r, kind) { C.paints.push({ x: x, y: y, r: r, kind: kind }); }
+  var dabF = 0;   /* (set while a field's or a kitchen plot's earth is dabbed: the game lays Colin, AD's ground pictures there and leaves these dabs out, f: 1; the picture tool and the editor paint them) */
+  function dab(x, y, r, kind) { var o = { x: x, y: y, r: r, kind: kind }; if (dabF) o.f = 1; C.paints.push(o); }
   function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
   function tile(x, y) { return [(x + 0.5) * T, (y + 0.5) * T]; }
   var CALLINGS = ['farmer', 'farmer', 'fisher', 'smith', 'weaver', 'elder', 'thrall'];
@@ -298,7 +299,7 @@ function make(seed, site, opts) {
     var nd = Math.round(G.doorProps + (R() - 0.5)), di2, used = {};
     for (di2 = 0; di2 < nd; di2++) { var by = pool[Math.floor(R() * pool.length)]; if (used[by]) continue; used[by] = 1; var sideS = di2 % 2 ? 1 : -1, off = l.door === 's' ? [T * (1.2 + 0.5 * di2) * sideS, 6 + R() * 6] : l.door === 'e' ? [10 + R() * 8, T * (1.0 + 0.6 * di2) * sideS] : l.door === 'w' ? [-10 - R() * 8, T * (1.0 + 0.6 * di2) * sideS] : [T * (1.2 + 0.5 * di2) * sideS, -8]; prop({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
     if (l.big && l.door === 's') { var wp = tile(l.x + l.w, l.y + l.h); if (wp[0] / T > (C.w || 1e9) - 1.5) wp = tile(l.x - 1, l.y + l.h); prop({ name: G.clutter ? 'woodshed' : 'woodpile', x: wp[0] + 8, y: wp[1] + 4, solid: 9 }); prop({ name: 'choppingBlock', x: wp[0] + 36 * (wp[0] / T > l.x ? 1 : -1), y: wp[1] + 12, block: true }); }
-    if (l.id === 'house' && l.door === 's' && R() < 0.5 && l.y >= 1) prop({ name: 'washingLine', x: (l.x + l.w / 2) * T, y: l.y * T - 14, solid: 4 });   // washing behind one house in two (the yard pieces, 2026-10-20)
+    if (l.id === 'house' && l.door === 's' && R() < 0.5 && l.y >= 1) prop({ name: ['washingLine_ew_1', 'washingLine_ew_2', 'washingLine_diag_1'][Math.floor(R() * 3)], x: (l.x + l.w / 2) * T, y: l.y * T - 14, solid: 4 });   // washing behind one house in two (the yard pieces, 2026-10-20)
     if (l.big && U.hall && l.door === 's') { prop({ name: 'spearRack', x: (l.dx + 2.2) * T, y: (l.y + l.h) * T + 6, solid: 4 }); }   // the hall's spears by its door
     // things against the walls (Robin, 2026-10-07: lived-in like the reference): a window box under every south window, a lantern by
     // the door that is lit at night, an awning on the open-fronted buildings, a sign on the hall and the trading stores
@@ -663,7 +664,7 @@ function make(seed, site, opts) {
       else if (kind === 'water') { if (put('prop', 'trough', px, py, 8)) put('prop', 'bucket', bx, by, 3); }
       else if (kind === 'rest') { if (put('item', 'bench', px, py, 6, { seat: true })) put('item', 'logSeat', bx, by, 5, { seat: true }); }
       else if (kind === 'cart') { if (put('prop', 'cart', px, py, 10)) put('prop', 'sackPile', bx, by, 6); }
-      else if (kind === 'flowers') { put('prop', 'flowerBed', px, py, 0); put('prop', 'flower_' + (1 + Math.floor(RG() * 3)), bx, by, 0); }
+      else if (kind === 'flowers') { put('prop', 'flowerBed_' + (1 + Math.floor(RG() * 3)), px, py, 0); put('prop', 'flower_' + (1 + Math.floor(RG() * 3)), bx, by, 0); }
       else if (kind === 'goods') { if (put('item', 'barrel', px, py, 4)) { put('item', 'crate', bx, by, 4); put('prop', 'sack', px - tx2 * 16, py - ty2 * 12, 3); } }
       else if (kind === 'post') { var sp2 = [(gr.x + 0.8) * T, (gr.y + 0.8) * T]; put('prop', 'dragonPost', sp2[0] + 30, sp2[1] - 4, 4); }
       else if (kind === 'drying') put('prop', 'dryingRack', px, py, 6);
@@ -960,7 +961,7 @@ function make(seed, site, opts) {
       if ((l.id !== 'house' && l.id !== 'longhouse') || l.door !== 's' || l.dx == null || l.dx < 0) return; var k;
       if (R() < 0.5) { var sideF = l.dx + 0.5 < l.x + l.w / 2 ? 1 : -1, nF = 2 + Math.floor(R() * 3); for (k = 0; k < nF; k++) { var fx2 = (l.dx + 0.5 + sideF * (1.35 + k * 0.5)) * T, fy2 = (l.y + l.h) * T + 7 + R() * 4; if (fx2 > l.x * T + 5 && fx2 < (l.x + l.w) * T - 5 && bedFree(fx2, fy2, 2, false)) V.nature.push({ name: 'flower', x: fx2, y: fy2, s: 0.8 + R() * 0.3, r: 0, v: Math.floor(R() * 3), bed: 1 }); } }
       if (R() < 0.6) { var sP = R() < 0.5 ? -1 : 1, px0, py0 = l.y + Math.max(0.3, l.h - 3.4), okP = false, cxk, cyk, tryS; for (tryS = 0; tryS < 2 && !okP; tryS++, sP = -sP) { px0 = sP < 0 ? l.x - 3.5 : l.x + l.w + 0.7; okP = true; for (cyk = 0; cyk <= 2 && okP; cyk++) for (cxk = 0; cxk <= 2 && okP; cxk++) if (!bedFree((px0 + 0.4 + cxk * 1.0) * T, (py0 + 0.5 + cyk * 0.9) * T, 8, true) || onUnitEdge((px0 + 0.4 + cxk) * T, (py0 + 0.5 + cyk * 0.9) * T)) okP = false; }
-        if (okP) { for (cyk = 0; cyk < 3; cyk++) { strokeTo([(px0 + 0.1) * T, (py0 + 0.5 + cyk * 0.9) * T], [(px0 + 2.7) * T, (py0 + 0.5 + cyk * 0.9) * T], 6, 2); for (cxk = 0; cxk < 3; cxk++) if (R() < 0.75) V.nature.push({ name: cyk === 1 && R() < 0.5 ? 'flower' : 'wildHerbs', x: (px0 + 0.4 + cxk * 1.0 + (R() - 0.5) * 0.3) * T, y: (py0 + 0.5 + cyk * 0.9) * T - 2, s: 0.8, r: 0, v: Math.floor(R() * 3), bed: 1 }); } V.plots.push({ x: px0, y: py0, w: 2.8, h: 2.8 }); } }
+        if (okP) { dabF = 1; for (cyk = 0; cyk < 3; cyk++) { strokeTo([(px0 + 0.1) * T, (py0 + 0.5 + cyk * 0.9) * T], [(px0 + 2.7) * T, (py0 + 0.5 + cyk * 0.9) * T], 6, 2); for (cxk = 0; cxk < 3; cxk++) if (R() < 0.75) V.nature.push({ plot: 1, name: cyk === 1 && R() < 0.5 ? 'flower' : 'wildHerbs', x: (px0 + 0.4 + cxk * 1.0 + (R() - 0.5) * 0.3) * T, y: (py0 + 0.5 + cyk * 0.9) * T - 2, s: 0.8, r: 0, v: Math.floor(R() * 3), bed: 1 }); } dabF = 0; V.plots.push({ x: px0, y: py0, w: 2.8, h: 2.8 }); } }
     });
   }
   // ---- the outside: the fields on the side with the room, the sacred at a corner, the midden behind, a grave beyond; the story's marks ----
@@ -977,17 +978,17 @@ function make(seed, site, opts) {
   function fieldLay(fx0, fy0, fw, fh, kind) { var k;
     V.fields.push({ x: fx0, y: fy0, w: fw, h: fh, kind: kind });
     V.nature = V.nature.filter(function (o) { return !(o.x > (fx0 - 0.4) * T && o.x < (fx0 + fw + 0.4) * T && o.y > (fy0 - 0.4) * T && o.y < (fy0 + fh + 0.4) * T); });
-    if (kind === 'plough') { var nf = Math.round(fw / 0.62); for (k = 0; k < nf; k++) { var xx = (fx0 + 0.3 + k * (fw - 0.6) / (nf - 1)) * T; strokeTo([xx, (fy0 + 0.3) * T], [xx, (fy0 + fh - 0.3) * T], 5.2, 2); } }
-    else { var nh = 1 + Math.floor(R() * 2); for (k = 0; k < nh; k++) prop({ name: 'haystack', x: (fx0 + 0.8 + R() * (fw - 1.6)) * T, y: (fy0 + 1 + (k + R() * 0.6) * (fh - 2) / nh) * T, solid: 6 }); for (k = 0; k < Math.round(fw * fh / 3); k++) V.nature.push({ name: R() < 0.7 ? 'flower' : 'wildHerbs', x: (fx0 + 0.2 + R() * (fw - 0.4)) * T, y: (fy0 + 0.2 + R() * (fh - 0.4)) * T, s: 0.8 + R() * 0.2, r: 0, v: Math.floor(R() * 3), bed: 1 }); }
+    if (kind === 'plough') { dabF = 1; var nf = Math.round(fw / 0.62); for (k = 0; k < nf; k++) { var xx = (fx0 + 0.3 + k * (fw - 0.6) / (nf - 1)) * T; strokeTo([xx, (fy0 + 0.3) * T], [xx, (fy0 + fh - 0.3) * T], 5.2, 2); } dabF = 0; }
+    else { var nh = 1 + Math.floor(R() * 2); for (k = 0; k < nh; k++) prop({ name: 'haystack', x: (fx0 + 0.8 + R() * (fw - 1.6)) * T, y: (fy0 + 1 + (k + R() * 0.6) * (fh - 2) / nh) * T, solid: 6 }); prop({ name: R() < 0.7 ? 'hayRack_ew_full' : 'hayRack_ew_empty', x: (fx0 + fw / 2) * T, y: (fy0 + fh + 0.7) * T, solid: 9 });   /* (the hesje at the meadow's south edge: Colin, AD's, 2026-11-24) */ for (k = 0; k < Math.round(fw * fh / 3); k++) V.nature.push({ fld: 1, name: R() < 0.7 ? 'flower' : 'wildHerbs', x: (fx0 + 0.2 + R() * (fw - 0.4)) * T, y: (fy0 + 0.2 + R() * (fh - 0.4)) * T, s: 0.8 + R() * 0.2, r: 0, v: Math.floor(R() * 3), bed: 1 }); }
   }
   var roomE = tx + w - ex1, roomW = ex0 - tx, fieldSide = roomE >= roomW ? 1 : -1;
   if (G.fields && A.tier !== 0 && !V.ruin && story !== 'seal' || (G.fields && archId === 'farmstead')) {
     var fCap = A.shore ? 3 : fenceKind !== 'none' ? 4 : 3 + V.units.length, fN = 0, crow = false, sI, sides2 = [fieldSide, -fieldSide];
     for (sI = 0; sI < 2 && fN < fCap; sI++) { var sd2 = sides2[sI], room2 = sd2 > 0 ? roomE : roomW, fw2 = room2 >= 8.5 ? 6 : 3, nAc = Math.min(3, Math.floor((room2 - 1.5) / (fw2 + 0.8))), col;
       for (col = 0; col < nAc && fN < fCap; col++) { var fxc = sd2 > 0 ? ex1 + 1.5 + col * (fw2 + 0.8) : ex0 - 1.5 - (col + 1) * (fw2 + 0.8) + 0.8, cur = Math.max(ty + 1, ey0 - 2 + R() * 3), yEnd = Math.min(ty + h - 1, ey1 + 2), guard = 0;
-        while (cur + 5 <= yEnd && fN < fCap && guard++ < 12) { var len = Math.min(7 + Math.floor(R() * 6), Math.floor(yEnd - cur)), rk = R(), kd = rk < 0.6 ? 'plough' : rk < 0.82 ? 'hay' : 'fallow';
+        while (cur + 5 <= yEnd && fN < fCap && guard++ < 12) { var len = Math.min(7 + Math.floor(R() * 6), Math.floor(yEnd - cur)), rk = R(), kd = rk < 0.6 ? 'plough' : rk < 0.82 ? 'hay' : 'fallow'; if (kd === 'hay') len = len >= 12 ? 12 : len >= 8 ? 8 : 4;   /* (a meadow in whole lengths of the studio's tile, four tiles) */
           if (!fieldFree(fxc, cur, fw2, len)) { cur += 2; continue; }
-          if (kd !== 'fallow') { fieldLay(fxc, cur, fw2, len, kd); fN++; if (kd === 'plough' && !crow) { crow = true; prop({ name: 'scarecrow', x: (fxc + fw2 / 2) * T, y: (cur + len * 0.45) * T }); } }
+          if (kd !== 'fallow') { fieldLay(fxc, cur, fw2, len, kd); fN++; if (kd === 'plough' && !crow) { crow = true; prop({ name: 'scarecrow_' + (R() < 0.5 ? 1 : 2), x: (fxc + fw2 / 2) * T, y: (cur + len * 0.45) * T }); } }
           cur += len + 1 + R() * 1.5; } } }
   }
   if (G.sacred && !green) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); prop({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of ' + (opts.name || 'this place') + ' for one who did not come home.' }); find({ kind: 'stone', x: sc[0], y: sc[1] }); }
@@ -1416,7 +1417,7 @@ function plan(env, opts) {
       var ruinRoll = R() < 0.14;   /* (rolled whether or not it can apply, so a seed's layout does not move) */ if (opts.wants && opts.wants[i]) ruinRoll = false;
       if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && sites.length > 0 && ruinRoll) arch = 'ruin'; if (roled && q.role === 'ruin') arch = 'ruin'; else if (roled && q.role === 'hamlet' && arch === 'ruin') arch = 'fishing';   /* (never the first place, the big island's village: Old Aslak lives there, and a fresh start of 2026-10-23 had it a ruin with nobody in it) */
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
-      st.arch = arch; st.wealth = wealth; st.isle = isleAt; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used); st.role = arch === 'fisher' ? 'fisher' : (q.role || null); if (roled && q.role === 'hamlet' && arch !== 'fisher') st.name = 'Saltvik'; if (roled && q.role === 'ruin' && arch === 'ruin') st.name = 'Ulfarstad';   /* (the lore's fixed names, place.saltvik and place.ulfarstad) */
+      st.arch = arch; st.wealth = wealth; st.isle = isleAt; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used); st.role = arch === 'fisher' ? 'fisher' : (q.role || null); if (roled && q.role === 'hamlet' && arch !== 'fisher') st.name = 'Saltvik'; if (roled && q.role === 'ruin' && arch === 'ruin') st.name = 'Ulfarstad'; if (roled && arch === 'fisher') st.name = 'Tangholm';   /* (Gamli's hut is the one place on the kelp islet and takes its name: the second played pass of 2026-11-24 found it called by a generated village name; mine) */   /* (the lore's fixed names, place.saltvik and place.ulfarstad) */
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
     });
