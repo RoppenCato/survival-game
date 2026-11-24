@@ -75,8 +75,17 @@ or stand in a notch), a grab (struck free by blows on the fingers). A hand hurt 
 the opening, and blows on it reach the troll. Light matters as with every troll: braziers round the ledge can be lit to make the
 head turn away. With both hands broken it sinks, and what it guarded lies on the ledge.
 
-**Open, for Robin:** do trolls turn to stone in daylight, all of them or only some; can the house trolls be friends (the
-Trollvinir, troll-friends, suggest so); which of these are in chapter 2's north and which later.
+**The lore's side (Alistair, LD's handoff 35, 2026-11-24, all proposed):** a troll never stops growing. They are the mountain's
+own children; each grows as long as it lives, so the kinds are one people at different ages, and the big ones are deep because
+they are old. The names: the young are Harungen; house trolls the tussar (`being.tusse`); the brute the mountain troll
+(`being.bergtroll`); the lean one the jutul (`being.jutul`: bargains and riddles); the crawler `being.troll-crawler` (went down
+too young and forgot how to stand); the three-headed an old one that never went down; the deep walkers the bergrisar
+(`being.bergrisi`: they do not know you are there); the one in the pit the mountain king (`being.mountain-king`).
+
+**The three questions, as the canon answers them:** all trolls turn to stone in daylight (Robin, 2026-10-05; the Trollvinir's
+troll is the one that has seen the day and lived, 2026-10-21), and the deep ones never meet it; house trolls can be friends (the
+Trollvinir, Robin, 2026-10-21); every kind fits chapter 2's north but the Gape, which is the west's. **Still Robin's:** which
+kinds are built for chapter 2, and how the stone rule plays for trolls met by day.
 
 ## Hårungen, the troll's young (`being.harungen`)
 
