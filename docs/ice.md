@@ -67,3 +67,10 @@ through. Real ones need a reference Robin likes first (the ice's creak, its long
 2. A fall through the ice: harsher. The cold keeps biting while he is in the water (built).
 3. Standing still is safe; only moving strains the ice (built).
 4. Nothing more on the ice for now: chapter 1 comes first.
+
+## Built 2026-11-24 (Robin: "Do you 1-6")
+
+- **Ice fishing**: with an axe in hand on ice thick enough (0.35), E "Cut a hole in the ice" chops for 2.6 s and opens a hole a step in front of him; with the rod the cast goes to the hole he faces within 150 units. A hole is a hole: step in it and you are in the water. It skins over by morning. Numbers mine (`ICECUT`).
+- **Great shadows under the ice**: the sea's passing shadows go under the ice he stands on, and the sheet creaks while the largest two are under his feet. Nothing breaks.
+
+Still waiting, in order: wolves on the ice, the ice's own sounds, tracks, the thaw, bone skates.

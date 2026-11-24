@@ -191,3 +191,5 @@ alpha). Chapter 0's is `docs/chapter-0-checklist.md`. Before a chapter's list is
 - [ ] Played through by script
 - [ ] Its checklist written; then Robin checks it item by item, and what he finds is fixed and checked again
 - [ ] Every item Checked: the chapter is **Done**, the alpha is made from it (`docs/chapter-checks.md`), the next one becomes current
+
+**Asked of the studios for chapter 2 and onwards (Robin, 2026-11-24; concepts, not yet placed in a chapter's table):** Slavic/Baltic pirates (no Caribbean look: no tricorns, flintlocks, cannons or Jolly Rogers), with characters, their village and the threats round their waters; and tropic islands with threats, an ancient civilisation with spiritual lore, temples and thick jungle in place of villages, humid and warm. Colin, AD presents the boards to Robin; Alistair, LD's proposals are the Wends and the Warm Isles.
