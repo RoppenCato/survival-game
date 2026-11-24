@@ -3077,6 +3077,8 @@ __COMBAT__
     else { c.translate(x, y); c.rotate(Math.atan2(Math.sin(f2.a) * K, Math.cos(f2.a)) + Math.sin(clock * 0.9 + f2.seed) * 0.05); var L = f2.kind.k === 'spar' ? 17 : 11; c.lineCap = 'round'; c.strokeStyle = '#231a16'; c.lineWidth = f2.kind.k === 'spar' ? 3 : 4.2; c.beginPath(); c.moveTo(-L, -1); c.lineTo(L, -1); c.stroke(); c.strokeStyle = f2.kind.k === 'spar' ? '#9a7a54' : '#7a5c40'; c.lineWidth = f2.kind.k === 'spar' ? 1.8 : 3; c.beginPath(); c.moveTo(-L, -1.2); c.lineTo(L, -1.2); c.stroke(); if (f2.kind.k === 'spar') { c.strokeStyle = 'rgba(214,200,170,0.85)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(-L * 0.3, -0.6); c.quadraticCurveTo(0, 5, L * 0.5, 1.5); c.stroke(); } else { c.fillStyle = '#c8a878'; c.beginPath(); c.ellipse(L, -1.2, 1, 1.5, 0, 0, 6.283); c.fill(); } }
     c.restore();
   }
+  var DEEP_PIC = null, DEEP_META = { shark: { fw: 175, fh: 97, ax: 87.5, ay: 48.5, upp: 0.5, length_m: 3, loop_s: 3.2 }, humpback: { fw: 601, fh: 530, ax: 300.5, ay: 265, upp: 0.5, length_m: 11, loop_s: 4.5 }, blue: { fw: 1475, fh: 656, ax: 737.5, ay: 328, upp: 0.5, length_m: 27, loop_s: 7 }, serpentHead: { fw: 547, fh: 481, ax: 273.5, ay: 240.5, upp: 0.5, length_m: 10, loop_s: 2.4, neck_m: 2.6 } };   /* Colin, AD's sheets (assets/sea_shadows/shadows.json, 2026-11-24), loaded when the sea is first in sight */
+  function deepPics() { if (!DEEP_PIC && typeof Image !== 'undefined') { DEEP_PIC = {}; for (var k in DEEP_META) { var q = DEEP_META[k], o = {}; for (var m in q) o[m] = q[m]; o.img = new Image(); o.img.src = '../assets/sea_shadows/' + k + '.png'; DEEP_PIC[k] = o; } } return DEEP_PIC; }
   function deepSend(kind) { if (!seaEnv) return null; if (!seaEnv.over) { var Pd = hero(); seaEnv.over = { x: Pd.x, y: Pd.y }; } return Sea.deepCall(sea, seaEnv, kind); }   /* Admin's: one sent now, wherever you stand */
   function deepTick(dt) {
     var dp = sea.deep, k = Sea.dread(sea); deepK += (k - deepK) * Math.min(1, dt * 0.8); if (deepK < 0.002) deepK = 0;
@@ -3092,7 +3094,7 @@ __COMBAT__
     if ((shoreT -= dt) <= 0) { shoreT = 2; shorePt = null; var bd = 1e9; for (var a = 0; a < 6.283; a += 0.5236) for (var dd = 60; dd <= 360 && dd < bd; dd += 40) { var sx = P.x + Math.cos(a) * dd, sy = P.y + Math.sin(a) * dd; if (seaW(sx, sy) !== seaW(P.x, P.y)) { if (dd < bd) { bd = dd; shorePt = { x: sx, y: sy }; } break; } } }
     seaEnv = { x: cam.x, y: cam.y / K, hw: 200 / z, hh: 125 / z / K, z: z, wind: { a: wind.a, s: wind.s }, water: function (x, y) { return x > 0 && y > 0 && x < WX && y < WY && seaW(x, y); }, night: light(), ship: raft && raft.aboard && Yard.isShip(raft.kind) ? { x: raft.x, y: raft.y } : null, shore: shorePt };
     var icedNow = iceOn(); seaEnv.iced = icedNow; seaEnv.boat = raft && raft.aboard ? { x: raft.x, y: raft.y, h: raft.h || 0, v: Math.max(Math.abs(raft.speed || 0), Math.hypot(raft.vx || 0, raft.vy || 0)) } : null; seaEnv.geese = year.season === 'spring' ? -Math.PI / 2 : year.season === 'autumn' ? Math.PI / 2 : null; seaEnv.over = raft && raft.aboard ? { x: raft.x, y: raft.y } : icedNow && !P.dead && !w.isLand(P.x, P.y) && seaW(P.x, P.y) ? { x: P.x, y: P.y } : null;   /* where the deep's shadows pass: under any boat he is aboard, or under the ice he stands on */
-    Sea.tick(sea, dt, seaEnv); deepTick(dt); flotTick(dt);
+    seaEnv.deepImg = deepPics(); Sea.tick(sea, dt, seaEnv); deepTick(dt); flotTick(dt);
   }
   function raftTick(dt) {
     
