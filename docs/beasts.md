@@ -39,6 +39,45 @@ glows faintly. The troll is a threat to mining.
 
 **Open:** how much ore one troll guards; whether he follows you out of the cave into the night.
 
+## The troll race (Robin, 2026-11-24; the roster and the mechanics below are my proposals, not decided)
+
+Robin: "lets make lots of different trolls. For the caves up north I also want there to be trolls so big they are walking down in
+the depths along the paths the hero is walking. Imagine they are way further down but you see them walking around by your sides.
+I also want a massive troll at the deepest cave which you only see the head and arms from, rest is deeper down ... where you
+fight its hands. There should be different sizes and types of trolls. Some bulky and stupid, some more lenient and intelligent.
+Some huge crawling beastlike trolls, some smaller family like trolls (still bigger than human). Trolls should have their own
+kind of race."
+
+What exists: the mountain troll and his young (Harungen) in the game; the Gape and the three-headed troll as models, spawned
+nowhere; Trollmor and the haug troll as names.
+
+**A roster to choose from (mine):**
+
+| Kind | Size | Mind | Where | What it does |
+| --- | --- | --- | --- | --- |
+| The young (Harungen) | half a man | a child's | every troll home | built: bonk at ore, cry when struck |
+| House trolls, the family | a head over a man | slow, wary, not cruel | the Trollvinir town, cave homes | live as a household: a mother, a father, old ones; trade or leave you be until wronged |
+| The brute | twice a man, wide | stupid | cave passages, guarding | the mountain troll as built: one great slow sweep, fooled by light and noise |
+| The lean one | twice a man, thin, long arms | clever | deeper halls | throws stones, puts out your torch, sets the brutes on you, can be spoken with |
+| The crawler | a horse and more, on all fours | a beast | low tunnels, flooded caves | fast in the dark, climbs walls, the Gape's bite |
+| The old one, three-headed | three times a man | each head its own | a hall of its own | the three-headed troll's model: a miniboss |
+| The deep walkers | a hill | unknowable | the abyss beside the paths | never fought: seen far below, walking; the ledge shakes, stones fall; standing in their gaze is the danger |
+| The one in the pit | a mountain | old, patient | the deepest cave | only the head and the two arms above the edge: the fight is with the hands |
+
+**The deep walkers, in the engine (mine):** the cave's floor has a second, lower layer drawn under the paths at a smaller scale
+and bluer, darker light (the sea's shadows are the same trick): a walker is a figure on that layer following a line beside the
+hero's path, its head level with his feet. Its steps give a slow thud and a dust fall from the roof; where its path crosses under
+a bridge of rock the bridge trembles. No screen shake: the lights sway, dust falls, the sound drops.
+
+**The one in the pit, in the engine (mine):** the hero stands on a ledge round a pit. The head is scenery with eyes that follow;
+the two hands are the enemies, each with health of its own: a slam (a ring to step out of), a sweep along the ledge (dash through
+or stand in a notch), a grab (struck free by blows on the fingers). A hand hurt enough lies on the ledge a few seconds: that is
+the opening, and blows on it reach the troll. Light matters as with every troll: braziers round the ledge can be lit to make the
+head turn away. With both hands broken it sinks, and what it guarded lies on the ledge.
+
+**Open, for Robin:** do trolls turn to stone in daylight, all of them or only some; can the house trolls be friends (the
+Trollvinir, troll-friends, suggest so); which of these are in chapter 2's north and which later.
+
 ## Hårungen, the troll's young (`being.harungen`)
 
 **Built (Robin, 2026-10-16):** five live in the troll's cave. They walk about, bonk at the ore rocks and veins with their
