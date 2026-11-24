@@ -84,8 +84,11 @@ too young and forgot how to stand); the three-headed an old one that never went 
 
 **The three questions, as the canon answers them:** all trolls turn to stone in daylight (Robin, 2026-10-05; the Trollvinir's
 troll is the one that has seen the day and lived, 2026-10-21), and the deep ones never meet it; house trolls can be friends (the
-Trollvinir, Robin, 2026-10-21); every kind fits chapter 2's north but the Gape, which is the west's. **Still Robin's:** which
-kinds are built for chapter 2, and how the stone rule plays for trolls met by day.
+Trollvinir, Robin, 2026-10-21); every kind fits chapter 2's north but the Gape, which is the west's. **Robin's answers (2026-11-24):** (1) all kinds turn to stone in daylight in general, "but maybe we'll have some that found
+a way"; (2) house trolls can be friendly: yes; (3) "The biggest ones are saved for chapter 3 (like the boss and the ones walking
+at the depths). We can have some huge wandering ones in the cold climate tho." So chapter 2's north has the young, the tussar,
+the mountain troll, the jutul, the crawler, the three-headed one (mine, the pick among them still his) and **huge wanderers
+above ground in the cold**; the bergrisar below the paths and the mountain king are chapter 3's.
 
 ## Hårungen, the troll's young (`being.harungen`)
 
