@@ -90,6 +90,14 @@ at the depths). We can have some huge wandering ones in the cold climate tho." S
 the mountain troll, the jutul, the crawler, the three-headed one (mine, the pick among them still his) and **huge wanderers
 above ground in the cold**; the bergrisar below the paths and the mountain king are chapter 3's.
 
+**The huge wanderers and the ways past the day (Alistair, LD's handoff 36, 2026-11-24, proposed):** the wanderers are the
+rime-thurses (`being.rime-thurs`): trolls old enough to be huge that never went down, walking the fells and frozen lakes through
+the months the sun does not rise, going somewhere and not hunting; when the sun returns one lies down in a snowfield and looks
+like a hill. Four stories of trolls that found a way past daylight: a roof (the Trollvinir's), a back of turf (the haug troll
+walks the forest by day as a hillside), the weather (fog, blizzard, a storm too thick for the sun), and the long night. Which of
+these are rules of play is not decided. Mine, for when it is built: the weather one costs nothing to build (the weather system
+already knows fog, blizzard and storm) and makes bad weather in the north dangerous.
+
 ## Hårungen, the troll's young (`being.harungen`)
 
 **Built (Robin, 2026-10-16):** five live in the troll's cave. They walk about, bonk at the ore rocks and veins with their
