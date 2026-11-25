@@ -246,3 +246,13 @@ the stone that holds ore glows faintly. The mountain troll is the threat to mini
 glowing copper at night; the first copper is the veins in the big island's open cliffs, the rest in the troll's cave (its
 veins, ore rocks and his hoard). **Suggested and not built:** tin for bronze on another island; ore kinds by biome and
 distance (`ore: 'copper' | 'tin' | 'iron'` at planting).
+
+### The troll race as decided on the board (Robin, 2026-11-25, through Colin, AD: "Go with your choices"; `C:\dev\SG\Art Director\out	roll_race\DECISIONS.md`)
+
+Robin's words reached me through Colin, AD, not from Robin here; the picks are Colin, AD's, standing by that answer.
+
+- **The family face is kept**: the heavy hanging nose, small hooded eyes, big ears, huge three-fingered hands. **The cow's tail on the tussar and the crawler only.**
+- **Build order for chapter 2's north:** the tussar family (a mother with a young on her hip, a father, an old one; friendly, met as people), the rime-thurs at 7.2 m in the open snow, the brute (it replaces today's cave troll sheet when built: the Mountain test and the old troll's cave, nothing of chapter 1), then the jutul and the crawler.
+- **The three-headed troll is not spawned anywhere until it is remade in the family look.**
+- **Chapter 3's giants:** the deep walkers (about 38 m) on a lower layer at an eighth of the scale, bluer in the fog, beside the path, never seeing you; the mountain king a head and two hands over his pit, each hand resting, rising over a slam ring, sweeping, grabbing, lying hurt and open, withdrawing.
+- Nothing is built before its chapter (the one-chapter rule). **Mine, owed to Colin, AD when the tussar start:** the list of clips the game needs for them.
