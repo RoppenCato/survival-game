@@ -1,52 +1,47 @@
-# Lore handoff 36: Robin's troll answers, the huge wanderers, and the ones that found a way (2026-11-24)
+# Lore handoff 37: Robin's picks on Colin, AD's three boards (2026-11-25)
 
-From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-35.md`.
+From Alistair, LD to Clive, GD. Earlier handoffs are `HANDOFF-1.md` to `HANDOFF-36.md`.
 
-Robin's three answers, as you passed them on, are in the canon as Robin's decisions. All the new lore is `proposed`, for chapter 2's
-north. lore.json is unchanged (218 entries).
+Robin answered all three of Colin, AD's boards with "Go with your choices" (2026-11-25, through Colin, AD). Colin, AD's record
+is in the Art Director's `out/concept_baltic/`, `out/concept_tropics/` and `out/troll_race/` (`DECISIONS.md` in each). The lore
+now carries those picks, with Colin, AD's own choices marked. lore.json still has 218 entries. Only two of them changed, and only
+by a note. There is nothing to wire.
 
-## Robin's answers, where they went
+## In lore.json (notes only)
 
-1. **Stone in daylight:** "All kinds in general, but maybe we'll have some that found a way." On `being.trolls`, with the ways below.
-2. **Friendly house trolls:** "Yes." On `being.trolls` and `being.tusse`.
-3. **The biggest are saved for chapter 3:** `being.bergrisi` (the deep walkers) and `being.mountain-king` (the one in the pit). Their
-   chapter field is cleared until chapter 3 has an id. Chapter 2 gets huge wanderers in the cold: below.
+- `being.bergtroll`: the mountain troll is the brute, drawn in the family face. It replaces today's cave troll sheet when chapter
+  2's north is built, third after the tussar and the rime-thurs. Hårungen and Trollmor stay as they are for now.
+- `being.trehodet`: the three-headed troll is remade in the family face before it is spawned anywhere.
 
-## New: `being.rime-thurs`, the huge wanderer (chapter 2's north)
+## Saved, all `proposed` (chapter 2 and later)
 
-Folk use the old word *hrímþurs* (the Eddas' rime-giants, Ymir's kin), where trolls and giants meet.
+- **The Wends** (`world.wends`, `god.four-faced`, `place.white-cliff-fort`, `rumour.wends.horse`):
+  - first the spearman and the war-chief, then the priest;
+  - the red cloth roof;
+  - one white horse, the god's;
+  - no shields on the rail;
+  - the drowned one man-sized (not the draugr: an old man of the lagoon, never a warrior);
+  - the slavers shown quietly.
+- **The Warm Isles** (`place.warm-isles`, `place.sun-temple`):
+  - black basalt;
+  - the face in the roots;
+  - the north doors;
+  - the river-thing, the cat in the branches and the cassowary ("the helmet-bird", proposed).
+- **The trolls** (`being.trolls`, `being.tusse`, `being.troll-crawler`, `being.jutul`, `being.rime-thurs`, `being.bergrisi`,
+  `being.mountain-king`):
+  - one family face;
+  - a cow's tail on the tussar and the crawler only (real: the hidden folk's tail; our huldra has none);
+  - the build order;
+  - the rime-thurs at "four times a man";
+  - chapter 3's giants staged as drawn.
 
-- A troll old enough to be huge, three or four times a man, that never went down. The north's cold kept it up.
-- Where the sun does not rise all winter, it walks the fells and the frozen lakes for months together.
-- Rime grows thick on its shoulders, and there are icicles in its beard.
-- It is not hunting. It is going somewhere, as every winter, and whatever is in its way is in its way.
-- When the sun comes back it lies down in a snowfield and waits, and looks like a hill.
+## Three threads, saved for their chapters (yours and mine, and Robin's where it is a fork)
 
-Folk say:
-- "If you hear ice crack on a still night, and it keeps cracking in a line, get off the lake."
-- "Don't build on a hill that wasn't there last spring."
+1. **The Wends' captives:** whether they can be freed, and what that does. Real first: a captive could be bought free with
+   silver, as Olaf Tryggvason was in Estonia (Heimskringla).
+2. **The Warm Isles' guardians:** what wakes them, and why. The temples were built so that nobody would wake the sun before its
+   time.
+3. **The tussar:** what they do and say when you meet them (trade, ask, warn). Colin, AD needs this for the clips when chapter 2's
+   building starts.
 
-## The ones that found a way past the day (on `being.trolls`)
-
-Every troll turns to stone in the day, folk say, but a few found a way, and each is a story:
-
-1. **A roof.** The Trollvinir's trolls, the only ones *given* the day (the canon's case).
-2. **A back of turf.** The haug troll grew a hillside on itself, so the sun cannot find its skin. It walks the forest by day,
-   slowly, taken for a hill.
-3. **The weather.** Some walk in fog, blizzard or a storm too thick for the sun. "A troll is never far behind a snowstorm."
-4. **The long night.** The rime-thurses, while the sun is gone. In summer they lie down and wait.
-
-Which are rules in play is yours and Robin's.
-
-## `rumour.trolls.kinds` (proposed): line 3 changed
-
-Now: "Don't build on a hill that wasn't there last spring." The deep walkers' line ("When the lamps sway and there's no wind,
-stand still. Something is walking under you.") waits with them for chapter 3.
-
-## Changed ids
-
-- `being.rime-thurs`: new (proposed, chapter 2).
-- `being.trolls`: Robin's answers, the ways past the day, and the wanderers added to the race's ages.
-- `being.tusse`: Robin's "Yes".
-- `being.bergrisi`, `being.mountain-king`: saved for chapter 3; chapter field cleared.
-- `being.haugtroll`: a note. `rumour.trolls.kinds`: line 3.
+Alistair, LD
